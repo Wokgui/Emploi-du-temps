@@ -1,24 +1,13 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#111827">
-  <title>Emploi du temps</title>
-  <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#f4f6f8;color:#111827}.wrap{max-width:760px;margin:auto;padding:28px 16px}.card{background:white;border:1px solid #d1d5db;border-radius:18px;padding:20px;margin-top:16px}.btn{display:inline-block;background:#2563eb;color:white;text-decoration:none;padding:12px 16px;border-radius:12px;font-weight:700}.muted{color:#6b7280}.bar{height:14px;border-radius:999px;background:#e5e7eb;overflow:hidden}.bar>div{width:0;height:100%;background:#2563eb}
-  </style>
-</head>
-<body>
-  <main class="wrap">
-    <h1>Mon emploi du temps</h1>
-    <p class="muted">Projet séparé de LëtzLies. Cette page servira de portail Web/Vercel pour le widget Android.</p>
-    <section class="card">
-      <h2>Widget Android</h2>
-      <p>Le widget affichera le cours actuel, le prochain cours, le temps restant et la progression de la journée.</p>
-      <div class="bar"><div></div></div>
-      <p class="muted">L’APK sera généré automatiquement par GitHub Actions.</p>
-    </section>
-  </main>
-</body>
-</html>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#111827"><title>Emploi du temps</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--text:#111827;--muted:#6b7280;--line:#d1d5db;--blue:#2563eb;--green:#16a34a}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.wrap{max-width:760px;margin:auto;padding:24px 16px}.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin-top:14px}.badge{display:inline-block;background:#e0e7ff;color:#3730a3;padding:5px 9px;border-radius:999px;font-size:.78rem;font-weight:700}.btn{display:inline-block;margin-top:10px;background:var(--blue);color:#fff;text-decoration:none;padding:12px 16px;border-radius:12px;font-weight:800}.muted{color:var(--muted)}.widget{background:#111827;color:#fff;border-radius:22px;padding:16px;margin-top:12px}.top{display:flex;justify-content:space-between;gap:12px}.small{font-size:.78rem;color:#9ca3af}.status{font-size:1.05rem;font-weight:800;margin-top:7px}.bar{height:10px;border-radius:999px;background:#374151;overflow:hidden;margin-top:10px}.bar span{display:block;height:100%;width:62%;background:#60a5fa}.bar.green span{width:50%;background:#22c55e}.progress{font-size:.72rem;color:#9ca3af;margin-top:5px}
+</style>
+</head><body><main class="wrap">
+<span class="badge">Projet indépendant</span><h1>Mon emploi du temps</h1><p class="muted">Widget Android séparé de LëtzLies.</p>
+<section class="widget"><div class="top"><div class="small">Jeudi · 4/7 cours</div><div>↻</div></div><div class="status">6G3BIL · 6G4BIL · salle 216</div><div class="small">Cours en cours · fin à 14:00 · reste 24 min</div><div class="bar"><span></span></div><div class="bar green"><span></span></div><div class="progress">Journée 62% · Cours 50%</div></section>
+<section class="card"><h2 style="margin-top:0">Installer sur Android</h2><p>Après compilation, le bouton ci-dessous télécharge directement l’APK installable.</p><a class="btn" href="https://github.com/Wokgui/Emploi-du-temps/releases/download/widget-latest/emploi-du-temps-widget.apk">Télécharger l’APK</a><p class="muted">Puis : appui long sur l’écran d’accueil → Widgets → Emploi du temps.</p></section>
+<section class="card"><b>Fonctions prévues</b><p class="muted">Cours actuel et prochain cours, salle, compte à rebours, progression 8h–18h, progression des cours, actualisation ↻, mises à jour aux changements de cours et toutes les 30 minutes.</p></section>
+</main></body></html>
