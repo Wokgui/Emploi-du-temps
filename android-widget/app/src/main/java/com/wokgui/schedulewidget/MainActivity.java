@@ -17,9 +17,11 @@ public class MainActivity extends Activity {
         ScheduleStore.ensureInitialized(this);
         setContentView(R.layout.activity_main);
         webView = findViewById(R.id.webView);
+
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+
         webView.addJavascriptInterface(new ScheduleBridge(), "AndroidSchedule");
         webView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
@@ -30,28 +32,45 @@ public class MainActivity extends Activity {
         webView.loadUrl("file:///android_asset/index.html");
     }
 
-    @Override protected void onNewIntent(Intent intent) {
+    @Override
+    protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
         applyOpenMode();
     }
 
-    @Override protected void onResume() {
+    @Override
+    protected void onResume() {
         super.onResume();
-        if (webView != null) webView.evaluateJavascript("if(window.reloadSchedule){reloadSchedule();}", null);
+        if (webView != null) {
+            webView.evaluateJavascript(
+                    "if(window.reloadSchedule){reloadSchedule();}",
+                    value -> applyOpenMode()
+            );
+        }
     }
 
     private void applyOpenMode() {
-        if (webView == null) return;
-        String mode = getIntent() == null ? null : getIntent().getStringExtra("open_mode");
-        if ("edit".equals(mode)) {
-            webView.evaluateJavascript("if(window.setModeFromAndroid){setModeFromAndroid('edit');}", null);
+        if (webView == null || getIntent() == null) return;
+        String mode = getIntent().getStringExtra("open_mode");
+        if ("today".equals(mode) || "week".equals(mode) || "edit".equals(mode)) {
+            webView.evaluateJavascript(
+                    "if(window.setModeFromAndroid){setModeFromAndroid('" + mode + "');}",
+                    null
+            );
             getIntent().removeExtra("open_mode");
         }
     }
 
     private final class ScheduleBridge {
-        @JavascriptInterface public String loadSchedule() { return ScheduleStore.exportJson(MainActivity.this); }
-        @JavascriptInterface public void saveSchedule(String json) { ScheduleStore.importJson(MainActivity.this, json); }
+        @JavascriptInterface
+        public String loadSchedule() {
+            return ScheduleStore.exportJson(MainActivity.this);
+        }
+
+        @JavascriptInterface
+        public void saveSchedule(String json) {
+            ScheduleStore.importJson(MainActivity.this, json);
+        }
     }
 }
