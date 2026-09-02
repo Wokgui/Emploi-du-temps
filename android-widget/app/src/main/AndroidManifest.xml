@@ -20,6 +20,11 @@
             </intent-filter>
         </activity>
 
+        <service
+            android:name=".UpcomingCoursesService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+
         <receiver
             android:name=".ScheduleWidgetProvider"
             android:exported="false">
