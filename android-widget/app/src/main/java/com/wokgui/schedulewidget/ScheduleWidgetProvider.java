@@ -63,61 +63,77 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         List<ScheduleData.Course> courses = ScheduleData.forDay(day);
 
         ScheduleData.Course current = null;
-        ScheduleData.Course next = null;
-        int completed = 0;
-        double courseProgressUnits = 0.0;
+        ScheduleData.Course nextToday = null;
 
         for (ScheduleData.Course course : courses) {
             int start = ScheduleData.toMinutes(course.start);
             int end = ScheduleData.toMinutes(course.end);
-            if (minute >= end) {
-                completed++;
-                courseProgressUnits += 1.0;
-            } else if (minute >= start) {
+            if (minute >= start && minute < end) {
                 current = course;
-                courseProgressUnits += Math.max(0.0, Math.min(1.0, (minute - start) / (double) (end - start)));
-            } else if (next == null) {
-                next = course;
+            } else if (start > minute && nextToday == null) {
+                nextToday = course;
             }
         }
 
-        int dayProgress = clamp((int) Math.round((minute - 480) * 100.0 / 600.0));
-        int classProgress = courses.isEmpty() ? 0 : clamp((int) Math.round(courseProgressUnits * 100.0 / courses.size()));
-
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_schedule);
-        views.setTextViewText(R.id.tvTitle, dayLabel(day) + (courses.isEmpty() ? "" : " · " + completed + "/" + courses.size() + " cours"));
-        views.setProgressBar(R.id.dayProgress, 100, dayProgress, false);
-        views.setProgressBar(R.id.classProgress, 100, classProgress, false);
-        views.setTextViewText(R.id.tvProgress, "Journée " + dayProgress + "% · Cours " + classProgress + "%");
 
         if (current != null) {
+            int start = ScheduleData.toMinutes(current.start);
             int end = ScheduleData.toMinutes(current.end);
+            int progress = clamp((int) Math.round((minute - start) * 100.0 / Math.max(1, end - start)));
             long remainingMs = Math.max(0L, (end - minute) * 60_000L - now.get(Calendar.SECOND) * 1000L);
-            views.setTextViewText(R.id.tvStatus, current.label + " · salle " + current.room);
-            views.setTextViewText(R.id.tvSubstatus, "Cours en cours · fin à " + current.end);
-            showCountdown(views, remainingMs, "Reste %s");
-        } else if (next != null) {
-            int start = ScheduleData.toMinutes(next.start);
+
+            views.setTextViewText(R.id.tvStatus, current.label);
+            views.setTextViewText(R.id.tvSubstatus, "Salle " + current.room + " · jusqu’à " + current.end);
+            showCountdown(views, remainingMs, "Encore %s");
+            views.setProgressBar(R.id.classProgress, 100, progress, false);
+            views.setViewVisibility(R.id.classProgress, View.VISIBLE);
+        } else if (nextToday != null) {
+            int start = ScheduleData.toMinutes(nextToday.start);
             long remainingMs = Math.max(0L, (start - minute) * 60_000L - now.get(Calendar.SECOND) * 1000L);
-            views.setTextViewText(R.id.tvStatus, "Prochain : " + next.label + " · salle " + next.room);
-            views.setTextViewText(R.id.tvSubstatus, "À " + next.start);
+
+            views.setTextViewText(R.id.tvStatus, "Pas de cours maintenant");
+            views.setTextViewText(R.id.tvSubstatus, "Prochain à " + nextToday.start + " · salle " + nextToday.room);
             showCountdown(views, remainingMs, "Dans %s");
+            views.setViewVisibility(R.id.classProgress, View.GONE);
         } else if (courses.isEmpty()) {
             views.setTextViewText(R.id.tvStatus, "Pas de cours aujourd’hui");
-            views.setTextViewText(R.id.tvSubstatus, nextCourseText(now));
+            views.setTextViewText(R.id.tvSubstatus, "Prochain cours ci-dessous");
             views.setViewVisibility(R.id.countdown, View.GONE);
+            views.setViewVisibility(R.id.classProgress, View.GONE);
         } else {
-            views.setTextViewText(R.id.tvStatus, "Cours terminés pour aujourd’hui");
-            views.setTextViewText(R.id.tvSubstatus, nextCourseText(now));
+            views.setTextViewText(R.id.tvStatus, "Cours terminés");
+            views.setTextViewText(R.id.tvSubstatus, "Pour aujourd’hui");
             views.setViewVisibility(R.id.countdown, View.GONE);
+            views.setViewVisibility(R.id.classProgress, View.GONE);
+        }
+
+        NextCourseInfo nextInfo = findNextCourse(now, nextToday);
+        if (nextInfo != null) {
+            views.setViewVisibility(R.id.nextPanel, View.VISIBLE);
+            views.setTextViewText(R.id.tvNextClass, nextInfo.course.label);
+            String prefix = isSameCalendarDay(now, nextInfo.date) ? "" : dayLabel(nextInfo.date.get(Calendar.DAY_OF_WEEK)) + " ";
+            views.setTextViewText(R.id.tvNextMeta, prefix + nextInfo.course.start + " · salle " + nextInfo.course.room);
+        } else {
+            views.setViewVisibility(R.id.nextPanel, View.GONE);
         }
 
         Intent openIntent = new Intent(context, MainActivity.class);
-        PendingIntent openPending = PendingIntent.getActivity(context, 0, openIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent openPending = PendingIntent.getActivity(
+                context,
+                0,
+                openIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
         views.setOnClickPendingIntent(R.id.widgetRoot, openPending);
 
         Intent refreshIntent = new Intent(context, ScheduleWidgetProvider.class).setAction(ACTION_REFRESH);
-        PendingIntent refreshPending = PendingIntent.getBroadcast(context, 1, refreshIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent refreshPending = PendingIntent.getBroadcast(
+                context,
+                1,
+                refreshIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
         views.setOnClickPendingIntent(R.id.btnRefresh, refreshPending);
 
         manager.updateAppWidget(widgetId, views);
@@ -130,17 +146,23 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         views.setChronometerCountDown(R.id.countdown, true);
     }
 
-    private static String nextCourseText(Calendar from) {
-        Calendar cursor = (Calendar) from.clone();
+    private static NextCourseInfo findNextCourse(Calendar now, ScheduleData.Course nextToday) {
+        if (nextToday != null) return new NextCourseInfo((Calendar) now.clone(), nextToday);
+
+        Calendar cursor = (Calendar) now.clone();
         for (int add = 1; add <= 7; add++) {
             cursor.add(Calendar.DAY_OF_YEAR, 1);
             List<ScheduleData.Course> list = ScheduleData.forDay(cursor.get(Calendar.DAY_OF_WEEK));
             if (!list.isEmpty()) {
-                ScheduleData.Course c = list.get(0);
-                return "Prochain : " + dayLabel(cursor.get(Calendar.DAY_OF_WEEK)) + " " + c.start + " · " + c.label;
+                return new NextCourseInfo((Calendar) cursor.clone(), list.get(0));
             }
         }
-        return "";
+        return null;
+    }
+
+    private static boolean isSameCalendarDay(Calendar a, Calendar b) {
+        return a.get(Calendar.YEAR) == b.get(Calendar.YEAR)
+                && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR);
     }
 
     private static String dayLabel(int day) {
@@ -186,14 +208,34 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         if (targetMs == Long.MAX_VALUE) return;
         AlarmManager alarm = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, ScheduleWidgetProvider.class).setAction(ACTION_BOUNDARY);
-        PendingIntent pending = PendingIntent.getBroadcast(context, 2, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pending = PendingIntent.getBroadcast(
+                context,
+                2,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
         alarm.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, targetMs, pending);
     }
 
     private static void cancelBoundary(Context context) {
         AlarmManager alarm = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, ScheduleWidgetProvider.class).setAction(ACTION_BOUNDARY);
-        PendingIntent pending = PendingIntent.getBroadcast(context, 2, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pending = PendingIntent.getBroadcast(
+                context,
+                2,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
         alarm.cancel(pending);
+    }
+
+    private static class NextCourseInfo {
+        final Calendar date;
+        final ScheduleData.Course course;
+
+        NextCourseInfo(Calendar date, ScheduleData.Course course) {
+            this.date = date;
+            this.course = course;
+        }
     }
 }
