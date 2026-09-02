@@ -1,6 +1,7 @@
 package com.wokgui.schedulewidget;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
@@ -20,25 +21,37 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         webView.addJavascriptInterface(new ScheduleBridge(), "AndroidSchedule");
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            @Override public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                applyOpenMode();
+            }
+        });
         webView.loadUrl("file:///android_asset/index.html");
     }
 
-    @Override
-    protected void onResume() {
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        applyOpenMode();
+    }
+
+    @Override protected void onResume() {
         super.onResume();
         if (webView != null) webView.evaluateJavascript("if(window.reloadSchedule){reloadSchedule();}", null);
     }
 
-    private final class ScheduleBridge {
-        @JavascriptInterface
-        public String loadSchedule() {
-            return ScheduleStore.exportJson(MainActivity.this);
+    private void applyOpenMode() {
+        if (webView == null) return;
+        String mode = getIntent() == null ? null : getIntent().getStringExtra("open_mode");
+        if ("edit".equals(mode)) {
+            webView.evaluateJavascript("if(window.setModeFromAndroid){setModeFromAndroid('edit');}", null);
+            getIntent().removeExtra("open_mode");
         }
+    }
 
-        @JavascriptInterface
-        public void saveSchedule(String json) {
-            ScheduleStore.importJson(MainActivity.this, json);
-        }
+    private final class ScheduleBridge {
+        @JavascriptInterface public String loadSchedule() { return ScheduleStore.exportJson(MainActivity.this); }
+        @JavascriptInterface public void saveSchedule(String json) { ScheduleStore.importJson(MainActivity.this, json); }
     }
 }
