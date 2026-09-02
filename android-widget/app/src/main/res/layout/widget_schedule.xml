@@ -4,7 +4,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="12dp"
+    android:paddingLeft="12dp"
+    android:paddingTop="9dp"
+    android:paddingRight="12dp"
+    android:paddingBottom="0dp"
     android:background="@drawable/widget_background">
 
     <LinearLayout
@@ -25,22 +28,22 @@
 
         <TextView
             android:id="@+id/btnRefresh"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
             android:gravity="center"
             android:text="↻"
             android:textColor="#0AA6A6"
-            android:textSize="21sp"
+            android:textSize="20sp"
             android:contentDescription="@string/refresh" />
 
         <TextView
             android:id="@+id/btnEdit"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
             android:gravity="center"
             android:text="✎"
             android:textColor="#0AA6A6"
-            android:textSize="19sp"
+            android:textSize="18sp"
             android:contentDescription="Modifier l'emploi du temps" />
     </LinearLayout>
 
@@ -51,26 +54,26 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:textColor="#101936"
-        android:textSize="20sp"
+        android:textSize="19sp"
         android:textStyle="bold" />
 
     <TextView
         android:id="@+id/tvSubstatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
+        android:layout_marginTop="1dp"
         android:ellipsize="end"
         android:maxLines="1"
         android:textColor="#5A667A"
-        android:textSize="12sp" />
+        android:textSize="11sp" />
 
     <ProgressBar
         android:id="@+id/classProgress"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
-        android:layout_height="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="5dp"
+        android:layout_height="7dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="2dp"
         android:max="100"
         android:progressTint="#0AA6A6"
         android:progressBackgroundTint="#E5E7EB" />
@@ -80,17 +83,20 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:paddingBottom="0dp"
+        android:clipToPadding="false"
         android:divider="#E5EAF0"
         android:dividerHeight="1dp"
-        android:scrollbars="vertical" />
+        android:scrollbars="vertical"
+        android:fadingEdge="none" />
 
     <TextView
         android:id="@+id/emptyUpcoming"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="8dp"
-        android:paddingBottom="5dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="2dp"
         android:text="Aucun autre cours programmé"
         android:textColor="#647087"
-        android:textSize="12sp" />
+        android:textSize="11sp" />
 </LinearLayout>
