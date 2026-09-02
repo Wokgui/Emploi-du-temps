@@ -16,12 +16,14 @@ public class UpcomingCoursesService extends RemoteViewsService {
     }
 
     private static final class Item {
-        final int day;
         final String label;
         final String time;
         final String room;
-        Item(int day, String label, String time, String room) {
-            this.day = day; this.label = label; this.time = time; this.room = room;
+
+        Item(String label, String time, String room) {
+            this.label = label;
+            this.time = time;
+            this.room = room;
         }
     }
 
@@ -38,25 +40,41 @@ public class UpcomingCoursesService extends RemoteViewsService {
         private void reload() {
             items.clear();
             ScheduleStore.ensureInitialized(context);
+
             Calendar now = Calendar.getInstance();
             int nowMin = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
-            int today = now.get(Calendar.DAY_OF_WEEK);
-            boolean hasCurrent = false;
-            for (ScheduleData.Course c : ScheduleStore.getCourses(context, today)) {
-                int s = ScheduleData.toMinutes(c.start), e = ScheduleData.toMinutes(c.end);
-                if (nowMin >= s && nowMin < e) { hasCurrent = true; break; }
-            }
-            boolean skippedTopNext = hasCurrent;
+
+            // Le cours affiché en grand par le widget est le prochain cours.
+            // On cherche ce cours, puis on ne met dans la liste que les cours
+            // qui le suivent LE MÊME JOUR. Aucun cours d'un autre jour n'est ajouté.
+            Calendar targetDate = null;
+            ScheduleData.Course topNext = null;
+
             Calendar cursor = (Calendar) now.clone();
-            for (int add = 0; add < 8 && items.size() < 30; add++) {
+            for (int add = 0; add < 8 && topNext == null; add++) {
                 int day = cursor.get(Calendar.DAY_OF_WEEK);
                 List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, day);
                 for (ScheduleData.Course c : courses) {
                     if (add == 0 && ScheduleData.toMinutes(c.start) <= nowMin) continue;
-                    if (!skippedTopNext) { skippedTopNext = true; continue; }
-                    items.add(new Item(day, c.label, c.start, c.room));
+                    topNext = c;
+                    targetDate = (Calendar) cursor.clone();
+                    break;
                 }
                 cursor.add(Calendar.DAY_OF_YEAR, 1);
+            }
+
+            if (topNext == null || targetDate == null) return;
+
+            List<ScheduleData.Course> sameDay = ScheduleStore.getCourses(
+                    context,
+                    targetDate.get(Calendar.DAY_OF_WEEK)
+            );
+            int topStart = ScheduleData.toMinutes(topNext.start);
+
+            for (ScheduleData.Course c : sameDay) {
+                if (ScheduleData.toMinutes(c.start) > topStart) {
+                    items.add(new Item(c.label, c.start, c.room));
+                }
             }
         }
 
@@ -65,26 +83,13 @@ public class UpcomingCoursesService extends RemoteViewsService {
             Item item = items.get(position);
             RemoteViews v = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
             v.setTextViewText(R.id.rowTitle, item.label);
-            String when = item.day == Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-                    ? item.time
-                    : shortDay(item.day) + " " + item.time;
-            v.setTextViewText(R.id.rowMeta, when + " · salle " + (item.room.isEmpty() ? "—" : item.room));
+            v.setTextViewText(R.id.rowMeta, item.time + " · salle " + (item.room.isEmpty() ? "—" : item.room));
+
             Intent fill = new Intent();
             fill.putExtra("open_mode", "edit");
             v.setOnClickFillInIntent(R.id.rowTitle, fill);
             v.setOnClickFillInIntent(R.id.rowMeta, fill);
             return v;
-        }
-
-        private String shortDay(int day) {
-            switch (day) {
-                case Calendar.MONDAY: return "Lun";
-                case Calendar.TUESDAY: return "Mar";
-                case Calendar.WEDNESDAY: return "Mer";
-                case Calendar.THURSDAY: return "Jeu";
-                case Calendar.FRIDAY: return "Ven";
-                default: return "";
-            }
         }
 
         @Override public RemoteViews getLoadingView() { return null; }
