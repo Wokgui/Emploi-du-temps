@@ -58,9 +58,9 @@ public class PronoteActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 status.setText(isPronotePage(url)
-                        ? "Ouvre « Travail à faire », puis touche Importer"
+                        ? "Affiche le cahier de textes ou Travail à faire, puis touche Importer"
                         : "Connexion en cours…");
-                injectAutoCapture();
+                captureCurrentPage(false);
             }
         });
 
@@ -88,10 +88,6 @@ public class PronoteActivity extends Activity {
         }
     }
 
-    private void injectAutoCapture() {
-        captureCurrentPage(false);
-    }
-
     private void captureCurrentPage(boolean force) {
         if (webView == null) return;
         String current = webView.getUrl();
@@ -101,26 +97,97 @@ public class PronoteActivity extends Activity {
             return;
         }
 
-        String js = "(function(){try{" +
-                "const force=" + (force ? "true" : "false") + ";" +
-                "const body=(document.body&&document.body.innerText?document.body.innerText:'').trim();" +
-                "const needles=['3G1','3G2','3G3','3G4','4G1','4G2','4G3','4G4','5G1','5G2','5G3','5G4','6G3','6G4'];" +
-                "const keyword=/travail\\s*[àa]\\s*faire|cahier\\s*de\\s*textes|devoir|travaux\\s*[àa]\\s*faire/i;" +
-                "const blocks=[];const seen=new Set();" +
-                "const els=document.querySelectorAll('article,section,li,tr,[role=row],[role=listitem],.liste_contenu,.conteneur,div');" +
-                "for(const el of els){if(blocks.length>=40)break;let t='';try{t=(el.innerText||'').replace(/\\s+/g,' ').trim()}catch(e){}" +
-                "if(t.length<18||t.length>1600)continue;const up=t.toUpperCase();" +
-                "const hasClass=needles.some(n=>up.includes(n));const hasKeyword=keyword.test(t);" +
-                "if(!(hasClass||hasKeyword))continue;" +
-                "let childDuplicate=false;for(const c of el.children){try{const ct=(c.innerText||'').replace(/\\s+/g,' ').trim();if(ct===t){childDuplicate=true;break}}catch(e){}}" +
-                "if(childDuplicate)continue;const key=t.slice(0,500);if(seen.has(key))continue;seen.add(key);blocks.push({text:t});}" +
-                "const relevant=keyword.test(body)||blocks.some(b=>keyword.test(b.text));" +
-                "if(force||relevant){const payload={url:location.href,title:document.title||'PRONOTE',capturedAt:Date.now(),text:body.slice(0,180000),blocks:blocks};AndroidPronoteCapture.captureDom(JSON.stringify(payload));return 'captured:'+blocks.length;}" +
-                "return 'ignored';}catch(e){return 'error:'+e.message;}})();";
+        String js = """
+            (function(){
+              try {
+                const force = %s;
+                const clean = t => String(t || '').replace(/\s+/g, ' ').trim();
+                const body = clean(document.body && document.body.innerText ? document.body.innerText : '');
+                const needles = ['3G1','3G2','3G3','3G4','4G1','4G2','4G3','4G4','5G1','5G2','5G3','5G4','6G3','6G4'];
+                const keyword = /travail\s*[àa]\s*faire|travaux\s*[àa]\s*faire|cahier\s*de\s*textes|contenu\s*(de\s*)?(la\s*)?(s[ée]ance|cours)|devoir|[àa]\s*faire\s*pour/i;
+                const blocks = [];
+                const seen = new Set();
+                const selector = 'article,section,li,tr,[role=row],[role=listitem],.liste_contenu,.conteneur,[class*="travail"],[class*="cahier"],[class*="devoir"],div';
+                const els = document.querySelectorAll(selector);
+
+                function contextFor(el) {
+                  const pieces = [];
+                  try {
+                    const ownTitle = clean(el.getAttribute('aria-label') || el.getAttribute('title') || '');
+                    if (ownTitle) pieces.push(ownTitle);
+                  } catch(e) {}
+                  try {
+                    const parent = el.closest('article,section,li,tr,[role=row],[role=listitem],.liste_contenu,.conteneur') || el.parentElement;
+                    if (parent && parent !== el) {
+                      const pt = clean(parent.innerText || '');
+                      if (pt && pt.length <= 2400) pieces.push(pt);
+                    }
+                  } catch(e) {}
+                  try {
+                    let p = el.previousElementSibling;
+                    let n = 0;
+                    while (p && n < 3) {
+                      const pt = clean(p.innerText || '');
+                      if (pt && pt.length < 500) pieces.push(pt);
+                      p = p.previousElementSibling;
+                      n++;
+                    }
+                  } catch(e) {}
+                  return clean(pieces.join(' · ')).slice(0, 2600);
+                }
+
+                for (const el of els) {
+                  if (blocks.length >= 80) break;
+                  let text = '';
+                  try { text = clean(el.innerText || ''); } catch(e) {}
+                  if (text.length < 12 || text.length > 2200) continue;
+                  const context = contextFor(el);
+                  const combined = clean(context + ' ' + text);
+                  const upper = combined.toUpperCase();
+                  const hasClass = needles.some(n => upper.includes(n));
+                  const hasKeyword = keyword.test(combined);
+                  if (!(hasClass || hasKeyword)) continue;
+
+                  let childDuplicate = false;
+                  for (const c of el.children) {
+                    try {
+                      const ct = clean(c.innerText || '');
+                      if (ct === text) { childDuplicate = true; break; }
+                    } catch(e) {}
+                  }
+                  if (childDuplicate && !hasKeyword) continue;
+
+                  const key = combined.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 700);
+                  if (seen.has(key)) continue;
+                  seen.add(key);
+                  blocks.push({text:text, context:context});
+                }
+
+                const relevant = keyword.test(body) || blocks.length > 0;
+                if (force || relevant) {
+                  if (force && blocks.length === 0 && body) {
+                    blocks.push({text:body.slice(0, 12000), context:'Page PRONOTE importée'});
+                  }
+                  const payload = {
+                    url: location.href,
+                    title: document.title || 'PRONOTE',
+                    capturedAt: Date.now(),
+                    text: body.slice(0, 180000),
+                    blocks: blocks
+                  };
+                  AndroidPronoteCapture.captureDom(JSON.stringify(payload));
+                  return 'captured:' + blocks.length;
+                }
+                return 'ignored';
+              } catch(e) {
+                return 'error:' + e.message;
+              }
+            })();
+            """.formatted(force ? "true" : "false");
 
         webView.evaluateJavascript(js, value -> {
             if (force && value != null && value.contains("ignored")) {
-                status.setText("Aucun devoir détecté sur cette page");
+                status.setText("Aucun contenu de cahier de textes détecté sur cette page");
             }
         });
     }
@@ -130,7 +197,7 @@ public class PronoteActivity extends Activity {
         public void captureDom(String payload) {
             PronoteStore.saveSnapshot(PronoteActivity.this, payload);
             runOnUiThread(() -> {
-                status.setText("Devoirs importés dans Emploi du temps");
+                status.setText("Import enregistré. Reviens dans Emploi du temps pour voir ce qui a été détecté.");
                 Toast.makeText(PronoteActivity.this, "Import PRONOTE enregistré", Toast.LENGTH_SHORT).show();
             });
         }
