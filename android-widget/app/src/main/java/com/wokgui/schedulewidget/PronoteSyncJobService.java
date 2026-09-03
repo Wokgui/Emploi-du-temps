@@ -211,7 +211,8 @@ public class PronoteSyncJobService extends JobService {
     private final class BackgroundBridge {
         @JavascriptInterface
         public void captureDom(String payload) {
-            PronoteStore.mergeSnapshot(PronoteSyncJobService.this, payload);
+            if (captures == 0) PronoteStore.replaceSnapshot(PronoteSyncJobService.this, payload);
+            else PronoteStore.mergeSnapshot(PronoteSyncJobService.this, payload);
             captures++;
         }
     }
