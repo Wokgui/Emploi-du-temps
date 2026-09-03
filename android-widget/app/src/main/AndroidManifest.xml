@@ -26,6 +26,11 @@
         </activity>
 
         <service
+            android:name=".PronoteSyncJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="true" />
+
+        <service
             android:name=".UpcomingCoursesService"
             android:permission="android.permission.BIND_REMOTEVIEWS"
             android:exported="false" />
@@ -41,6 +46,7 @@
                 <action android:name="android.intent.action.DATE_CHANGED" />
                 <action android:name="com.wokgui.schedulewidget.REFRESH" />
                 <action android:name="com.wokgui.schedulewidget.BOUNDARY" />
+                <action android:name="com.wokgui.schedulewidget.TOGGLE_HOMEWORK" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
