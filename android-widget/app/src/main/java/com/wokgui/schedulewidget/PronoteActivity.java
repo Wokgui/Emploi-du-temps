@@ -20,6 +20,7 @@ public class PronoteActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        PronoteSyncScheduler.schedule(this);
         setContentView(R.layout.activity_pronote);
 
         status = findViewById(R.id.pronoteStatus);
@@ -58,7 +59,7 @@ public class PronoteActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 status.setText(isPronotePage(url)
-                        ? "Affiche le cahier de textes ou Travail à faire, puis touche Importer"
+                        ? "Connexion reconnue. La synchronisation automatique sera ensuite faite en arrière-plan."
                         : "Connexion en cours…");
                 captureCurrentPage(false);
             }
@@ -203,10 +204,13 @@ public class PronoteActivity extends Activity {
     private final class CaptureBridge {
         @JavascriptInterface
         public void captureDom(String payload) {
-            PronoteStore.saveSnapshot(PronoteActivity.this, payload);
+            PronoteStore.mergeSnapshot(PronoteActivity.this, payload);
+            PronoteStore.markSyncSuccess(PronoteActivity.this, "Session PRONOTE active");
+            PronoteSyncScheduler.schedule(PronoteActivity.this);
+            PronoteSyncScheduler.requestNow(PronoteActivity.this);
             runOnUiThread(() -> {
-                status.setText("Import enregistré. Reviens dans Emploi du temps pour voir ce qui a été détecté.");
-                Toast.makeText(PronoteActivity.this, "Import PRONOTE enregistré", Toast.LENGTH_SHORT).show();
+                status.setText("PRONOTE connecté. Les prochaines synchronisations seront automatiques.");
+                Toast.makeText(PronoteActivity.this, "PRONOTE connecté", Toast.LENGTH_SHORT).show();
             });
         }
     }
