@@ -6,11 +6,18 @@ import android.content.SharedPreferences;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.text.Normalizer;
+import java.util.HashSet;
+import java.util.Set;
+
 final class PronoteStore {
     private static final String PREFS = "pronote_import_v1";
     private static final String SNAPSHOT = "snapshot";
     private static final String IMPORTED_AT = "imported_at";
     private static final String SOURCE_URL = "source_url";
+    private static final String LAST_SYNC_ATTEMPT = "last_sync_attempt";
+    private static final String LAST_SYNC_OK = "last_sync_ok";
+    private static final String LAST_SYNC_MESSAGE = "last_sync_message";
     static final String DEFAULT_PRONOTE_URL = "https://0570107g.index-education.net/pronote/mobile.professeur.html";
 
     private PronoteStore() {}
@@ -20,22 +27,70 @@ final class PronoteStore {
     }
 
     static void saveSnapshot(Context context, String payload) {
+        mergeSnapshot(context, payload);
+    }
+
+    static synchronized void mergeSnapshot(Context context, String payload) {
         if (payload == null) return;
         String trimmed = payload.trim();
         if (trimmed.isEmpty()) return;
-        // On garde un plafond raisonnable pour ne pas faire grossir les préférences.
         if (trimmed.length() > 900_000) trimmed = trimmed.substring(0, 900_000);
-        String sourceUrl = "";
+
         try {
-            JSONObject object = new JSONObject(trimmed);
-            sourceUrl = object.optString("url", "");
+            JSONObject incoming = new JSONObject(trimmed);
+            JSONObject previous;
+            try {
+                previous = new JSONObject(getSnapshot(context));
+            } catch (Exception ignored) {
+                previous = new JSONObject();
+            }
+
+            JSONArray merged = new JSONArray();
+            Set<String> seen = new HashSet<>();
+            appendBlocks(previous.optJSONArray("blocks"), merged, seen);
+            appendBlocks(incoming.optJSONArray("blocks"), merged, seen);
+
+            JSONObject out = new JSONObject();
+            out.put("url", incoming.optString("url", previous.optString("url", "")));
+            out.put("title", incoming.optString("title", previous.optString("title", "PRONOTE")));
+            out.put("capturedAt", System.currentTimeMillis());
+            String text = incoming.optString("text", "");
+            if (text.isEmpty()) text = previous.optString("text", "");
+            if (text.length() > 180_000) text = text.substring(0, 180_000);
+            out.put("text", text);
+            out.put("blocks", merged);
+
+            String sourceUrl = out.optString("url", "");
+            prefs(context).edit()
+                    .putString(SNAPSHOT, out.toString())
+                    .putLong(IMPORTED_AT, System.currentTimeMillis())
+                    .putString(SOURCE_URL, sourceUrl)
+                    .apply();
         } catch (Exception ignored) {
         }
-        prefs(context).edit()
-                .putString(SNAPSHOT, trimmed)
-                .putLong(IMPORTED_AT, System.currentTimeMillis())
-                .putString(SOURCE_URL, sourceUrl)
-                .apply();
+    }
+
+    private static void appendBlocks(JSONArray source, JSONArray target, Set<String> seen) {
+        if (source == null) return;
+        for (int i = 0; i < source.length() && target.length() < 160; i++) {
+            JSONObject block = source.optJSONObject(i);
+            if (block == null) continue;
+            String text = block.optString("text", "");
+            String context = block.optString("context", "");
+            String key = normalize(context + " " + text);
+            if (key.isEmpty() || seen.contains(key)) continue;
+            seen.add(key);
+            target.put(block);
+        }
+    }
+
+    private static String normalize(String value) {
+        if (value == null) return "";
+        String n = Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("[\\p{InCombiningDiacriticalMarks}]", "")
+                .toUpperCase()
+                .replaceAll("[^A-Z0-9]", "");
+        return n.length() > 900 ? n.substring(0, 900) : n;
     }
 
     static String getSnapshot(Context context) {
@@ -44,6 +99,34 @@ final class PronoteStore {
 
     static long getImportedAt(Context context) {
         return prefs(context).getLong(IMPORTED_AT, 0L);
+    }
+
+    static long getLastSyncAttempt(Context context) {
+        return prefs(context).getLong(LAST_SYNC_ATTEMPT, 0L);
+    }
+
+    static void markSyncAttempt(Context context) {
+        prefs(context).edit()
+                .putLong(LAST_SYNC_ATTEMPT, System.currentTimeMillis())
+                .putBoolean(LAST_SYNC_OK, false)
+                .putString(LAST_SYNC_MESSAGE, "Synchronisation en cours")
+                .apply();
+    }
+
+    static void markSyncSuccess(Context context, String message) {
+        prefs(context).edit()
+                .putLong(LAST_SYNC_ATTEMPT, System.currentTimeMillis())
+                .putBoolean(LAST_SYNC_OK, true)
+                .putString(LAST_SYNC_MESSAGE, message == null ? "Synchronisé" : message)
+                .apply();
+    }
+
+    static void markSyncError(Context context, String message) {
+        prefs(context).edit()
+                .putLong(LAST_SYNC_ATTEMPT, System.currentTimeMillis())
+                .putBoolean(LAST_SYNC_OK, false)
+                .putString(LAST_SYNC_MESSAGE, message == null ? "Synchronisation impossible" : message)
+                .apply();
     }
 
     static String getStatusJson(Context context) {
@@ -58,6 +141,9 @@ final class PronoteStore {
             out.put("blocks", blocks == null ? 0 : blocks.length());
             out.put("title", data.optString("title", ""));
             out.put("url", prefs(context).getString(SOURCE_URL, ""));
+            out.put("lastSyncAttempt", getLastSyncAttempt(context));
+            out.put("lastSyncOk", prefs(context).getBoolean(LAST_SYNC_OK, false));
+            out.put("lastSyncMessage", prefs(context).getString(LAST_SYNC_MESSAGE, ""));
         } catch (Exception ignored) {
         }
         return out.toString();
