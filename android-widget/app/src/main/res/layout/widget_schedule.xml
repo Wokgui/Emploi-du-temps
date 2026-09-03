@@ -77,7 +77,7 @@
         android:layout_marginTop="6dp"
         android:layout_marginBottom="2dp"
         android:max="100"
-        android:progressTint="#0AA6A6"
+        android:progressTint="#1178E8"
         android:progressBackgroundTint="#E5E7EB" />
 
     <ListView
