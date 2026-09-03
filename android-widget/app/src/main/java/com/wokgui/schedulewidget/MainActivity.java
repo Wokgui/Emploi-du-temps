@@ -1,8 +1,10 @@
 package com.wokgui.schedulewidget;
 
 import android.app.Activity;
+import android.app.job.JobScheduler;
 import android.content.Intent;
 import android.os.Bundle;
+import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -14,6 +16,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        clearLegacySyncData();
         ScheduleStore.ensureInitialized(this);
         setContentView(R.layout.activity_main);
         webView = findViewById(R.id.webView);
@@ -52,6 +55,21 @@ public class MainActivity extends Activity {
                         webView.evaluateJavascript("if(window.refreshLunchBreakUi){refreshLunchBreakUi();}", null);
                     }
             );
+        }
+    }
+
+    private void clearLegacySyncData() {
+        getSharedPreferences("pronote_import_v1", MODE_PRIVATE).edit().clear().apply();
+        try {
+            JobScheduler scheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
+            scheduler.cancel(4101);
+            scheduler.cancel(4102);
+        } catch (Exception ignored) {
+        }
+        try {
+            CookieManager.getInstance().removeAllCookies(null);
+            CookieManager.getInstance().flush();
+        } catch (Exception ignored) {
         }
     }
 
