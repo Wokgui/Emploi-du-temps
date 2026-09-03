@@ -21,10 +21,22 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
             android:text="Cours en cours"
             android:textColor="#0AA6A6"
             android:textSize="13sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btnHomework"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:gravity="center"
+            android:text="☑"
+            android:textColor="#1178E8"
+            android:textSize="17sp"
+            android:contentDescription="Afficher les devoirs" />
 
         <TextView
             android:id="@+id/btnRefresh"
@@ -47,56 +59,127 @@
             android:contentDescription="Modifier l'emploi du temps" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tvStatus"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:textColor="#101936"
-        android:textSize="19sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/tvSubstatus"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="1dp"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:textColor="#5A667A"
-        android:textSize="11sp" />
-
-    <ProgressBar
-        android:id="@+id/classProgress"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="7dp"
-        android:layout_marginTop="6dp"
-        android:layout_marginBottom="2dp"
-        android:max="100"
-        android:progressTint="#0AA6A6"
-        android:progressBackgroundTint="#E5E7EB" />
-
-    <ListView
-        android:id="@+id/upcomingList"
+    <LinearLayout
+        android:id="@+id/normalPanel"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:paddingBottom="0dp"
-        android:clipToPadding="false"
-        android:divider="#E5EAF0"
-        android:dividerHeight="1dp"
-        android:scrollbars="vertical"
-        android:fadingEdge="none" />
+        android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/emptyUpcoming"
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#101936"
+            android:textSize="19sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvSubstatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#5A667A"
+            android:textSize="11sp" />
+
+        <ProgressBar
+            android:id="@+id/classProgress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="7dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="2dp"
+            android:max="100"
+            android:progressTint="#0AA6A6"
+            android:progressBackgroundTint="#E5E7EB" />
+
+        <ListView
+            android:id="@+id/upcomingList"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:paddingBottom="0dp"
+            android:clipToPadding="false"
+            android:divider="#E5EAF0"
+            android:dividerHeight="1dp"
+            android:scrollbars="vertical"
+            android:fadingEdge="none" />
+
+        <TextView
+            android:id="@+id/emptyUpcoming"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="6dp"
+            android:paddingBottom="2dp"
+            android:text="Aucun autre cours programmé"
+            android:textColor="#647087"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/homeworkPanel"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="6dp"
-        android:paddingBottom="2dp"
-        android:text="Aucun autre cours programmé"
-        android:textColor="#647087"
-        android:textSize="11sp" />
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvHomeworkCourse"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#101936"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:text="Pour ce cours · cahier de textes"
+            android:textColor="#0AA6A6"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvHomeworkLesson"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="3"
+            android:textColor="#354057"
+            android:textSize="11sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="À faire pour la prochaine fois"
+            android:textColor="#1178E8"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvHomeworkNext"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="3"
+            android:textColor="#354057"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/tvHomeworkSync"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:textColor="#8A93A3"
+            android:textSize="9sp" />
+    </LinearLayout>
 </LinearLayout>
