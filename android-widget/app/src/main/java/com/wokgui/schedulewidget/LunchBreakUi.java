@@ -45,15 +45,66 @@ final class LunchBreakUi {
                   return {start:'12:00', end:'13:00'};
                 }
 
+                // La barre n'avance que pendant les cours réellement programmés.
+                // Avant un cours, entre deux cours et pendant la pause de midi, elle reste figée.
+                window.progressPercent = function() {
+                  try {
+                    const d = typeof todayKey === 'function' ? todayKey() : (new Date().getDay() + 1);
+                    const courses = (typeof state !== 'undefined' && state[d] && Array.isArray(state[d].courses))
+                      ? state[d].courses : [];
+                    if (!courses.length) return 0;
+
+                    const now = new Date();
+                    const nowM = now.getHours() * 60 + now.getMinutes();
+                    let total = 0;
+                    let done = 0;
+                    for (const c of courses) {
+                      const start = minutes(c.start);
+                      const end = minutes(c.end);
+                      const duration = Math.max(0, end - start);
+                      if (!duration) continue;
+                      total += duration;
+                      if (nowM >= end) done += duration;
+                      else if (nowM > start) done += Math.min(duration, nowM - start);
+                    }
+                    return total > 0 ? Math.max(0, Math.min(100, done * 100 / total)) : 0;
+                  } catch(e) {
+                    return 0;
+                  }
+                };
+
                 function timeFromRow(row) {
                   const node = row.querySelector('.time');
                   const found = String(node ? node.textContent : '').match(/[0-2][0-9]:[0-5][0-9]/g) || [];
                   return {start:found[0] || '', end:found[1] || found[0] || ''};
                 }
 
+                function decorateTimeline() {
+                  const head = document.querySelector('.timelineHead strong');
+                  if (head) head.textContent = "Avancement de l’emploi du temps";
+                  const bar = document.getElementById('todayProgress');
+                  if (bar) {
+                    bar.style.width = window.progressPercent() + '%';
+                    bar.style.background = 'linear-gradient(90deg,#1178e8,#2d91ef)';
+                  }
+                  try {
+                    const d = typeof todayKey === 'function' ? todayKey() : (new Date().getDay() + 1);
+                    const courses = (typeof state !== 'undefined' && state[d] && Array.isArray(state[d].courses))
+                      ? state[d].courses : [];
+                    const startEl = document.getElementById('scaleStart');
+                    const endEl = document.getElementById('scaleEnd');
+                    if (courses.length) {
+                      if (startEl) startEl.textContent = courses[0].start;
+                      if (endEl) endEl.textContent = courses[courses.length - 1].end;
+                    }
+                  } catch(e) {}
+                }
+
                 function decorateToday() {
                   const box = document.getElementById('todayList');
-                  if (!box || box.querySelector('.lunchToday')) return;
+                  if (!box) return;
+                  decorateTimeline();
+                  if (box.querySelector('.lunchToday')) return;
                   const rows = [...box.querySelectorAll('.todayCourse')];
                   if (!rows.length) return;
                   const l = lunch();
@@ -126,6 +177,7 @@ final class LunchBreakUi {
                   queued = true;
                   setTimeout(() => {
                     queued = false;
+                    decorateTimeline();
                     decorateToday();
                     decorateWeek();
                     decorateEdit();
@@ -138,6 +190,7 @@ final class LunchBreakUi {
                   if (node) new MutationObserver(refresh).observe(node, {childList:true, subtree:true});
                 });
                 document.querySelectorAll('.nav').forEach(b => b.addEventListener('click', () => setTimeout(refresh, 80)));
+                setInterval(decorateTimeline, 30000);
                 refresh();
               } catch(e) {
                 console.log('Lunch break UI', e);
