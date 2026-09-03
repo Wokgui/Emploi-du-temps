@@ -15,8 +15,6 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ScheduleStore.ensureInitialized(this);
-        PronoteSyncScheduler.schedule(this);
-        PronoteSyncScheduler.requestNowIfStale(this, 10L * 60L * 1000L);
         setContentView(R.layout.activity_main);
         webView = findViewById(R.id.webView);
 
@@ -25,12 +23,11 @@ public class MainActivity extends Activity {
         settings.setDomStorageEnabled(true);
 
         webView.addJavascriptInterface(new ScheduleBridge(), "AndroidSchedule");
-        webView.addJavascriptInterface(new PronoteAppBridge(), "AndroidPronoteApp");
         webView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 applyOpenMode();
-                injectPronoteUi();
+                injectLunchBreakUi();
             }
         });
         webView.loadUrl("file:///android_asset/index.html");
@@ -46,14 +43,13 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        PronoteSyncScheduler.requestNowIfStale(this, 10L * 60L * 1000L);
         if (webView != null) {
             webView.evaluateJavascript(
                     "if(window.reloadSchedule){reloadSchedule();}",
                     value -> {
                         applyOpenMode();
-                        injectPronoteUi();
-                        webView.evaluateJavascript("if(window.refreshPronoteUi){refreshPronoteUi();}if(window.refreshPronoteCourseUi){refreshPronoteCourseUi();}", null);
+                        injectLunchBreakUi();
+                        webView.evaluateJavascript("if(window.refreshLunchBreakUi){refreshLunchBreakUi();}", null);
                     }
             );
         }
@@ -71,10 +67,8 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void injectPronoteUi() {
-        if (webView == null) return;
-        webView.evaluateJavascript(PronoteUi.script(), null);
-        webView.evaluateJavascript(PronoteCourseUi.script(), null);
+    private void injectLunchBreakUi() {
+        if (webView != null) webView.evaluateJavascript(LunchBreakUi.script(), null);
     }
 
     private final class ScheduleBridge {
@@ -86,38 +80,6 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void saveSchedule(String json) {
             ScheduleStore.importJson(MainActivity.this, json);
-        }
-    }
-
-    private final class PronoteAppBridge {
-        @JavascriptInterface
-        public void openPronote() {
-            runOnUiThread(() -> startActivity(new Intent(MainActivity.this, PronoteActivity.class)));
-        }
-
-        @JavascriptInterface
-        public String status() {
-            return PronoteStore.getStatusJson(MainActivity.this);
-        }
-
-        @JavascriptInterface
-        public String homework() {
-            return PronoteStore.getSnapshot(MainActivity.this);
-        }
-
-        @JavascriptInterface
-        public String courseHomework(String label) {
-            return PronoteHomework.toJson(MainActivity.this, label);
-        }
-
-        @JavascriptInterface
-        public void syncNow() {
-            PronoteSyncScheduler.requestNow(MainActivity.this);
-        }
-
-        @JavascriptInterface
-        public void clear() {
-            PronoteStore.clear(MainActivity.this);
         }
     }
 }
