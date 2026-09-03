@@ -15,6 +15,8 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ScheduleStore.ensureInitialized(this);
+        PronoteSyncScheduler.schedule(this);
+        PronoteSyncScheduler.requestNowIfStale(this, 10L * 60L * 1000L);
         setContentView(R.layout.activity_main);
         webView = findViewById(R.id.webView);
 
@@ -44,13 +46,14 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        PronoteSyncScheduler.requestNowIfStale(this, 10L * 60L * 1000L);
         if (webView != null) {
             webView.evaluateJavascript(
                     "if(window.reloadSchedule){reloadSchedule();}",
                     value -> {
                         applyOpenMode();
                         injectPronoteUi();
-                        webView.evaluateJavascript("if(window.refreshPronoteUi){refreshPronoteUi();}", null);
+                        webView.evaluateJavascript("if(window.refreshPronoteUi){refreshPronoteUi();}if(window.refreshPronoteCourseUi){refreshPronoteCourseUi();}", null);
                     }
             );
         }
@@ -69,7 +72,9 @@ public class MainActivity extends Activity {
     }
 
     private void injectPronoteUi() {
-        if (webView != null) webView.evaluateJavascript(PronoteUi.script(), null);
+        if (webView == null) return;
+        webView.evaluateJavascript(PronoteUi.script(), null);
+        webView.evaluateJavascript(PronoteCourseUi.script(), null);
     }
 
     private final class ScheduleBridge {
@@ -98,6 +103,16 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String homework() {
             return PronoteStore.getSnapshot(MainActivity.this);
+        }
+
+        @JavascriptInterface
+        public String courseHomework(String label) {
+            return PronoteHomework.toJson(MainActivity.this, label);
+        }
+
+        @JavascriptInterface
+        public void syncNow() {
+            PronoteSyncScheduler.requestNow(MainActivity.this);
         }
 
         @JavascriptInterface
