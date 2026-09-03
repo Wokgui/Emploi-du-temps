@@ -113,9 +113,10 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(R.id.tvSubstatus, "");
         }
 
-        int first = ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, 1));
-        int last = ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, 7));
-        int progress = clamp((int) Math.round((minute - first) * 100.0 / Math.max(1, last - first)));
+        // La barre représente l'avancement réel de TES cours de la journée.
+        // Entre deux cours (y compris avant un cours ou pendant midi), elle reste figée :
+        // elle ne doit plus donner l'impression qu'un cours est déjà commencé.
+        int progress = teachingProgress(courses, minute);
         views.setViewVisibility(R.id.classProgress, View.VISIBLE);
         views.setProgressBar(R.id.classProgress, 100, progress, false);
 
@@ -148,6 +149,29 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         views.setPendingIntentTemplate(R.id.upcomingList, editPending);
         manager.updateAppWidget(widgetId, views);
         manager.notifyAppWidgetViewDataChanged(widgetId, R.id.upcomingList);
+    }
+
+    private static int teachingProgress(List<ScheduleData.Course> courses, int minute) {
+        if (courses == null || courses.isEmpty()) return 0;
+
+        int totalMinutes = 0;
+        int doneMinutes = 0;
+        for (ScheduleData.Course c : courses) {
+            int start = ScheduleData.toMinutes(c.start);
+            int end = ScheduleData.toMinutes(c.end);
+            int duration = Math.max(0, end - start);
+            if (duration <= 0) continue;
+
+            totalMinutes += duration;
+            if (minute >= end) {
+                doneMinutes += duration;
+            } else if (minute > start) {
+                doneMinutes += Math.min(duration, minute - start);
+            }
+        }
+
+        if (totalMinutes <= 0) return 0;
+        return clamp((int) Math.round(doneMinutes * 100.0 / totalMinutes));
     }
 
     private static NextCourseInfo findNextCourse(Context context, Calendar now) {
