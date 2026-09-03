@@ -19,11 +19,13 @@ public class UpcomingCoursesService extends RemoteViewsService {
         final String label;
         final String time;
         final String room;
+        final boolean lunch;
 
-        Item(String label, String time, String room) {
+        Item(String label, String time, String room, boolean lunch) {
             this.label = label;
             this.time = time;
             this.room = room;
+            this.lunch = lunch;
         }
     }
 
@@ -43,38 +45,82 @@ public class UpcomingCoursesService extends RemoteViewsService {
 
             Calendar now = Calendar.getInstance();
             int nowMin = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
+            int lunchStart = ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, 4));
+            int lunchEnd = ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, 5));
+            boolean lunchValid = lunchEnd > lunchStart;
 
-            // Le cours affiché en grand par le widget est le prochain cours.
-            // On cherche ce cours, puis on ne met dans la liste que les cours
-            // qui le suivent LE MÊME JOUR. Aucun cours d'un autre jour n'est ajouté.
-            Calendar targetDate = null;
-            ScheduleData.Course topNext = null;
-
-            Calendar cursor = (Calendar) now.clone();
-            for (int add = 0; add < 8 && topNext == null; add++) {
-                int day = cursor.get(Calendar.DAY_OF_WEEK);
-                List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, day);
-                for (ScheduleData.Course c : courses) {
-                    if (add == 0 && ScheduleData.toMinutes(c.start) <= nowMin) continue;
-                    topNext = c;
-                    targetDate = (Calendar) cursor.clone();
+            List<ScheduleData.Course> todayCourses = ScheduleStore.getCourses(
+                    context, now.get(Calendar.DAY_OF_WEEK));
+            ScheduleData.Course current = null;
+            for (ScheduleData.Course c : todayCourses) {
+                int s = ScheduleData.toMinutes(c.start);
+                int e = ScheduleData.toMinutes(c.end);
+                if (nowMin >= s && nowMin < e) {
+                    current = c;
                     break;
                 }
-                cursor.add(Calendar.DAY_OF_YEAR, 1);
             }
 
-            if (topNext == null || targetDate == null) return;
+            boolean inLunch = current == null && !todayCourses.isEmpty() && lunchValid
+                    && nowMin >= lunchStart && nowMin < lunchEnd;
+
+            Calendar targetDate;
+            int anchorStart;
+            boolean mainShowsLunch = false;
+
+            if (current != null) {
+                targetDate = (Calendar) now.clone();
+                anchorStart = ScheduleData.toMinutes(current.start);
+            } else if (inLunch) {
+                targetDate = (Calendar) now.clone();
+                anchorStart = lunchStart;
+                mainShowsLunch = true;
+            } else {
+                ScheduleData.Course topNext = null;
+                targetDate = null;
+                Calendar cursor = (Calendar) now.clone();
+                for (int add = 0; add < 8 && topNext == null; add++) {
+                    int day = cursor.get(Calendar.DAY_OF_WEEK);
+                    List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, day);
+                    for (ScheduleData.Course c : courses) {
+                        if (add == 0 && ScheduleData.toMinutes(c.start) <= nowMin) continue;
+                        topNext = c;
+                        targetDate = (Calendar) cursor.clone();
+                        break;
+                    }
+                    cursor.add(Calendar.DAY_OF_YEAR, 1);
+                }
+                if (topNext == null || targetDate == null) return;
+                anchorStart = ScheduleData.toMinutes(topNext.start);
+            }
 
             List<ScheduleData.Course> sameDay = ScheduleStore.getCourses(
-                    context,
-                    targetDate.get(Calendar.DAY_OF_WEEK)
-            );
-            int topStart = ScheduleData.toMinutes(topNext.start);
+                    context, targetDate.get(Calendar.DAY_OF_WEEK));
 
+            boolean hasAfternoonCourse = false;
             for (ScheduleData.Course c : sameDay) {
-                if (ScheduleData.toMinutes(c.start) > topStart) {
-                    items.add(new Item(c.label, c.start, c.room));
+                if (ScheduleData.toMinutes(c.start) >= lunchEnd) {
+                    hasAfternoonCourse = true;
+                    break;
                 }
+            }
+
+            boolean lunchAdded = mainShowsLunch;
+            for (ScheduleData.Course c : sameDay) {
+                int start = ScheduleData.toMinutes(c.start);
+                if (start <= anchorStart) continue;
+
+                if (!lunchAdded && lunchValid && hasAfternoonCourse
+                        && anchorStart < lunchStart && start >= lunchEnd) {
+                    items.add(new Item(
+                            "Pause de midi",
+                            ScheduleStore.getSlotEnd(context, 4) + "–" + ScheduleStore.getSlotStart(context, 5),
+                            "",
+                            true));
+                    lunchAdded = true;
+                }
+
+                items.add(new Item(c.label, c.start, c.room, false));
             }
         }
 
@@ -83,10 +129,18 @@ public class UpcomingCoursesService extends RemoteViewsService {
             Item item = items.get(position);
             RemoteViews v = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
             v.setTextViewText(R.id.rowTitle, item.label);
-            v.setTextViewText(R.id.rowMeta, item.time + " · salle " + (item.room.isEmpty() ? "—" : item.room));
+            if (item.lunch) {
+                v.setTextViewText(R.id.rowMeta, item.time + " · reprise à " + ScheduleStore.getSlotStart(context, 5));
+                v.setTextColor(R.id.rowTitle, 0xFF9A5C09);
+                v.setTextColor(R.id.rowMeta, 0xFF8B6A3A);
+            } else {
+                v.setTextViewText(R.id.rowMeta, item.time + " · salle " + (item.room.isEmpty() ? "—" : item.room));
+                v.setTextColor(R.id.rowTitle, 0xFF101936);
+                v.setTextColor(R.id.rowMeta, 0xFF647087);
+            }
 
             Intent fill = new Intent();
-            fill.putExtra("open_mode", "edit");
+            fill.putExtra("open_mode", item.lunch ? "today" : "edit");
             v.setOnClickFillInIntent(R.id.rowTitle, fill);
             v.setOnClickFillInIntent(R.id.rowMeta, fill);
             return v;
