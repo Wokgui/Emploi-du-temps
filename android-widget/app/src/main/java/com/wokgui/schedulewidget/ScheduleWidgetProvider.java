@@ -7,20 +7,29 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.view.View;
 import android.widget.RemoteViews;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class ScheduleWidgetProvider extends AppWidgetProvider {
     static final String ACTION_REFRESH = "com.wokgui.schedulewidget.REFRESH";
     static final String ACTION_BOUNDARY = "com.wokgui.schedulewidget.BOUNDARY";
+    static final String ACTION_TOGGLE_HOMEWORK = "com.wokgui.schedulewidget.TOGGLE_HOMEWORK";
+    static final String EXTRA_WIDGET_ID = "widget_id";
+    private static final String PREFS = "widget_state_v1";
 
     @Override
     public void onUpdate(Context context, AppWidgetManager manager, int[] appWidgetIds) {
         ScheduleStore.ensureInitialized(context);
+        PronoteSyncScheduler.schedule(context);
+        PronoteSyncScheduler.requestNowIfStale(context, 15L * 60L * 1000L);
         for (int id : appWidgetIds) updateWidget(context, manager, id);
         scheduleNextBoundary(context);
     }
@@ -29,12 +38,29 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
         String action = intent.getAction();
+
+        if (ACTION_TOGGLE_HOMEWORK.equals(action)) {
+            int widgetId = intent.getIntExtra(EXTRA_WIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
+            if (widgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+                SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+                boolean next = !prefs.getBoolean("homework_" + widgetId, false);
+                prefs.edit().putBoolean("homework_" + widgetId, next).apply();
+                updateWidget(context, AppWidgetManager.getInstance(context), widgetId);
+            }
+            return;
+        }
+
+        if (ACTION_REFRESH.equals(action)) {
+            PronoteSyncScheduler.requestNow(context);
+        }
+
         if (ACTION_REFRESH.equals(action)
                 || ACTION_BOUNDARY.equals(action)
                 || Intent.ACTION_BOOT_COMPLETED.equals(action)
                 || Intent.ACTION_TIME_CHANGED.equals(action)
                 || Intent.ACTION_TIMEZONE_CHANGED.equals(action)
                 || Intent.ACTION_DATE_CHANGED.equals(action)) {
+            PronoteSyncScheduler.schedule(context);
             updateAll(context);
             scheduleNextBoundary(context);
         }
@@ -43,6 +69,8 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
     @Override
     public void onEnabled(Context context) {
         ScheduleStore.ensureInitialized(context);
+        PronoteSyncScheduler.schedule(context);
+        PronoteSyncScheduler.requestNowIfStale(context, 5L * 60L * 1000L);
         updateAll(context);
         scheduleNextBoundary(context);
     }
@@ -50,6 +78,10 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
     @Override
     public void onDisabled(Context context) {
         cancelBoundary(context);
+    }
+
+    static void refreshAll(Context context) {
+        updateAll(context);
     }
 
     private static void updateAll(Context context) {
@@ -80,34 +112,71 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         NextCourseInfo next = findNextCourse(context, now);
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_schedule);
 
-        if (current != null) {
-            views.setTextViewText(R.id.tvKind, "Cours en cours");
-            views.setTextViewText(R.id.tvStatus, current.label);
-            views.setTextViewText(R.id.tvSubstatus,
-                    current.start + "–" + current.end + " · salle " + room(current.room));
-        } else if (next != null) {
-            views.setTextViewText(R.id.tvKind, "Prochain cours");
-            views.setTextViewText(R.id.tvStatus, next.course.label);
-            String prefix = isSameDay(now, next.date) ? "" : dayLabel(next.date.get(Calendar.DAY_OF_WEEK)) + " ";
-            views.setTextViewText(R.id.tvSubstatus,
-                    prefix + next.course.start + " · salle " + room(next.course.room));
+        boolean homeworkMode = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getBoolean("homework_" + widgetId, false);
+
+        if (homeworkMode) {
+            views.setViewVisibility(R.id.normalPanel, View.GONE);
+            views.setViewVisibility(R.id.homeworkPanel, View.VISIBLE);
+            views.setTextViewText(R.id.btnHomework, "▦");
+
+            ScheduleData.Course target = current != null ? current : (next == null ? null : next.course);
+            if (target != null) {
+                PronoteHomework.HomeworkInfo info = PronoteHomework.forCourse(context, target.label);
+                views.setTextViewText(R.id.tvKind, "Devoirs");
+                views.setTextViewText(R.id.tvHomeworkCourse, target.label);
+                views.setTextViewText(R.id.tvHomeworkLesson,
+                        info.lesson.isEmpty() ? "Aucun contenu de cahier de textes associé." : info.lesson);
+                views.setTextViewText(R.id.tvHomeworkNext,
+                        info.nextHomework.isEmpty() ? "Aucun devoir à faire détecté." : info.nextHomework);
+            } else {
+                views.setTextViewText(R.id.tvKind, "Devoirs");
+                views.setTextViewText(R.id.tvHomeworkCourse, "Aucun cours programmé");
+                views.setTextViewText(R.id.tvHomeworkLesson, "");
+                views.setTextViewText(R.id.tvHomeworkNext, "");
+            }
+
+            long importedAt = PronoteStore.getImportedAt(context);
+            if (importedAt > 0L) {
+                String time = new SimpleDateFormat("dd/MM HH:mm", Locale.FRANCE).format(new Date(importedAt));
+                views.setTextViewText(R.id.tvHomeworkSync, "PRONOTE synchronisé · " + time);
+            } else {
+                views.setTextViewText(R.id.tvHomeworkSync, "PRONOTE pas encore synchronisé");
+            }
         } else {
-            views.setTextViewText(R.id.tvKind, "Emploi du temps");
-            views.setTextViewText(R.id.tvStatus, "Aucun cours programmé");
-            views.setTextViewText(R.id.tvSubstatus, "");
+            views.setViewVisibility(R.id.normalPanel, View.VISIBLE);
+            views.setViewVisibility(R.id.homeworkPanel, View.GONE);
+            views.setTextViewText(R.id.btnHomework, "☑");
+
+            if (current != null) {
+                views.setTextViewText(R.id.tvKind, "Cours en cours");
+                views.setTextViewText(R.id.tvStatus, current.label);
+                views.setTextViewText(R.id.tvSubstatus,
+                        current.start + "–" + current.end + " · salle " + room(current.room));
+            } else if (next != null) {
+                views.setTextViewText(R.id.tvKind, "Prochain cours");
+                views.setTextViewText(R.id.tvStatus, next.course.label);
+                String prefix = isSameDay(now, next.date) ? "" : dayLabel(next.date.get(Calendar.DAY_OF_WEEK)) + " ";
+                views.setTextViewText(R.id.tvSubstatus,
+                        prefix + next.course.start + " · salle " + room(next.course.room));
+            } else {
+                views.setTextViewText(R.id.tvKind, "Emploi du temps");
+                views.setTextViewText(R.id.tvStatus, "Aucun cours programmé");
+                views.setTextViewText(R.id.tvSubstatus, "");
+            }
+
+            int first = ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, 1));
+            int last = ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, 7));
+            int progress = clamp((int) Math.round((minute - first) * 100.0 / Math.max(1, last - first)));
+            views.setViewVisibility(R.id.classProgress, View.VISIBLE);
+            views.setProgressBar(R.id.classProgress, 100, progress, false);
+
+            Intent listIntent = new Intent(context, UpcomingCoursesService.class);
+            listIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId);
+            listIntent.setData(Uri.parse(listIntent.toUri(Intent.URI_INTENT_SCHEME)));
+            views.setRemoteAdapter(R.id.upcomingList, listIntent);
+            views.setEmptyView(R.id.upcomingList, R.id.emptyUpcoming);
         }
-
-        int first = ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, 1));
-        int last = ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, 7));
-        int progress = clamp((int) Math.round((minute - first) * 100.0 / Math.max(1, last - first)));
-        views.setViewVisibility(R.id.classProgress, View.VISIBLE);
-        views.setProgressBar(R.id.classProgress, 100, progress, false);
-
-        Intent listIntent = new Intent(context, UpcomingCoursesService.class);
-        listIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId);
-        listIntent.setData(Uri.parse(listIntent.toUri(Intent.URI_INTENT_SCHEME)));
-        views.setRemoteAdapter(R.id.upcomingList, listIntent);
-        views.setEmptyView(R.id.upcomingList, R.id.emptyUpcoming);
 
         Intent openIntent = new Intent(context, MainActivity.class);
         openIntent.putExtra("open_mode", "today");
@@ -128,6 +197,14 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
                 context, 300 + widgetId, refreshIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.btnRefresh, refreshPending);
+
+        Intent homeworkIntent = new Intent(context, ScheduleWidgetProvider.class)
+                .setAction(ACTION_TOGGLE_HOMEWORK)
+                .putExtra(EXTRA_WIDGET_ID, widgetId);
+        PendingIntent homeworkPending = PendingIntent.getBroadcast(
+                context, 400 + widgetId, homeworkIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        views.setOnClickPendingIntent(R.id.btnHomework, homeworkPending);
 
         views.setPendingIntentTemplate(R.id.upcomingList, editPending);
         manager.updateAppWidget(widgetId, views);
