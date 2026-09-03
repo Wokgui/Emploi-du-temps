@@ -71,7 +71,13 @@ final class PronoteUi {
                 }
 
                 function clean(t) {
-                  return String(t || '').replace(/\s+/g, ' ').trim();
+                  let s = String(t || '');
+                  s = s.replaceAll(String.fromCharCode(10), ' ')
+                       .replaceAll(String.fromCharCode(13), ' ')
+                       .replaceAll(String.fromCharCode(9), ' ')
+                       .trim();
+                  while (s.includes('  ')) s = s.replaceAll('  ', ' ');
+                  return s;
                 }
 
                 function escapeHtml(t) {
@@ -83,15 +89,17 @@ final class PronoteUi {
                 }
 
                 function norm(t) {
-                  return clean(t)
-                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                    .toUpperCase().replace(/[^A-Z0-9]/g, '');
+                  const chars = clean(t).normalize('NFD').split('').filter(ch => {
+                    const n = ch.charCodeAt(0);
+                    return n < 768 || n > 879;
+                  }).join('');
+                  return chars.toUpperCase().replace(/[^A-Z0-9]/g, '');
                 }
 
                 function tokens(label) {
                   const u = clean(label).toUpperCase();
-                  const out = u.match(/[3-6]G\d(?:BIL)?/g) || [];
-                  const grouped = u.match(/([3-6]G)(\d(?:-\d)+)/);
+                  const out = u.match(/[3-6]G[0-9](?:BIL)?/g) || [];
+                  const grouped = u.match(/([3-6]G)([0-9](?:-[0-9])+)/);
                   if (grouped) grouped[2].split('-').forEach(n => out.push(grouped[1] + n));
                   return [...new Set(out)];
                 }
