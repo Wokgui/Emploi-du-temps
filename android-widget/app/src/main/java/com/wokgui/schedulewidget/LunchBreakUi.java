@@ -23,9 +23,8 @@ final class LunchBreakUi {
                   .lunchBadge{font-size:.75rem;font-weight:800;color:#9a5c09;background:#ffedca;border-radius:999px;padding:5px 8px}
                   .lunchWeekTime,.lunchWeekCell{min-height:52px!important;background:#fff8eb!important;color:#9a5c09!important}
                   .lunchWeekCell{font-weight:800;font-size:.82rem}
-                  .lunchSettingInfo{margin-top:10px;padding:12px 14px;border:1px solid #f3d5a1;border-radius:8px;background:#fff8eb;color:#7d5826;line-height:1.35}
-                  .lunchSettingInfo strong{color:#9a5c09}
-                  .lunchSettingInfo small{display:block;margin-top:3px;color:#8a7353}
+                  #viewWeek>.note,#viewEdit>.note,#lunchSettingInfo{display:none!important}
+                  @media(max-width:560px){.header h1{transform:translateY(7px)}}
                 `;
                 document.head.appendChild(st);
 
@@ -155,20 +154,8 @@ final class LunchBreakUi {
                   grid.insertBefore(frag, before);
                 }
 
-                function decorateEdit() {
-                  const slotsBox = document.getElementById('slotSettings');
-                  if (!slotsBox) return;
-                  const l = lunch();
-                  let info = document.getElementById('lunchSettingInfo');
-                  if (!info) {
-                    info = document.createElement('div');
-                    info.id = 'lunchSettingInfo';
-                    info.className = 'lunchSettingInfo';
-                    slotsBox.insertAdjacentElement('afterend', info);
-                  }
-                  const html = '<strong>Pause de midi : ' + l.start + '–' + l.end + '</strong>' +
-                    '<small>Elle est calculée automatiquement entre la fin de la 4e heure et le début de la 5e heure.</small>';
-                  if (info.innerHTML !== html) info.innerHTML = html;
+                function removeExplanatoryText() {
+                  document.querySelectorAll('#viewWeek>.note,#viewEdit>.note,#lunchSettingInfo').forEach(el => el.remove());
                 }
 
                 let queued = false;
@@ -177,10 +164,10 @@ final class LunchBreakUi {
                   queued = true;
                   setTimeout(() => {
                     queued = false;
+                    removeExplanatoryText();
                     decorateTimeline();
                     decorateToday();
                     decorateWeek();
-                    decorateEdit();
                   }, 0);
                 }
                 window.refreshLunchBreakUi = refresh;
