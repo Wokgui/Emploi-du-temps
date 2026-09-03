@@ -101,10 +101,18 @@ public class PronoteActivity extends Activity {
             (function(){
               try {
                 const force = %s;
-                const clean = t => String(t || '').replace(/\s+/g, ' ').trim();
+                function clean(t) {
+                  let s = String(t || '');
+                  s = s.replaceAll(String.fromCharCode(10), ' ')
+                       .replaceAll(String.fromCharCode(13), ' ')
+                       .replaceAll(String.fromCharCode(9), ' ')
+                       .trim();
+                  while (s.includes('  ')) s = s.replaceAll('  ', ' ');
+                  return s;
+                }
                 const body = clean(document.body && document.body.innerText ? document.body.innerText : '');
                 const needles = ['3G1','3G2','3G3','3G4','4G1','4G2','4G3','4G4','5G1','5G2','5G3','5G4','6G3','6G4'];
-                const keyword = /travail\s*[àa]\s*faire|travaux\s*[àa]\s*faire|cahier\s*de\s*textes|contenu\s*(de\s*)?(la\s*)?(s[ée]ance|cours)|devoir|[àa]\s*faire\s*pour/i;
+                const keyword = /travail *[àa] *faire|travaux *[àa] *faire|cahier *de *textes|contenu *(de *)?(la *)?(s[ée]ance|cours)|devoir|[àa] *faire *pour/i;
                 const blocks = [];
                 const seen = new Set();
                 const selector = 'article,section,li,tr,[role=row],[role=listitem],.liste_contenu,.conteneur,[class*="travail"],[class*="cahier"],[class*="devoir"],div';
