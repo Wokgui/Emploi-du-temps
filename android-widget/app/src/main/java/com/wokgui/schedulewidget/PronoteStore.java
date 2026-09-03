@@ -30,6 +30,28 @@ final class PronoteStore {
         mergeSnapshot(context, payload);
     }
 
+    static synchronized void replaceSnapshot(Context context, String payload) {
+        if (payload == null) return;
+        String trimmed = payload.trim();
+        if (trimmed.isEmpty()) return;
+        if (trimmed.length() > 900_000) trimmed = trimmed.substring(0, 900_000);
+        try {
+            JSONObject incoming = new JSONObject(trimmed);
+            JSONArray cleaned = new JSONArray();
+            appendBlocks(incoming.optJSONArray("blocks"), cleaned, new HashSet<>());
+            JSONObject out = new JSONObject();
+            out.put("url", incoming.optString("url", ""));
+            out.put("title", incoming.optString("title", "PRONOTE"));
+            out.put("capturedAt", System.currentTimeMillis());
+            String text = incoming.optString("text", "");
+            if (text.length() > 180_000) text = text.substring(0, 180_000);
+            out.put("text", text);
+            out.put("blocks", cleaned);
+            writeSnapshot(context, out);
+        } catch (Exception ignored) {
+        }
+    }
+
     static synchronized void mergeSnapshot(Context context, String payload) {
         if (payload == null) return;
         String trimmed = payload.trim();
@@ -59,15 +81,18 @@ final class PronoteStore {
             if (text.length() > 180_000) text = text.substring(0, 180_000);
             out.put("text", text);
             out.put("blocks", merged);
-
-            String sourceUrl = out.optString("url", "");
-            prefs(context).edit()
-                    .putString(SNAPSHOT, out.toString())
-                    .putLong(IMPORTED_AT, System.currentTimeMillis())
-                    .putString(SOURCE_URL, sourceUrl)
-                    .apply();
+            writeSnapshot(context, out);
         } catch (Exception ignored) {
         }
+    }
+
+    private static void writeSnapshot(Context context, JSONObject out) {
+        String sourceUrl = out.optString("url", "");
+        prefs(context).edit()
+                .putString(SNAPSHOT, out.toString())
+                .putLong(IMPORTED_AT, System.currentTimeMillis())
+                .putString(SOURCE_URL, sourceUrl)
+                .apply();
     }
 
     private static void appendBlocks(JSONArray source, JSONArray target, Set<String> seen) {
