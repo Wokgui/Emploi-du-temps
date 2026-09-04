@@ -133,9 +133,14 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(R.id.tvSubstatus, "");
         }
 
-        int progress = teachingProgress(courses, minute);
-        views.setViewVisibility(R.id.classProgress, View.VISIBLE);
-        views.setProgressBar(R.id.classProgress, 100, progress, false);
+        if (current != null) {
+            int progress = courseProgress(current, minute);
+            views.setViewVisibility(R.id.classProgress, View.VISIBLE);
+            views.setProgressBar(R.id.classProgress, 100, progress, false);
+        } else {
+            views.setProgressBar(R.id.classProgress, 100, 0, false);
+            views.setViewVisibility(R.id.classProgress, View.GONE);
+        }
 
         Intent listIntent = new Intent(context, UpcomingCoursesService.class);
         listIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId);
@@ -210,27 +215,14 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         return new GapInfo(start, end, next);
     }
 
-    private static int teachingProgress(List<ScheduleData.Course> courses, int minute) {
-        if (courses == null || courses.isEmpty()) return 0;
-
-        int totalMinutes = 0;
-        int doneMinutes = 0;
-        for (ScheduleData.Course c : courses) {
-            int start = ScheduleData.toMinutes(c.start);
-            int end = ScheduleData.toMinutes(c.end);
-            int duration = Math.max(0, end - start);
-            if (duration <= 0) continue;
-
-            totalMinutes += duration;
-            if (minute >= end) {
-                doneMinutes += duration;
-            } else if (minute > start) {
-                doneMinutes += Math.min(duration, minute - start);
-            }
-        }
-
-        if (totalMinutes <= 0) return 0;
-        return clamp((int) Math.round(doneMinutes * 100.0 / totalMinutes));
+    private static int courseProgress(ScheduleData.Course course, int minute) {
+        if (course == null) return 0;
+        int start = ScheduleData.toMinutes(course.start);
+        int end = ScheduleData.toMinutes(course.end);
+        int duration = end - start;
+        if (duration <= 0 || minute <= start) return 0;
+        if (minute >= end) return 100;
+        return clamp((int) Math.round((minute - start) * 100.0 / duration));
     }
 
     private static NextCourseInfo findNextCourse(Context context, Calendar now) {
@@ -291,8 +283,24 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         Calendar now = Calendar.getInstance();
         long nowMs = now.getTimeInMillis();
         long targetMs = Long.MAX_VALUE;
-        Calendar day = (Calendar) now.clone();
 
+        int nowMinute = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
+        List<ScheduleData.Course> todayCourses = ScheduleStore.getCourses(
+                context, now.get(Calendar.DAY_OF_WEEK));
+        for (ScheduleData.Course c : todayCourses) {
+            int start = ScheduleData.toMinutes(c.start);
+            int end = ScheduleData.toMinutes(c.end);
+            if (nowMinute >= start && nowMinute < end) {
+                Calendar tick = (Calendar) now.clone();
+                tick.add(Calendar.MINUTE, 1);
+                tick.set(Calendar.SECOND, 2);
+                tick.set(Calendar.MILLISECOND, 0);
+                targetMs = tick.getTimeInMillis();
+                break;
+            }
+        }
+
+        Calendar day = (Calendar) now.clone();
         for (int add = 0; add <= 7; add++) {
             List<Integer> boundaries = ScheduleData.boundaries(
                     ScheduleStore.getCourses(context, day.get(Calendar.DAY_OF_WEEK)));
