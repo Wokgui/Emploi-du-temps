@@ -4,7 +4,50 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:fillColor="#111827" android:pathData="M0,0h108v108h-108z"/>
-    <path android:fillColor="#2563EB" android:pathData="M18,18h72v72h-72z"/>
-    <path android:fillColor="#FFFFFF" android:pathData="M30,38h48v6h-48zM30,52h48v6h-48zM30,66h34v6h-34z"/>
+
+    <!-- Fond bleu arrondi -->
+    <path
+        android:fillColor="#0B78D1"
+        android:pathData="M26,6H82C93.05,6 102,14.95 102,26V82C102,93.05 93.05,102 82,102H26C14.95,102 6,93.05 6,82V26C6,14.95 14.95,6 26,6Z" />
+
+    <!-- Feuille d’emploi du temps -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M29,18H79C85.63,18 91,23.37 91,30V80C91,86.63 85.63,92 79,92H29C22.37,92 17,86.63 17,80V30C17,23.37 22.37,18 29,18Z" />
+
+    <!-- Bandeau du calendrier -->
+    <path
+        android:fillColor="#DDF3FF"
+        android:pathData="M17,31H91V42H17Z" />
+
+    <!-- Anneaux -->
+    <path
+        android:fillColor="#0B78D1"
+        android:pathData="M33,14H39V29H33ZM69,14H75V29H69Z" />
+
+    <!-- Ligne 1 : cours -->
+    <path
+        android:fillColor="#14213D"
+        android:pathData="M28,50H38V58H28Z" />
+    <path
+        android:fillColor="#2990EA"
+        android:pathData="M43,50H80C82.21,50 84,51.79 84,54C84,56.21 82.21,58 80,58H43Z" />
+
+    <!-- Ligne 2 : cours en cours -->
+    <path
+        android:fillColor="#14213D"
+        android:pathData="M28,63H38V71H28Z" />
+    <path
+        android:fillColor="#10A7A5"
+        android:pathData="M43,63H74C76.21,63 78,64.79 78,67C78,69.21 76.21,71 74,71H43Z" />
+
+    <!-- Ligne 3 : trou d’emploi du temps -->
+    <path
+        android:fillColor="#14213D"
+        android:pathData="M28,76H38V84H28Z" />
+    <path
+        android:fillColor="#EDE9FE"
+        android:strokeColor="#7C3AED"
+        android:strokeWidth="2"
+        android:pathData="M45,76H80C82.21,76 84,77.79 84,80C84,82.21 82.21,84 80,84H45C42.79,84 41,82.21 41,80C41,77.79 42.79,76 45,76Z" />
 </vector>
