@@ -8,6 +8,7 @@ import android.widget.RemoteViewsService;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 public class UpcomingCoursesService extends RemoteViewsService {
     @Override
@@ -16,16 +17,29 @@ public class UpcomingCoursesService extends RemoteViewsService {
     }
 
     private static final class Item {
+        static final int COURSE = 0;
+        static final int LUNCH = 1;
+        static final int GAP = 2;
+
         final String label;
         final String time;
         final String room;
-        final boolean lunch;
+        final int type;
 
-        Item(String label, String time, String room, boolean lunch) {
+        Item(String label, String time, String room, int type) {
             this.label = label;
             this.time = time;
             this.room = room;
-            this.lunch = lunch;
+            this.type = type;
+        }
+    }
+
+    private static final class GapInfo {
+        final int start;
+        final int end;
+        GapInfo(int start, int end) {
+            this.start = start;
+            this.end = end;
         }
     }
 
@@ -63,18 +77,26 @@ public class UpcomingCoursesService extends RemoteViewsService {
 
             boolean inLunch = current == null && !todayCourses.isEmpty() && lunchValid
                     && nowMin >= lunchStart && nowMin < lunchEnd;
+            GapInfo currentGap = current == null && !inLunch
+                    ? findCurrentGap(todayCourses, nowMin, lunchStart, lunchEnd)
+                    : null;
 
             Calendar targetDate;
-            int anchorStart;
-            boolean mainShowsLunch = false;
+            int threshold;
+            int previousEnd;
 
             if (current != null) {
                 targetDate = (Calendar) now.clone();
-                anchorStart = ScheduleData.toMinutes(current.start);
+                threshold = ScheduleData.toMinutes(current.start) + 1;
+                previousEnd = ScheduleData.toMinutes(current.end);
             } else if (inLunch) {
                 targetDate = (Calendar) now.clone();
-                anchorStart = lunchStart;
-                mainShowsLunch = true;
+                threshold = lunchEnd;
+                previousEnd = lunchEnd;
+            } else if (currentGap != null) {
+                targetDate = (Calendar) now.clone();
+                threshold = currentGap.end;
+                previousEnd = currentGap.end;
             } else {
                 ScheduleData.Course topNext = null;
                 targetDate = null;
@@ -91,37 +113,92 @@ public class UpcomingCoursesService extends RemoteViewsService {
                     cursor.add(Calendar.DAY_OF_YEAR, 1);
                 }
                 if (topNext == null || targetDate == null) return;
-                anchorStart = ScheduleData.toMinutes(topNext.start);
+                threshold = ScheduleData.toMinutes(topNext.start) + 1;
+                previousEnd = ScheduleData.toMinutes(topNext.end);
             }
 
             List<ScheduleData.Course> sameDay = ScheduleStore.getCourses(
                     context, targetDate.get(Calendar.DAY_OF_WEEK));
 
-            boolean hasAfternoonCourse = false;
-            for (ScheduleData.Course c : sameDay) {
-                if (ScheduleData.toMinutes(c.start) >= lunchEnd) {
-                    hasAfternoonCourse = true;
-                    break;
-                }
-            }
-
-            boolean lunchAdded = mainShowsLunch;
             for (ScheduleData.Course c : sameDay) {
                 int start = ScheduleData.toMinutes(c.start);
-                if (start <= anchorStart) continue;
+                if (start < threshold) continue;
 
-                if (!lunchAdded && lunchValid && hasAfternoonCourse
-                        && anchorStart < lunchStart && start >= lunchEnd) {
-                    items.add(new Item(
-                            "Pause de midi",
-                            ScheduleStore.getSlotEnd(context, 4) + "–" + ScheduleStore.getSlotStart(context, 5),
-                            "",
-                            true));
-                    lunchAdded = true;
-                }
-
-                items.add(new Item(c.label, c.start, c.room, false));
+                appendBreaks(previousEnd, start, lunchStart, lunchEnd);
+                items.add(new Item(c.label, c.start, c.room, Item.COURSE));
+                previousEnd = ScheduleData.toMinutes(c.end);
             }
+        }
+
+        private GapInfo findCurrentGap(List<ScheduleData.Course> courses, int minute,
+                                       int lunchStart, int lunchEnd) {
+            if (courses == null || courses.size() < 2) return null;
+
+            int previousEnd = -1;
+            int nextStart = Integer.MAX_VALUE;
+            for (ScheduleData.Course c : courses) {
+                int start = ScheduleData.toMinutes(c.start);
+                int end = ScheduleData.toMinutes(c.end);
+                if (end <= minute && end > previousEnd) previousEnd = end;
+                if (start > minute && start < nextStart) nextStart = start;
+            }
+            if (previousEnd < 0 || nextStart == Integer.MAX_VALUE || nextStart <= previousEnd) return null;
+
+            boolean lunchValid = lunchEnd > lunchStart;
+            if (lunchValid && minute >= lunchStart && minute < lunchEnd) return null;
+
+            int start = previousEnd;
+            int end = nextStart;
+            if (lunchValid) {
+                if (minute < lunchStart && end > lunchStart) end = lunchStart;
+                else if (minute >= lunchEnd && start < lunchEnd) start = lunchEnd;
+            }
+            if (end <= start || minute < start || minute >= end) return null;
+            return new GapInfo(start, end);
+        }
+
+        private void appendBreaks(int from, int to, int lunchStart, int lunchEnd) {
+            if (to <= from) return;
+            boolean lunchValid = lunchEnd > lunchStart;
+
+            if (!lunchValid || to <= lunchStart || from >= lunchEnd) {
+                addGap(from, to);
+                return;
+            }
+
+            if (from < lunchStart) addGap(from, Math.min(to, lunchStart));
+
+            if (from <= lunchStart && to >= lunchEnd) {
+                items.add(new Item(
+                        "Pause de midi",
+                        minuteLabel(lunchStart) + "–" + minuteLabel(lunchEnd),
+                        "",
+                        Item.LUNCH));
+            }
+
+            if (to > lunchEnd) addGap(Math.max(from, lunchEnd), to);
+        }
+
+        private void addGap(int start, int end) {
+            int duration = end - start;
+            if (duration <= 0) return;
+            items.add(new Item(
+                    "Trou · " + durationLabel(duration),
+                    minuteLabel(start) + "–" + minuteLabel(end),
+                    "",
+                    Item.GAP));
+        }
+
+        private String minuteLabel(int minute) {
+            return String.format(Locale.FRANCE, "%02d:%02d", minute / 60, minute % 60);
+        }
+
+        private String durationLabel(int minutes) {
+            int h = minutes / 60;
+            int m = minutes % 60;
+            if (h > 0 && m > 0) return h + " h " + m;
+            if (h > 0) return h + " h";
+            return m + " min";
         }
 
         @Override public RemoteViews getViewAt(int position) {
@@ -129,18 +206,25 @@ public class UpcomingCoursesService extends RemoteViewsService {
             Item item = items.get(position);
             RemoteViews v = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
             v.setTextViewText(R.id.rowTitle, item.label);
-            if (item.lunch) {
-                v.setTextViewText(R.id.rowMeta, item.time + " · reprise à " + ScheduleStore.getSlotStart(context, 5));
+
+            if (item.type == Item.LUNCH) {
+                v.setTextViewText(R.id.rowMeta,
+                        item.time + " · reprise à " + ScheduleStore.getSlotStart(context, 5));
                 v.setTextColor(R.id.rowTitle, 0xFF9A5C09);
                 v.setTextColor(R.id.rowMeta, 0xFF8B6A3A);
+            } else if (item.type == Item.GAP) {
+                v.setTextViewText(R.id.rowMeta, item.time + " · sans cours");
+                v.setTextColor(R.id.rowTitle, 0xFF7357B8);
+                v.setTextColor(R.id.rowMeta, 0xFF6F6287);
             } else {
-                v.setTextViewText(R.id.rowMeta, item.time + " · salle " + (item.room.isEmpty() ? "—" : item.room));
+                v.setTextViewText(R.id.rowMeta,
+                        item.time + " · salle " + (item.room.isEmpty() ? "—" : item.room));
                 v.setTextColor(R.id.rowTitle, 0xFF101936);
                 v.setTextColor(R.id.rowMeta, 0xFF647087);
             }
 
             Intent fill = new Intent();
-            fill.putExtra("open_mode", item.lunch ? "today" : "edit");
+            fill.putExtra("open_mode", item.type == Item.COURSE ? "edit" : "today");
             v.setOnClickFillInIntent(R.id.rowTitle, fill);
             v.setOnClickFillInIntent(R.id.rowMeta, fill);
             return v;
