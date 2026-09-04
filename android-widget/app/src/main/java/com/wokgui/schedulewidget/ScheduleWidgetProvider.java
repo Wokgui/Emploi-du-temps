@@ -13,6 +13,7 @@ import android.widget.RemoteViews;
 
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 public class ScheduleWidgetProvider extends AppWidgetProvider {
     static final String ACTION_REFRESH = "com.wokgui.schedulewidget.REFRESH";
@@ -86,9 +87,15 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         boolean lunchValid = lunchEnd > lunchStart;
         boolean inLunch = current == null && !courses.isEmpty() && lunchValid
                 && minute >= lunchStart && minute < lunchEnd;
+        GapInfo gap = current == null && !inLunch
+                ? findCurrentGap(courses, minute, lunchStart, lunchEnd)
+                : null;
 
         NextCourseInfo next = findNextCourse(context, now);
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_schedule);
+        views.setTextColor(R.id.tvKind, 0xFF0AA6A6);
+        views.setTextColor(R.id.tvStatus, 0xFF101936);
+        views.setTextColor(R.id.tvSubstatus, 0xFF5A667A);
 
         if (current != null) {
             views.setTextViewText(R.id.tvKind, "Cours en cours");
@@ -101,6 +108,19 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(R.id.tvKind, "Pause de midi");
             views.setTextViewText(R.id.tvStatus, start + "–" + end);
             views.setTextViewText(R.id.tvSubstatus, "Reprise à " + end);
+            views.setTextColor(R.id.tvKind, 0xFF9A5C09);
+            views.setTextColor(R.id.tvStatus, 0xFF7D5826);
+            views.setTextColor(R.id.tvSubstatus, 0xFF8B6A3A);
+        } else if (gap != null) {
+            views.setTextViewText(R.id.tvKind, "Trou dans l’emploi du temps");
+            views.setTextViewText(R.id.tvStatus,
+                    minuteLabel(gap.start) + "–" + minuteLabel(gap.end)
+                            + " · " + durationLabel(gap.end - gap.start));
+            views.setTextViewText(R.id.tvSubstatus,
+                    "Prochain cours à " + gap.next.start + " · " + gap.next.label);
+            views.setTextColor(R.id.tvKind, 0xFF7357B8);
+            views.setTextColor(R.id.tvStatus, 0xFF4F3A88);
+            views.setTextColor(R.id.tvSubstatus, 0xFF6F6287);
         } else if (next != null) {
             views.setTextViewText(R.id.tvKind, "Prochain cours");
             views.setTextViewText(R.id.tvStatus, next.course.label);
@@ -113,9 +133,6 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(R.id.tvSubstatus, "");
         }
 
-        // La barre représente l'avancement réel de TES cours de la journée.
-        // Entre deux cours (y compris avant un cours ou pendant midi), elle reste figée :
-        // elle ne doit plus donner l'impression qu'un cours est déjà commencé.
         int progress = teachingProgress(courses, minute);
         views.setViewVisibility(R.id.classProgress, View.VISIBLE);
         views.setProgressBar(R.id.classProgress, 100, progress, false);
@@ -149,6 +166,48 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         views.setPendingIntentTemplate(R.id.upcomingList, editPending);
         manager.updateAppWidget(widgetId, views);
         manager.notifyAppWidgetViewDataChanged(widgetId, R.id.upcomingList);
+    }
+
+    private static GapInfo findCurrentGap(List<ScheduleData.Course> courses, int minute,
+                                          int lunchStart, int lunchEnd) {
+        if (courses == null || courses.size() < 2) return null;
+
+        ScheduleData.Course previous = null;
+        ScheduleData.Course next = null;
+        int previousEnd = -1;
+        int nextStart = Integer.MAX_VALUE;
+
+        for (ScheduleData.Course c : courses) {
+            int start = ScheduleData.toMinutes(c.start);
+            int end = ScheduleData.toMinutes(c.end);
+            if (end <= minute && end > previousEnd) {
+                previous = c;
+                previousEnd = end;
+            }
+            if (start > minute && start < nextStart) {
+                next = c;
+                nextStart = start;
+            }
+        }
+
+        if (previous == null || next == null || nextStart <= previousEnd
+                || minute < previousEnd || minute >= nextStart) return null;
+
+        boolean lunchValid = lunchEnd > lunchStart;
+        if (lunchValid && minute >= lunchStart && minute < lunchEnd) return null;
+
+        int start = previousEnd;
+        int end = nextStart;
+        if (lunchValid) {
+            if (minute < lunchStart && end > lunchStart) {
+                end = lunchStart;
+            } else if (minute >= lunchEnd && start < lunchEnd) {
+                start = lunchEnd;
+            }
+        }
+
+        if (end <= start || minute < start || minute >= end) return null;
+        return new GapInfo(start, end, next);
     }
 
     private static int teachingProgress(List<ScheduleData.Course> courses, int minute) {
@@ -188,6 +247,19 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
             cursor.add(Calendar.DAY_OF_YEAR, 1);
         }
         return null;
+    }
+
+    private static String minuteLabel(int minute) {
+        return String.format(Locale.FRANCE, "%02d:%02d", minute / 60, minute % 60);
+    }
+
+    private static String durationLabel(int minutes) {
+        if (minutes <= 0) return "";
+        int h = minutes / 60;
+        int m = minutes % 60;
+        if (h > 0 && m > 0) return h + " h " + m;
+        if (h > 0) return h + " h";
+        return m + " min";
     }
 
     private static boolean isSameDay(Calendar a, Calendar b) {
@@ -259,6 +331,18 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
                 context, 2, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         alarm.cancel(pending);
+    }
+
+    private static class GapInfo {
+        final int start;
+        final int end;
+        final ScheduleData.Course next;
+
+        GapInfo(int start, int end, ScheduleData.Course next) {
+            this.start = start;
+            this.end = end;
+            this.next = next;
+        }
     }
 
     private static class NextCourseInfo {
