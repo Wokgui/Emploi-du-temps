@@ -193,8 +193,7 @@ public class MainActivity extends Activity {
 
     private void injectPersonalizationUi() {
         if (webView == null) return;
-        webView.evaluateJavascript(PersonalizationUi2.script(), value ->
-                webView.evaluateJavascript(AdvancedFeaturesUi.script(), null));
+        webView.evaluateJavascript(PersonalizationUi2.script(), value -> webView.evaluateJavascript(AdvancedFeaturesUi.script(), null));
     }
 
     private void maybeRequestNotificationPermission() {
@@ -223,15 +222,10 @@ public class MainActivity extends Activity {
     private void handleBackupResult(int resultCode, Intent data) {
         boolean success = false;
         if (resultCode == RESULT_OK && data != null && data.getData() != null) {
-            try {
-                String raw = readAll(data.getData());
-                success = BackupStore.importJson(this, raw);
-            } catch (Exception ignored) {}
+            try { success = BackupStore.importJson(this, readAll(data.getData())); }
+            catch (Exception ignored) {}
         }
-        if (webView != null) {
-            final boolean ok = success;
-            webView.evaluateJavascript("if(window.applyBackupImported){window.applyBackupImported(" + (ok ? "true" : "false") + ");}", null);
-        }
+        if (webView != null) webView.evaluateJavascript("if(window.applyBackupImported){window.applyBackupImported(" + (success ? "true" : "false") + ");}", null);
     }
 
     private String readAll(Uri uri) throws Exception {
@@ -257,6 +251,24 @@ public class MainActivity extends Activity {
             if (AdvancedSettingsStore.remindersEnabled(MainActivity.this)) runOnUiThread(MainActivity.this::maybeRequestNotificationPermission);
         }
         @JavascriptInterface public void setCurrentWeek(String letter) { ScheduleStore.setCurrentWeekLetter(MainActivity.this, letter); }
+
+        @JavascriptInterface public String loadEffectiveCourses(String yyyyMmDd) {
+            JSONObject root = new JSONObject();
+            JSONArray arr = new JSONArray();
+            try {
+                java.util.Calendar date = java.util.Calendar.getInstance();
+                java.util.Date parsed = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).parse(yyyyMmDd == null ? "" : yyyyMmDd);
+                if (parsed != null) date.setTime(parsed);
+                root.put("dayOff", AdvancedSettingsStore.isDayOff(MainActivity.this, date));
+                for (ScheduleData.Course c : ScheduleStore.getCourses(MainActivity.this, date)) {
+                    JSONObject o = new JSONObject();
+                    o.put("start", c.start); o.put("end", c.end); o.put("label", c.label); o.put("room", c.room); o.put("slot", c.slot); o.put("uncertain", c.uncertain);
+                    arr.put(o);
+                }
+                root.put("courses", arr);
+            } catch (Exception ignored) {}
+            return root.toString();
+        }
 
         @JavascriptInterface public String listProfiles() { return ProfileStore.listJson(MainActivity.this); }
         @JavascriptInterface public String createProfile(String name, boolean duplicateCurrent) { return ProfileStore.create(MainActivity.this, name, duplicateCurrent); }
