@@ -94,10 +94,13 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
 
         NextCourseInfo next = findNextCourse(context, now);
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_schedule);
-        views.setTextViewText(R.id.tvHeaderDate, formatWidgetDate(now));
+
+        Calendar tileDate = (current == null && !inLunch && gap == null && next != null)
+                ? next.date : now;
+        views.setTextViewText(R.id.tvTileDate, formatWidgetDate(tileDate));
         views.setTextColor(R.id.tvKind, 0xFF087F8B);
         views.setTextColor(R.id.tvStatus, 0xFF101936);
-        views.setTextColor(R.id.tvSubstatus, 0xFF5A667A);
+        views.setTextColor(R.id.tvSubstatus, 0xFF465369);
         views.setViewVisibility(R.id.tvKindActive, View.GONE);
         views.setViewVisibility(R.id.tvKind, View.VISIBLE);
         views.setViewVisibility(R.id.tvRemaining, View.GONE);
@@ -109,34 +112,34 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(R.id.tvKindActive, "●  En cours");
             views.setTextViewText(R.id.tvStatus, current.label);
             views.setTextViewText(R.id.tvSubstatus,
-                    current.start + "–" + current.end + " · salle " + room(current.room));
+                    current.start + " - " + current.end + " · salle " + room(current.room));
             views.setTextColor(R.id.tvStatus, 0xFF101936);
             views.setTextColor(R.id.tvSubstatus, 0xFF39465A);
         } else if (inLunch) {
             String start = ScheduleStore.getSlotEnd(context, 4);
             String end = ScheduleStore.getSlotStart(context, 5);
             views.setTextViewText(R.id.tvKind, "Pause de midi");
-            views.setTextViewText(R.id.tvStatus, start + "–" + end);
+            views.setTextViewText(R.id.tvStatus, start + " - " + end);
             views.setTextViewText(R.id.tvSubstatus, "Reprise à " + end);
-            views.setTextColor(R.id.tvKind, 0xFF9A5C09);
+            views.setTextColor(R.id.tvKind, 0xFF9A6212);
             views.setTextColor(R.id.tvStatus, 0xFF7D5826);
             views.setTextColor(R.id.tvSubstatus, 0xFF8B6A3A);
         } else if (gap != null) {
             views.setTextViewText(R.id.tvKind, "Trou dans l’emploi du temps");
             views.setTextViewText(R.id.tvStatus,
-                    minuteLabel(gap.start) + "–" + minuteLabel(gap.end)
+                    minuteLabel(gap.start) + " - " + minuteLabel(gap.end)
                             + " · " + durationLabel(gap.end - gap.start));
             views.setTextViewText(R.id.tvSubstatus,
                     "Prochain cours à " + gap.next.start + " · " + gap.next.label);
-            views.setTextColor(R.id.tvKind, 0xFF7357B8);
+            views.setTextColor(R.id.tvKind, 0xFF7254B5);
             views.setTextColor(R.id.tvStatus, 0xFF4F3A88);
             views.setTextColor(R.id.tvSubstatus, 0xFF6F6287);
         } else if (next != null) {
             views.setTextViewText(R.id.tvKind, "Prochain cours");
             views.setTextViewText(R.id.tvStatus, next.course.label);
-            String prefix = isSameDay(now, next.date) ? "" : dayLabel(next.date.get(Calendar.DAY_OF_WEEK)) + " ";
             views.setTextViewText(R.id.tvSubstatus,
-                    prefix + next.course.start + " · salle " + room(next.course.room));
+                    next.course.start + " - " + next.course.end
+                            + " · salle " + room(next.course.room));
         } else {
             views.setTextViewText(R.id.tvKind, "Emploi du temps");
             views.setTextViewText(R.id.tvStatus, "Aucun cours programmé");
@@ -177,13 +180,6 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         PendingIntent editPending = PendingIntent.getActivity(
                 context, 200 + widgetId, editIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        views.setOnClickPendingIntent(R.id.btnEdit, editPending);
-
-        Intent refreshIntent = new Intent(context, ScheduleWidgetProvider.class).setAction(ACTION_REFRESH);
-        PendingIntent refreshPending = PendingIntent.getBroadcast(
-                context, 300 + widgetId, refreshIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        views.setOnClickPendingIntent(R.id.btnRefresh, refreshPending);
 
         views.setPendingIntentTemplate(R.id.upcomingList, editPending);
         manager.updateAppWidget(widgetId, views);
@@ -258,10 +254,10 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         return null;
     }
 
-    private static String formatWidgetDate(Calendar now) {
-        String date = new SimpleDateFormat("EEEE d MMMM", Locale.FRANCE).format(now.getTime());
-        if (!date.isEmpty()) date = Character.toUpperCase(date.charAt(0)) + date.substring(1);
-        return date + " · Semaine " + now.get(Calendar.WEEK_OF_YEAR);
+    private static String formatWidgetDate(Calendar date) {
+        String label = new SimpleDateFormat("EEEE d MMMM", Locale.FRANCE).format(date.getTime());
+        if (!label.isEmpty()) label = Character.toUpperCase(label.charAt(0)) + label.substring(1);
+        return label + " · S" + date.get(Calendar.WEEK_OF_YEAR);
     }
 
     private static String remainingLabel(int minutes) {
@@ -288,25 +284,8 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         return m + " min";
     }
 
-    private static boolean isSameDay(Calendar a, Calendar b) {
-        return a.get(Calendar.YEAR) == b.get(Calendar.YEAR)
-                && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR);
-    }
-
     private static String room(String room) {
         return room == null || room.trim().isEmpty() ? "—" : room;
-    }
-
-    private static String dayLabel(int day) {
-        switch (day) {
-            case Calendar.MONDAY: return "Lundi";
-            case Calendar.TUESDAY: return "Mardi";
-            case Calendar.WEDNESDAY: return "Mercredi";
-            case Calendar.THURSDAY: return "Jeudi";
-            case Calendar.FRIDAY: return "Vendredi";
-            case Calendar.SATURDAY: return "Samedi";
-            default: return "Dimanche";
-        }
     }
 
     private static int clamp(int value) {
