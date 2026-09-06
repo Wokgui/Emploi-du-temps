@@ -2,20 +2,20 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/rowRoot"
     android:layout_width="match_parent"
-    android:layout_height="42dp"
+    android:layout_height="44dp"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingLeft="1dp"
-    android:paddingRight="1dp">
+    android:paddingLeft="3dp"
+    android:paddingRight="3dp">
 
     <TextView
         android:id="@+id/rowIndex"
-        android:layout_width="22dp"
-        android:layout_height="22dp"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:gravity="center"
         android:background="@drawable/widget_index_badge"
         android:textColor="#56657A"
-        android:textSize="8sp"
+        android:textSize="9sp"
         android:textStyle="bold" />
 
     <LinearLayout
@@ -39,7 +39,7 @@
             android:gravity="center"
             android:text="●"
             android:textColor="#74839A"
-            android:textSize="8sp" />
+            android:textSize="9sp" />
 
         <TextView
             android:id="@+id/rowLineBottom"
@@ -52,7 +52,7 @@
 
     <LinearLayout
         android:layout_width="0dp"
-        android:layout_height="38dp"
+        android:layout_height="40dp"
         android:layout_weight="1"
         android:orientation="vertical"
         android:gravity="center_vertical"
@@ -69,7 +69,7 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:textColor="#17213A"
-            android:textSize="10sp"
+            android:textSize="11sp"
             android:textStyle="bold" />
 
         <LinearLayout
@@ -87,7 +87,7 @@
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:textColor="#66758A"
-                android:textSize="8sp" />
+                android:textSize="9sp" />
 
             <TextView
                 android:id="@+id/rowRelative"
@@ -96,7 +96,7 @@
                 android:layout_marginLeft="5dp"
                 android:maxLines="1"
                 android:textColor="#5F6E84"
-                android:textSize="8sp" />
+                android:textSize="9sp" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>
