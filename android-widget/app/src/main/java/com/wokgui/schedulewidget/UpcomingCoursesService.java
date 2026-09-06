@@ -133,7 +133,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 appendBreaks(previousEnd, start, lunchStart, lunchEnd);
                 items.add(new Item(
                         c.label,
-                        c.start,
+                        c.start + " - " + c.end,
                         c.room,
                         Item.COURSE,
                         i + 1,
@@ -249,19 +249,21 @@ public class UpcomingCoursesService extends RemoteViewsService {
                     position == items.size() - 1 ? View.INVISIBLE : View.VISIBLE);
 
             if (item.type == Item.LUNCH) {
-                v.setTextViewText(R.id.rowIndex, "");
-                v.setViewVisibility(R.id.rowIndex, View.INVISIBLE);
+                v.setViewVisibility(R.id.rowIndex, View.VISIBLE);
+                v.setTextViewText(R.id.rowIndex, "•");
                 v.setTextViewText(R.id.rowMeta,
                         item.time + " · reprise à " + ScheduleStore.getSlotStart(context, 5));
-                v.setTextColor(R.id.rowDot, 0xFFD09A49);
+                v.setTextColor(R.id.rowIndex, 0xFFC58A32);
+                v.setTextColor(R.id.rowDot, 0xFFC58A32);
                 v.setTextColor(R.id.rowTitle, 0xFF9A6212);
                 v.setTextColor(R.id.rowMeta, 0xFF8D6C39);
                 v.setViewVisibility(R.id.rowRelative, View.GONE);
             } else if (item.type == Item.GAP) {
-                v.setTextViewText(R.id.rowIndex, "");
-                v.setViewVisibility(R.id.rowIndex, View.INVISIBLE);
+                v.setViewVisibility(R.id.rowIndex, View.VISIBLE);
+                v.setTextViewText(R.id.rowIndex, "•");
                 v.setTextViewText(R.id.rowMeta, item.time + " · sans cours");
-                v.setTextColor(R.id.rowDot, 0xFF8B79C6);
+                v.setTextColor(R.id.rowIndex, 0xFF7B67BD);
+                v.setTextColor(R.id.rowDot, 0xFF7B67BD);
                 v.setTextColor(R.id.rowTitle, 0xFF7254B5);
                 v.setTextColor(R.id.rowMeta, 0xFF75688C);
                 v.setViewVisibility(R.id.rowRelative, View.GONE);
@@ -270,8 +272,8 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 v.setTextViewText(R.id.rowIndex, String.valueOf(item.order));
                 v.setTextViewText(R.id.rowMeta,
                         item.time + " · salle " + (item.room.isEmpty() ? "—" : item.room));
-                v.setTextColor(R.id.rowIndex, 0xFF57667C);
-                v.setTextColor(R.id.rowDot, 0xFF73829A);
+                v.setTextColor(R.id.rowIndex, 0xFF56657A);
+                v.setTextColor(R.id.rowDot, 0xFF74839A);
                 v.setTextColor(R.id.rowTitle, 0xFF17213A);
                 v.setTextColor(R.id.rowMeta, 0xFF66758A);
                 v.setTextColor(R.id.rowRelative, 0xFF5F6E84);
