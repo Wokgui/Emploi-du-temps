@@ -14,16 +14,16 @@ final class CourseColorUi {
                 window.__courseColorUiV2=true;
 
                 const COLORS={
-                  butter:{bg:'#FFF2C6',edge:'#C99200'},
-                  apricot:{bg:'#FFE2BE',edge:'#DF861C'},
-                  peach:{bg:'#FFD9C9',edge:'#E37454'},
-                  coral:{bg:'#FFD1C8',edge:'#D95E48'},
-                  terracotta:{bg:'#F3D2C6',edge:'#B75C3D'},
-                  rose:{bg:'#F8D9E0',edge:'#C94F70'},
-                  berry:{bg:'#F1D5E0',edge:'#A53E68'},
-                  plum:{bg:'#EADCEA',edge:'#7B4A82'},
-                  sand:{bg:'#F1E4CE',edge:'#A77B3D'},
-                  olive:{bg:'#E8E2BE',edge:'#7C7837'},
+                  butter:{bg:'#FFE078',edge:'#A86D00'},
+                  apricot:{bg:'#FFBC68',edge:'#C56000'},
+                  peach:{bg:'#FF9B7A',edge:'#BA4327'},
+                  coral:{bg:'#FF7A67',edge:'#A92F24'},
+                  terracotta:{bg:'#D98A6C',edge:'#81412E'},
+                  rose:{bg:'#F08AA3',edge:'#9C3554'},
+                  berry:{bg:'#D45E83',edge:'#732540'},
+                  plum:{bg:'#A97191',edge:'#58364D'},
+                  sand:{bg:'#D8AA5D',edge:'#80520F'},
+                  olive:{bg:'#C1AF4A',edge:'#665B12'},
 
                   // Anciennes couleurs conservées pour les emplois du temps déjà personnalisés.
                   blue:{bg:'#DCEBFF',edge:'#0877F9'},
@@ -36,7 +36,7 @@ final class CourseColorUi {
                   red:{bg:'#FDE8E8',edge:'#D84343'},
                   graphite:{bg:'#ECEFF1',edge:'#546E7A'}
                 };
-                const PALETTE=['butter','apricot','peach','coral','terracotta','rose','berry','plum','sand','olive'];
+                const PALETTE=['butter','apricot','peach','coral','terracotta','rose','berry','plum'];
                 let picked='';
                 let scope='cell';
 
@@ -114,7 +114,7 @@ final class CourseColorUi {
                   el.style.background='';el.style.boxShadow='';
                   if(!c)return;
                   el.style.background=gradient?('linear-gradient(90deg,'+c.bg+' 0%,#ffffff 97%)'):c.bg;
-                  el.style.boxShadow='inset 0 0 0 1px '+c.edge+'35';
+                  el.style.boxShadow='inset 0 0 0 1px '+c.edge;
                 }
 
                 function decorateWeek(){
