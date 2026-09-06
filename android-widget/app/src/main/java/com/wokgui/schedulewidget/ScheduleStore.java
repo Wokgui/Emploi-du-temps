@@ -294,7 +294,13 @@ final class ScheduleStore {
         try {
             for (ScheduleData.Course c : courses) {
                 JSONObject o = new JSONObject();
-                o.put("start", c.start); o.put("end", c.end); o.put("label", c.label); o.put("room", c.room); o.put("slot", c.slot); o.put("uncertain", c.uncertain);
+                o.put("start", c.start);
+                o.put("end", c.end);
+                o.put("label", c.label);
+                o.put("room", c.room);
+                o.put("slot", c.slot);
+                o.put("uncertain", c.uncertain);
+                if (!c.color.isEmpty()) o.put("color", c.color);
                 arr.put(o);
             }
         } catch (Exception ignored) {}
@@ -314,12 +320,13 @@ final class ScheduleStore {
                 String room = o.optString("room", "");
                 int slot = o.optInt("slot", 0);
                 boolean uncertain = o.optBoolean("uncertain", false);
+                String color = o.optString("color", "");
                 if (slot == 0) {
                     for (int n = 0; n < 7; n++) {
                         if (DEFAULT_START[n].equals(start) && DEFAULT_END[n].equals(end)) { slot = n + 1; break; }
                     }
                 }
-                out.add(new ScheduleData.Course(start, end, label, room, slot, uncertain));
+                out.add(new ScheduleData.Course(start, end, label, room, slot, uncertain, color));
             }
         } catch (Exception ignored) {}
         return out;
@@ -343,7 +350,10 @@ final class ScheduleStore {
     private static int weekIndex(Calendar date) {
         Calendar c = (Calendar) date.clone();
         c.setFirstDayOfWeek(Calendar.MONDAY);
-        c.set(Calendar.HOUR_OF_DAY, 12); c.set(Calendar.MINUTE, 0); c.set(Calendar.SECOND, 0); c.set(Calendar.MILLISECOND, 0);
+        c.set(Calendar.HOUR_OF_DAY, 12);
+        c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 0);
+        c.set(Calendar.MILLISECOND, 0);
         int dow = c.get(Calendar.DAY_OF_WEEK);
         int delta = dow == Calendar.SUNDAY ? -6 : Calendar.MONDAY - dow;
         c.add(Calendar.DAY_OF_YEAR, delta);
