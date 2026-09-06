@@ -179,7 +179,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
 
             if (from <= lunchStart && to >= lunchEnd) {
                 items.add(new Item(
-                        "Pause de midi",
+                        ScheduleStore.getLunchLabel(context),
                         minuteLabel(lunchStart) + " - " + minuteLabel(lunchEnd),
                         "",
                         Item.LUNCH,
@@ -194,7 +194,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             int duration = end - start;
             if (duration <= 0) return;
             items.add(new Item(
-                    "Trou · " + durationLabel(duration),
+                    ScheduleStore.getGapLabel(context) + " · " + durationLabel(duration),
                     minuteLabel(start) + " - " + minuteLabel(end),
                     "",
                     Item.GAP,
