@@ -18,6 +18,8 @@ import java.util.List;
 final class ScheduleStore {
     private static final String PREFS = "schedule_store_v1";
     private static final String INIT = "initialized";
+    private static final String WEEK_AB_INIT = "week_ab_initialized";
+    private static final String WEEK_A_PARITY = "week_a_parity";
 
     private static final String[] DEFAULT_START = {
             "08:00","09:00","10:00","11:00","13:00","14:00","16:00"
@@ -35,6 +37,7 @@ final class ScheduleStore {
     static void ensureInitialized(Context context) {
         SharedPreferences p = prefs(context);
         SharedPreferences.Editor e = p.edit();
+
         if (!p.getBoolean(INIT, false)) {
             for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
                 e.putBoolean("enabled_" + day, true);
@@ -42,6 +45,7 @@ final class ScheduleStore {
             }
             e.putBoolean(INIT, true);
         }
+
         for (int i = 0; i < 7; i++) {
             if (!p.contains("slot_" + (i + 1) + "_start")) {
                 e.putString("slot_" + (i + 1) + "_start", DEFAULT_START[i]);
@@ -50,10 +54,25 @@ final class ScheduleStore {
                 e.putString("slot_" + (i + 1) + "_end", DEFAULT_END[i]);
             }
         }
+
         for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
             e.putBoolean("enabled_" + day, true);
         }
         e.apply();
+
+        p = prefs(context);
+        if (!p.getBoolean(WEEK_AB_INIT, false)) {
+            SharedPreferences.Editor migration = p.edit();
+            for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
+                String legacy = p.getString("day_" + day, encode(ScheduleData.defaultForDay(day)));
+                migration.putString(weekKey("A", day), legacy);
+                migration.putString(weekKey("B", day), legacy);
+            }
+            // À la première migration, la semaine en cours devient la semaine A.
+            migration.putInt(WEEK_A_PARITY, Calendar.getInstance().get(Calendar.WEEK_OF_YEAR) & 1);
+            migration.putBoolean(WEEK_AB_INIT, true);
+            migration.apply();
+        }
     }
 
     static boolean isDayEnabled(Context context, int day) {
@@ -73,16 +92,40 @@ final class ScheduleStore {
         return prefs(context).getString("slot_" + (i + 1) + "_end", DEFAULT_END[i]);
     }
 
-    static List<ScheduleData.Course> getStoredCourses(Context context, int day) {
+    static String getWeekLetter(Context context, Calendar date) {
         ensureInitialized(context);
-        String json = prefs(context).getString("day_" + day, "[]");
+        int aParity = prefs(context).getInt(WEEK_A_PARITY,
+                Calendar.getInstance().get(Calendar.WEEK_OF_YEAR) & 1);
+        return ((date.get(Calendar.WEEK_OF_YEAR) & 1) == aParity) ? "A" : "B";
+    }
+
+    static void setCurrentWeekLetter(Context context, String letter) {
+        ensureInitialized(context);
+        int currentParity = Calendar.getInstance().get(Calendar.WEEK_OF_YEAR) & 1;
+        int aParity = "B".equalsIgnoreCase(letter) ? (currentParity ^ 1) : currentParity;
+        prefs(context).edit().putInt(WEEK_A_PARITY, aParity).apply();
+    }
+
+    static List<ScheduleData.Course> getStoredCourses(Context context, int day, String week) {
+        ensureInitialized(context);
+        String safeWeek = "B".equalsIgnoreCase(week) ? "B" : "A";
+        String json = prefs(context).getString(weekKey(safeWeek, day), "[]");
         List<ScheduleData.Course> result = decode(json);
         Collections.sort(result, Comparator.comparingInt(c -> ScheduleData.toMinutes(c.start)));
         return result;
     }
 
+    static List<ScheduleData.Course> getStoredCourses(Context context, int day) {
+        return getStoredCourses(context, day, getWeekLetter(context, Calendar.getInstance()));
+    }
+
+    static List<ScheduleData.Course> getCourses(Context context, Calendar date) {
+        return getStoredCourses(context, date.get(Calendar.DAY_OF_WEEK), getWeekLetter(context, date));
+    }
+
     static List<ScheduleData.Course> getCourses(Context context, int day) {
-        return getStoredCourses(context, day);
+        Calendar now = Calendar.getInstance();
+        return getStoredCourses(context, day, getWeekLetter(context, now));
     }
 
     static String exportJson(Context context) {
@@ -98,10 +141,31 @@ final class ScheduleStore {
             }
             root.put("_slots", slots);
 
+            Calendar now = Calendar.getInstance();
+            String currentWeek = getWeekLetter(context, now);
+            root.put("_currentWeek", currentWeek);
+            root.put("_weekAParity", prefs(context).getInt(WEEK_A_PARITY,
+                    now.get(Calendar.WEEK_OF_YEAR) & 1));
+
+            JSONObject weeks = new JSONObject();
+            for (String week : new String[]{"A", "B"}) {
+                JSONObject weekObject = new JSONObject();
+                for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
+                    JSONObject d = new JSONObject();
+                    d.put("enabled", true);
+                    d.put("courses", new JSONArray(encode(getStoredCourses(context, day, week))));
+                    weekObject.put(String.valueOf(day), d);
+                }
+                weeks.put(week, weekObject);
+            }
+            root.put("_weeks", weeks);
+
+            // Compatibilité avec les anciennes versions de l'interface :
+            // les clés 2 à 6 correspondent à la semaine actuellement active.
             for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
                 JSONObject d = new JSONObject();
                 d.put("enabled", true);
-                d.put("courses", new JSONArray(encode(getStoredCourses(context, day))));
+                d.put("courses", new JSONArray(encode(getStoredCourses(context, day, currentWeek))));
                 root.put(String.valueOf(day), d);
             }
             return root.toString();
@@ -128,13 +192,41 @@ final class ScheduleStore {
                 }
             }
 
-            for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
-                JSONObject d = root.optJSONObject(String.valueOf(day));
-                editor.putBoolean("enabled_" + day, true);
-                if (d == null) continue;
-                JSONArray arr = d.optJSONArray("courses");
-                if (arr != null) editor.putString("day_" + day, arr.toString());
+            String requestedCurrent = root.optString("_currentWeek", "");
+            if ("A".equalsIgnoreCase(requestedCurrent) || "B".equalsIgnoreCase(requestedCurrent)) {
+                int currentParity = Calendar.getInstance().get(Calendar.WEEK_OF_YEAR) & 1;
+                editor.putInt(WEEK_A_PARITY,
+                        "A".equalsIgnoreCase(requestedCurrent) ? currentParity : (currentParity ^ 1));
+            } else if (root.has("_weekAParity")) {
+                editor.putInt(WEEK_A_PARITY, root.optInt("_weekAParity", 0) & 1);
             }
+
+            JSONObject weeks = root.optJSONObject("_weeks");
+            if (weeks != null) {
+                for (String week : new String[]{"A", "B"}) {
+                    JSONObject weekObject = weeks.optJSONObject(week);
+                    if (weekObject == null) continue;
+                    for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
+                        JSONObject d = weekObject.optJSONObject(String.valueOf(day));
+                        if (d == null) continue;
+                        JSONArray arr = d.optJSONArray("courses");
+                        if (arr != null) editor.putString(weekKey(week, day), arr.toString());
+                    }
+                }
+            } else {
+                // Import d'un ancien format : on duplique l'emploi du temps dans A et B.
+                for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
+                    JSONObject d = root.optJSONObject(String.valueOf(day));
+                    if (d == null) continue;
+                    JSONArray arr = d.optJSONArray("courses");
+                    if (arr != null) {
+                        editor.putString(weekKey("A", day), arr.toString());
+                        editor.putString(weekKey("B", day), arr.toString());
+                    }
+                }
+            }
+
+            editor.putBoolean(WEEK_AB_INIT, true);
             editor.apply();
             refreshWidgets(context);
         } catch (Exception ignored) {
@@ -149,6 +241,10 @@ final class ScheduleStore {
         Intent refresh = new Intent(context, ScheduleWidgetProvider.class)
                 .setAction(ScheduleWidgetProvider.ACTION_REFRESH);
         context.sendBroadcast(refresh);
+    }
+
+    private static String weekKey(String week, int day) {
+        return "week_" + week + "_day_" + day;
     }
 
     private static String encode(List<ScheduleData.Course> courses) {
