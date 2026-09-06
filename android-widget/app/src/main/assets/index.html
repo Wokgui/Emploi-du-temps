@@ -6,49 +6,52 @@
 <meta name="theme-color" content="#087cc5">
 <title>Emploi du temps</title>
 <style>
-:root{--blue:#1178e8;--blue2:#075fae;--teal:#08a7a5;--ink:#111936;--muted:#68738a;--line:#dce3eb;--panel:#fff;--soft:#f2f8ff;--bg:#f6f8fb;--danger:#ef476f}
+:root{--blue:#0877f9;--blue2:#075fae;--teal:#087f8b;--ink:#111936;--muted:#68738a;--line:#dce3eb;--panel:#fff;--soft:#f2f8ff;--bg:#f6f8fb;--danger:#d93b59;--gap:#7254b5;--lunch:#9a6212}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-.header{height:92px;background:linear-gradient(135deg,#0c86cf,#0668b5);display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 3px 14px #064a7a2b;position:relative}
-.header:after{content:"";position:absolute;left:16%;right:16%;bottom:10px;height:3px;border-radius:99px;background:#ffffff45}
-.header h1{margin:0;text-align:center;font-size:1.72rem;line-height:1;font-weight:780;letter-spacing:.01em}
-.wrap{max-width:900px;margin:0 auto;padding:16px 14px 100px}
-.card{background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 2px 8px #11233b10}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow-x:hidden}
+button,input,select{font:inherit}
+.header{height:58px;background:linear-gradient(135deg,#0c86cf,#0668b5);display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 2px 10px #064a7a25}
+.header h1{margin:0;text-align:center;font-size:1.38rem;line-height:1;font-weight:800}
+.contextBar{height:39px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 10px;position:sticky;top:0;z-index:8}
+.currentWeek{border:0;border-radius:999px;background:#e6f1ff;color:#075fae;padding:6px 10px;font-size:.78rem;font-weight:800;white-space:nowrap}.currentWeek b{color:var(--blue)}
+.weekTabs{display:flex;gap:4px}.weekTab{border:1px solid #cdd9e7;background:#fff;color:#536078;border-radius:999px;padding:5px 10px;font-size:.76rem;font-weight:800}.weekTab.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.wrap{max-width:900px;margin:0 auto;padding:8px 8px 66px}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 1px 5px #11233b0b}
 .view{display:none}.view.active{display:block}
-.dayTitle{text-align:center;margin:2px 0 12px}.dayTitle h2{margin:0;font-size:1.3rem}.dayTitle .date{margin-top:4px;color:var(--muted)}
-.timelineCard{padding:15px 16px;margin-bottom:15px}.timelineHead{display:flex;align-items:center;justify-content:space-between;gap:10px}.timelineHead strong{color:var(--teal)}.timelineClock{color:var(--muted);font-variant-numeric:tabular-nums}
-.timeline{height:10px;border-radius:999px;background:#e4e8ee;overflow:hidden;margin-top:10px;position:relative}.timeline>span{height:100%;display:block;width:0;background:linear-gradient(90deg,var(--teal),#20b7a6);border-radius:999px;transition:width .2s}
-.timelineScale{display:flex;justify-content:space-between;color:#8a93a3;font-size:.72rem;margin-top:5px}
-.todayList{overflow:hidden}.todayCourse{display:grid;grid-template-columns:94px minmax(0,1fr) auto;align-items:center;gap:12px;padding:15px 13px;border-top:1px solid #e9edf2;position:relative}.todayCourse:first-child{border-top:0}.todayCourse.current:before{content:"";position:absolute;left:0;top:5px;bottom:5px;width:5px;background:var(--teal)}.time{font-variant-numeric:tabular-nums;color:#56637a}.label{font-weight:800}.room{color:var(--muted);font-size:.88rem;margin-top:3px}.badge{font-size:.75rem;font-weight:750;color:#087f7d;background:#e7f9f7;border-radius:999px;padding:5px 8px}
-.empty{padding:30px 18px;text-align:center;color:var(--muted)}
-.weekTop{display:flex;align-items:center;justify-content:center;margin:3px 0 12px}.weekTop h2{margin:0;font-size:1.3rem}
-.weekScroller{overflow:auto;padding-bottom:6px}.weekGrid{display:grid;grid-template-columns:86px repeat(5,minmax(132px,1fr));min-width:760px;border:1px solid var(--line);background:#fff;border-radius:10px;overflow:hidden}
-.wh,.wc{border-right:1px solid #e6ebf0;border-bottom:1px solid #e6ebf0;min-height:72px;padding:9px}.wh{background:linear-gradient(#f8fbff,#f1f7ff);font-weight:800;text-align:center;display:flex;align-items:center;justify-content:center}.wh.day{color:#0b69c7}.wh.timecol{color:#657087;font-size:.85rem}.wc{background:#fff;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer}.wc.has{background:#fbfdff}.wc.has:active{background:#eaf5ff}.wc .cellLabel{font-weight:780;font-size:.9rem;line-height:1.15}.wc .cellRoom{font-size:.75rem;color:var(--muted);margin-top:5px}.wc.emptyCell{color:#b1bac7;font-size:1.2rem}
-.editTop{display:flex;justify-content:center;margin-bottom:11px}.dayTabs{display:flex;justify-content:center;gap:8px;overflow:auto;max-width:100%}.dayTab{min-width:58px;border:1px solid var(--line);background:#fff;border-radius:24px;padding:10px 14px;color:#4d5667;font-size:1rem}.dayTab.active{background:linear-gradient(135deg,#1584ed,#0868c7);border-color:#1178e8;color:#fff}
-.sectionHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 4px 8px}.sectionHead h2,.sectionHead h3{margin:0;font-size:1.05rem}.count{color:var(--blue);font-weight:750}
-.editList{overflow:hidden}.editCourse{display:grid;grid-template-columns:94px minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px;border-top:1px solid #e9edf2}.editCourse:first-child{border-top:0}.editActions{display:flex;gap:6px}.iconBtn{width:40px;height:40px;border:1px solid var(--line);border-radius:7px;background:#fff;font-size:1.02rem}.iconBtn.edit{color:var(--teal)}.iconBtn.del{color:var(--danger)}
-.addBtn{width:100%;margin-top:10px;padding:13px;border:1.5px dashed var(--blue);border-radius:8px;background:#fff;color:var(--blue);font-size:1rem;font-weight:780}
-.slots{overflow:hidden}.slotRow{display:grid;grid-template-columns:76px 1fr 1fr;align-items:center;gap:9px;padding:10px 12px;border-top:1px solid #e9edf2}.slotRow:first-child{border-top:0}.slotNum{font-weight:800;color:#0c71d2}.slotRow input{width:100%;border:1px solid var(--line);border-radius:7px;padding:10px;font:inherit;background:#fff;color:var(--ink)}
-.note{font-size:.82rem;color:var(--muted);margin:6px 4px 0;line-height:1.35}
-.bottom{position:fixed;left:0;right:0;bottom:0;z-index:12;background:#ffffffef;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);padding:7px 8px calc(7px + env(safe-area-inset-bottom));backdrop-filter:blur(12px)}
-.nav{border:0;background:transparent;color:#777;padding:8px 4px;font-size:.84rem}.nav span{display:block;font-size:1.25rem;margin-bottom:2px}.nav.active{color:var(--blue);font-weight:800}
-.modal{position:fixed;inset:0;z-index:30;background:#0b17384f;display:none;align-items:flex-end}.modal.show{display:flex}.sheet{width:100%;max-width:780px;margin:auto;background:#fff;padding:18px;border-radius:14px 14px 0 0;max-height:86vh;overflow:auto}.sheet h3{margin:0 0 14px;text-align:center}.field{margin-bottom:11px}.field label{display:block;color:var(--muted);font-size:.82rem;margin-bottom:4px}.field input,.field select{width:100%;border:1px solid var(--line);border-radius:8px;padding:12px;font:inherit;background:#fff;color:var(--ink)}.slotPreview{background:var(--soft);border:1px solid #d9eaff;border-radius:8px;padding:11px 12px;margin-bottom:11px;color:#31516f}.sheetActions{display:flex;justify-content:flex-end;gap:9px;margin-top:8px}.btn{padding:11px 15px;border:1px solid var(--line);border-radius:8px;background:#fff;font-weight:760}.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
-@media(max-width:560px){.header{height:82px}.header h1{font-size:1.58rem}.todayCourse,.editCourse{grid-template-columns:78px minmax(0,1fr);gap:8px}.badge,.editActions{grid-column:2;justify-self:start}.slotRow{grid-template-columns:68px 1fr 1fr}.wrap{padding-left:12px;padding-right:12px}}
+.dayTitle{text-align:center;margin:0 0 6px}.dayTitle h2{margin:0;font-size:1.05rem}.dayTitle .date{margin-top:1px;color:var(--muted);font-size:.76rem}
+.timelineCard{padding:7px 10px;margin-bottom:7px}.timelineHead{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.78rem}.timelineHead strong{color:var(--teal)}.timelineClock{color:var(--muted);font-variant-numeric:tabular-nums}.timeline{height:7px;border-radius:999px;background:#e4e8ee;overflow:hidden;margin-top:5px}.timeline>span{height:100%;display:block;width:0;background:linear-gradient(90deg,#0877f9,#2994f0);border-radius:999px}.timelineScale{display:flex;justify-content:space-between;color:#8a93a3;font-size:.62rem;margin-top:2px}
+.todayList{overflow:hidden}.todayCourse{display:grid;grid-template-columns:67px minmax(0,1fr) auto;align-items:center;gap:7px;min-height:44px;padding:5px 8px;border-top:1px solid #edf0f4;position:relative}.todayCourse:first-child{border-top:0}.todayCourse.current:before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:4px;background:var(--blue)}.todayCourse.gap{background:#faf8ff}.todayCourse.lunch{background:#fffaf1}.time{font-variant-numeric:tabular-nums;color:#56637a;font-size:.74rem;line-height:1.12}.label{font-weight:800;font-size:.88rem;line-height:1.1}.room{color:var(--muted);font-size:.70rem;margin-top:2px}.badge{font-size:.64rem;font-weight:800;color:#fff;background:var(--blue);border-radius:999px;padding:4px 6px}.badge.gap{background:#ede8ff;color:var(--gap)}.badge.lunch{background:#ffedca;color:var(--lunch)}
+.empty{padding:20px 12px;text-align:center;color:var(--muted)}
+.weekTop{display:flex;align-items:center;justify-content:center;margin:0 0 6px}.weekTop h2{margin:0;font-size:1rem}.weekTop .weekLetter{color:var(--blue);margin-left:5px}
+.weekScroller{overflow:hidden}.weekGrid{display:grid;grid-template-columns:42px repeat(5,minmax(0,1fr));width:100%;border:1px solid var(--line);background:#fff;border-radius:7px;overflow:hidden}
+.wh,.wc{border-right:1px solid #e6ebf0;border-bottom:1px solid #e6ebf0;min-width:0;min-height:38px;padding:2px}.wh{background:linear-gradient(#f8fbff,#f1f7ff);font-weight:800;text-align:center;display:flex;align-items:center;justify-content:center;font-size:.65rem}.wh.day{color:#0b69c7}.wh.timecol{color:#657087;font-size:.58rem;line-height:1.08}.wc{background:#fff;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer;overflow:hidden}.wc.has{background:#fbfdff}.wc.has:active{background:#eaf5ff}.wc.gapCell{background:#faf8ff;color:var(--gap)}.wc.lunchCell{background:#fffaf1;color:var(--lunch)}.wc .cellLabel{font-weight:800;font-size:.60rem;line-height:1.02;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.wc .cellRoom{font-size:.52rem;color:var(--muted);margin-top:1px}.wc.emptyCell{color:#c5ccd5;font-size:.75rem}
+.editTop{display:flex;justify-content:center;margin-bottom:6px}.dayTabs{display:flex;justify-content:center;gap:5px;overflow:auto;max-width:100%}.dayTab{min-width:48px;border:1px solid var(--line);background:#fff;border-radius:20px;padding:7px 9px;color:#4d5667;font-size:.82rem}.dayTab.active{background:linear-gradient(135deg,#1584ed,#0868c7);border-color:#1178e8;color:#fff}
+.sectionHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 3px 5px}.sectionHead h2,.sectionHead h3{margin:0;font-size:.93rem}.count{color:var(--blue);font-weight:750;font-size:.78rem}
+.editList{overflow:hidden}.editCourse{display:grid;grid-template-columns:66px minmax(0,1fr);gap:7px;align-items:center;min-height:45px;padding:6px 9px;border-top:1px solid #e9edf2;cursor:pointer}.editCourse:first-child{border-top:0}.editCourse:active{background:#eef6ff}
+.addBtn{width:100%;margin-top:7px;padding:9px;border:1.5px dashed var(--blue);border-radius:7px;background:#fff;color:var(--blue);font-size:.84rem;font-weight:800}
+.slots{overflow:hidden}.slotRow{display:grid;grid-template-columns:62px 1fr 1fr;align-items:center;gap:6px;padding:6px 8px;border-top:1px solid #e9edf2}.slotRow:first-child{border-top:0}.slotNum{font-weight:800;color:#0c71d2;font-size:.75rem}.slotRow input{width:100%;border:1px solid var(--line);border-radius:6px;padding:7px 5px;font-size:.76rem;background:#fff;color:var(--ink)}
+.bottom{position:fixed;left:0;right:0;bottom:0;z-index:12;background:#ffffffef;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);padding:4px 7px calc(4px + env(safe-area-inset-bottom));backdrop-filter:blur(12px)}
+.nav{border:0;background:transparent;color:#777;padding:5px 3px;font-size:.72rem}.nav span{display:block;font-size:1.05rem;margin-bottom:0}.nav.active{color:var(--blue);font-weight:800}
+.modal{position:fixed;inset:0;z-index:30;background:#0b17384f;display:none;align-items:flex-end}.modal.show{display:flex}.sheet{width:100%;max-width:780px;margin:auto;background:#fff;padding:14px;border-radius:12px 12px 0 0;max-height:86vh;overflow:auto}.sheet h3{margin:0 0 10px;text-align:center}.field{margin-bottom:8px}.field label{display:block;color:var(--muted);font-size:.74rem;margin-bottom:3px}.field input,.field select{width:100%;border:1px solid var(--line);border-radius:7px;padding:9px;font:inherit;background:#fff;color:var(--ink)}.slotPreview{background:var(--soft);border:1px solid #d9eaff;border-radius:7px;padding:8px 10px;margin-bottom:8px;color:#31516f;font-size:.80rem}.sheetActions{display:flex;justify-content:space-between;gap:7px;margin-top:7px}.rightActions{display:flex;gap:7px}.btn{padding:9px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;font-weight:760}.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn.danger{color:var(--danger);border-color:#f0b9c4;background:#fff5f7}.btn[hidden]{display:none}
+@media(max-width:560px){body{font-size:14px}.wrap{padding-left:6px;padding-right:6px}.header{height:54px}.header h1{font-size:1.24rem}.contextBar{height:37px;padding-left:7px;padding-right:7px}.todayCourse{min-height:42px}.weekGrid{grid-template-columns:39px repeat(5,minmax(0,1fr))}.wh,.wc{min-height:36px}.wc .cellLabel{font-size:.57rem}.wc .cellRoom{font-size:.50rem}}
 </style>
 </head>
 <body>
 <header class="header"><h1>Emploi du temps</h1></header>
+<div class="contextBar">
+  <button id="currentWeekBtn" class="currentWeek" type="button">Cette semaine : <b>A</b></button>
+  <div id="weekTabs" class="weekTabs"><button class="weekTab" data-week="A">Semaine A</button><button class="weekTab" data-week="B">Semaine B</button></div>
+</div>
 <main class="wrap">
   <section id="viewToday" class="view">
     <div class="dayTitle"><h2 id="todayTitle">Aujourd’hui</h2><div id="todayDate" class="date"></div></div>
-    <section class="card timelineCard"><div class="timelineHead"><strong>Position dans la journée</strong><span id="todayClock" class="timelineClock"></span></div><div class="timeline"><span id="todayProgress"></span></div><div class="timelineScale"><span id="scaleStart"></span><span id="scaleEnd"></span></div></section>
+    <section class="card timelineCard"><div class="timelineHead"><strong>Avancement</strong><span id="todayClock" class="timelineClock"></span></div><div class="timeline"><span id="todayProgress"></span></div><div class="timelineScale"><span id="scaleStart"></span><span id="scaleEnd"></span></div></section>
     <section id="todayList" class="card todayList"></section>
   </section>
 
   <section id="viewWeek" class="view">
-    <div class="weekTop"><h2>Semaine</h2></div>
+    <div class="weekTop"><h2>Aperçu semaine <span id="weekTitleLetter" class="weekLetter">A</span></h2></div>
     <div class="weekScroller"><div id="weekGrid" class="weekGrid"></div></div>
-    <div class="note">Appuie sur un cours pour le modifier. Appuie sur une case vide pour en ajouter un à cet horaire.</div>
   </section>
 
   <section id="viewEdit" class="view active">
@@ -58,7 +61,6 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px system-ui,-apple-s
     <button id="addCourse" class="addBtn">＋ Ajouter un cours</button>
     <div class="sectionHead"><h3>Horaires des 7 heures</h3></div>
     <section id="slotSettings" class="card slots"></section>
-    <div class="note">Ces horaires sont proposés automatiquement quand tu attribues une heure 1 à 7 à un cours. Modifier un horaire ici met à jour tous les cours déjà liés à cette heure.</div>
   </section>
 </main>
 
@@ -75,7 +77,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px system-ui,-apple-s
   <div id="slotPreview" class="slotPreview"></div>
   <div class="field"><label>Classe / groupe</label><input id="fLabel" type="text" maxlength="80" required></div>
   <div class="field"><label>Salle</label><input id="fRoom" type="text" maxlength="20"></div>
-  <div class="sheetActions"><button id="cancelEdit" type="button" class="btn">Annuler</button><button type="submit" class="btn primary">Enregistrer</button></div>
+  <div class="sheetActions"><button id="deleteCourse" type="button" class="btn danger" hidden>Supprimer</button><div class="rightActions"><button id="cancelEdit" type="button" class="btn">Annuler</button><button type="submit" class="btn primary">Enregistrer</button></div></div>
 </form>
 </div>
 
@@ -90,107 +92,120 @@ const DEFAULTS={
 6:{enabled:true,courses:[['11:00','12:00','5G1-2-3 ALL','217',4],['13:00','14:00','5G4 ALL','217',5],['14:00','15:00','3G3 ALL · 3G4 ALL','217',6],['15:00','16:00','4G3 ALL · 4G4 ALL','217',0],['16:00','17:00','4G1 ALL · 4G2 ALL','217',7]]}
 };
 for(const d of DAYS)DEFAULTS[d].courses=DEFAULTS[d].courses.map(c=>({start:c[0],end:c[1],label:c[2],room:c[3],slot:c[4]}));
-let state=JSON.parse(JSON.stringify(DEFAULTS)),slots=JSON.parse(JSON.stringify(DEFAULT_SLOTS)),mode='edit',selected=5,editing=null,newPrefill=null;
-const $=id=>document.getElementById(id),min=t=>{const [h,m]=(t||'00:00').split(':').map(Number);return h*60+m},esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clone=o=>JSON.parse(JSON.stringify(o));
+let weeks={A:clone(DEFAULTS),B:clone(DEFAULTS)},state=weeks.A,slots=clone(DEFAULT_SLOTS),mode='edit',selected=5,editing=null,newPrefill=null,currentWeek='A',activeWeek='A';
+const $=id=>document.getElementById(id),min=t=>{const [h,m]=(t||'00:00').split(':').map(Number);return h*60+m},clock=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-function normalize(){
+function normalizeWeek(obj){
   for(const d of DAYS){
-    if(!state[d])state[d]={enabled:true,courses:[]};
-    state[d].enabled=true;
-    if(!Array.isArray(state[d].courses))state[d].courses=[];
-    for(const c of state[d].courses){
+    if(!obj[d])obj[d]={enabled:true,courses:[]};
+    obj[d].enabled=true;
+    if(!Array.isArray(obj[d].courses))obj[d].courses=[];
+    for(const c of obj[d].courses){
       c.slot=Number(c.slot||0);
-      if(!c.slot){
-        const match=slots.find(s=>s.start===c.start&&s.end===c.end);
-        if(match)c.slot=match.n;
-      }
+      if(!c.slot){const match=slots.find(s=>s.start===c.start&&s.end===c.end);if(match)c.slot=match.n}
     }
-    state[d].courses.sort((a,b)=>min(a.start)-min(b.start));
+    obj[d].courses.sort((a,b)=>min(a.start)-min(b.start));
   }
-  if(!Array.isArray(slots)||slots.length!==7)slots=JSON.parse(JSON.stringify(DEFAULT_SLOTS));
+}
+function normalize(){
+  if(!Array.isArray(slots)||slots.length!==7)slots=clone(DEFAULT_SLOTS);
   slots=slots.map((s,i)=>({n:i+1,start:s.start||DEFAULT_SLOTS[i].start,end:s.end||DEFAULT_SLOTS[i].end}));
+  normalizeWeek(weeks.A);normalizeWeek(weeks.B);
+  state=weeks[mode==='today'?currentWeek:activeWeek];
 }
 function load(){
   try{
     let raw=null;
-    if(window.AndroidSchedule&&AndroidSchedule.loadSchedule)raw=AndroidSchedule.loadSchedule();
-    else raw=localStorage.getItem('edt');
+    if(window.AndroidSchedule&&AndroidSchedule.loadSchedule)raw=AndroidSchedule.loadSchedule();else raw=localStorage.getItem('edt');
     if(raw){
       const root=JSON.parse(raw);
       if(root._slots)slots=root._slots.map((s,i)=>({n:i+1,start:s.start,end:s.end}));
-      for(const d of DAYS)if(root[d])state[d]=root[d];
+      currentWeek=(root._currentWeek==='B')?'B':'A';activeWeek=currentWeek;
+      if(root._weeks){
+        for(const w of ['A','B'])if(root._weeks[w])for(const d of DAYS)if(root._weeks[w][d])weeks[w][d]=root._weeks[w][d];
+      }else{
+        const legacy=clone(DEFAULTS);for(const d of DAYS)if(root[d])legacy[d]=root[d];weeks.A=clone(legacy);weeks.B=clone(legacy);
+      }
     }
-  }catch(e){state=JSON.parse(JSON.stringify(DEFAULTS));slots=JSON.parse(JSON.stringify(DEFAULT_SLOTS))}
+  }catch(e){weeks={A:clone(DEFAULTS),B:clone(DEFAULTS)};slots=clone(DEFAULT_SLOTS);currentWeek='A';activeWeek='A'}
   normalize();render();
 }
 window.reloadSchedule=load;
 function exportState(){
-  const root={_slots:slots.map(s=>({start:s.start,end:s.end}))};
-  for(const d of DAYS)root[d]={enabled:true,courses:state[d].courses};
+  const root={_slots:slots.map(s=>({start:s.start,end:s.end})),_currentWeek:currentWeek,_weeks:{A:{},B:{}}};
+  for(const w of ['A','B'])for(const d of DAYS)root._weeks[w][d]={enabled:true,courses:weeks[w][d].courses};
+  const current=weeks[currentWeek];for(const d of DAYS)root[d]={enabled:true,courses:current[d].courses};
   return root;
 }
 function save(){
-  normalize();
-  const raw=JSON.stringify(exportState());
+  normalize();const raw=JSON.stringify(exportState());
   try{if(window.AndroidSchedule&&AndroidSchedule.saveSchedule)AndroidSchedule.saveSchedule(raw);else localStorage.setItem('edt',raw)}catch(e){}
   render();
 }
 function todayKey(){const d=new Date().getDay();return d>=1&&d<=5?d+1:2}
+function currentCourse(day){const now=new Date(),m=now.getHours()*60+now.getMinutes();if(day!==now.getDay()+1)return null;return weeks[currentWeek][day].courses.find(c=>m>=min(c.start)&&m<min(c.end))||null}
+function lunch(){const start=slots[3].end,end=slots[4].start;return min(end)>min(start)?{start,end}:null}
+function gapSegments(list){
+  const out=[],l=lunch(),ls=l?min(l.start):-1,le=l?min(l.end):-1;
+  for(let i=0;i<list.length-1;i++){
+    let a=min(list[i].end),b=min(list[i+1].start);if(b<=a)continue;
+    if(!l||b<=ls||a>=le)out.push({start:a,end:b});
+    else{if(a<ls)out.push({start:a,end:Math.min(b,ls)});if(b>le)out.push({start:Math.max(a,le),end:b})}
+  }
+  return out.filter(g=>g.end>g.start);
+}
 function progressPercent(){
-  const now=new Date(),nowM=now.getHours()*60+now.getMinutes();
-  const start=min(slots[0].start),end=min(slots[6].end);
-  return Math.max(0,Math.min(100,(nowM-start)*100/Math.max(1,end-start)));
+  const d=todayKey(),list=weeks[currentWeek][d].courses,now=new Date(),nowM=now.getHours()*60+now.getMinutes();let total=0,done=0;
+  for(const c of list){const s=min(c.start),e=min(c.end),dur=Math.max(0,e-s);total+=dur;if(nowM>=e)done+=dur;else if(nowM>s)done+=Math.min(dur,nowM-s)}
+  return total?Math.max(0,Math.min(100,done*100/total)):0;
 }
-function currentCourse(day){
-  const now=new Date(),m=now.getHours()*60+now.getMinutes();
-  if(day!==now.getDay()+1)return null;
-  return state[day].courses.find(c=>m>=min(c.start)&&m<min(c.end))||null;
-}
-function setMode(m){
-  mode=m;
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  $('view'+m[0].toUpperCase()+m.slice(1)).classList.add('active');
-  document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));
-  render();
-}
+function setMode(m){mode=m;document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$('view'+m[0].toUpperCase()+m.slice(1)).classList.add('active');document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));if(m==='today')activeWeek=currentWeek;render()}
 window.setModeFromAndroid=setMode;
+function setActiveWeek(w){activeWeek=w==='B'?'B':'A';render()}
+function toggleCurrentWeek(){currentWeek=currentWeek==='A'?'B':'A';activeWeek=currentWeek;save()}
 
-function render(){normalize();if(mode==='today')renderToday();else if(mode==='week')renderWeek();else renderEdit()}
+function renderContext(){
+  $('currentWeekBtn').innerHTML=`Cette semaine : <b>${currentWeek}</b>`;
+  document.querySelectorAll('.weekTab').forEach(b=>b.classList.toggle('active',b.dataset.week===(mode==='today'?currentWeek:activeWeek)));
+}
+function render(){normalize();renderContext();if(mode==='today')renderToday();else if(mode==='week')renderWeek();else renderEdit()}
 function renderToday(){
-  const d=todayKey(),now=new Date(),list=state[d].courses,cur=currentCourse(d);
-  $('todayTitle').textContent=FULL[d];
-  $('todayDate').textContent=now.toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
-  $('todayClock').textContent=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-  $('todayProgress').style.width=progressPercent()+'%';
-  $('scaleStart').textContent=slots[0].start;$('scaleEnd').textContent=slots[6].end;
-  const box=$('todayList');box.innerHTML='';
-  if(!list.length){box.innerHTML='<div class="empty">Aucun cours aujourd’hui.</div>';return}
-  for(const c of list){
-    const row=document.createElement('div');row.className='todayCourse'+(cur===c?' current':'');
-    row.innerHTML=`<div class="time"><strong>${esc(c.start)}</strong><br>${esc(c.end)}</div><div><div class="label">${esc(c.label)}</div><div class="room">salle ${esc(c.room||'—')}${c.slot?` · heure ${c.slot}`:''}</div></div>${cur===c?'<div class="badge">En cours</div>':''}`;
+  state=weeks[currentWeek];const d=todayKey(),now=new Date(),list=state[d].courses,cur=currentCourse(d);
+  $('todayTitle').textContent=FULL[d]+' · semaine '+currentWeek;$('todayDate').textContent=now.toLocaleDateString('fr-FR',{day:'numeric',month:'long'});$('todayClock').textContent=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});$('todayProgress').style.width=progressPercent()+'%';
+  $('scaleStart').textContent=list[0]?.start||slots[0].start;$('scaleEnd').textContent=list[list.length-1]?.end||slots[6].end;
+  const box=$('todayList');box.innerHTML='';if(!list.length){box.innerHTML='<div class="empty">Aucun cours aujourd’hui.</div>';return}
+  const events=list.map(c=>({type:'course',start:min(c.start),end:min(c.end),course:c}));
+  for(const g of gapSegments(list))events.push({type:'gap',start:g.start,end:g.end});
+  const l=lunch();if(l&&list.some(c=>min(c.end)<=min(l.start))&&list.some(c=>min(c.start)>=min(l.end)))events.push({type:'lunch',start:min(l.start),end:min(l.end),l});
+  events.sort((a,b)=>a.start-b.start||a.end-b.end);
+  for(const ev of events){
+    const row=document.createElement('div');
+    if(ev.type==='course'){
+      const c=ev.course;row.className='todayCourse'+(cur===c?' current':'');row.innerHTML=`<div class="time"><strong>${esc(c.start)}</strong><br>${esc(c.end)}</div><div><div class="label">${esc(c.label)}</div><div class="room">salle ${esc(c.room||'—')}${c.slot?` · heure ${c.slot}`:''}</div></div>${cur===c?'<div class="badge">En cours</div>':''}`;row.onclick=()=>{activeWeek=currentWeek;selected=d;editing=state[d].courses.indexOf(c);openEditor(editing)};
+    }else if(ev.type==='gap'){
+      row.className='todayCourse gap';row.innerHTML=`<div class="time"><strong>${clock(ev.start)}</strong><br>${clock(ev.end)}</div><div><div class="label">Trou</div><div class="room">${durationLabel(ev.end-ev.start)} sans cours</div></div><div class="badge gap">Trou</div>`;
+    }else{
+      row.className='todayCourse lunch';row.innerHTML=`<div class="time"><strong>${esc(ev.l.start)}</strong><br>${esc(ev.l.end)}</div><div><div class="label">Pause de midi</div><div class="room">Reprise à ${esc(ev.l.end)}</div></div><div class="badge lunch">Pause</div>`;
+    }
     box.appendChild(row);
   }
 }
-function uniqueWeekTimes(){
-  const map=new Map();
-  for(const d of DAYS)for(const c of state[d].courses)map.set(c.start+'|'+c.end,{start:c.start,end:c.end});
-  for(const s of slots)map.set(s.start+'|'+s.end,{start:s.start,end:s.end});
-  return [...map.values()].sort((a,b)=>min(a.start)-min(b.start)||min(a.end)-min(b.end));
-}
+function durationLabel(minutes){const h=Math.floor(minutes/60),m=minutes%60;if(h&&m)return h+' h '+m;if(h)return h+' h';return m+' min'}
+function uniqueWeekTimes(){const map=new Map();for(const s of slots)map.set(s.start+'|'+s.end,{start:s.start,end:s.end,type:'slot'});for(const d of DAYS)for(const c of state[d].courses)map.set(c.start+'|'+c.end,{start:c.start,end:c.end,type:'course'});const l=lunch();if(l)map.set(l.start+'|'+l.end,{start:l.start,end:l.end,type:'lunch'});return [...map.values()].sort((a,b)=>min(a.start)-min(b.start)||min(a.end)-min(b.end))}
 function renderWeek(){
-  const box=$('weekGrid'),times=uniqueWeekTimes();box.innerHTML='';
-  const corner=document.createElement('div');corner.className='wh timecol';corner.textContent='Heure';box.appendChild(corner);
-  for(const d of DAYS){const h=document.createElement('div');h.className='wh day';h.textContent=NAMES[d];box.appendChild(h)}
+  state=weeks[activeWeek];$('weekTitleLetter').textContent=activeWeek;const box=$('weekGrid'),times=uniqueWeekTimes();box.innerHTML='';
+  const corner=document.createElement('div');corner.className='wh timecol';corner.textContent='H';box.appendChild(corner);for(const d of DAYS){const h=document.createElement('div');h.className='wh day';h.textContent=NAMES[d];box.appendChild(h)}
+  const l=lunch();
   for(const t of times){
     const th=document.createElement('div');th.className='wh timecol';th.innerHTML=`${esc(t.start)}<br>${esc(t.end)}`;box.appendChild(th);
     for(const d of DAYS){
-      const c=state[d].courses.find(x=>x.start===t.start&&x.end===t.end);
-      const cell=document.createElement('div');
-      if(c){
-        cell.className='wc has';cell.innerHTML=`<div><div class="cellLabel">${esc(c.label)}</div><div class="cellRoom">salle ${esc(c.room||'—')}</div></div>`;
-        cell.onclick=()=>{selected=d;editing=state[d].courses.indexOf(c);openEditor(editing)};
-      }else{
-        cell.className='wc emptyCell';cell.textContent='＋';
+      const c=state[d].courses.find(x=>x.start===t.start&&x.end===t.end);const cell=document.createElement('div');
+      if(c){cell.className='wc has';cell.innerHTML=`<div><div class="cellLabel">${esc(c.label)}</div><div class="cellRoom">${esc(c.room||'—')}</div></div>`;cell.onclick=()=>{selected=d;editing=state[d].courses.indexOf(c);openEditor(editing)}}
+      else if(l&&t.type==='lunch'){cell.className='wc lunchCell';cell.innerHTML='<div class="cellLabel">Pause</div>'}
+      else{
+        const g=gapSegments(state[d].courses).find(x=>Math.min(min(t.end),x.end)>Math.max(min(t.start),x.start));
+        if(g){cell.className='wc gapCell';cell.innerHTML='<div class="cellLabel">Trou</div>'}else cell.className='wc emptyCell';
         cell.onclick=()=>{selected=d;newPrefill={start:t.start,end:t.end};openEditor(null)};
       }
       box.appendChild(cell);
@@ -198,86 +213,25 @@ function renderWeek(){
   }
 }
 function renderEdit(){
-  renderDayTabs();
-  $('editDayTitle').textContent=FULL[selected];
-  $('editCount').textContent=`${state[selected].courses.length} cours`;
-  const box=$('editList');box.innerHTML='';
+  state=weeks[activeWeek];renderDayTabs();$('editDayTitle').textContent=FULL[selected]+' · semaine '+activeWeek;$('editCount').textContent=`${state[selected].courses.length} cours`;const box=$('editList');box.innerHTML='';
   if(!state[selected].courses.length)box.innerHTML='<div class="empty">Aucun cours ce jour.</div>';
-  state[selected].courses.forEach((c,i)=>{
-    const row=document.createElement('div');row.className='editCourse';
-    row.innerHTML=`<div class="time"><strong>${esc(c.start)}</strong><br>${esc(c.end)}</div><div><div class="label">${esc(c.label)}</div><div class="room">salle ${esc(c.room||'—')}${c.slot?` · heure ${c.slot}`:' · horaire libre'}</div></div><div class="editActions"><button class="iconBtn edit" aria-label="Modifier">✎</button><button class="iconBtn del" aria-label="Supprimer">⌫</button></div>`;
-    row.querySelector('.edit').onclick=()=>openEditor(i);
-    row.querySelector('.del').onclick=()=>{if(confirm('Supprimer ce cours ?')){state[selected].courses.splice(i,1);save()}};
-    box.appendChild(row);
-  });
-  renderSlots();
+  state[selected].courses.forEach((c,i)=>{const row=document.createElement('div');row.className='editCourse';row.innerHTML=`<div class="time"><strong>${esc(c.start)}</strong><br>${esc(c.end)}</div><div><div class="label">${esc(c.label)}</div><div class="room">salle ${esc(c.room||'—')}${c.slot?` · heure ${c.slot}`:' · horaire libre'}</div></div>`;row.onclick=()=>openEditor(i);box.appendChild(row)});renderSlots();
 }
-function renderDayTabs(){
-  const box=$('dayTabs');box.innerHTML='';
-  for(const d of DAYS){const b=document.createElement('button');b.className='dayTab'+(selected===d?' active':'');b.textContent=NAMES[d];b.onclick=()=>{selected=d;renderEdit()};box.appendChild(b)}
-}
-function renderSlots(){
-  const box=$('slotSettings');box.innerHTML='';
-  slots.forEach((s,i)=>{
-    const row=document.createElement('div');row.className='slotRow';
-    row.innerHTML=`<div class="slotNum">${i+1}e heure</div><input type="time" value="${esc(s.start)}" aria-label="Début ${i+1}e heure"><input type="time" value="${esc(s.end)}" aria-label="Fin ${i+1}e heure">`;
-    const inputs=row.querySelectorAll('input');
-    const apply=()=>{
-      slots[i].start=inputs[0].value;slots[i].end=inputs[1].value;
-      for(const d of DAYS)for(const c of state[d].courses)if(c.slot===i+1){c.start=slots[i].start;c.end=slots[i].end}
-      save();
-    };
-    inputs[0].onchange=apply;inputs[1].onchange=apply;box.appendChild(row);
-  });
-}
-function firstFreeSlot(day){
-  const used=new Set(state[day].courses.map(c=>c.slot).filter(Boolean));
-  return slots.find(s=>!used.has(s.n))?.n||1;
-}
+function renderDayTabs(){const box=$('dayTabs');box.innerHTML='';for(const d of DAYS){const b=document.createElement('button');b.className='dayTab'+(selected===d?' active':'');b.textContent=NAMES[d];b.onclick=()=>{selected=d;renderEdit()};box.appendChild(b)}}
+function renderSlots(){const box=$('slotSettings');box.innerHTML='';slots.forEach((s,i)=>{const row=document.createElement('div');row.className='slotRow';row.innerHTML=`<div class="slotNum">${i+1}e h</div><input type="time" value="${esc(s.start)}"><input type="time" value="${esc(s.end)}">`;const inputs=row.querySelectorAll('input');const apply=()=>{slots[i].start=inputs[0].value;slots[i].end=inputs[1].value;for(const w of ['A','B'])for(const d of DAYS)for(const c of weeks[w][d].courses)if(c.slot===i+1){c.start=slots[i].start;c.end=slots[i].end}save()};inputs[0].onchange=apply;inputs[1].onchange=apply;box.appendChild(row)})}
+function firstFreeSlot(day){const used=new Set(state[day].courses.map(c=>c.slot).filter(Boolean));return slots.find(s=>!used.has(s.n))?.n||1}
 function slotForTimes(start,end){return slots.find(s=>s.start===start&&s.end===end)?.n||0}
-function fillSlotOptions(selectedSlot,allowCustom,start,end){
-  const sel=$('fSlot');sel.innerHTML='';
-  if(allowCustom){const o=document.createElement('option');o.value='0';o.textContent=`Horaire actuel (${start}–${end})`;sel.appendChild(o)}
-  slots.forEach(s=>{const o=document.createElement('option');o.value=String(s.n);o.textContent=`${s.n}e heure · ${s.start}–${s.end}`;sel.appendChild(o)});
-  sel.value=String(selectedSlot);updateSlotPreview();
-}
-function updateSlotPreview(){
-  const n=Number($('fSlot').value);
-  if(n===0){
-    const c=editing!=null?state[selected].courses[editing]:newPrefill;
-    $('slotPreview').textContent=c?`Horaire conservé : ${c.start}–${c.end}`:'Horaire personnalisé';
-  }else{
-    const s=slots[n-1];$('slotPreview').textContent=`Horaire appliqué : ${s.start}–${s.end}`;
-  }
-}
-function openEditor(index){
-  editing=index;
-  const c=index!=null?state[selected].courses[index]:null;
-  $('modalTitle').textContent=c?'Modifier le cours':'Ajouter un cours';
-  $('fLabel').value=c?.label||'';$('fRoom').value=c?.room||'';
-  let chosen;
-  if(c)chosen=c.slot||slotForTimes(c.start,c.end)||0;
-  else if(newPrefill)chosen=slotForTimes(newPrefill.start,newPrefill.end)||0;
-  else chosen=firstFreeSlot(selected);
-  fillSlotOptions(chosen,!!c||!!newPrefill,c?.start||newPrefill?.start,c?.end||newPrefill?.end);
-  $('modal').classList.add('show');
-}
+function fillSlotOptions(selectedSlot,allowCustom,start,end){const sel=$('fSlot');sel.innerHTML='';if(allowCustom&&start&&end){const o=document.createElement('option');o.value='0';o.textContent=`Horaire actuel (${start}–${end})`;sel.appendChild(o)}slots.forEach(s=>{const o=document.createElement('option');o.value=String(s.n);o.textContent=`${s.n}e heure · ${s.start}–${s.end}`;sel.appendChild(o)});sel.value=String(selectedSlot);updateSlotPreview()}
+function updateSlotPreview(){const n=Number($('fSlot').value);if(n===0){const c=editing!=null?state[selected].courses[editing]:newPrefill;$('slotPreview').textContent=c?`Horaire conservé : ${c.start}–${c.end}`:'Horaire personnalisé'}else{const s=slots[n-1];$('slotPreview').textContent=`Horaire appliqué : ${s.start}–${s.end}`}}
+function openEditor(index){state=weeks[activeWeek];editing=index;const c=index!=null?state[selected].courses[index]:null;$('modalTitle').textContent=c?`Modifier · semaine ${activeWeek}`:`Ajouter · semaine ${activeWeek}`;$('fLabel').value=c?.label||'';$('fRoom').value=c?.room||'';$('deleteCourse').hidden=!c;let chosen;if(c)chosen=c.slot||slotForTimes(c.start,c.end)||0;else if(newPrefill)chosen=slotForTimes(newPrefill.start,newPrefill.end)||0;else chosen=firstFreeSlot(selected);fillSlotOptions(chosen,!!c||!!newPrefill,c?.start||newPrefill?.start,c?.end||newPrefill?.end);$('modal').classList.add('show')}
 $('fSlot').onchange=updateSlotPreview;
 $('cancelEdit').onclick=()=>{$('modal').classList.remove('show');editing=null;newPrefill=null};
+$('deleteCourse').onclick=()=>{if(editing!=null&&confirm('Supprimer ce cours ?')){state[selected].courses.splice(editing,1);$('modal').classList.remove('show');editing=null;newPrefill=null;save()}};
 $('modal').onclick=e=>{if(e.target===$('modal'))$('cancelEdit').click()};
-$('courseForm').onsubmit=e=>{
-  e.preventDefault();
-  const slot=Number($('fSlot').value),old=editing!=null?state[selected].courses[editing]:null;
-  let start,end;
-  if(slot>0){start=slots[slot-1].start;end=slots[slot-1].end}
-  else if(old){start=old.start;end=old.end}
-  else if(newPrefill){start=newPrefill.start;end=newPrefill.end}
-  else{return}
-  const course={start,end,label:$('fLabel').value.trim(),room:$('fRoom').value.trim(),slot};
-  if(editing!=null)state[selected].courses[editing]=course;else state[selected].courses.push(course);
-  $('modal').classList.remove('show');editing=null;newPrefill=null;save();
-};
+$('courseForm').onsubmit=e=>{e.preventDefault();const slot=Number($('fSlot').value),old=editing!=null?state[selected].courses[editing]:null;let start,end;if(slot>0){start=slots[slot-1].start;end=slots[slot-1].end}else if(old){start=old.start;end=old.end}else if(newPrefill){start=newPrefill.start;end=newPrefill.end}else{return}const course={start,end,label:$('fLabel').value.trim(),room:$('fRoom').value.trim(),slot};if(editing!=null)state[selected].courses[editing]=course;else state[selected].courses.push(course);$('modal').classList.remove('show');editing=null;newPrefill=null;save()};
 $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};
+$('currentWeekBtn').onclick=toggleCurrentWeek;
+document.querySelectorAll('.weekTab').forEach(b=>b.onclick=()=>setActiveWeek(b.dataset.week));
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 setInterval(()=>{if(mode==='today')renderToday()},30000);
 load();
