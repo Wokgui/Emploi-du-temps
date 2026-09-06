@@ -77,40 +77,40 @@ final class UiSettingsStore {
         switch (id == null ? "blue" : id) {
             case "teal":
                 return new Theme("teal", 0xFF00897B, 0xFF00695C, 0xFFDDF4F0,
-                        0xFFFFFFFF, 0xFF102B28, 0xFF4F6965, 0xFFB9D6D1);
+                        0xFF00897B, 0xFF102B28, 0xFF4F6965, 0xFFB9D6D1);
             case "violet":
                 return new Theme("violet", 0xFF6750A4, 0xFF4F378B, 0xFFEDE7F6,
-                        0xFFFFFFFF, 0xFF241B35, 0xFF665D72, 0xFFD0C5E1);
+                        0xFF6750A4, 0xFF241B35, 0xFF665D72, 0xFFD0C5E1);
             case "green":
                 return new Theme("green", 0xFF2E7D32, 0xFF1B5E20, 0xFFE3F3E4,
-                        0xFFFFFFFF, 0xFF172B19, 0xFF5D705F, 0xFFBDD7BF);
+                        0xFF2E7D32, 0xFF172B19, 0xFF5D705F, 0xFFBDD7BF);
             case "amber":
                 return new Theme("amber", 0xFFEF6C00, 0xFFBF4E00, 0xFFFFEBD8,
-                        0xFFFFFFFF, 0xFF352015, 0xFF756256, 0xFFE3C7AC);
+                        0xFFEF6C00, 0xFF352015, 0xFF756256, 0xFFE3C7AC);
             case "rose":
                 return new Theme("rose", 0xFFD81B60, 0xFFAD1457, 0xFFFCE4EC,
-                        0xFFFFFFFF, 0xFF341723, 0xFF75616A, 0xFFE0BEC9);
+                        0xFFD81B60, 0xFF341723, 0xFF75616A, 0xFFE0BEC9);
             case "red":
                 return new Theme("red", 0xFFD84343, 0xFFB72E2E, 0xFFFDE8E8,
-                        0xFFFFFFFF, 0xFF351919, 0xFF776060, 0xFFE2BDBD);
+                        0xFFD84343, 0xFF351919, 0xFF776060, 0xFFE2BDBD);
             case "indigo":
                 return new Theme("indigo", 0xFF3F51B5, 0xFF303F9F, 0xFFE8EAF6,
-                        0xFFFFFFFF, 0xFF1D2342, 0xFF666A7D, 0xFFC6CAE4);
+                        0xFF3F51B5, 0xFF1D2342, 0xFF666A7D, 0xFFC6CAE4);
             case "cyan":
                 return new Theme("cyan", 0xFF0097A7, 0xFF007C91, 0xFFE0F7FA,
-                        0xFFFFFFFF, 0xFF123036, 0xFF60757A, 0xFFB9DDE2);
+                        0xFF0097A7, 0xFF123036, 0xFF60757A, 0xFFB9DDE2);
             case "coral":
                 return new Theme("coral", 0xFFE76F51, 0xFFC95035, 0xFFFCE9E3,
-                        0xFFFFFFFF, 0xFF3A211B, 0xFF79675F, 0xFFE6C3B8);
+                        0xFFE76F51, 0xFF3A211B, 0xFF79675F, 0xFFE6C3B8);
             case "navy":
                 return new Theme("navy", 0xFF2457A7, 0xFF193E7A, 0xFFE5EDFA,
-                        0xFFFFFFFF, 0xFF17243B, 0xFF617086, 0xFFC0CEE2);
+                        0xFF2457A7, 0xFF17243B, 0xFF617086, 0xFFC0CEE2);
             case "graphite":
                 return new Theme("graphite", 0xFF546E7A, 0xFF37474F, 0xFFECEFF1,
-                        0xFFFFFFFF, 0xFF1D292E, 0xFF68757B, 0xFFC9D1D5);
+                        0xFF546E7A, 0xFF1D292E, 0xFF68757B, 0xFFC9D1D5);
             default:
                 return new Theme("blue", 0xFF0877F9, 0xFF075FAE, 0xFFD9EAFB,
-                        0xFFFFFFFF, 0xFF101936, 0xFF465369, 0xFFB9CCE1);
+                        0xFF0877F9, 0xFF101936, 0xFF465369, 0xFFB9CCE1);
         }
     }
 
