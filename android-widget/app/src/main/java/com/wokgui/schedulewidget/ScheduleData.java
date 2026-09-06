@@ -12,17 +12,23 @@ final class ScheduleData {
     static final class Course {
         final String start, end, label, room;
         final int slot;
+        final boolean uncertain;
 
         Course(String start, String end, String label, String room) {
-            this(start, end, label, room, 0);
+            this(start, end, label, room, 0, false);
         }
 
         Course(String start, String end, String label, String room, int slot) {
+            this(start, end, label, room, slot, false);
+        }
+
+        Course(String start, String end, String label, String room, int slot, boolean uncertain) {
             this.start = start;
             this.end = end;
             this.label = label;
             this.room = room;
             this.slot = slot;
+            this.uncertain = uncertain;
         }
     }
 
@@ -61,7 +67,7 @@ final class ScheduleData {
     }
 
     private static Course c(String s, String e, String l, String r, int slot) {
-        return new Course(s, e, l, r, slot);
+        return new Course(s, e, l, r, slot, false);
     }
 
     static List<Course> defaultForDay(int day) {
