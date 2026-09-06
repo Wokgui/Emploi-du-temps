@@ -57,11 +57,16 @@ final class UiSettingsStore {
         return "fr";
     }
 
+    private static boolean supportedTheme(String value) {
+        return "blue".equals(value) || "teal".equals(value) || "violet".equals(value)
+                || "green".equals(value) || "amber".equals(value) || "rose".equals(value)
+                || "red".equals(value) || "indigo".equals(value) || "cyan".equals(value)
+                || "coral".equals(value) || "navy".equals(value) || "graphite".equals(value);
+    }
+
     static String themeId(Context context) {
         String value = prefs(context).getString(THEME, "blue");
-        if ("teal".equals(value) || "violet".equals(value)
-                || "green".equals(value) || "amber".equals(value)) return value;
-        return "blue";
+        return supportedTheme(value) ? value : "blue";
     }
 
     static Theme theme(Context context) {
@@ -82,6 +87,27 @@ final class UiSettingsStore {
             case "amber":
                 return new Theme("amber", 0xFFEF6C00, 0xFFBF4E00, 0xFFFFEBD8,
                         0xFFFFFFFF, 0xFF352015, 0xFF756256, 0xFFE3C7AC);
+            case "rose":
+                return new Theme("rose", 0xFFD81B60, 0xFFAD1457, 0xFFFCE4EC,
+                        0xFFFFFFFF, 0xFF341723, 0xFF75616A, 0xFFE0BEC9);
+            case "red":
+                return new Theme("red", 0xFFD84343, 0xFFB72E2E, 0xFFFDE8E8,
+                        0xFFFFFFFF, 0xFF351919, 0xFF776060, 0xFFE2BDBD);
+            case "indigo":
+                return new Theme("indigo", 0xFF3F51B5, 0xFF303F9F, 0xFFE8EAF6,
+                        0xFFFFFFFF, 0xFF1D2342, 0xFF666A7D, 0xFFC6CAE4);
+            case "cyan":
+                return new Theme("cyan", 0xFF0097A7, 0xFF007C91, 0xFFE0F7FA,
+                        0xFFFFFFFF, 0xFF123036, 0xFF60757A, 0xFFB9DDE2);
+            case "coral":
+                return new Theme("coral", 0xFFE76F51, 0xFFC95035, 0xFFFCE9E3,
+                        0xFFFFFFFF, 0xFF3A211B, 0xFF79675F, 0xFFE6C3B8);
+            case "navy":
+                return new Theme("navy", 0xFF2457A7, 0xFF193E7A, 0xFFE5EDFA,
+                        0xFFFFFFFF, 0xFF17243B, 0xFF617086, 0xFFC0CEE2);
+            case "graphite":
+                return new Theme("graphite", 0xFF546E7A, 0xFF37474F, 0xFFECEFF1,
+                        0xFFFFFFFF, 0xFF1D292E, 0xFF68757B, 0xFFC9D1D5);
             default:
                 return new Theme("blue", 0xFF0877F9, 0xFF075FAE, 0xFFD9EAFB,
                         0xFFFFFFFF, 0xFF101936, 0xFF465369, 0xFFB9CCE1);
@@ -109,8 +135,7 @@ final class UiSettingsStore {
             String lang = o.optString("language", language(context));
             if (!"de".equals(lang) && !"en".equals(lang)) lang = "fr";
             String theme = o.optString("theme", themeId(context));
-            if (!"teal".equals(theme) && !"violet".equals(theme)
-                    && !"green".equals(theme) && !"amber".equals(theme)) theme = "blue";
+            if (!supportedTheme(theme)) theme = "blue";
 
             prefs(context).edit()
                     .putFloat(APP_FONT, appScale)
