@@ -11,7 +11,6 @@ import android.net.Uri;
 import android.view.View;
 import android.widget.RemoteViews;
 
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
@@ -94,28 +93,15 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
 
         NextCourseInfo next = findNextCourse(context, now);
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_schedule);
-
-        String widgetDate = new SimpleDateFormat("EEEE d MMMM", Locale.FRANCE).format(now.getTime());
-        views.setTextViewText(R.id.tvWidgetDate, capitalize(widgetDate));
-        views.setTextViewText(R.id.tvSectionTitle, "À suivre");
-        views.setInt(R.id.statusCard, "setBackgroundResource", R.drawable.widget_status_card);
-        views.setInt(R.id.tvKind, "setBackgroundResource", 0);
-        views.setViewVisibility(R.id.tvRemaining, View.GONE);
-
         views.setTextColor(R.id.tvKind, 0xFF0AA6A6);
         views.setTextColor(R.id.tvStatus, 0xFF101936);
         views.setTextColor(R.id.tvSubstatus, 0xFF5A667A);
 
         if (current != null) {
-            views.setInt(R.id.statusCard, "setBackgroundResource", R.drawable.widget_current_card);
-            views.setInt(R.id.tvKind, "setBackgroundResource", R.drawable.widget_badge_blue);
-            views.setTextColor(R.id.tvKind, 0xFFFFFFFF);
-            views.setTextViewText(R.id.tvKind, "En cours");
+            views.setTextViewText(R.id.tvKind, "Cours en cours");
             views.setTextViewText(R.id.tvStatus, current.label);
             views.setTextViewText(R.id.tvSubstatus,
                     current.start + "–" + current.end + " · salle " + room(current.room));
-            views.setTextViewText(R.id.tvRemaining, remainingLabel(current, minute));
-            views.setViewVisibility(R.id.tvRemaining, View.VISIBLE);
         } else if (inLunch) {
             String start = ScheduleStore.getSlotEnd(context, 4);
             String end = ScheduleStore.getSlotStart(context, 5);
@@ -138,9 +124,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         } else if (next != null) {
             views.setTextViewText(R.id.tvKind, "Prochain cours");
             views.setTextViewText(R.id.tvStatus, next.course.label);
-            String prefix = isSameDay(now, next.date)
-                    ? ""
-                    : dayLabel(next.date.get(Calendar.DAY_OF_WEEK)) + " ";
+            String prefix = isSameDay(now, next.date) ? "" : dayLabel(next.date.get(Calendar.DAY_OF_WEEK)) + " ";
             views.setTextViewText(R.id.tvSubstatus,
                     prefix + next.course.start + " · salle " + room(next.course.room));
         } else {
@@ -241,17 +225,6 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         return clamp((int) Math.round((minute - start) * 100.0 / duration));
     }
 
-    private static String remainingLabel(ScheduleData.Course course, int minute) {
-        int end = ScheduleData.toMinutes(course.end);
-        int remaining = Math.max(0, end - minute);
-        if (remaining == 60) return "1 h restante";
-        if (remaining < 60) return remaining + " min restantes";
-        int h = remaining / 60;
-        int m = remaining % 60;
-        if (m == 0) return h + " h restantes";
-        return h + " h " + m + " restantes";
-    }
-
     private static NextCourseInfo findNextCourse(Context context, Calendar now) {
         int nowMin = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
         Calendar cursor = (Calendar) now.clone();
@@ -279,11 +252,6 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         if (h > 0 && m > 0) return h + " h " + m;
         if (h > 0) return h + " h";
         return m + " min";
-    }
-
-    private static String capitalize(String value) {
-        if (value == null || value.isEmpty()) return "";
-        return value.substring(0, 1).toUpperCase(Locale.FRANCE) + value.substring(1);
     }
 
     private static boolean isSameDay(Calendar a, Calendar b) {
@@ -388,7 +356,6 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
     private static class NextCourseInfo {
         final Calendar date;
         final ScheduleData.Course course;
-
         NextCourseInfo(Calendar date, ScheduleData.Course course) {
             this.date = date;
             this.course = course;
