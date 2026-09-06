@@ -76,7 +76,7 @@ public class MainActivity extends Activity {
                     value -> {
                         applyOpenMode();
                         injectPersonalizationUi();
-                        webView.evaluateJavascript("if(window.refreshSettingsV3){refreshSettingsV3();}if(window.refreshAdvancedFeatures){refreshAdvancedFeatures();}if(window.refreshUiPolishSchool){refreshUiPolishSchool();}", null);
+                        webView.evaluateJavascript("if(window.refreshSettingsV3){refreshSettingsV3();}if(window.refreshAdvancedFeatures){refreshAdvancedFeatures();}if(window.refreshUiPolishSchool){refreshUiPolishSchool();}if(window.refreshCourseColors){refreshCourseColors();}", null);
                     }
             );
         }
@@ -195,7 +195,8 @@ public class MainActivity extends Activity {
         if (webView == null) return;
         webView.evaluateJavascript(PersonalizationUi2.script(), value ->
                 webView.evaluateJavascript(AdvancedFeaturesUi.script(), value2 ->
-                        webView.evaluateJavascript(UiPolishAndSchoolCalendarUi.script(), null)));
+                        webView.evaluateJavascript(UiPolishAndSchoolCalendarUi.script(), value3 ->
+                                webView.evaluateJavascript(CourseColorUi.script(), null))));
     }
 
     private void maybeRequestNotificationPermission() {
@@ -264,7 +265,7 @@ public class MainActivity extends Activity {
                 root.put("dayOff", AdvancedSettingsStore.isDayOff(MainActivity.this, date));
                 for (ScheduleData.Course c : ScheduleStore.getCourses(MainActivity.this, date)) {
                     JSONObject o = new JSONObject();
-                    o.put("start", c.start); o.put("end", c.end); o.put("label", c.label); o.put("room", c.room); o.put("slot", c.slot); o.put("uncertain", c.uncertain);
+                    o.put("start", c.start); o.put("end", c.end); o.put("label", c.label); o.put("room", c.room); o.put("slot", c.slot); o.put("uncertain", c.uncertain); o.put("color", c.color);
                     arr.put(o);
                 }
                 root.put("courses", arr);
