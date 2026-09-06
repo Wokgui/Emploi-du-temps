@@ -20,6 +20,10 @@ final class ScheduleStore {
     private static final String INIT = "initialized";
     private static final String WEEK_AB_INIT = "week_ab_initialized";
     private static final String WEEK_A_PARITY = "week_a_parity";
+    private static final String GAP_LABEL = "gap_label";
+    private static final String LUNCH_LABEL = "lunch_label";
+    private static final String SHOW_GAP_BADGE = "show_gap_badge";
+    private static final String SHOW_LUNCH_BADGE = "show_lunch_badge";
 
     private static final String[] DEFAULT_START = {
             "08:00","09:00","10:00","11:00","13:00","14:00","16:00"
@@ -54,6 +58,10 @@ final class ScheduleStore {
                 e.putString("slot_" + (i + 1) + "_end", DEFAULT_END[i]);
             }
         }
+        if (!p.contains(GAP_LABEL)) e.putString(GAP_LABEL, "Trou");
+        if (!p.contains(LUNCH_LABEL)) e.putString(LUNCH_LABEL, "Pause de midi");
+        if (!p.contains(SHOW_GAP_BADGE)) e.putBoolean(SHOW_GAP_BADGE, true);
+        if (!p.contains(SHOW_LUNCH_BADGE)) e.putBoolean(SHOW_LUNCH_BADGE, true);
 
         for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
             e.putBoolean("enabled_" + day, true);
@@ -68,7 +76,6 @@ final class ScheduleStore {
                 migration.putString(weekKey("A", day), legacy);
                 migration.putString(weekKey("B", day), legacy);
             }
-            // À la première migration, la semaine en cours devient la semaine A.
             migration.putInt(WEEK_A_PARITY, Calendar.getInstance().get(Calendar.WEEK_OF_YEAR) & 1);
             migration.putBoolean(WEEK_AB_INIT, true);
             migration.apply();
@@ -90,6 +97,28 @@ final class ScheduleStore {
         ensureInitialized(context);
         int i = Math.max(1, Math.min(7, slot)) - 1;
         return prefs(context).getString("slot_" + (i + 1) + "_end", DEFAULT_END[i]);
+    }
+
+    static String getGapLabel(Context context) {
+        ensureInitialized(context);
+        String value = prefs(context).getString(GAP_LABEL, "Trou");
+        return value == null || value.trim().isEmpty() ? "Trou" : value.trim();
+    }
+
+    static String getLunchLabel(Context context) {
+        ensureInitialized(context);
+        String value = prefs(context).getString(LUNCH_LABEL, "Pause de midi");
+        return value == null || value.trim().isEmpty() ? "Pause de midi" : value.trim();
+    }
+
+    static boolean showGapBadge(Context context) {
+        ensureInitialized(context);
+        return prefs(context).getBoolean(SHOW_GAP_BADGE, true);
+    }
+
+    static boolean showLunchBadge(Context context) {
+        ensureInitialized(context);
+        return prefs(context).getBoolean(SHOW_LUNCH_BADGE, true);
     }
 
     static String getWeekLetter(Context context, Calendar date) {
@@ -141,6 +170,13 @@ final class ScheduleStore {
             }
             root.put("_slots", slots);
 
+            JSONObject breaks = new JSONObject();
+            breaks.put("gapLabel", getGapLabel(context));
+            breaks.put("lunchLabel", getLunchLabel(context));
+            breaks.put("showGapBadge", showGapBadge(context));
+            breaks.put("showLunchBadge", showLunchBadge(context));
+            root.put("_breaks", breaks);
+
             Calendar now = Calendar.getInstance();
             String currentWeek = getWeekLetter(context, now);
             root.put("_currentWeek", currentWeek);
@@ -160,8 +196,6 @@ final class ScheduleStore {
             }
             root.put("_weeks", weeks);
 
-            // Compatibilité avec les anciennes versions de l'interface :
-            // les clés 2 à 6 correspondent à la semaine actuellement active.
             for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
                 JSONObject d = new JSONObject();
                 d.put("enabled", true);
@@ -185,11 +219,19 @@ final class ScheduleStore {
                 for (int i = 0; i < Math.min(7, slots.length()); i++) {
                     JSONObject s = slots.optJSONObject(i);
                     if (s == null) continue;
-                    String start = s.optString("start", DEFAULT_START[i]);
-                    String end = s.optString("end", DEFAULT_END[i]);
-                    editor.putString("slot_" + (i + 1) + "_start", start);
-                    editor.putString("slot_" + (i + 1) + "_end", end);
+                    editor.putString("slot_" + (i + 1) + "_start",
+                            s.optString("start", DEFAULT_START[i]));
+                    editor.putString("slot_" + (i + 1) + "_end",
+                            s.optString("end", DEFAULT_END[i]));
                 }
+            }
+
+            JSONObject breaks = root.optJSONObject("_breaks");
+            if (breaks != null) {
+                editor.putString(GAP_LABEL, breaks.optString("gapLabel", "Trou"));
+                editor.putString(LUNCH_LABEL, breaks.optString("lunchLabel", "Pause de midi"));
+                editor.putBoolean(SHOW_GAP_BADGE, breaks.optBoolean("showGapBadge", true));
+                editor.putBoolean(SHOW_LUNCH_BADGE, breaks.optBoolean("showLunchBadge", true));
             }
 
             String requestedCurrent = root.optString("_currentWeek", "");
@@ -214,7 +256,6 @@ final class ScheduleStore {
                     }
                 }
             } else {
-                // Import d'un ancien format : on duplique l'emploi du temps dans A et B.
                 for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
                     JSONObject d = root.optJSONObject(String.valueOf(day));
                     if (d == null) continue;
