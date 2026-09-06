@@ -95,16 +95,20 @@ final class UiPolishAndSchoolCalendarUi {
                   document.querySelectorAll('.themeButton').forEach(b=>b.classList.toggle('active',b.dataset.theme===id));
                 }
 
+                let stickyTheme=EXTRA_THEMES[ui().theme]?ui().theme:null;
                 let themeBusy=false;
+                function restoreStickyTheme(){
+                  if(!stickyTheme)return;setTimeout(()=>{const o=ui();if(o.theme!==stickyTheme){o.theme=stickyTheme;saveUi(o)}applyExtraTheme(stickyTheme);renderExtraThemes()},15);
+                }
                 function renderExtraThemes(){
                   if(themeBusy)return;const grid=document.getElementById('themeGrid');if(!grid)return;themeBusy=true;
-                  const current=ui().theme||'blue';
+                  const nativeCurrent=ui().theme||'blue';const current=stickyTheme||nativeCurrent;
                   Object.keys(EXTRA_THEMES).forEach(id=>{
                     let b=grid.querySelector('[data-theme="'+id+'"]');const th=EXTRA_THEMES[id];
                     if(!b){b=document.createElement('button');b.type='button';b.className='themeButton extraTheme';b.dataset.theme=id;b.innerHTML='<span class="themeSwatch" style="background:linear-gradient(135deg,'+th.a+','+th.s+')"></span><span class="themeName"></span>';grid.appendChild(b)}
                     const n=b.querySelector('.themeName');if(n)n.textContent=th[lang()]||th.fr;
                     b.classList.toggle('active',current===id);
-                    b.onclick=()=>{const o=ui();o.theme=id;saveUi(o);applyExtraTheme(id);setTimeout(refresh,20)};
+                    b.onclick=()=>{stickyTheme=id;const o=ui();o.theme=id;saveUi(o);applyExtraTheme(id);setTimeout(refresh,20)};
                   });
                   if(EXTRA_THEMES[current])applyExtraTheme(current);
                   themeBusy=false;
@@ -113,9 +117,14 @@ final class UiPolishAndSchoolCalendarUi {
                 function defaultSchoolYear(){
                   const d=new Date(),y=d.getFullYear(),m=d.getMonth()+1;return (m>=8?y:y-1)+'-'+(m>=8?y+1:y);
                 }
+                function vacationName(name){
+                  const names={
+                    'Toussaint':{en:'Autumn break',de:'Herbstferien'},'Noël':{en:'Christmas break',de:'Weihnachtsferien'},'Hiver':{en:'Winter break',de:'Winterferien'},'Printemps':{en:'Spring break',de:'Frühlingsferien'},'Été':{en:'Summer break',de:'Sommerferien'},'Pont de l’Ascension':{en:'Ascension break',de:'Christi-Himmelfahrt-Brückentag'}
+                  };const n=names[name];return n?(lang()==='en'?n.en:(lang()==='de'?n.de:name)):name;
+                }
                 function schoolRanges(year,zone){
                   const data=SCHOOL[year];if(!data)return [];
-                  return (data.common||[]).concat(data[zone]||[]).map(x=>({start:x[0],end:x[1],label:'Vacances scolaires · '+x[2],source:'schoolCalendar'}));
+                  return (data.common||[]).concat(data[zone]||[]).map(x=>({start:x[0],end:x[1],label:tx('Vacances scolaires · ','School holidays · ','Schulferien · ')+vacationName(x[2]),source:'schoolCalendar'}));
                 }
                 function applySchoolCalendar(){
                   const a=advanced();const enabled=document.getElementById('schoolEnabled')?document.getElementById('schoolEnabled').checked:false;
@@ -158,9 +167,14 @@ final class UiPolishAndSchoolCalendarUi {
                 if(typeof oldAdv==='function'&&!oldAdv.__polishWrapped){const w=function(){const r=oldAdv.apply(this,arguments);setTimeout(refresh,0);return r};w.__polishWrapped=true;window.refreshAdvancedFeatures=w}
 
                 const settings=document.getElementById('settingsBtn');if(settings)settings.addEventListener('click',()=>setTimeout(refresh,30));
-                const appFont=document.getElementById('appFont');if(appFont)appFont.addEventListener('input',()=>setTimeout(applyResponsive,0));
+                const appFont=document.getElementById('appFont');if(appFont){appFont.addEventListener('input',()=>{setTimeout(applyResponsive,0);restoreStickyTheme()});appFont.addEventListener('change',restoreStickyTheme)}
+                const widgetFont=document.getElementById('widgetFont');if(widgetFont){widgetFont.addEventListener('input',restoreStickyTheme);widgetFont.addEventListener('change',restoreStickyTheme)}
+                const language=document.getElementById('languageSelect');if(language)language.addEventListener('change',restoreStickyTheme);
                 const cycle=document.getElementById('advCycle');if(cycle)cycle.addEventListener('change',()=>setTimeout(applyResponsive,0));
-                const grid=document.getElementById('themeGrid');if(grid){const mo=new MutationObserver(()=>{if(!themeBusy)setTimeout(renderExtraThemes,0)});mo.observe(grid,{childList:true})}
+                const grid=document.getElementById('themeGrid');if(grid){
+                  grid.addEventListener('click',e=>{const b=e.target.closest('.themeButton');if(b&&!b.classList.contains('extraTheme'))stickyTheme=null});
+                  const mo=new MutationObserver(()=>{if(!themeBusy)setTimeout(renderExtraThemes,0)});mo.observe(grid,{childList:true});
+                }
                 refresh();
               } catch(e) { console.log('UI polish/school calendar',e); }
             })();
