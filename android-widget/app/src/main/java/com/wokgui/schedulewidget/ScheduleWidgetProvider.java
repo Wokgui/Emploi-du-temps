@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.view.View;
 import android.widget.RemoteViews;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
@@ -93,18 +94,24 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
 
         NextCourseInfo next = findNextCourse(context, now);
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_schedule);
-        views.setTextColor(R.id.tvKind, 0xFF0AA6A6);
+        views.setTextViewText(R.id.tvHeaderDate, formatWidgetDate(now));
+        views.setTextColor(R.id.tvKind, 0xFF087F8B);
         views.setTextColor(R.id.tvStatus, 0xFF101936);
         views.setTextColor(R.id.tvSubstatus, 0xFF5A667A);
+        views.setViewVisibility(R.id.tvKindActive, View.GONE);
+        views.setViewVisibility(R.id.tvKind, View.VISIBLE);
+        views.setViewVisibility(R.id.tvRemaining, View.GONE);
+        views.setViewVisibility(R.id.tvProgressPercent, View.GONE);
 
         if (current != null) {
-            views.setTextViewText(R.id.tvKind, "● EN COURS");
+            views.setViewVisibility(R.id.tvKind, View.GONE);
+            views.setViewVisibility(R.id.tvKindActive, View.VISIBLE);
+            views.setTextViewText(R.id.tvKindActive, "●  En cours");
             views.setTextViewText(R.id.tvStatus, current.label);
             views.setTextViewText(R.id.tvSubstatus,
                     current.start + "–" + current.end + " · salle " + room(current.room));
-            views.setTextColor(R.id.tvKind, 0xFF1178E8);
-            views.setTextColor(R.id.tvStatus, 0xFF0B5FC6);
-            views.setTextColor(R.id.tvSubstatus, 0xFF334155);
+            views.setTextColor(R.id.tvStatus, 0xFF101936);
+            views.setTextColor(R.id.tvSubstatus, 0xFF39465A);
         } else if (inLunch) {
             String start = ScheduleStore.getSlotEnd(context, 4);
             String end = ScheduleStore.getSlotStart(context, 5);
@@ -138,11 +145,18 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
 
         if (current != null) {
             int progress = courseProgress(current, minute);
+            int remaining = Math.max(0, ScheduleData.toMinutes(current.end) - minute);
             views.setViewVisibility(R.id.classProgress, View.VISIBLE);
             views.setProgressBar(R.id.classProgress, 100, progress, false);
+            views.setViewVisibility(R.id.tvProgressPercent, View.VISIBLE);
+            views.setTextViewText(R.id.tvProgressPercent, progress + "%");
+            views.setViewVisibility(R.id.tvRemaining, View.VISIBLE);
+            views.setTextViewText(R.id.tvRemaining, remainingLabel(remaining));
         } else {
             views.setProgressBar(R.id.classProgress, 100, 0, false);
             views.setViewVisibility(R.id.classProgress, View.GONE);
+            views.setViewVisibility(R.id.tvProgressPercent, View.GONE);
+            views.setViewVisibility(R.id.tvRemaining, View.GONE);
         }
 
         Intent listIntent = new Intent(context, UpcomingCoursesService.class);
@@ -242,6 +256,23 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
             cursor.add(Calendar.DAY_OF_YEAR, 1);
         }
         return null;
+    }
+
+    private static String formatWidgetDate(Calendar now) {
+        String date = new SimpleDateFormat("EEEE d MMMM", Locale.FRANCE).format(now.getTime());
+        if (!date.isEmpty()) date = Character.toUpperCase(date.charAt(0)) + date.substring(1);
+        return date + " · Semaine " + now.get(Calendar.WEEK_OF_YEAR);
+    }
+
+    private static String remainingLabel(int minutes) {
+        if (minutes <= 0) return "Fin du cours";
+        int h = minutes / 60;
+        int m = minutes % 60;
+        if (h > 0 && m > 0) return h + " h " + m + " restantes";
+        if (h == 1) return "1 h restante";
+        if (h > 1) return h + " h restantes";
+        if (m == 1) return "1 min restante";
+        return m + " min restantes";
     }
 
     private static String minuteLabel(int minute) {
