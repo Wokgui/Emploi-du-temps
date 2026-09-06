@@ -4,20 +4,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:paddingLeft="0dp"
-    android:paddingTop="0dp"
-    android:paddingRight="0dp"
-    android:paddingBottom="0dp"
+    android:padding="0dp"
     android:background="@drawable/widget_background">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingLeft="10dp"
-        android:paddingTop="6dp"
-        android:paddingRight="10dp"
-        android:paddingBottom="6dp"
+        android:paddingLeft="9dp"
+        android:paddingTop="5dp"
+        android:paddingRight="8dp"
+        android:paddingBottom="5dp"
         android:background="@drawable/widget_current_card">
 
         <LinearLayout
@@ -27,15 +24,27 @@
             android:orientation="horizontal">
 
             <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#101936"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <TextView
                 android:id="@+id/tvKindActive"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingLeft="9dp"
+                android:layout_marginLeft="6dp"
+                android:paddingLeft="8dp"
                 android:paddingTop="3dp"
-                android:paddingRight="9dp"
+                android:paddingRight="8dp"
                 android:paddingBottom="3dp"
                 android:background="@drawable/widget_badge_blue"
-                android:text="●  En cours"
+                android:text="● En cours"
                 android:textColor="#FFFFFF"
                 android:textSize="9sp"
                 android:textStyle="bold"
@@ -45,9 +54,10 @@
                 android:id="@+id/tvKind"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingLeft="9dp"
+                android:layout_marginLeft="6dp"
+                android:paddingLeft="8dp"
                 android:paddingTop="3dp"
-                android:paddingRight="9dp"
+                android:paddingRight="8dp"
                 android:paddingBottom="3dp"
                 android:background="@drawable/widget_badge_blue"
                 android:text="Prochain cours"
@@ -57,40 +67,29 @@
 
             <TextView
                 android:id="@+id/tvTileDate"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginLeft="8dp"
+                android:layout_marginLeft="6dp"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:textColor="#59677C"
-                android:textSize="8sp" />
+                android:textColor="#4F5E73"
+                android:textSize="8.5sp" />
 
             <ImageView
                 android:id="@+id/courseIcon"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:padding="6dp"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_marginLeft="5dp"
+                android:padding="5dp"
                 android:background="@drawable/widget_icon_circle"
-                android:src="@drawable/ic_school"
-                android:contentDescription="Cours" />
+                android:src="@drawable/ic_edit"
+                android:contentDescription="Modifier" />
         </LinearLayout>
-
-        <TextView
-            android:id="@+id/tvStatus"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:textColor="#101936"
-            android:textSize="18sp"
-            android:textStyle="bold" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="1dp"
+            android:layout_marginTop="2dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -102,7 +101,7 @@
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:textColor="#465369"
-                android:textSize="9sp" />
+                android:textSize="10sp" />
 
             <TextView
                 android:id="@+id/tvRemaining"
@@ -111,14 +110,14 @@
                 android:layout_marginLeft="7dp"
                 android:maxLines="1"
                 android:textColor="#465369"
-                android:textSize="8sp"
+                android:textSize="9sp"
                 android:visibility="gone" />
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="3dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -139,7 +138,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="7dp"
                 android:textColor="#0877F9"
-                android:textSize="9sp"
+                android:textSize="10sp"
                 android:textStyle="bold"
                 android:visibility="gone" />
         </LinearLayout>
@@ -148,19 +147,18 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:layout_marginBottom="0dp"
+        android:layout_marginTop="2dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingLeft="4dp"
-        android:paddingRight="4dp">
+        android:paddingLeft="7dp"
+        android:paddingRight="7dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="À suivre"
             android:textColor="#087F8B"
-            android:textSize="10sp"
+            android:textSize="11sp"
             android:textStyle="bold" />
 
         <TextView
@@ -194,5 +192,5 @@
         android:paddingBottom="1dp"
         android:text="Aucun autre cours programmé"
         android:textColor="#647087"
-        android:textSize="9sp" />
+        android:textSize="10sp" />
 </LinearLayout>
