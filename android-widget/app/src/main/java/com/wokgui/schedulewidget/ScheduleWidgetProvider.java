@@ -7,7 +7,10 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.net.Uri;
+import android.os.Build;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.RemoteViews;
 
@@ -42,21 +45,14 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         }
     }
 
-    @Override
-    public void onEnabled(Context context) {
+    @Override public void onEnabled(Context context) {
         ScheduleStore.ensureInitialized(context);
         updateAll(context);
         scheduleNextBoundary(context);
     }
 
-    @Override
-    public void onDisabled(Context context) {
-        cancelBoundary(context);
-    }
-
-    static void refreshAll(Context context) {
-        updateAll(context);
-    }
+    @Override public void onDisabled(Context context) { cancelBoundary(context); }
+    static void refreshAll(Context context) { updateAll(context); }
 
     private static void updateAll(Context context) {
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
@@ -67,19 +63,14 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
 
     private static void updateWidget(Context context, AppWidgetManager manager, int widgetId) {
         ScheduleStore.ensureInitialized(context);
-
         Calendar now = Calendar.getInstance();
         int minute = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
         List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, now);
 
         ScheduleData.Course current = null;
         for (ScheduleData.Course c : courses) {
-            int s = ScheduleData.toMinutes(c.start);
-            int e = ScheduleData.toMinutes(c.end);
-            if (minute >= s && minute < e) {
-                current = c;
-                break;
-            }
+            int s = ScheduleData.toMinutes(c.start), e = ScheduleData.toMinutes(c.end);
+            if (minute >= s && minute < e) { current = c; break; }
         }
 
         int lunchStart = ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, 4));
@@ -88,17 +79,15 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         boolean inLunch = current == null && !courses.isEmpty() && lunchValid
                 && minute >= lunchStart && minute < lunchEnd;
         GapInfo gap = current == null && !inLunch
-                ? findCurrentGap(courses, minute, lunchStart, lunchEnd)
-                : null;
-
+                ? findCurrentGap(courses, minute, lunchStart, lunchEnd) : null;
         NextCourseInfo next = findNextCourse(context, now);
+
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_schedule);
+        applyAppearance(context, views);
 
         Calendar tileDate = (current == null && !inLunch && gap == null && next != null)
                 ? next.date : now;
         views.setTextViewText(R.id.tvTileDate, formatWidgetDate(context, tileDate));
-        views.setTextColor(R.id.tvStatus, 0xFF101936);
-        views.setTextColor(R.id.tvSubstatus, 0xFF465369);
         views.setViewVisibility(R.id.tvKindActive, View.GONE);
         views.setViewVisibility(R.id.tvKind, View.VISIBLE);
         views.setViewVisibility(R.id.tvRemaining, View.GONE);
@@ -108,40 +97,33 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         if (current != null) {
             views.setViewVisibility(R.id.tvKind, View.GONE);
             views.setViewVisibility(R.id.tvKindActive, View.VISIBLE);
-            views.setTextViewText(R.id.tvKindActive, "● En cours");
+            views.setTextViewText(R.id.tvKindActive, UiSettingsStore.t(context, "current"));
             views.setTextViewText(R.id.tvStatus, current.label);
             views.setTextViewText(R.id.tvSubstatus,
-                    current.start + " - " + current.end + " · salle " + room(current.room));
+                    current.start + " - " + current.end + " · "
+                            + UiSettingsStore.t(context, "room") + " " + room(current.room));
         } else if (inLunch) {
             String start = ScheduleStore.getSlotEnd(context, 4);
             String end = ScheduleStore.getSlotStart(context, 5);
-            views.setTextViewText(R.id.tvStatus, ScheduleStore.getLunchLabel(context));
-            views.setTextViewText(R.id.tvSubstatus, start + " - " + end + " · reprise à " + end);
-            views.setTextViewText(R.id.tvKind, "Pause");
-            views.setViewVisibility(R.id.tvKind,
-                    ScheduleStore.showLunchBadge(context) ? View.VISIBLE : View.GONE);
-            views.setTextColor(R.id.tvStatus, 0xFF7D5826);
-            views.setTextColor(R.id.tvSubstatus, 0xFF8B6A3A);
+            views.setViewVisibility(R.id.tvKind, View.GONE);
+            views.setTextViewText(R.id.tvStatus, localizedBreakLabel(context, true));
+            views.setTextViewText(R.id.tvSubstatus,
+                    start + " - " + end + " · " + UiSettingsStore.t(context, "backAt") + " " + end);
         } else if (gap != null) {
-            views.setTextViewText(R.id.tvStatus, ScheduleStore.getGapLabel(context));
+            views.setViewVisibility(R.id.tvKind, View.GONE);
+            views.setTextViewText(R.id.tvStatus, localizedBreakLabel(context, false));
             views.setTextViewText(R.id.tvSubstatus,
                     minuteLabel(gap.start) + " - " + minuteLabel(gap.end)
-                            + " · " + durationLabel(gap.end - gap.start)
-                            + " · prochain " + gap.next.start);
-            views.setTextViewText(R.id.tvKind, "Trou");
-            views.setViewVisibility(R.id.tvKind,
-                    ScheduleStore.showGapBadge(context) ? View.VISIBLE : View.GONE);
-            views.setTextColor(R.id.tvStatus, 0xFF4F3A88);
-            views.setTextColor(R.id.tvSubstatus, 0xFF6F6287);
+                            + " · " + durationLabel(gap.end - gap.start));
         } else if (next != null) {
-            views.setTextViewText(R.id.tvKind, "Prochain cours");
+            views.setTextViewText(R.id.tvKind, UiSettingsStore.t(context, "next"));
             views.setTextViewText(R.id.tvStatus, next.course.label);
             views.setTextViewText(R.id.tvSubstatus,
-                    next.course.start + " - " + next.course.end
-                            + " · salle " + room(next.course.room));
+                    next.course.start + " - " + next.course.end + " · "
+                            + UiSettingsStore.t(context, "room") + " " + room(next.course.room));
         } else {
-            views.setTextViewText(R.id.tvKind, "Emploi du temps");
-            views.setTextViewText(R.id.tvStatus, "Aucun cours programmé");
+            views.setViewVisibility(R.id.tvKind, View.GONE);
+            views.setTextViewText(R.id.tvStatus, UiSettingsStore.t(context, "noCourse"));
             views.setTextViewText(R.id.tvSubstatus, "");
         }
 
@@ -152,7 +134,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
             views.setViewVisibility(R.id.tvProgressPercent, View.VISIBLE);
             views.setTextViewText(R.id.tvProgressPercent, progress + "%");
             views.setViewVisibility(R.id.tvRemaining, View.VISIBLE);
-            views.setTextViewText(R.id.tvRemaining, remainingLabel(remaining));
+            views.setTextViewText(R.id.tvRemaining, remainingLabel(context, remaining));
         } else {
             views.setProgressBar(R.id.classProgress, 100, 100, false);
             views.setViewVisibility(R.id.tvProgressPercent, View.GONE);
@@ -167,66 +149,82 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
 
         Intent openIntent = new Intent(context, MainActivity.class);
         openIntent.putExtra("open_mode", "today");
-        PendingIntent openPending = PendingIntent.getActivity(
-                context, 100 + widgetId, openIntent,
+        PendingIntent openPending = PendingIntent.getActivity(context, 100 + widgetId, openIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.widgetRoot, openPending);
 
         Intent editIntent = new Intent(context, MainActivity.class);
         editIntent.putExtra("open_mode", "edit");
-        PendingIntent editPending = PendingIntent.getActivity(
-                context, 200 + widgetId, editIntent,
+        PendingIntent editPending = PendingIntent.getActivity(context, 200 + widgetId, editIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        views.setOnClickPendingIntent(R.id.courseIcon, editPending);
         views.setPendingIntentTemplate(R.id.upcomingList, editPending);
 
         manager.updateAppWidget(widgetId, views);
         manager.notifyAppWidgetViewDataChanged(widgetId, R.id.upcomingList);
     }
 
+    private static void applyAppearance(Context context, RemoteViews views) {
+        UiSettingsStore.Theme theme = UiSettingsStore.theme(context);
+        float scale = UiSettingsStore.widgetFontScale(context);
+        views.setInt(R.id.widgetRoot, "setBackgroundColor", theme.widgetSurface);
+        views.setInt(R.id.currentCard, "setBackgroundColor", theme.widgetCard);
+        views.setInt(R.id.tvKind, "setBackgroundColor", theme.accent);
+        views.setInt(R.id.tvKindActive, "setBackgroundColor", theme.accent);
+        views.setTextColor(R.id.tvStatus, theme.ink);
+        views.setTextColor(R.id.tvSubstatus, theme.muted);
+        views.setTextColor(R.id.tvTileDate, theme.muted);
+        views.setTextColor(R.id.tvRemaining, theme.muted);
+        views.setTextColor(R.id.tvProgressPercent, theme.accent);
+        views.setTextColor(R.id.emptyUpcoming, theme.muted);
+
+        views.setTextViewTextSize(R.id.tvKind, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
+        views.setTextViewTextSize(R.id.tvKindActive, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
+        views.setTextViewTextSize(R.id.tvStatus, TypedValue.COMPLEX_UNIT_SP, 19f * scale);
+        views.setTextViewTextSize(R.id.tvSubstatus, TypedValue.COMPLEX_UNIT_SP, 11f * scale);
+        views.setTextViewTextSize(R.id.tvTileDate, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
+        views.setTextViewTextSize(R.id.tvRemaining, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
+        views.setTextViewTextSize(R.id.tvProgressPercent, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
+        views.setTextViewTextSize(R.id.emptyUpcoming, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            views.setColorStateList(R.id.classProgress, "setProgressTintList", ColorStateList.valueOf(theme.accent));
+            views.setColorStateList(R.id.classProgress, "setProgressBackgroundTintList", ColorStateList.valueOf(theme.progressTrack));
+        }
+    }
+
+    private static String localizedBreakLabel(Context context, boolean lunch) {
+        String custom = lunch ? ScheduleStore.getLunchLabel(context) : ScheduleStore.getGapLabel(context);
+        if (lunch && "Pause de midi".equalsIgnoreCase(custom)) return UiSettingsStore.t(context, "lunch");
+        if (!lunch && "Trou".equalsIgnoreCase(custom)) return UiSettingsStore.t(context, "gap");
+        return custom;
+    }
+
     private static GapInfo findCurrentGap(List<ScheduleData.Course> courses, int minute,
                                           int lunchStart, int lunchEnd) {
         if (courses == null || courses.size() < 2) return null;
-
-        ScheduleData.Course previous = null;
-        ScheduleData.Course next = null;
-        int previousEnd = -1;
-        int nextStart = Integer.MAX_VALUE;
-
+        ScheduleData.Course previous = null, next = null;
+        int previousEnd = -1, nextStart = Integer.MAX_VALUE;
         for (ScheduleData.Course c : courses) {
-            int start = ScheduleData.toMinutes(c.start);
-            int end = ScheduleData.toMinutes(c.end);
-            if (end <= minute && end > previousEnd) {
-                previous = c;
-                previousEnd = end;
-            }
-            if (start > minute && start < nextStart) {
-                next = c;
-                nextStart = start;
-            }
+            int start = ScheduleData.toMinutes(c.start), end = ScheduleData.toMinutes(c.end);
+            if (end <= minute && end > previousEnd) { previous = c; previousEnd = end; }
+            if (start > minute && start < nextStart) { next = c; nextStart = start; }
         }
-
         if (previous == null || next == null || nextStart <= previousEnd
                 || minute < previousEnd || minute >= nextStart) return null;
-
         boolean lunchValid = lunchEnd > lunchStart;
         if (lunchValid && minute >= lunchStart && minute < lunchEnd) return null;
-
-        int start = previousEnd;
-        int end = nextStart;
+        int start = previousEnd, end = nextStart;
         if (lunchValid) {
             if (minute < lunchStart && end > lunchStart) end = lunchStart;
             else if (minute >= lunchEnd && start < lunchEnd) start = lunchEnd;
         }
-
         if (end <= start || minute < start || minute >= end) return null;
         return new GapInfo(start, end, next);
     }
 
     private static int courseProgress(ScheduleData.Course course, int minute) {
         if (course == null) return 0;
-        int start = ScheduleData.toMinutes(course.start);
-        int end = ScheduleData.toMinutes(course.end);
+        int start = ScheduleData.toMinutes(course.start), end = ScheduleData.toMinutes(course.end);
         int duration = end - start;
         if (duration <= 0 || minute <= start) return 0;
         if (minute >= end) return 100;
@@ -236,7 +234,6 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
     private static NextCourseInfo findNextCourse(Context context, Calendar now) {
         int nowMin = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
         Calendar cursor = (Calendar) now.clone();
-
         for (int add = 0; add < 8; add++) {
             List<ScheduleData.Course> list = ScheduleStore.getCourses(context, cursor);
             for (ScheduleData.Course c : list) {
@@ -249,21 +246,29 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
     }
 
     private static String formatWidgetDate(Context context, Calendar date) {
-        String label = new SimpleDateFormat("EEEE d MMMM", Locale.FRANCE).format(date.getTime());
+        Locale locale = UiSettingsStore.locale(context);
+        String label = new SimpleDateFormat("EEEE d MMMM", locale).format(date.getTime());
         if (!label.isEmpty()) label = Character.toUpperCase(label.charAt(0)) + label.substring(1);
-        return label + " · S" + date.get(Calendar.WEEK_OF_YEAR)
-                + " · " + ScheduleStore.getWeekLetter(context, date);
+        return label + " · S" + date.get(Calendar.WEEK_OF_YEAR) + " · " + ScheduleStore.getWeekLetter(context, date);
     }
 
-    private static String remainingLabel(int minutes) {
-        if (minutes <= 0) return "Fin du cours";
-        int h = minutes / 60;
-        int m = minutes % 60;
-        if (h > 0 && m > 0) return h + " h " + m + " restantes";
-        if (h == 1) return "1 h restante";
-        if (h > 1) return h + " h restantes";
-        if (m == 1) return "1 min restante";
-        return m + " min restantes";
+    private static String remainingLabel(Context context, int minutes) {
+        if (minutes <= 0) return UiSettingsStore.t(context, "courseEnd");
+        int h = minutes / 60, m = minutes % 60;
+        String lang = UiSettingsStore.language(context);
+        if ("de".equals(lang)) {
+            if (h > 0 && m > 0) return h + " Std. " + m + " Min. übrig";
+            if (h > 0) return h + " " + UiSettingsStore.t(context, h == 1 ? "remainingHour" : "remainingHours");
+            return m + " " + UiSettingsStore.t(context, m == 1 ? "remainingMinute" : "remainingMinutes");
+        }
+        if ("en".equals(lang)) {
+            if (h > 0 && m > 0) return h + " h " + m + " min left";
+            if (h > 0) return h + " " + UiSettingsStore.t(context, h == 1 ? "remainingHour" : "remainingHours");
+            return m + " " + UiSettingsStore.t(context, m == 1 ? "remainingMinute" : "remainingMinutes");
+        }
+        if (h > 0 && m > 0) return h + " h " + m + " min restantes";
+        if (h > 0) return h + " " + UiSettingsStore.t(context, h == 1 ? "remainingHour" : "remainingHours");
+        return m + " " + UiSettingsStore.t(context, m == 1 ? "remainingMinute" : "remainingMinutes");
     }
 
     private static String minuteLabel(int minute) {
@@ -272,68 +277,47 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
 
     private static String durationLabel(int minutes) {
         if (minutes <= 0) return "";
-        int h = minutes / 60;
-        int m = minutes % 60;
+        int h = minutes / 60, m = minutes % 60;
         if (h > 0 && m > 0) return h + " h " + m;
         if (h > 0) return h + " h";
         return m + " min";
     }
 
-    private static String room(String room) {
-        return room == null || room.trim().isEmpty() ? "—" : room;
-    }
-
-    private static int clamp(int value) {
-        return Math.max(0, Math.min(100, value));
-    }
+    private static String room(String room) { return room == null || room.trim().isEmpty() ? "—" : room; }
+    private static int clamp(int value) { return Math.max(0, Math.min(100, value)); }
 
     private static void scheduleNextBoundary(Context context) {
         Calendar now = Calendar.getInstance();
-        long nowMs = now.getTimeInMillis();
-        long targetMs = Long.MAX_VALUE;
-
+        long nowMs = now.getTimeInMillis(), targetMs = Long.MAX_VALUE;
         int nowMinute = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
         List<ScheduleData.Course> todayCourses = ScheduleStore.getCourses(context, now);
         for (ScheduleData.Course c : todayCourses) {
-            int start = ScheduleData.toMinutes(c.start);
-            int end = ScheduleData.toMinutes(c.end);
+            int start = ScheduleData.toMinutes(c.start), end = ScheduleData.toMinutes(c.end);
             if (nowMinute >= start && nowMinute < end) {
                 Calendar tick = (Calendar) now.clone();
-                tick.add(Calendar.MINUTE, 1);
-                tick.set(Calendar.SECOND, 2);
-                tick.set(Calendar.MILLISECOND, 0);
-                targetMs = tick.getTimeInMillis();
-                break;
+                tick.add(Calendar.MINUTE, 1); tick.set(Calendar.SECOND, 2); tick.set(Calendar.MILLISECOND, 0);
+                targetMs = tick.getTimeInMillis(); break;
             }
         }
-
         Calendar day = (Calendar) now.clone();
         for (int add = 0; add <= 7; add++) {
             List<Integer> boundaries = ScheduleData.boundaries(ScheduleStore.getCourses(context, day));
             boundaries.add(ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, 4)));
             boundaries.add(ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, 5)));
-
             for (int boundaryMin : boundaries) {
                 Calendar candidate = (Calendar) day.clone();
-                candidate.set(Calendar.HOUR_OF_DAY, boundaryMin / 60);
-                candidate.set(Calendar.MINUTE, boundaryMin % 60);
-                candidate.set(Calendar.SECOND, 2);
-                candidate.set(Calendar.MILLISECOND, 0);
+                candidate.set(Calendar.HOUR_OF_DAY, boundaryMin / 60); candidate.set(Calendar.MINUTE, boundaryMin % 60);
+                candidate.set(Calendar.SECOND, 2); candidate.set(Calendar.MILLISECOND, 0);
                 long candidateMs = candidate.getTimeInMillis();
                 if (candidateMs > nowMs + 1000 && candidateMs < targetMs) targetMs = candidateMs;
             }
-            day.add(Calendar.DAY_OF_YEAR, 1);
-            day.set(Calendar.HOUR_OF_DAY, 0);
-            day.set(Calendar.MINUTE, 0);
-            day.set(Calendar.SECOND, 0);
-            day.set(Calendar.MILLISECOND, 0);
+            day.add(Calendar.DAY_OF_YEAR, 1); day.set(Calendar.HOUR_OF_DAY, 0); day.set(Calendar.MINUTE, 0);
+            day.set(Calendar.SECOND, 0); day.set(Calendar.MILLISECOND, 0);
         }
-
         if (targetMs == Long.MAX_VALUE) return;
         AlarmManager alarm = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, ScheduleWidgetProvider.class).setAction(ACTION_BOUNDARY);
-        PendingIntent pending = PendingIntent.getBroadcast(
-                context, 2, intent,
+        PendingIntent pending = PendingIntent.getBroadcast(context, 2, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         alarm.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, targetMs, pending);
     }
@@ -341,31 +325,17 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
     private static void cancelBoundary(Context context) {
         AlarmManager alarm = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, ScheduleWidgetProvider.class).setAction(ACTION_BOUNDARY);
-        PendingIntent pending = PendingIntent.getBroadcast(
-                context, 2, intent,
+        PendingIntent pending = PendingIntent.getBroadcast(context, 2, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         alarm.cancel(pending);
     }
 
     private static class GapInfo {
-        final int start;
-        final int end;
-        final ScheduleData.Course next;
-
-        GapInfo(int start, int end, ScheduleData.Course next) {
-            this.start = start;
-            this.end = end;
-            this.next = next;
-        }
+        final int start, end; final ScheduleData.Course next;
+        GapInfo(int start, int end, ScheduleData.Course next) { this.start=start; this.end=end; this.next=next; }
     }
-
     private static class NextCourseInfo {
-        final Calendar date;
-        final ScheduleData.Course course;
-
-        NextCourseInfo(Calendar date, ScheduleData.Course course) {
-            this.date = date;
-            this.course = course;
-        }
+        final Calendar date; final ScheduleData.Course course;
+        NextCourseInfo(Calendar date, ScheduleData.Course course) { this.date=date; this.course=course; }
     }
 }
