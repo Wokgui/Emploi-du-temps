@@ -97,7 +97,6 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         Calendar tileDate = (current == null && !inLunch && gap == null && next != null)
                 ? next.date : now;
         views.setTextViewText(R.id.tvTileDate, formatWidgetDate(context, tileDate));
-        views.setTextColor(R.id.tvKind, 0xFFFFFFFF);
         views.setTextColor(R.id.tvStatus, 0xFF101936);
         views.setTextColor(R.id.tvSubstatus, 0xFF465369);
         views.setViewVisibility(R.id.tvKindActive, View.GONE);
@@ -109,28 +108,29 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         if (current != null) {
             views.setViewVisibility(R.id.tvKind, View.GONE);
             views.setViewVisibility(R.id.tvKindActive, View.VISIBLE);
-            views.setTextViewText(R.id.tvKindActive, "●  En cours");
+            views.setTextViewText(R.id.tvKindActive, "● En cours");
             views.setTextViewText(R.id.tvStatus, current.label);
             views.setTextViewText(R.id.tvSubstatus,
                     current.start + " - " + current.end + " · salle " + room(current.room));
-            views.setTextColor(R.id.tvStatus, 0xFF101936);
-            views.setTextColor(R.id.tvSubstatus, 0xFF39465A);
         } else if (inLunch) {
             String start = ScheduleStore.getSlotEnd(context, 4);
             String end = ScheduleStore.getSlotStart(context, 5);
-            views.setTextViewText(R.id.tvKind, "Pause de midi");
-            views.setTextViewText(R.id.tvStatus, start + " - " + end);
-            views.setTextViewText(R.id.tvSubstatus, "Reprise à " + end);
+            views.setTextViewText(R.id.tvStatus, ScheduleStore.getLunchLabel(context));
+            views.setTextViewText(R.id.tvSubstatus, start + " - " + end + " · reprise à " + end);
             views.setTextViewText(R.id.tvKind, "Pause");
+            views.setViewVisibility(R.id.tvKind,
+                    ScheduleStore.showLunchBadge(context) ? View.VISIBLE : View.GONE);
             views.setTextColor(R.id.tvStatus, 0xFF7D5826);
             views.setTextColor(R.id.tvSubstatus, 0xFF8B6A3A);
         } else if (gap != null) {
-            views.setTextViewText(R.id.tvKind, "Trou");
-            views.setTextViewText(R.id.tvStatus,
-                    minuteLabel(gap.start) + " - " + minuteLabel(gap.end)
-                            + " · " + durationLabel(gap.end - gap.start));
+            views.setTextViewText(R.id.tvStatus, ScheduleStore.getGapLabel(context));
             views.setTextViewText(R.id.tvSubstatus,
-                    "Prochain cours à " + gap.next.start + " · " + gap.next.label);
+                    minuteLabel(gap.start) + " - " + minuteLabel(gap.end)
+                            + " · " + durationLabel(gap.end - gap.start)
+                            + " · prochain " + gap.next.start);
+            views.setTextViewText(R.id.tvKind, "Trou");
+            views.setViewVisibility(R.id.tvKind,
+                    ScheduleStore.showGapBadge(context) ? View.VISIBLE : View.GONE);
             views.setTextColor(R.id.tvStatus, 0xFF4F3A88);
             views.setTextColor(R.id.tvSubstatus, 0xFF6F6287);
         } else if (next != null) {
@@ -154,7 +154,6 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
             views.setViewVisibility(R.id.tvRemaining, View.VISIBLE);
             views.setTextViewText(R.id.tvRemaining, remainingLabel(remaining));
         } else {
-            // Hors cours, la barre reste pleine afin de garder exactement sa place.
             views.setProgressBar(R.id.classProgress, 100, 100, false);
             views.setViewVisibility(R.id.tvProgressPercent, View.GONE);
             views.setViewVisibility(R.id.tvRemaining, View.GONE);
@@ -178,6 +177,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         PendingIntent editPending = PendingIntent.getActivity(
                 context, 200 + widgetId, editIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        views.setOnClickPendingIntent(R.id.courseIcon, editPending);
         views.setPendingIntentTemplate(R.id.upcomingList, editPending);
 
         manager.updateAppWidget(widgetId, views);
