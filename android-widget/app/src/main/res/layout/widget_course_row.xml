@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/rowRoot"
     android:layout_width="match_parent"
-    android:layout_height="48dp"
+    android:layout_height="42dp"
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:paddingLeft="1dp"
@@ -10,12 +10,12 @@
 
     <TextView
         android:id="@+id/rowIndex"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
         android:gravity="center"
         android:background="@drawable/widget_index_badge"
-        android:textColor="#5B687C"
-        android:textSize="9sp"
+        android:textColor="#56657A"
+        android:textSize="8sp"
         android:textStyle="bold" />
 
     <LinearLayout
@@ -29,37 +29,37 @@
             android:layout_width="1dp"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="#AAB7C8"
+            android:background="#A7B5C7"
             android:text="" />
 
         <TextView
             android:id="@+id/rowDot"
             android:layout_width="16dp"
-            android:layout_height="14dp"
+            android:layout_height="12dp"
             android:gravity="center"
             android:text="●"
-            android:textColor="#73829A"
-            android:textSize="9sp" />
+            android:textColor="#74839A"
+            android:textSize="8sp" />
 
         <TextView
             android:id="@+id/rowLineBottom"
             android:layout_width="1dp"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="#AAB7C8"
+            android:background="#A7B5C7"
             android:text="" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="0dp"
-        android:layout_height="42dp"
+        android:layout_height="38dp"
         android:layout_weight="1"
         android:orientation="vertical"
         android:gravity="center_vertical"
-        android:paddingLeft="10dp"
-        android:paddingTop="4dp"
-        android:paddingRight="10dp"
-        android:paddingBottom="4dp"
+        android:paddingLeft="9dp"
+        android:paddingTop="3dp"
+        android:paddingRight="9dp"
+        android:paddingBottom="3dp"
         android:background="@drawable/widget_course_row_background">
 
         <TextView
@@ -68,8 +68,8 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="1"
-            android:textColor="#233049"
-            android:textSize="11sp"
+            android:textColor="#17213A"
+            android:textSize="10sp"
             android:textStyle="bold" />
 
         <LinearLayout
@@ -86,7 +86,7 @@
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:textColor="#6E7B90"
+                android:textColor="#66758A"
                 android:textSize="8sp" />
 
             <TextView
@@ -95,7 +95,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dp"
                 android:maxLines="1"
-                android:textColor="#657289"
+                android:textColor="#5F6E84"
                 android:textSize="8sp" />
         </LinearLayout>
     </LinearLayout>
