@@ -67,7 +67,7 @@ public class MainActivity extends Activity {
                         applyOpenMode();
                         injectPersonalizationUi();
                         webView.evaluateJavascript(
-                                "if(window.refreshPersonalizationV2){refreshPersonalizationV2();}", null);
+                                "if(window.refreshSettingsV3){refreshSettingsV3();}", null);
                     }
             );
         }
