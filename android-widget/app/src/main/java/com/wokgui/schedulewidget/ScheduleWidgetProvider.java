@@ -98,10 +98,13 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         views.setTextColor(R.id.tvSubstatus, 0xFF5A667A);
 
         if (current != null) {
-            views.setTextViewText(R.id.tvKind, "Cours en cours");
+            views.setTextViewText(R.id.tvKind, "● EN COURS");
             views.setTextViewText(R.id.tvStatus, current.label);
             views.setTextViewText(R.id.tvSubstatus,
                     current.start + "–" + current.end + " · salle " + room(current.room));
+            views.setTextColor(R.id.tvKind, 0xFF1178E8);
+            views.setTextColor(R.id.tvStatus, 0xFF0B5FC6);
+            views.setTextColor(R.id.tvSubstatus, 0xFF334155);
         } else if (inLunch) {
             String start = ScheduleStore.getSlotEnd(context, 4);
             String end = ScheduleStore.getSlotStart(context, 5);
