@@ -24,8 +24,9 @@ public class UpcomingCoursesService extends RemoteViewsService {
         static final int GAP = 2;
         final String label, time, room, relative;
         final int type, order;
-        Item(String label, String time, String room, int type, int order, String relative) {
-            this.label=label;this.time=time;this.room=room;this.type=type;this.order=order;this.relative=relative;
+        final boolean uncertain;
+        Item(String label, String time, String room, int type, int order, String relative, boolean uncertain) {
+            this.label=label;this.time=time;this.room=room;this.type=type;this.order=order;this.relative=relative;this.uncertain=uncertain;
         }
     }
 
@@ -69,7 +70,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 targetDate=(Calendar)now.clone();threshold=currentGap.end;previousEnd=currentGap.end;
             }else{
                 ScheduleData.Course topNext=null;targetDate=null;Calendar cursor=(Calendar)now.clone();
-                for(int add=0;add<8&&topNext==null;add++){
+                for(int add=0;add<21&&topNext==null;add++){
                     List<ScheduleData.Course> courses=ScheduleStore.getCourses(context,cursor);
                     for(ScheduleData.Course c:courses){if(add==0&&ScheduleData.toMinutes(c.start)<=nowMin)continue;topNext=c;targetDate=(Calendar)cursor.clone();break;}
                     cursor.add(Calendar.DAY_OF_YEAR,1);
@@ -82,9 +83,23 @@ public class UpcomingCoursesService extends RemoteViewsService {
             for(int i=0;i<sameDay.size();i++){
                 ScheduleData.Course c=sameDay.get(i);int start=ScheduleData.toMinutes(c.start);if(start<threshold)continue;
                 appendBreaks(previousEnd,start,lunchStart,lunchEnd);
-                items.add(new Item(c.label,c.start+" - "+c.end,c.room,Item.COURSE,i+1,relativeLabel(now,targetDate,c.start)));
+                items.add(new Item(c.label,c.start+" - "+c.end,c.room,Item.COURSE,i+1,relativeLabel(now,targetDate,c.start),c.uncertain));
                 previousEnd=ScheduleData.toMinutes(c.end);
             }
+            trimForPreference();
+        }
+
+        private void trimForPreference() {
+            int maxCourses = "compact".equals(AdvancedSettingsStore.widgetFormat(context)) ? 1 : AdvancedSettingsStore.upcomingCount(context);
+            if (maxCourses <= 0) return;
+            int courses = 0, keep = items.size();
+            for (int i = 0; i < items.size(); i++) {
+                if (items.get(i).type == Item.COURSE) {
+                    courses++;
+                    if (courses >= maxCourses) { keep = i + 1; break; }
+                }
+            }
+            while (items.size() > keep) items.remove(items.size() - 1);
         }
 
         private GapInfo findCurrentGap(List<ScheduleData.Course> courses,int minute,int lunchStart,int lunchEnd){
@@ -100,13 +115,14 @@ public class UpcomingCoursesService extends RemoteViewsService {
             if(to<=from)return;boolean lunchValid=lunchEnd>lunchStart;
             if(!lunchValid||to<=lunchStart||from>=lunchEnd){addGap(from,to);return;}
             if(from<lunchStart)addGap(from,Math.min(to,lunchStart));
-            if(from<=lunchStart&&to>=lunchEnd)items.add(new Item(localizedBreakLabel(true),minuteLabel(lunchStart)+" - "+minuteLabel(lunchEnd),"",Item.LUNCH,0,""));
+            if(from<=lunchStart&&to>=lunchEnd&&AdvancedSettingsStore.showLunch(context))items.add(new Item(localizedBreakLabel(true),minuteLabel(lunchStart)+" - "+minuteLabel(lunchEnd),"",Item.LUNCH,0,"",false));
             if(to>lunchEnd)addGap(Math.max(from,lunchEnd),to);
         }
 
         private void addGap(int start,int end){
+            if(!AdvancedSettingsStore.showBreaks(context))return;
             int duration=end-start;if(duration<=0)return;
-            items.add(new Item(localizedBreakLabel(false)+" · "+durationLabel(duration),minuteLabel(start)+" - "+minuteLabel(end),"",Item.GAP,0,""));
+            items.add(new Item(localizedBreakLabel(false)+" · "+durationLabel(duration),minuteLabel(start)+" - "+minuteLabel(end),"",Item.GAP,0,"",false));
         }
 
         private String localizedBreakLabel(boolean lunch){
@@ -129,36 +145,55 @@ public class UpcomingCoursesService extends RemoteViewsService {
         private String minuteLabel(int minute){return String.format(Locale.FRANCE,"%02d:%02d",minute/60,minute%60);}
         private String durationLabel(int minutes){int h=minutes/60,m=minutes%60;if(h>0&&m>0)return h+" h "+m;if(h>0)return h+" h";return m+" min";}
 
+        private String courseMeta(Item item) {
+            boolean times=AdvancedSettingsStore.showTimes(context), room=AdvancedSettingsStore.showRoom(context);
+            if(times&&room)return item.time+" · "+UiSettingsStore.t(context,"room")+" "+(item.room.isEmpty()?"—":item.room);
+            if(times)return item.time;
+            if(room)return UiSettingsStore.t(context,"room")+" "+(item.room.isEmpty()?"—":item.room);
+            return "";
+        }
+
         @Override public RemoteViews getViewAt(int position){
             if(position<0||position>=items.size())return null;
             Item item=items.get(position);
-            RemoteViews v=new RemoteViews(context.getPackageName(),R.layout.widget_course_row);
+            String density=AdvancedSettingsStore.density(context);
+            int layout="compact".equals(density)?R.layout.widget_course_row_compact:("comfortable".equals(density)?R.layout.widget_course_row_comfortable:R.layout.widget_course_row);
+            RemoteViews v=new RemoteViews(context.getPackageName(),layout);
             float scale=UiSettingsStore.widgetFontScale(context);
             UiSettingsStore.Theme theme=UiSettingsStore.theme(context);
+            float densityScale="compact".equals(density)?.93f:("comfortable".equals(density)?1.08f:1f);
 
-            v.setTextViewTextSize(R.id.rowIndex,TypedValue.COMPLEX_UNIT_SP,8f*scale);
-            v.setTextViewTextSize(R.id.rowDot,TypedValue.COMPLEX_UNIT_SP,8f*scale);
-            v.setTextViewTextSize(R.id.rowTitle,TypedValue.COMPLEX_UNIT_SP,10.5f*scale);
-            v.setTextViewTextSize(R.id.rowMeta,TypedValue.COMPLEX_UNIT_SP,8.5f*scale);
-            v.setTextViewTextSize(R.id.rowRelative,TypedValue.COMPLEX_UNIT_SP,8.5f*scale);
+            v.setTextViewTextSize(R.id.rowIndex,TypedValue.COMPLEX_UNIT_SP,8f*scale*densityScale);
+            v.setTextViewTextSize(R.id.rowDot,TypedValue.COMPLEX_UNIT_SP,8f*scale*densityScale);
+            v.setTextViewTextSize(R.id.rowTitle,TypedValue.COMPLEX_UNIT_SP,10.5f*scale*densityScale);
+            v.setTextViewTextSize(R.id.rowMeta,TypedValue.COMPLEX_UNIT_SP,8.5f*scale*densityScale);
+            v.setTextViewTextSize(R.id.rowRelative,TypedValue.COMPLEX_UNIT_SP,8.5f*scale*densityScale);
 
-            v.setTextViewText(R.id.rowTitle,item.label);
+            v.setTextViewText(R.id.rowTitle,(item.uncertain?"⚠ ":"")+item.label);
             v.setTextViewText(R.id.rowRelative,item.relative.isEmpty()?"":"◷  "+item.relative);
             v.setViewVisibility(R.id.rowLineTop,position==0?View.INVISIBLE:View.VISIBLE);
             v.setViewVisibility(R.id.rowLineBottom,position==items.size()-1?View.INVISIBLE:View.VISIBLE);
 
             if(item.type==Item.LUNCH){
                 v.setTextViewText(R.id.rowIndex,"");v.setViewVisibility(R.id.rowIndex,View.INVISIBLE);
-                v.setTextViewText(R.id.rowMeta,item.time+" · "+UiSettingsStore.t(context,"backAt")+" "+ScheduleStore.getSlotStart(context,5));
+                String meta=AdvancedSettingsStore.showTimes(context)?item.time:"";
+                if(!meta.isEmpty())meta+=" · ";
+                meta+=UiSettingsStore.t(context,"backAt")+" "+ScheduleStore.getSlotStart(context,5);
+                v.setTextViewText(R.id.rowMeta,meta);
                 v.setTextColor(R.id.rowDot,0xFFD09A49);v.setTextColor(R.id.rowTitle,0xFF9A6212);v.setTextColor(R.id.rowMeta,0xFF8D6C39);v.setViewVisibility(R.id.rowRelative,View.GONE);
             }else if(item.type==Item.GAP){
                 v.setTextViewText(R.id.rowIndex,"");v.setViewVisibility(R.id.rowIndex,View.INVISIBLE);
-                v.setTextViewText(R.id.rowMeta,item.time+" · "+UiSettingsStore.t(context,"noClass"));
+                String meta=AdvancedSettingsStore.showTimes(context)?item.time+" · ":"";
+                meta+=UiSettingsStore.t(context,"noClass");
+                v.setTextViewText(R.id.rowMeta,meta);
                 v.setTextColor(R.id.rowDot,0xFF8B79C6);v.setTextColor(R.id.rowTitle,0xFF7254B5);v.setTextColor(R.id.rowMeta,0xFF75688C);v.setViewVisibility(R.id.rowRelative,View.GONE);
             }else{
                 v.setViewVisibility(R.id.rowIndex,View.VISIBLE);v.setTextViewText(R.id.rowIndex,String.valueOf(item.order));
-                v.setTextViewText(R.id.rowMeta,item.time+" · "+UiSettingsStore.t(context,"room")+" "+(item.room.isEmpty()?"—":item.room));
-                v.setTextColor(R.id.rowIndex,theme.accentDark);v.setTextColor(R.id.rowDot,theme.accent);v.setTextColor(R.id.rowTitle,theme.ink);v.setTextColor(R.id.rowMeta,theme.muted);v.setTextColor(R.id.rowRelative,theme.muted);
+                String meta=courseMeta(item);v.setTextViewText(R.id.rowMeta,meta);v.setViewVisibility(R.id.rowMeta,meta.isEmpty()?View.GONE:View.VISIBLE);
+                int accent=AdvancedSettingsStore.classColor(context,item.label,theme.accent);
+                int ink=theme.ink, muted=theme.muted;
+                if("high_contrast".equals(AdvancedSettingsStore.accessibility(context))){ink=0xFF000000;muted=0xFF333333;accent=0xFF0057B8;}
+                v.setTextColor(R.id.rowIndex,accent);v.setTextColor(R.id.rowDot,accent);v.setTextColor(R.id.rowTitle,ink);v.setTextColor(R.id.rowMeta,muted);v.setTextColor(R.id.rowRelative,muted);
                 v.setViewVisibility(R.id.rowRelative,item.relative.isEmpty()?View.GONE:View.VISIBLE);
             }
 
@@ -168,7 +203,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
         }
 
         @Override public RemoteViews getLoadingView(){return null;}
-        @Override public int getViewTypeCount(){return 1;}
+        @Override public int getViewTypeCount(){return 3;}
         @Override public long getItemId(int position){return position;}
         @Override public boolean hasStableIds(){return true;}
     }
