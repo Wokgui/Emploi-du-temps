@@ -183,7 +183,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             if (from <= lunchStart && to >= lunchEnd) {
                 items.add(new Item(
                         "Pause de midi",
-                        minuteLabel(lunchStart) + "–" + minuteLabel(lunchEnd),
+                        minuteLabel(lunchStart) + " - " + minuteLabel(lunchEnd),
                         "",
                         Item.LUNCH,
                         0,
@@ -198,7 +198,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             if (duration <= 0) return;
             items.add(new Item(
                     "Trou · " + durationLabel(duration),
-                    minuteLabel(start) + "–" + minuteLabel(end),
+                    minuteLabel(start) + " - " + minuteLabel(end),
                     "",
                     Item.GAP,
                     0,
@@ -241,35 +241,40 @@ public class UpcomingCoursesService extends RemoteViewsService {
             if (position < 0 || position >= items.size()) return null;
             Item item = items.get(position);
             RemoteViews v = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
+
             v.setTextViewText(R.id.rowTitle, item.label);
             v.setTextViewText(R.id.rowRelative, item.relative.isEmpty() ? "" : "◷  " + item.relative);
+            v.setViewVisibility(R.id.rowLineTop, position == 0 ? View.INVISIBLE : View.VISIBLE);
+            v.setViewVisibility(R.id.rowLineBottom,
+                    position == items.size() - 1 ? View.INVISIBLE : View.VISIBLE);
 
             if (item.type == Item.LUNCH) {
-                v.setTextViewText(R.id.rowIndex, "•");
+                v.setTextViewText(R.id.rowIndex, "");
+                v.setViewVisibility(R.id.rowIndex, View.INVISIBLE);
                 v.setTextViewText(R.id.rowMeta,
                         item.time + " · reprise à " + ScheduleStore.getSlotStart(context, 5));
-                v.setTextColor(R.id.rowIndex, 0xFF9A5C09);
-                v.setTextColor(R.id.rowDot, 0xFFD0A35D);
-                v.setTextColor(R.id.rowTitle, 0xFF9A5C09);
-                v.setTextColor(R.id.rowMeta, 0xFF8B6A3A);
+                v.setTextColor(R.id.rowDot, 0xFFD09A49);
+                v.setTextColor(R.id.rowTitle, 0xFF9A6212);
+                v.setTextColor(R.id.rowMeta, 0xFF8D6C39);
                 v.setViewVisibility(R.id.rowRelative, View.GONE);
             } else if (item.type == Item.GAP) {
-                v.setTextViewText(R.id.rowIndex, "•");
+                v.setTextViewText(R.id.rowIndex, "");
+                v.setViewVisibility(R.id.rowIndex, View.INVISIBLE);
                 v.setTextViewText(R.id.rowMeta, item.time + " · sans cours");
-                v.setTextColor(R.id.rowIndex, 0xFF7357B8);
-                v.setTextColor(R.id.rowDot, 0xFF8E79C8);
-                v.setTextColor(R.id.rowTitle, 0xFF7357B8);
-                v.setTextColor(R.id.rowMeta, 0xFF6F6287);
+                v.setTextColor(R.id.rowDot, 0xFF8B79C6);
+                v.setTextColor(R.id.rowTitle, 0xFF7254B5);
+                v.setTextColor(R.id.rowMeta, 0xFF75688C);
                 v.setViewVisibility(R.id.rowRelative, View.GONE);
             } else {
+                v.setViewVisibility(R.id.rowIndex, View.VISIBLE);
                 v.setTextViewText(R.id.rowIndex, String.valueOf(item.order));
                 v.setTextViewText(R.id.rowMeta,
                         item.time + " · salle " + (item.room.isEmpty() ? "—" : item.room));
-                v.setTextColor(R.id.rowIndex, 0xFF5F6B80);
-                v.setTextColor(R.id.rowDot, 0xFF7F8DA3);
-                v.setTextColor(R.id.rowTitle, 0xFF101936);
-                v.setTextColor(R.id.rowMeta, 0xFF647087);
-                v.setTextColor(R.id.rowRelative, 0xFF637087);
+                v.setTextColor(R.id.rowIndex, 0xFF57667C);
+                v.setTextColor(R.id.rowDot, 0xFF73829A);
+                v.setTextColor(R.id.rowTitle, 0xFF17213A);
+                v.setTextColor(R.id.rowMeta, 0xFF66758A);
+                v.setTextColor(R.id.rowRelative, 0xFF5F6E84);
                 v.setViewVisibility(R.id.rowRelative,
                         item.relative.isEmpty() ? View.GONE : View.VISIBLE);
             }
