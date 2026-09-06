@@ -2,6 +2,7 @@ package com.wokgui.schedulewidget;
 
 import android.content.Context;
 import android.content.Intent;
+import android.view.View;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
 
@@ -25,12 +26,16 @@ public class UpcomingCoursesService extends RemoteViewsService {
         final String time;
         final String room;
         final int type;
+        final int order;
+        final String relative;
 
-        Item(String label, String time, String room, int type) {
+        Item(String label, String time, String room, int type, int order, String relative) {
             this.label = label;
             this.time = time;
             this.room = room;
             this.type = type;
+            this.order = order;
+            this.relative = relative;
         }
     }
 
@@ -120,12 +125,19 @@ public class UpcomingCoursesService extends RemoteViewsService {
             List<ScheduleData.Course> sameDay = ScheduleStore.getCourses(
                     context, targetDate.get(Calendar.DAY_OF_WEEK));
 
-            for (ScheduleData.Course c : sameDay) {
+            for (int i = 0; i < sameDay.size(); i++) {
+                ScheduleData.Course c = sameDay.get(i);
                 int start = ScheduleData.toMinutes(c.start);
                 if (start < threshold) continue;
 
                 appendBreaks(previousEnd, start, lunchStart, lunchEnd);
-                items.add(new Item(c.label, c.start, c.room, Item.COURSE));
+                items.add(new Item(
+                        c.label,
+                        c.start,
+                        c.room,
+                        Item.COURSE,
+                        i + 1,
+                        relativeLabel(now, targetDate, c.start)));
                 previousEnd = ScheduleData.toMinutes(c.end);
             }
         }
@@ -173,7 +185,9 @@ public class UpcomingCoursesService extends RemoteViewsService {
                         "Pause de midi",
                         minuteLabel(lunchStart) + "–" + minuteLabel(lunchEnd),
                         "",
-                        Item.LUNCH));
+                        Item.LUNCH,
+                        0,
+                        ""));
             }
 
             if (to > lunchEnd) addGap(Math.max(from, lunchEnd), to);
@@ -186,7 +200,29 @@ public class UpcomingCoursesService extends RemoteViewsService {
                     "Trou · " + durationLabel(duration),
                     minuteLabel(start) + "–" + minuteLabel(end),
                     "",
-                    Item.GAP));
+                    Item.GAP,
+                    0,
+                    ""));
+        }
+
+        private String relativeLabel(Calendar now, Calendar targetDate, String start) {
+            Calendar target = (Calendar) targetDate.clone();
+            int minute = ScheduleData.toMinutes(start);
+            target.set(Calendar.HOUR_OF_DAY, minute / 60);
+            target.set(Calendar.MINUTE, minute % 60);
+            target.set(Calendar.SECOND, 0);
+            target.set(Calendar.MILLISECOND, 0);
+
+            long diff = Math.max(0L, (target.getTimeInMillis() - now.getTimeInMillis()) / 60000L);
+            if (diff <= 0) return "";
+            if (diff < 60) return "Dans " + diff + " min";
+
+            boolean tomorrow = target.get(Calendar.YEAR) == now.get(Calendar.YEAR)
+                    && target.get(Calendar.DAY_OF_YEAR) == now.get(Calendar.DAY_OF_YEAR) + 1;
+            if (tomorrow && diff >= 12 * 60) return "Demain";
+
+            long hours = Math.max(1L, Math.round(diff / 60.0));
+            return "Dans " + hours + " h";
         }
 
         private String minuteLabel(int minute) {
@@ -206,27 +242,46 @@ public class UpcomingCoursesService extends RemoteViewsService {
             Item item = items.get(position);
             RemoteViews v = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
             v.setTextViewText(R.id.rowTitle, item.label);
+            v.setTextViewText(R.id.rowRelative, item.relative.isEmpty() ? "" : "◷  " + item.relative);
 
             if (item.type == Item.LUNCH) {
+                v.setTextViewText(R.id.rowIndex, "•");
                 v.setTextViewText(R.id.rowMeta,
                         item.time + " · reprise à " + ScheduleStore.getSlotStart(context, 5));
+                v.setTextColor(R.id.rowIndex, 0xFF9A5C09);
+                v.setTextColor(R.id.rowDot, 0xFFD0A35D);
                 v.setTextColor(R.id.rowTitle, 0xFF9A5C09);
                 v.setTextColor(R.id.rowMeta, 0xFF8B6A3A);
+                v.setViewVisibility(R.id.rowRelative, View.GONE);
             } else if (item.type == Item.GAP) {
+                v.setTextViewText(R.id.rowIndex, "•");
                 v.setTextViewText(R.id.rowMeta, item.time + " · sans cours");
+                v.setTextColor(R.id.rowIndex, 0xFF7357B8);
+                v.setTextColor(R.id.rowDot, 0xFF8E79C8);
                 v.setTextColor(R.id.rowTitle, 0xFF7357B8);
                 v.setTextColor(R.id.rowMeta, 0xFF6F6287);
+                v.setViewVisibility(R.id.rowRelative, View.GONE);
             } else {
+                v.setTextViewText(R.id.rowIndex, String.valueOf(item.order));
                 v.setTextViewText(R.id.rowMeta,
                         item.time + " · salle " + (item.room.isEmpty() ? "—" : item.room));
+                v.setTextColor(R.id.rowIndex, 0xFF5F6B80);
+                v.setTextColor(R.id.rowDot, 0xFF7F8DA3);
                 v.setTextColor(R.id.rowTitle, 0xFF101936);
                 v.setTextColor(R.id.rowMeta, 0xFF647087);
+                v.setTextColor(R.id.rowRelative, 0xFF637087);
+                v.setViewVisibility(R.id.rowRelative,
+                        item.relative.isEmpty() ? View.GONE : View.VISIBLE);
             }
 
             Intent fill = new Intent();
             fill.putExtra("open_mode", item.type == Item.COURSE ? "edit" : "today");
+            v.setOnClickFillInIntent(R.id.rowRoot, fill);
             v.setOnClickFillInIntent(R.id.rowTitle, fill);
             v.setOnClickFillInIntent(R.id.rowMeta, fill);
+            v.setOnClickFillInIntent(R.id.rowRelative, fill);
+            v.setOnClickFillInIntent(R.id.rowIndex, fill);
+            v.setOnClickFillInIntent(R.id.rowDot, fill);
             return v;
         }
 
