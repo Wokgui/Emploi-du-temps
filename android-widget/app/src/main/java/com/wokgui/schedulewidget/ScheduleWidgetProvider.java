@@ -69,9 +69,8 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         ScheduleStore.ensureInitialized(context);
 
         Calendar now = Calendar.getInstance();
-        int today = now.get(Calendar.DAY_OF_WEEK);
         int minute = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
-        List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, today);
+        List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, now);
 
         ScheduleData.Course current = null;
         for (ScheduleData.Course c : courses) {
@@ -97,7 +96,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
 
         Calendar tileDate = (current == null && !inLunch && gap == null && next != null)
                 ? next.date : now;
-        views.setTextViewText(R.id.tvTileDate, formatWidgetDate(tileDate));
+        views.setTextViewText(R.id.tvTileDate, formatWidgetDate(context, tileDate));
         views.setTextColor(R.id.tvKind, 0xFFFFFFFF);
         views.setTextColor(R.id.tvStatus, 0xFF101936);
         views.setTextColor(R.id.tvSubstatus, 0xFF465369);
@@ -122,17 +121,16 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(R.id.tvKind, "Pause de midi");
             views.setTextViewText(R.id.tvStatus, start + " - " + end);
             views.setTextViewText(R.id.tvSubstatus, "Reprise à " + end);
-            views.setTextColor(R.id.tvKind, 0xFFFFFFFF);
+            views.setTextViewText(R.id.tvKind, "Pause");
             views.setTextColor(R.id.tvStatus, 0xFF7D5826);
             views.setTextColor(R.id.tvSubstatus, 0xFF8B6A3A);
         } else if (gap != null) {
-            views.setTextViewText(R.id.tvKind, "Trou dans l’emploi du temps");
+            views.setTextViewText(R.id.tvKind, "Trou");
             views.setTextViewText(R.id.tvStatus,
                     minuteLabel(gap.start) + " - " + minuteLabel(gap.end)
                             + " · " + durationLabel(gap.end - gap.start));
             views.setTextViewText(R.id.tvSubstatus,
                     "Prochain cours à " + gap.next.start + " · " + gap.next.label);
-            views.setTextColor(R.id.tvKind, 0xFFFFFFFF);
             views.setTextColor(R.id.tvStatus, 0xFF4F3A88);
             views.setTextColor(R.id.tvSubstatus, 0xFF6F6287);
         } else if (next != null) {
@@ -156,8 +154,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
             views.setViewVisibility(R.id.tvRemaining, View.VISIBLE);
             views.setTextViewText(R.id.tvRemaining, remainingLabel(remaining));
         } else {
-            // Hors cours, la barre reste visible et pleine pour conserver exactement
-            // l'espace prévu par la maquette. Elle repart à 0 au début du cours suivant.
+            // Hors cours, la barre reste pleine afin de garder exactement sa place.
             views.setProgressBar(R.id.classProgress, 100, 100, false);
             views.setViewVisibility(R.id.tvProgressPercent, View.GONE);
             views.setViewVisibility(R.id.tvRemaining, View.GONE);
@@ -181,8 +178,8 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         PendingIntent editPending = PendingIntent.getActivity(
                 context, 200 + widgetId, editIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
         views.setPendingIntentTemplate(R.id.upcomingList, editPending);
+
         manager.updateAppWidget(widgetId, views);
         manager.notifyAppWidgetViewDataChanged(widgetId, R.id.upcomingList);
     }
@@ -218,11 +215,8 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         int start = previousEnd;
         int end = nextStart;
         if (lunchValid) {
-            if (minute < lunchStart && end > lunchStart) {
-                end = lunchStart;
-            } else if (minute >= lunchEnd && start < lunchEnd) {
-                start = lunchEnd;
-            }
+            if (minute < lunchStart && end > lunchStart) end = lunchStart;
+            else if (minute >= lunchEnd && start < lunchEnd) start = lunchEnd;
         }
 
         if (end <= start || minute < start || minute >= end) return null;
@@ -244,8 +238,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         Calendar cursor = (Calendar) now.clone();
 
         for (int add = 0; add < 8; add++) {
-            int day = cursor.get(Calendar.DAY_OF_WEEK);
-            List<ScheduleData.Course> list = ScheduleStore.getCourses(context, day);
+            List<ScheduleData.Course> list = ScheduleStore.getCourses(context, cursor);
             for (ScheduleData.Course c : list) {
                 if (add == 0 && ScheduleData.toMinutes(c.start) <= nowMin) continue;
                 return new NextCourseInfo((Calendar) cursor.clone(), c);
@@ -255,10 +248,11 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         return null;
     }
 
-    private static String formatWidgetDate(Calendar date) {
+    private static String formatWidgetDate(Context context, Calendar date) {
         String label = new SimpleDateFormat("EEEE d MMMM", Locale.FRANCE).format(date.getTime());
         if (!label.isEmpty()) label = Character.toUpperCase(label.charAt(0)) + label.substring(1);
-        return label + " · S" + date.get(Calendar.WEEK_OF_YEAR);
+        return label + " · S" + date.get(Calendar.WEEK_OF_YEAR)
+                + " · " + ScheduleStore.getWeekLetter(context, date);
     }
 
     private static String remainingLabel(int minutes) {
@@ -299,8 +293,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         long targetMs = Long.MAX_VALUE;
 
         int nowMinute = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
-        List<ScheduleData.Course> todayCourses = ScheduleStore.getCourses(
-                context, now.get(Calendar.DAY_OF_WEEK));
+        List<ScheduleData.Course> todayCourses = ScheduleStore.getCourses(context, now);
         for (ScheduleData.Course c : todayCourses) {
             int start = ScheduleData.toMinutes(c.start);
             int end = ScheduleData.toMinutes(c.end);
@@ -316,8 +309,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
 
         Calendar day = (Calendar) now.clone();
         for (int add = 0; add <= 7; add++) {
-            List<Integer> boundaries = ScheduleData.boundaries(
-                    ScheduleStore.getCourses(context, day.get(Calendar.DAY_OF_WEEK)));
+            List<Integer> boundaries = ScheduleData.boundaries(ScheduleStore.getCourses(context, day));
             boundaries.add(ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, 4)));
             boundaries.add(ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, 5)));
 
@@ -370,6 +362,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
     private static class NextCourseInfo {
         final Calendar date;
         final ScheduleData.Course course;
+
         NextCourseInfo(Calendar date, ScheduleData.Course course) {
             this.date = date;
             this.course = course;
