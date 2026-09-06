@@ -45,7 +45,7 @@ final class CourseColorUi {
                   return 'fr';
                 }
                 function label(fr,en,de){const l=language();return l==='en'?en:(l==='de'?de:fr)}
-                function norm(s){return String(s||'').trim().replace(/\s+/g,' ').toLocaleLowerCase()}
+                function norm(s){return String(s||'').trim().replace(/ +/g,' ').toLocaleLowerCase()}
 
                 const style=document.createElement('style');
                 style.textContent=`
@@ -158,7 +158,7 @@ final class CourseColorUi {
 
                 function rowRange(row){
                   const time=row?row.querySelector('.time'):null;if(!time)return null;
-                  const txt=time.textContent||'';const found=txt.match(/(\d{1,2}:\d{2})/g);if(!found||found.length<2)return null;
+                  const txt=time.textContent||'';const found=txt.match(/[0-2]?[0-9]:[0-5][0-9]/g);if(!found||found.length<2)return null;
                   return {start:min(found[0]),end:min(found[1])};
                 }
 
