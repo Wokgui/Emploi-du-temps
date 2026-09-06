@@ -98,13 +98,14 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         Calendar tileDate = (current == null && !inLunch && gap == null && next != null)
                 ? next.date : now;
         views.setTextViewText(R.id.tvTileDate, formatWidgetDate(tileDate));
-        views.setTextColor(R.id.tvKind, 0xFF087F8B);
+        views.setTextColor(R.id.tvKind, 0xFFFFFFFF);
         views.setTextColor(R.id.tvStatus, 0xFF101936);
         views.setTextColor(R.id.tvSubstatus, 0xFF465369);
         views.setViewVisibility(R.id.tvKindActive, View.GONE);
         views.setViewVisibility(R.id.tvKind, View.VISIBLE);
         views.setViewVisibility(R.id.tvRemaining, View.GONE);
         views.setViewVisibility(R.id.tvProgressPercent, View.GONE);
+        views.setViewVisibility(R.id.classProgress, View.VISIBLE);
 
         if (current != null) {
             views.setViewVisibility(R.id.tvKind, View.GONE);
@@ -121,7 +122,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(R.id.tvKind, "Pause de midi");
             views.setTextViewText(R.id.tvStatus, start + " - " + end);
             views.setTextViewText(R.id.tvSubstatus, "Reprise à " + end);
-            views.setTextColor(R.id.tvKind, 0xFF9A6212);
+            views.setTextColor(R.id.tvKind, 0xFFFFFFFF);
             views.setTextColor(R.id.tvStatus, 0xFF7D5826);
             views.setTextColor(R.id.tvSubstatus, 0xFF8B6A3A);
         } else if (gap != null) {
@@ -131,7 +132,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
                             + " · " + durationLabel(gap.end - gap.start));
             views.setTextViewText(R.id.tvSubstatus,
                     "Prochain cours à " + gap.next.start + " · " + gap.next.label);
-            views.setTextColor(R.id.tvKind, 0xFF7254B5);
+            views.setTextColor(R.id.tvKind, 0xFFFFFFFF);
             views.setTextColor(R.id.tvStatus, 0xFF4F3A88);
             views.setTextColor(R.id.tvSubstatus, 0xFF6F6287);
         } else if (next != null) {
@@ -149,15 +150,15 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         if (current != null) {
             int progress = courseProgress(current, minute);
             int remaining = Math.max(0, ScheduleData.toMinutes(current.end) - minute);
-            views.setViewVisibility(R.id.classProgress, View.VISIBLE);
             views.setProgressBar(R.id.classProgress, 100, progress, false);
             views.setViewVisibility(R.id.tvProgressPercent, View.VISIBLE);
             views.setTextViewText(R.id.tvProgressPercent, progress + "%");
             views.setViewVisibility(R.id.tvRemaining, View.VISIBLE);
             views.setTextViewText(R.id.tvRemaining, remainingLabel(remaining));
         } else {
-            views.setProgressBar(R.id.classProgress, 100, 0, false);
-            views.setViewVisibility(R.id.classProgress, View.GONE);
+            // Hors cours, la barre reste visible et pleine pour conserver exactement
+            // l'espace prévu par la maquette. Elle repart à 0 au début du cours suivant.
+            views.setProgressBar(R.id.classProgress, 100, 100, false);
             views.setViewVisibility(R.id.tvProgressPercent, View.GONE);
             views.setViewVisibility(R.id.tvRemaining, View.GONE);
         }
