@@ -28,6 +28,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         ScheduleStore.ensureInitialized(context);
         for (int id : appWidgetIds) updateWidget(context, manager, id);
         scheduleNextBoundary(context);
+        ReminderScheduler.reschedule(context);
     }
 
     @Override
@@ -42,6 +43,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
                 || Intent.ACTION_DATE_CHANGED.equals(action)) {
             updateAll(context);
             scheduleNextBoundary(context);
+            ReminderScheduler.reschedule(context);
         }
     }
 
@@ -49,6 +51,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         ScheduleStore.ensureInitialized(context);
         updateAll(context);
         scheduleNextBoundary(context);
+        ReminderScheduler.reschedule(context);
     }
 
     @Override public void onDisabled(Context context) { cancelBoundary(context); }
@@ -76,65 +79,74 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         int lunchStart = ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, 4));
         int lunchEnd = ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, 5));
         boolean lunchValid = lunchEnd > lunchStart;
-        boolean inLunch = current == null && !courses.isEmpty() && lunchValid
+        boolean inLunch = AdvancedSettingsStore.showLunch(context) && current == null && !courses.isEmpty() && lunchValid
                 && minute >= lunchStart && minute < lunchEnd;
-        GapInfo gap = current == null && !inLunch
+        GapInfo gap = current == null && !inLunch && AdvancedSettingsStore.showBreaks(context)
                 ? findCurrentGap(courses, minute, lunchStart, lunchEnd) : null;
         NextCourseInfo next = findNextCourse(context, now);
 
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_schedule);
         applyAppearance(context, views);
 
-        Calendar tileDate = (current == null && !inLunch && gap == null && next != null)
-                ? next.date : now;
+        Calendar tileDate = (current == null && !inLunch && gap == null && next != null) ? next.date : now;
         views.setTextViewText(R.id.tvTileDate, formatWidgetDate(context, tileDate));
         views.setViewVisibility(R.id.tvKindActive, View.GONE);
         views.setViewVisibility(R.id.tvKind, View.VISIBLE);
         views.setViewVisibility(R.id.tvRemaining, View.GONE);
         views.setViewVisibility(R.id.tvProgressPercent, View.GONE);
-        views.setViewVisibility(R.id.classProgress, View.VISIBLE);
+        views.setViewVisibility(R.id.classProgress, AdvancedSettingsStore.showProgress(context) ? View.VISIBLE : View.GONE);
 
+        String accentLabel = null;
         if (current != null) {
+            accentLabel = current.label;
             views.setViewVisibility(R.id.tvKind, View.GONE);
             views.setViewVisibility(R.id.tvKindActive, View.VISIBLE);
             views.setTextViewText(R.id.tvKindActive, UiSettingsStore.t(context, "current"));
-            views.setTextViewText(R.id.tvStatus, current.label);
-            views.setTextViewText(R.id.tvSubstatus,
-                    current.start + " - " + current.end + " · "
-                            + UiSettingsStore.t(context, "room") + " " + room(current.room));
+            views.setTextViewText(R.id.tvStatus, displayLabel(current));
+            views.setTextViewText(R.id.tvSubstatus, courseMeta(context, current));
+            views.setViewVisibility(R.id.tvSubstatus, courseMeta(context, current).isEmpty() ? View.GONE : View.VISIBLE);
         } else if (inLunch) {
             String start = ScheduleStore.getSlotEnd(context, 4);
             String end = ScheduleStore.getSlotStart(context, 5);
             views.setViewVisibility(R.id.tvKind, View.GONE);
             views.setTextViewText(R.id.tvStatus, localizedBreakLabel(context, true));
-            views.setTextViewText(R.id.tvSubstatus,
-                    start + " - " + end + " · " + UiSettingsStore.t(context, "backAt") + " " + end);
+            String meta = AdvancedSettingsStore.showTimes(context) ? start + " - " + end + " · " : "";
+            meta += UiSettingsStore.t(context, "backAt") + " " + end;
+            views.setTextViewText(R.id.tvSubstatus, meta);
         } else if (gap != null) {
             views.setViewVisibility(R.id.tvKind, View.GONE);
             views.setTextViewText(R.id.tvStatus, localizedBreakLabel(context, false));
-            views.setTextViewText(R.id.tvSubstatus,
-                    minuteLabel(gap.start) + " - " + minuteLabel(gap.end)
-                            + " · " + durationLabel(gap.end - gap.start));
+            String meta = AdvancedSettingsStore.showTimes(context) ? minuteLabel(gap.start) + " - " + minuteLabel(gap.end) + " · " : "";
+            meta += durationLabel(gap.end - gap.start);
+            views.setTextViewText(R.id.tvSubstatus, meta);
         } else if (next != null) {
+            accentLabel = next.course.label;
             views.setTextViewText(R.id.tvKind, UiSettingsStore.t(context, "next"));
-            views.setTextViewText(R.id.tvStatus, next.course.label);
-            views.setTextViewText(R.id.tvSubstatus,
-                    next.course.start + " - " + next.course.end + " · "
-                            + UiSettingsStore.t(context, "room") + " " + room(next.course.room));
+            views.setTextViewText(R.id.tvStatus, displayLabel(next.course));
+            String meta = courseMeta(context, next.course);
+            views.setTextViewText(R.id.tvSubstatus, meta);
+            views.setViewVisibility(R.id.tvSubstatus, meta.isEmpty() ? View.GONE : View.VISIBLE);
         } else {
             views.setViewVisibility(R.id.tvKind, View.GONE);
             views.setTextViewText(R.id.tvStatus, UiSettingsStore.t(context, "noCourse"));
             views.setTextViewText(R.id.tvSubstatus, "");
+            views.setViewVisibility(R.id.tvSubstatus, View.GONE);
         }
+
+        if (accentLabel != null) applyCourseAccent(context, views, accentLabel);
 
         if (current != null) {
             int progress = courseProgress(current, minute);
             int remaining = Math.max(0, ScheduleData.toMinutes(current.end) - minute);
             views.setProgressBar(R.id.classProgress, 100, progress, false);
-            views.setViewVisibility(R.id.tvProgressPercent, View.VISIBLE);
-            views.setTextViewText(R.id.tvProgressPercent, progress + "%");
-            views.setViewVisibility(R.id.tvRemaining, View.VISIBLE);
-            views.setTextViewText(R.id.tvRemaining, remainingLabel(context, remaining));
+            if (AdvancedSettingsStore.showPercent(context) && AdvancedSettingsStore.showProgress(context)) {
+                views.setViewVisibility(R.id.tvProgressPercent, View.VISIBLE);
+                views.setTextViewText(R.id.tvProgressPercent, progress + "%");
+            }
+            if (AdvancedSettingsStore.showRemaining(context)) {
+                views.setViewVisibility(R.id.tvRemaining, View.VISIBLE);
+                views.setTextViewText(R.id.tvRemaining, remainingLabel(context, remaining));
+            }
         } else {
             views.setProgressBar(R.id.classProgress, 100, 100, false);
             views.setViewVisibility(R.id.tvProgressPercent, View.GONE);
@@ -163,32 +175,63 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         manager.notifyAppWidgetViewDataChanged(widgetId, R.id.upcomingList);
     }
 
+    private static String displayLabel(ScheduleData.Course course) {
+        return (course.uncertain ? "⚠ " : "") + course.label;
+    }
+
+    private static String courseMeta(Context context, ScheduleData.Course course) {
+        boolean times = AdvancedSettingsStore.showTimes(context);
+        boolean room = AdvancedSettingsStore.showRoom(context);
+        if (times && room) return course.start + " - " + course.end + " · " + UiSettingsStore.t(context, "room") + " " + room(course.room);
+        if (times) return course.start + " - " + course.end;
+        if (room) return UiSettingsStore.t(context, "room") + " " + room(course.room);
+        return "";
+    }
+
     private static void applyAppearance(Context context, RemoteViews views) {
         UiSettingsStore.Theme theme = UiSettingsStore.theme(context);
         float scale = UiSettingsStore.widgetFontScale(context);
-        views.setInt(R.id.widgetRoot, "setBackgroundColor", theme.widgetSurface);
-        views.setInt(R.id.currentCard, "setBackgroundColor", theme.widgetCard);
-        views.setInt(R.id.tvKind, "setBackgroundColor", theme.accent);
-        views.setInt(R.id.tvKindActive, "setBackgroundColor", theme.accent);
-        views.setTextColor(R.id.tvStatus, theme.ink);
-        views.setTextColor(R.id.tvSubstatus, theme.muted);
-        views.setTextColor(R.id.tvTileDate, theme.muted);
-        views.setTextColor(R.id.tvRemaining, theme.muted);
-        views.setTextColor(R.id.tvProgressPercent, theme.accent);
-        views.setTextColor(R.id.emptyUpcoming, theme.muted);
+        int surface = theme.widgetSurface, card = theme.widgetCard, ink = theme.ink, muted = theme.muted, accent = theme.accent, track = theme.progressTrack;
+        if ("high_contrast".equals(AdvancedSettingsStore.accessibility(context))) {
+            surface = 0xFFFFFFFF; card = 0xFFFFFFFF; ink = 0xFF000000; muted = 0xFF303030; accent = 0xFF0057B8; track = 0xFFBFC7D1;
+        }
+        views.setInt(R.id.widgetRoot, "setBackgroundColor", surface);
+        views.setInt(R.id.currentCard, "setBackgroundColor", card);
+        views.setInt(R.id.tvKind, "setBackgroundColor", accent);
+        views.setInt(R.id.tvKindActive, "setBackgroundColor", accent);
+        views.setTextColor(R.id.tvStatus, ink);
+        views.setTextColor(R.id.tvSubstatus, muted);
+        views.setTextColor(R.id.tvTileDate, muted);
+        views.setTextColor(R.id.tvRemaining, muted);
+        views.setTextColor(R.id.tvProgressPercent, accent);
+        views.setTextColor(R.id.emptyUpcoming, muted);
 
-        views.setTextViewTextSize(R.id.tvKind, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
-        views.setTextViewTextSize(R.id.tvKindActive, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
-        views.setTextViewTextSize(R.id.tvStatus, TypedValue.COMPLEX_UNIT_SP, 19f * scale);
-        views.setTextViewTextSize(R.id.tvSubstatus, TypedValue.COMPLEX_UNIT_SP, 11f * scale);
-        views.setTextViewTextSize(R.id.tvTileDate, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
-        views.setTextViewTextSize(R.id.tvRemaining, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
-        views.setTextViewTextSize(R.id.tvProgressPercent, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
-        views.setTextViewTextSize(R.id.emptyUpcoming, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
+        String density = AdvancedSettingsStore.density(context);
+        float densityScale = "compact".equals(density) ? .94f : ("comfortable".equals(density) ? 1.08f : 1f);
+        views.setTextViewTextSize(R.id.tvKind, TypedValue.COMPLEX_UNIT_SP, 10f * scale * densityScale);
+        views.setTextViewTextSize(R.id.tvKindActive, TypedValue.COMPLEX_UNIT_SP, 10f * scale * densityScale);
+        views.setTextViewTextSize(R.id.tvStatus, TypedValue.COMPLEX_UNIT_SP, 19f * scale * densityScale);
+        views.setTextViewTextSize(R.id.tvSubstatus, TypedValue.COMPLEX_UNIT_SP, 11f * scale * densityScale);
+        views.setTextViewTextSize(R.id.tvTileDate, TypedValue.COMPLEX_UNIT_SP, 10f * scale * densityScale);
+        views.setTextViewTextSize(R.id.tvRemaining, TypedValue.COMPLEX_UNIT_SP, 10f * scale * densityScale);
+        views.setTextViewTextSize(R.id.tvProgressPercent, TypedValue.COMPLEX_UNIT_SP, 10f * scale * densityScale);
+        views.setTextViewTextSize(R.id.emptyUpcoming, TypedValue.COMPLEX_UNIT_SP, 10f * scale * densityScale);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            views.setColorStateList(R.id.classProgress, "setProgressTintList", ColorStateList.valueOf(theme.accent));
-            views.setColorStateList(R.id.classProgress, "setProgressBackgroundTintList", ColorStateList.valueOf(theme.progressTrack));
+            views.setColorStateList(R.id.classProgress, "setProgressTintList", ColorStateList.valueOf(accent));
+            views.setColorStateList(R.id.classProgress, "setProgressBackgroundTintList", ColorStateList.valueOf(track));
+        }
+    }
+
+    private static void applyCourseAccent(Context context, RemoteViews views, String label) {
+        UiSettingsStore.Theme theme = UiSettingsStore.theme(context);
+        int accent = AdvancedSettingsStore.classColor(context, label, theme.accent);
+        if ("high_contrast".equals(AdvancedSettingsStore.accessibility(context))) accent = 0xFF0057B8;
+        views.setInt(R.id.tvKind, "setBackgroundColor", accent);
+        views.setInt(R.id.tvKindActive, "setBackgroundColor", accent);
+        views.setTextColor(R.id.tvProgressPercent, accent);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            views.setColorStateList(R.id.classProgress, "setProgressTintList", ColorStateList.valueOf(accent));
         }
     }
 
@@ -199,8 +242,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         return custom;
     }
 
-    private static GapInfo findCurrentGap(List<ScheduleData.Course> courses, int minute,
-                                          int lunchStart, int lunchEnd) {
+    private static GapInfo findCurrentGap(List<ScheduleData.Course> courses, int minute, int lunchStart, int lunchEnd) {
         if (courses == null || courses.size() < 2) return null;
         ScheduleData.Course previous = null, next = null;
         int previousEnd = -1, nextStart = Integer.MAX_VALUE;
@@ -209,8 +251,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
             if (end <= minute && end > previousEnd) { previous = c; previousEnd = end; }
             if (start > minute && start < nextStart) { next = c; nextStart = start; }
         }
-        if (previous == null || next == null || nextStart <= previousEnd
-                || minute < previousEnd || minute >= nextStart) return null;
+        if (previous == null || next == null || nextStart <= previousEnd || minute < previousEnd || minute >= nextStart) return null;
         boolean lunchValid = lunchEnd > lunchStart;
         if (lunchValid && minute >= lunchStart && minute < lunchEnd) return null;
         int start = previousEnd, end = nextStart;
@@ -234,7 +275,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
     private static NextCourseInfo findNextCourse(Context context, Calendar now) {
         int nowMin = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
         Calendar cursor = (Calendar) now.clone();
-        for (int add = 0; add < 8; add++) {
+        for (int add = 0; add < 21; add++) {
             List<ScheduleData.Course> list = ScheduleStore.getCourses(context, cursor);
             for (ScheduleData.Course c : list) {
                 if (add == 0 && ScheduleData.toMinutes(c.start) <= nowMin) continue;
@@ -249,6 +290,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         Locale locale = UiSettingsStore.locale(context);
         String label = new SimpleDateFormat("EEEE d MMMM", locale).format(date.getTime());
         if (!label.isEmpty()) label = Character.toUpperCase(label.charAt(0)) + label.substring(1);
+        if (!AdvancedSettingsStore.showWeekInfo(context)) return label;
         return label + " · S" + date.get(Calendar.WEEK_OF_YEAR) + " · " + ScheduleStore.getWeekLetter(context, date);
     }
 
@@ -271,10 +313,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         return m + " " + UiSettingsStore.t(context, m == 1 ? "remainingMinute" : "remainingMinutes");
     }
 
-    private static String minuteLabel(int minute) {
-        return String.format(Locale.FRANCE, "%02d:%02d", minute / 60, minute % 60);
-    }
-
+    private static String minuteLabel(int minute) { return String.format(Locale.FRANCE, "%02d:%02d", minute / 60, minute % 60); }
     private static String durationLabel(int minutes) {
         if (minutes <= 0) return "";
         int h = minutes / 60, m = minutes % 60;
@@ -282,7 +321,6 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         if (h > 0) return h + " h";
         return m + " min";
     }
-
     private static String room(String room) { return room == null || room.trim().isEmpty() ? "—" : room; }
     private static int clamp(int value) { return Math.max(0, Math.min(100, value)); }
 
@@ -300,7 +338,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
             }
         }
         Calendar day = (Calendar) now.clone();
-        for (int add = 0; add <= 7; add++) {
+        for (int add = 0; add <= 21; add++) {
             List<Integer> boundaries = ScheduleData.boundaries(ScheduleStore.getCourses(context, day));
             boundaries.add(ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, 4)));
             boundaries.add(ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, 5)));
