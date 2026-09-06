@@ -4,20 +4,20 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:paddingLeft="9dp"
-    android:paddingTop="8dp"
-    android:paddingRight="9dp"
-    android:paddingBottom="5dp"
+    android:paddingLeft="4dp"
+    android:paddingTop="4dp"
+    android:paddingRight="4dp"
+    android:paddingBottom="3dp"
     android:background="@drawable/widget_background">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingLeft="11dp"
-        android:paddingTop="9dp"
-        android:paddingRight="11dp"
-        android:paddingBottom="9dp"
+        android:paddingLeft="10dp"
+        android:paddingTop="6dp"
+        android:paddingRight="10dp"
+        android:paddingBottom="6dp"
         android:background="@drawable/widget_current_card">
 
         <LinearLayout
@@ -30,10 +30,10 @@
                 android:id="@+id/tvKindActive"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingLeft="10dp"
-                android:paddingTop="4dp"
-                android:paddingRight="10dp"
-                android:paddingBottom="4dp"
+                android:paddingLeft="9dp"
+                android:paddingTop="3dp"
+                android:paddingRight="9dp"
+                android:paddingBottom="3dp"
                 android:background="@drawable/widget_badge_blue"
                 android:text="●  En cours"
                 android:textColor="#FFFFFF"
@@ -45,13 +45,13 @@
                 android:id="@+id/tvKind"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingLeft="10dp"
-                android:paddingTop="4dp"
-                android:paddingRight="10dp"
-                android:paddingBottom="4dp"
-                android:background="@drawable/widget_kind_badge"
+                android:paddingLeft="9dp"
+                android:paddingTop="3dp"
+                android:paddingRight="9dp"
+                android:paddingBottom="3dp"
+                android:background="@drawable/widget_badge_blue"
                 android:text="Prochain cours"
-                android:textColor="#087F8B"
+                android:textColor="#FFFFFF"
                 android:textSize="9sp"
                 android:textStyle="bold" />
 
@@ -63,14 +63,14 @@
                 android:layout_marginLeft="8dp"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:textColor="#637087"
+                android:textColor="#59677C"
                 android:textSize="8sp" />
 
             <ImageView
                 android:id="@+id/courseIcon"
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                android:padding="7dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:padding="6dp"
                 android:background="@drawable/widget_icon_circle"
                 android:src="@drawable/ic_school"
                 android:contentDescription="Cours" />
@@ -80,17 +80,17 @@
             android:id="@+id/tvStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
+            android:layout_marginTop="4dp"
             android:ellipsize="end"
             android:maxLines="1"
             android:textColor="#101936"
-            android:textSize="21sp"
+            android:textSize="18sp"
             android:textStyle="bold" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
+            android:layout_marginTop="1dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -110,7 +110,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="7dp"
                 android:maxLines="1"
-                android:textColor="#485469"
+                android:textColor="#465369"
                 android:textSize="8sp"
                 android:visibility="gone" />
         </LinearLayout>
@@ -118,7 +118,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="4dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -126,20 +126,20 @@
                 android:id="@+id/classProgress"
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="0dp"
-                android:layout_height="7dp"
+                android:layout_height="6dp"
                 android:layout_weight="1"
                 android:max="100"
-                android:progressTint="#0B78F6"
-                android:progressBackgroundTint="#B7CDE3"
-                android:visibility="gone" />
+                android:progressTint="#0877F9"
+                android:progressBackgroundTint="#B9CCE1"
+                android:visibility="visible" />
 
             <TextView
                 android:id="@+id/tvProgressPercent"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="8dp"
-                android:textColor="#0B78F6"
-                android:textSize="10sp"
+                android:layout_marginLeft="7dp"
+                android:textColor="#0877F9"
+                android:textSize="9sp"
                 android:textStyle="bold"
                 android:visibility="gone" />
         </LinearLayout>
@@ -148,8 +148,8 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:layout_marginBottom="1dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="0dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingLeft="4dp"
@@ -160,7 +160,7 @@
             android:layout_height="wrap_content"
             android:text="À suivre"
             android:textColor="#087F8B"
-            android:textSize="11sp"
+            android:textSize="10sp"
             android:textStyle="bold" />
 
         <TextView
@@ -189,9 +189,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingLeft="8dp"
-        android:paddingTop="6dp"
+        android:paddingTop="4dp"
         android:paddingRight="8dp"
-        android:paddingBottom="2dp"
+        android:paddingBottom="1dp"
         android:text="Aucun autre cours programmé"
         android:textColor="#647087"
         android:textSize="9sp" />
