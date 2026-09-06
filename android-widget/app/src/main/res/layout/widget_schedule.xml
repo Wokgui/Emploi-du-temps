@@ -4,81 +4,106 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:paddingLeft="12dp"
-    android:paddingTop="9dp"
-    android:paddingRight="12dp"
+    android:paddingLeft="10dp"
+    android:paddingTop="5dp"
+    android:paddingRight="10dp"
     android:paddingBottom="0dp"
     android:background="@drawable/widget_background">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="vertical"
+        android:paddingLeft="10dp"
+        android:paddingTop="7dp"
+        android:paddingRight="10dp"
+        android:paddingBottom="8dp"
+        android:background="@drawable/widget_current_card">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvKind"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Cours en cours"
+                android:textColor="#0AA6A6"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnRefresh"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:gravity="center"
+                android:text="↻"
+                android:textColor="#0A7FA5"
+                android:textSize="19sp"
+                android:contentDescription="@string/refresh" />
+
+            <TextView
+                android:id="@+id/btnEdit"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:gravity="center"
+                android:text="✎"
+                android:textColor="#0A7FA5"
+                android:textSize="17sp"
+                android:contentDescription="Modifier l'emploi du temps" />
+        </LinearLayout>
 
         <TextView
-            android:id="@+id/tvKind"
-            android:layout_width="0dp"
+            android:id="@+id/tvStatus"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_marginTop="1dp"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="Cours en cours"
-            android:textColor="#0AA6A6"
-            android:textSize="13sp"
+            android:textColor="#101936"
+            android:textSize="21sp"
             android:textStyle="bold" />
 
         <TextView
-            android:id="@+id/btnRefresh"
-            android:layout_width="34dp"
-            android:layout_height="34dp"
-            android:gravity="center"
-            android:text="↻"
-            android:textColor="#0AA6A6"
-            android:textSize="20sp"
-            android:contentDescription="@string/refresh" />
+            android:id="@+id/tvSubstatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#5A667A"
+            android:textSize="10sp" />
 
-        <TextView
-            android:id="@+id/btnEdit"
-            android:layout_width="34dp"
-            android:layout_height="34dp"
-            android:gravity="center"
-            android:text="✎"
-            android:textColor="#0AA6A6"
-            android:textSize="18sp"
-            android:contentDescription="Modifier l'emploi du temps" />
+        <ProgressBar
+            android:id="@+id/classProgress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:layout_marginTop="6dp"
+            android:max="100"
+            android:progressTint="#1178E8"
+            android:progressBackgroundTint="#C8D7E8" />
     </LinearLayout>
 
     <TextView
-        android:id="@+id/tvStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:textColor="#101936"
-        android:textSize="19sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/tvSubstatus"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="1dp"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:textColor="#5A667A"
-        android:textSize="11sp" />
-
-    <ProgressBar
-        android:id="@+id/classProgress"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="7dp"
         android:layout_marginTop="6dp"
-        android:layout_marginBottom="2dp"
-        android:max="100"
-        android:progressTint="#1178E8"
-        android:progressBackgroundTint="#E5E7EB" />
+        android:paddingLeft="8dp"
+        android:paddingTop="5dp"
+        android:paddingRight="8dp"
+        android:paddingBottom="5dp"
+        android:background="#EAF1F8"
+        android:text="À suivre"
+        android:textColor="#087F8B"
+        android:textSize="11sp"
+        android:textStyle="bold" />
 
     <ListView
         android:id="@+id/upcomingList"
@@ -87,7 +112,7 @@
         android:layout_weight="1"
         android:paddingBottom="0dp"
         android:clipToPadding="false"
-        android:divider="#E5EAF0"
+        android:divider="#D7E0E9"
         android:dividerHeight="1dp"
         android:scrollbars="vertical"
         android:fadingEdge="none" />
@@ -96,9 +121,11 @@
         android:id="@+id/emptyUpcoming"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingLeft="8dp"
         android:paddingTop="6dp"
+        android:paddingRight="8dp"
         android:paddingBottom="2dp"
         android:text="Aucun autre cours programmé"
         android:textColor="#647087"
-        android:textSize="11sp" />
+        android:textSize="10sp" />
 </LinearLayout>
