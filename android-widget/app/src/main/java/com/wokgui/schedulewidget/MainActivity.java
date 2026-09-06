@@ -76,7 +76,7 @@ public class MainActivity extends Activity {
                     value -> {
                         applyOpenMode();
                         injectPersonalizationUi();
-                        webView.evaluateJavascript("if(window.refreshSettingsV3){refreshSettingsV3();}if(window.refreshAdvancedFeatures){refreshAdvancedFeatures();}if(window.refreshUiPolishSchool){refreshUiPolishSchool();}if(window.refreshCourseColors){refreshCourseColors();}if(window.refreshCoursePaletteV1){refreshCoursePaletteV1();}", null);
+                        webView.evaluateJavascript("if(window.refreshSettingsV3){refreshSettingsV3();}if(window.refreshAdvancedFeatures){refreshAdvancedFeatures();}if(window.refreshUiPolishSchool){refreshUiPolishSchool();}if(window.refreshCourseColors){refreshCourseColors();}if(window.refreshCoursePaletteV1){refreshCoursePaletteV1();}if(window.refreshLunchBreakUi){refreshLunchBreakUi();}", null);
                     }
             );
         }
@@ -197,7 +197,8 @@ public class MainActivity extends Activity {
                 webView.evaluateJavascript(AdvancedFeaturesUi.script(), value2 ->
                         webView.evaluateJavascript(UiPolishAndSchoolCalendarUi.script(), value3 ->
                                 webView.evaluateJavascript(CourseColorUi.script(), value4 ->
-                                        webView.evaluateJavascript(PaletteSelectorUi.script(), null)))));
+                                        webView.evaluateJavascript(PaletteSelectorUi.script(), value5 ->
+                                                webView.evaluateJavascript(LunchBreakUi.script(), null))))));
     }
 
     private void maybeRequestNotificationPermission() {
