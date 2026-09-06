@@ -15,28 +15,45 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingLeft="10dp"
-        android:paddingTop="7dp"
+        android:paddingTop="6dp"
         android:paddingRight="10dp"
-        android:paddingBottom="8dp"
+        android:paddingBottom="9dp"
         android:background="@drawable/widget_current_card">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:background="#1178E8"
+            android:text="" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/tvKind"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:ellipsize="end"
                 android:maxLines="1"
+                android:paddingLeft="10dp"
+                android:paddingTop="4dp"
+                android:paddingRight="10dp"
+                android:paddingBottom="4dp"
+                android:background="@drawable/widget_kind_badge"
                 android:text="Cours en cours"
-                android:textColor="#0AA6A6"
-                android:textSize="13sp"
+                android:textColor="#0B6FA4"
+                android:textSize="10sp"
                 android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:text="" />
 
             <TextView
                 android:id="@+id/btnRefresh"
@@ -63,18 +80,18 @@
             android:id="@+id/tvStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="1dp"
+            android:layout_marginTop="4dp"
             android:ellipsize="end"
             android:maxLines="1"
             android:textColor="#101936"
-            android:textSize="21sp"
+            android:textSize="22sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvSubstatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="1dp"
+            android:layout_marginTop="2dp"
             android:ellipsize="end"
             android:maxLines="1"
             android:textColor="#5A667A"
@@ -85,25 +102,38 @@
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
             android:layout_height="8dp"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="7dp"
             android:max="100"
             android:progressTint="#1178E8"
-            android:progressBackgroundTint="#C8D7E8" />
+            android:progressBackgroundTint="#C7D8E9" />
     </LinearLayout>
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:paddingLeft="8dp"
-        android:paddingTop="5dp"
-        android:paddingRight="8dp"
-        android:paddingBottom="5dp"
-        android:background="#EAF1F8"
-        android:text="À suivre"
-        android:textColor="#087F8B"
-        android:textSize="11sp"
-        android:textStyle="bold" />
+        android:layout_marginTop="7dp"
+        android:layout_marginBottom="2dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="À suivre"
+            android:textColor="#087F8B"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_marginLeft="8dp"
+            android:layout_weight="1"
+            android:background="#CEDAE6"
+            android:text="" />
+    </LinearLayout>
 
     <ListView
         android:id="@+id/upcomingList"
@@ -112,8 +142,8 @@
         android:layout_weight="1"
         android:paddingBottom="0dp"
         android:clipToPadding="false"
-        android:divider="#D7E0E9"
-        android:dividerHeight="1dp"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="0dp"
         android:scrollbars="vertical"
         android:fadingEdge="none" />
 
