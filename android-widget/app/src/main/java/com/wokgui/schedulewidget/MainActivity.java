@@ -23,7 +23,6 @@ import org.json.JSONObject;
 
 public class MainActivity extends Activity {
     private static final int PICK_TIMETABLE_PHOTO = 5201;
-
     private WebView webView;
     private final TextRecognizer textRecognizer =
             TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
@@ -68,7 +67,7 @@ public class MainActivity extends Activity {
                         applyOpenMode();
                         injectPersonalizationUi();
                         webView.evaluateJavascript(
-                                "if(window.refreshPersonalizationUi){refreshPersonalizationUi();}", null);
+                                "if(window.refreshPersonalizationV2){refreshPersonalizationV2();}", null);
                     }
             );
         }
@@ -84,7 +83,6 @@ public class MainActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode != PICK_TIMETABLE_PHOTO) return;
-
         if (resultCode != RESULT_OK || data == null || data.getData() == null) {
             resetPhotoImportButton("Import annulé.");
             return;
@@ -95,12 +93,9 @@ public class MainActivity extends Activity {
             final int takeFlags = data.getFlags()
                     & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
             if (takeFlags != 0) {
-                try {
-                    getContentResolver().takePersistableUriPermission(uri, takeFlags);
-                } catch (Exception ignored) {
-                }
+                try { getContentResolver().takePersistableUriPermission(uri, takeFlags); }
+                catch (Exception ignored) {}
             }
-
             InputImage image = InputImage.fromFilePath(this, uri);
             textRecognizer.process(image)
                     .addOnSuccessListener(this::sendRecognizedSchedule)
@@ -115,8 +110,7 @@ public class MainActivity extends Activity {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("image/*");
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
-                | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
         startActivityForResult(intent, PICK_TIMETABLE_PHOTO);
     }
 
@@ -124,7 +118,6 @@ public class MainActivity extends Activity {
         try {
             JSONObject payload = new JSONObject();
             JSONArray lines = new JSONArray();
-
             for (Text.TextBlock block : result.getTextBlocks()) {
                 for (Text.Line line : block.getLines()) {
                     Rect box = line.getBoundingBox();
@@ -140,18 +133,14 @@ public class MainActivity extends Activity {
             }
             payload.put("lines", lines);
             payload.put("fullText", result.getText());
-
             if (lines.length() == 0) {
                 sendOcrError("Aucun texte exploitable n’a été détecté sur cette photo.");
                 return;
             }
-
             if (webView != null) {
                 String quoted = JSONObject.quote(payload.toString());
                 webView.evaluateJavascript(
-                        "if(window.applyOcrSchedule){window.applyOcrSchedule(" + quoted + ");}",
-                        null
-                );
+                        "if(window.applyOcrSchedule){window.applyOcrSchedule(" + quoted + ");}", null);
             }
         } catch (Exception e) {
             sendOcrError("Le texte a été reconnu, mais la conversion a échoué.");
@@ -162,9 +151,7 @@ public class MainActivity extends Activity {
         if (webView == null) return;
         String quoted = JSONObject.quote(message);
         webView.evaluateJavascript(
-                "if(window.applyOcrError){window.applyOcrError(" + quoted + ");}",
-                null
-        );
+                "if(window.applyOcrError){window.applyOcrError(" + quoted + ");}", null);
     }
 
     private void resetPhotoImportButton(String message) {
@@ -173,24 +160,19 @@ public class MainActivity extends Activity {
         webView.evaluateJavascript(
                 "(function(){var b=document.getElementById('importPhoto');"
                         + "if(b){b.disabled=false;b.textContent='Importer une photo d’emploi du temps';}"
-                        + "var s=document.getElementById('importStatus');if(s){s.textContent=" + quoted + ";}})();",
-                null
-        );
+                        + "var s=document.getElementById('importStatus');if(s){s.textContent=" + quoted + ";}})();", null);
     }
 
     private void clearLegacySyncData() {
         getSharedPreferences("pronote_import_v1", MODE_PRIVATE).edit().clear().apply();
         try {
             JobScheduler scheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
-            scheduler.cancel(4101);
-            scheduler.cancel(4102);
-        } catch (Exception ignored) {
-        }
+            scheduler.cancel(4101); scheduler.cancel(4102);
+        } catch (Exception ignored) {}
         try {
             CookieManager.getInstance().removeAllCookies(null);
             CookieManager.getInstance().flush();
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
     }
 
     private void applyOpenMode() {
@@ -198,41 +180,20 @@ public class MainActivity extends Activity {
         String mode = getIntent().getStringExtra("open_mode");
         if ("today".equals(mode) || "week".equals(mode) || "edit".equals(mode)) {
             webView.evaluateJavascript(
-                    "if(window.setModeFromAndroid){setModeFromAndroid('" + mode + "');}",
-                    null
-            );
+                    "if(window.setModeFromAndroid){setModeFromAndroid('" + mode + "');}", null);
             getIntent().removeExtra("open_mode");
         }
     }
 
     private void injectPersonalizationUi() {
-        if (webView != null) webView.evaluateJavascript(PersonalizationUi.script(), null);
+        if (webView != null) webView.evaluateJavascript(PersonalizationUi2.script(), null);
     }
 
     private final class ScheduleBridge {
-        @JavascriptInterface
-        public String loadSchedule() {
-            return ScheduleStore.exportJson(MainActivity.this);
-        }
-
-        @JavascriptInterface
-        public void saveSchedule(String json) {
-            ScheduleStore.importJson(MainActivity.this, json);
-        }
-
-        @JavascriptInterface
-        public void pickTimetablePhoto() {
-            runOnUiThread(MainActivity.this::pickTimetablePhoto);
-        }
-
-        @JavascriptInterface
-        public String loadUiSettings() {
-            return UiSettingsStore.exportJson(MainActivity.this);
-        }
-
-        @JavascriptInterface
-        public void saveUiSettings(String json) {
-            UiSettingsStore.importJson(MainActivity.this, json);
-        }
+        @JavascriptInterface public String loadSchedule() { return ScheduleStore.exportJson(MainActivity.this); }
+        @JavascriptInterface public void saveSchedule(String json) { ScheduleStore.importJson(MainActivity.this, json); }
+        @JavascriptInterface public void pickTimetablePhoto() { runOnUiThread(MainActivity.this::pickTimetablePhoto); }
+        @JavascriptInterface public String loadUiSettings() { return UiSettingsStore.exportJson(MainActivity.this); }
+        @JavascriptInterface public void saveUiSettings(String json) { UiSettingsStore.importJson(MainActivity.this, json); }
     }
 }
