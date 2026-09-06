@@ -68,8 +68,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             int lunchEnd = ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, 5));
             boolean lunchValid = lunchEnd > lunchStart;
 
-            List<ScheduleData.Course> todayCourses = ScheduleStore.getCourses(
-                    context, now.get(Calendar.DAY_OF_WEEK));
+            List<ScheduleData.Course> todayCourses = ScheduleStore.getCourses(context, now);
             ScheduleData.Course current = null;
             for (ScheduleData.Course c : todayCourses) {
                 int s = ScheduleData.toMinutes(c.start);
@@ -107,8 +106,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 targetDate = null;
                 Calendar cursor = (Calendar) now.clone();
                 for (int add = 0; add < 8 && topNext == null; add++) {
-                    int day = cursor.get(Calendar.DAY_OF_WEEK);
-                    List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, day);
+                    List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, cursor);
                     for (ScheduleData.Course c : courses) {
                         if (add == 0 && ScheduleData.toMinutes(c.start) <= nowMin) continue;
                         topNext = c;
@@ -122,8 +120,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 previousEnd = ScheduleData.toMinutes(topNext.end);
             }
 
-            List<ScheduleData.Course> sameDay = ScheduleStore.getCourses(
-                    context, targetDate.get(Calendar.DAY_OF_WEEK));
+            List<ScheduleData.Course> sameDay = ScheduleStore.getCourses(context, targetDate);
 
             for (int i = 0; i < sameDay.size(); i++) {
                 ScheduleData.Course c = sameDay.get(i);
@@ -249,21 +246,19 @@ public class UpcomingCoursesService extends RemoteViewsService {
                     position == items.size() - 1 ? View.INVISIBLE : View.VISIBLE);
 
             if (item.type == Item.LUNCH) {
-                v.setViewVisibility(R.id.rowIndex, View.VISIBLE);
-                v.setTextViewText(R.id.rowIndex, "•");
+                v.setTextViewText(R.id.rowIndex, "");
+                v.setViewVisibility(R.id.rowIndex, View.INVISIBLE);
                 v.setTextViewText(R.id.rowMeta,
                         item.time + " · reprise à " + ScheduleStore.getSlotStart(context, 5));
-                v.setTextColor(R.id.rowIndex, 0xFFC58A32);
-                v.setTextColor(R.id.rowDot, 0xFFC58A32);
+                v.setTextColor(R.id.rowDot, 0xFFD09A49);
                 v.setTextColor(R.id.rowTitle, 0xFF9A6212);
                 v.setTextColor(R.id.rowMeta, 0xFF8D6C39);
                 v.setViewVisibility(R.id.rowRelative, View.GONE);
             } else if (item.type == Item.GAP) {
-                v.setViewVisibility(R.id.rowIndex, View.VISIBLE);
-                v.setTextViewText(R.id.rowIndex, "•");
+                v.setTextViewText(R.id.rowIndex, "");
+                v.setViewVisibility(R.id.rowIndex, View.INVISIBLE);
                 v.setTextViewText(R.id.rowMeta, item.time + " · sans cours");
-                v.setTextColor(R.id.rowIndex, 0xFF7B67BD);
-                v.setTextColor(R.id.rowDot, 0xFF7B67BD);
+                v.setTextColor(R.id.rowDot, 0xFF8B79C6);
                 v.setTextColor(R.id.rowTitle, 0xFF7254B5);
                 v.setTextColor(R.id.rowMeta, 0xFF75688C);
                 v.setViewVisibility(R.id.rowRelative, View.GONE);
@@ -272,8 +267,8 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 v.setTextViewText(R.id.rowIndex, String.valueOf(item.order));
                 v.setTextViewText(R.id.rowMeta,
                         item.time + " · salle " + (item.room.isEmpty() ? "—" : item.room));
-                v.setTextColor(R.id.rowIndex, 0xFF56657A);
-                v.setTextColor(R.id.rowDot, 0xFF74839A);
+                v.setTextColor(R.id.rowIndex, 0xFF57667C);
+                v.setTextColor(R.id.rowDot, 0xFF73829A);
                 v.setTextColor(R.id.rowTitle, 0xFF17213A);
                 v.setTextColor(R.id.rowMeta, 0xFF66758A);
                 v.setTextColor(R.id.rowRelative, 0xFF5F6E84);
