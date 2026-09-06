@@ -45,6 +45,7 @@ public class MainActivity extends Activity {
             @Override public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 applyOpenMode();
+                injectPersonalizationUi();
             }
         });
         webView.loadUrl("file:///android_asset/index.html");
@@ -63,7 +64,12 @@ public class MainActivity extends Activity {
         if (webView != null) {
             webView.evaluateJavascript(
                     "if(window.reloadSchedule){reloadSchedule();}",
-                    value -> applyOpenMode()
+                    value -> {
+                        applyOpenMode();
+                        injectPersonalizationUi();
+                        webView.evaluateJavascript(
+                                "if(window.refreshPersonalizationUi){refreshPersonalizationUi();}", null);
+                    }
             );
         }
     }
@@ -199,6 +205,10 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void injectPersonalizationUi() {
+        if (webView != null) webView.evaluateJavascript(PersonalizationUi.script(), null);
+    }
+
     private final class ScheduleBridge {
         @JavascriptInterface
         public String loadSchedule() {
@@ -213,6 +223,16 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void pickTimetablePhoto() {
             runOnUiThread(MainActivity.this::pickTimetablePhoto);
+        }
+
+        @JavascriptInterface
+        public String loadUiSettings() {
+            return UiSettingsStore.exportJson(MainActivity.this);
+        }
+
+        @JavascriptInterface
+        public void saveUiSettings(String json) {
+            UiSettingsStore.importJson(MainActivity.this, json);
         }
     }
 }
