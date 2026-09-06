@@ -76,7 +76,7 @@ public class MainActivity extends Activity {
                     value -> {
                         applyOpenMode();
                         injectPersonalizationUi();
-                        webView.evaluateJavascript("if(window.refreshSettingsV3){refreshSettingsV3();}if(window.refreshAdvancedFeatures){refreshAdvancedFeatures();}", null);
+                        webView.evaluateJavascript("if(window.refreshSettingsV3){refreshSettingsV3();}if(window.refreshAdvancedFeatures){refreshAdvancedFeatures();}if(window.refreshUiPolishSchool){refreshUiPolishSchool();}", null);
                     }
             );
         }
@@ -193,7 +193,9 @@ public class MainActivity extends Activity {
 
     private void injectPersonalizationUi() {
         if (webView == null) return;
-        webView.evaluateJavascript(PersonalizationUi2.script(), value -> webView.evaluateJavascript(AdvancedFeaturesUi.script(), null));
+        webView.evaluateJavascript(PersonalizationUi2.script(), value ->
+                webView.evaluateJavascript(AdvancedFeaturesUi.script(), value2 ->
+                        webView.evaluateJavascript(UiPolishAndSchoolCalendarUi.script(), null)));
     }
 
     private void maybeRequestNotificationPermission() {
