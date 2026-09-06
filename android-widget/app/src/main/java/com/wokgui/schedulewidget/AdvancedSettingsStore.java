@@ -68,9 +68,7 @@ final class AdvancedSettingsStore {
         return base;
     }
 
-    static synchronized String exportJson(Context context) {
-        return json(context).toString();
-    }
+    static synchronized String exportJson(Context context) { return json(context).toString(); }
 
     static synchronized void importJson(Context context, String raw) {
         try {
@@ -83,27 +81,39 @@ final class AdvancedSettingsStore {
                     merged.put(key, incoming.opt(key));
                 }
             }
-            merged.put("cycleLength", clamp(merged.optInt("cycleLength", 2), 2, 4));
-            merged.put("upcomingCount", clamp(merged.optInt("upcomingCount", 0), 0, 6));
-            merged.put("reminderMinutes", clamp(merged.optInt("reminderMinutes", 10), 0, 120));
-            String density = merged.optString("density", "normal");
-            if (!"compact".equals(density) && !"comfortable".equals(density)) density = "normal";
-            merged.put("density", density);
-            String format = merged.optString("widgetFormat", "timeline");
-            if (!"compact".equals(format)) format = "timeline";
-            merged.put("widgetFormat", format);
-            String access = merged.optString("accessibility", "normal");
-            if (!"high_contrast".equals(access) && !"colorblind".equals(access)) access = "normal";
-            merged.put("accessibility", access);
-            String holiday = merged.optString("holidayMode", "alsace_moselle");
-            if (!"off".equals(holiday) && !"france".equals(holiday)) holiday = "alsace_moselle";
-            merged.put("holidayMode", holiday);
-            if (!(merged.opt("exceptions") instanceof JSONArray)) merged.put("exceptions", new JSONArray());
-            if (!(merged.opt("dayOffRanges") instanceof JSONArray)) merged.put("dayOffRanges", new JSONArray());
+            normalize(merged);
             prefs(context).edit().putString(JSON, merged.toString()).apply();
             ScheduleStore.refreshWidgets(context);
             ReminderScheduler.reschedule(context);
         } catch (Exception ignored) {}
+    }
+
+    static synchronized void setCycleLength(Context context, int length) {
+        try {
+            JSONObject o = json(context);
+            o.put("cycleLength", clamp(length, 2, 4));
+            prefs(context).edit().putString(JSON, o.toString()).apply();
+        } catch (Exception ignored) {}
+    }
+
+    private static void normalize(JSONObject merged) throws Exception {
+        merged.put("cycleLength", clamp(merged.optInt("cycleLength", 2), 2, 4));
+        merged.put("upcomingCount", clamp(merged.optInt("upcomingCount", 0), 0, 6));
+        merged.put("reminderMinutes", clamp(merged.optInt("reminderMinutes", 10), 0, 120));
+        String density = merged.optString("density", "normal");
+        if (!"compact".equals(density) && !"comfortable".equals(density)) density = "normal";
+        merged.put("density", density);
+        String format = merged.optString("widgetFormat", "timeline");
+        if (!"compact".equals(format)) format = "timeline";
+        merged.put("widgetFormat", format);
+        String access = merged.optString("accessibility", "normal");
+        if (!"high_contrast".equals(access) && !"colorblind".equals(access)) access = "normal";
+        merged.put("accessibility", access);
+        String holiday = merged.optString("holidayMode", "alsace_moselle");
+        if (!"off".equals(holiday) && !"france".equals(holiday)) holiday = "alsace_moselle";
+        merged.put("holidayMode", holiday);
+        if (!(merged.opt("exceptions") instanceof JSONArray)) merged.put("exceptions", new JSONArray());
+        if (!(merged.opt("dayOffRanges") instanceof JSONArray)) merged.put("dayOffRanges", new JSONArray());
     }
 
     static int cycleLength(Context context) { return clamp(json(context).optInt("cycleLength", 2), 2, 4); }
@@ -156,28 +166,15 @@ final class AdvancedSettingsStore {
             String refStart = e.optString("refStart", "");
             String refLabel = e.optString("refLabel", "");
             if ("extra".equals(type)) {
-                String start = e.optString("start", "08:00");
-                String end = e.optString("end", "09:00");
-                String label = e.optString("label", "Cours exceptionnel");
-                String room = e.optString("room", "");
-                out.add(new ScheduleData.Course(start, end, label, room, 0, false));
+                out.add(new ScheduleData.Course(e.optString("start", "08:00"), e.optString("end", "09:00"), e.optString("label", "Cours exceptionnel"), e.optString("room", ""), 0, false));
                 continue;
             }
             int index = findMatching(out, refStart, refLabel);
             if (index < 0) continue;
             ScheduleData.Course old = out.get(index);
-            if ("cancel".equals(type)) {
-                out.remove(index);
-            } else if ("room".equals(type)) {
-                String room = e.optString("room", old.room);
-                out.set(index, new ScheduleData.Course(old.start, old.end, old.label, room, old.slot, old.uncertain));
-            } else if ("move".equals(type)) {
-                String start = e.optString("start", old.start);
-                String end = e.optString("end", old.end);
-                String label = e.optString("label", old.label);
-                String room = e.optString("room", old.room);
-                out.set(index, new ScheduleData.Course(start, end, label, room, 0, old.uncertain));
-            }
+            if ("cancel".equals(type)) out.remove(index);
+            else if ("room".equals(type)) out.set(index, new ScheduleData.Course(old.start, old.end, old.label, e.optString("room", old.room), old.slot, old.uncertain));
+            else if ("move".equals(type)) out.set(index, new ScheduleData.Course(e.optString("start", old.start), e.optString("end", old.end), e.optString("label", old.label), e.optString("room", old.room), 0, old.uncertain));
         }
         Collections.sort(out, Comparator.comparingInt(c -> ScheduleData.toMinutes(c.start)));
         return out;
@@ -192,9 +189,7 @@ final class AdvancedSettingsStore {
         return palette[hash % palette.length];
     }
 
-    static String dateKey(Calendar date) {
-        return new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(date.getTime());
-    }
+    static String dateKey(Calendar date) { return new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(date.getTime()); }
 
     private static int findMatching(List<ScheduleData.Course> list, String start, String label) {
         for (int i = 0; i < list.size(); i++) {
