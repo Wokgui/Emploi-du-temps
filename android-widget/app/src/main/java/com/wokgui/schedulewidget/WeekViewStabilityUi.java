@@ -7,17 +7,25 @@ final class WeekViewStabilityUi {
         return """
             (function(){
               try{
-                if(window.__weekViewStabilityV2){
+                if(window.__weekViewStabilityV3){
                   if(window.refreshWeekViewStability)window.refreshWeekViewStability();
                   return;
                 }
-                window.__weekViewStabilityV2=true;
+                window.__weekViewStabilityV3=true;
 
+                const APP_VERSION='5.8';
+                function clone(o){return JSON.parse(JSON.stringify(o))}
                 function loadAdv(){
                   try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}
                   catch(e){return {}}
                 }
+                function saveAdvObj(o){
+                  try{AndroidSchedule.saveAdvancedSettings(JSON.stringify(o))}catch(e){}
+                }
                 function oneWeek(){return loadAdv().singleWeek===true}
+                function uiLang(){
+                  try{const raw=AndroidSchedule.loadUiSettings();const o=JSON.parse(raw||'{}');return o.language==='de'||o.language==='en'?o.language:'fr'}catch(e){return 'fr'}
+                }
 
                 function ensureTitleSpan(){
                   const h=document.querySelector('.weekTop h2');
@@ -119,7 +127,7 @@ final class WeekViewStabilityUi {
                 }
 
                 function wrapRender(){
-                  if(typeof window.render!=='function'||window.render.__weekStableV2Wrapped)return;
+                  if(typeof window.render!=='function'||window.render.__weekStableV3Wrapped)return;
                   const old=window.render;
                   const wrapped=function(){
                     if(oneWeek()){
@@ -134,12 +142,12 @@ final class WeekViewStabilityUi {
                     }
                     return out;
                   };
-                  wrapped.__weekStableV2Wrapped=true;
+                  wrapped.__weekStableV3Wrapped=true;
                   window.render=wrapped;
                 }
 
                 function wrapBulkRefresh(){
-                  if(typeof window.refreshBulkCourseUi!=='function'||window.refreshBulkCourseUi.__weekStableV2Wrapped)return;
+                  if(typeof window.refreshBulkCourseUi!=='function'||window.refreshBulkCourseUi.__weekStableV3Wrapped)return;
                   const old=window.refreshBulkCourseUi;
                   const wrapped=function(){
                     ensureTitleSpan();
@@ -149,14 +157,14 @@ final class WeekViewStabilityUi {
                     if(oneWeek()&&document.getElementById('viewWeek')?.classList.contains('active'))setTimeout(repairWeek,0);
                     return out;
                   };
-                  wrapped.__weekStableV2Wrapped=true;
+                  wrapped.__weekStableV3Wrapped=true;
                   window.refreshBulkCourseUi=wrapped;
                 }
 
                 function bindWeekTab(){
                   const nav=document.querySelector('.nav[data-mode="week"]');
-                  if(!nav||nav.dataset.weekStableV2Bound)return;
-                  nav.dataset.weekStableV2Bound='1';
+                  if(!nav||nav.dataset.weekStableV3Bound)return;
+                  nav.dataset.weekStableV3Bound='1';
                   nav.addEventListener('click',()=>{
                     if(oneWeek()){
                       ensureSingleState();
@@ -166,13 +174,112 @@ final class WeekViewStabilityUi {
                   nav.addEventListener('click',()=>setTimeout(repairWeek,0));
                 }
 
+                function syncSingleSchedule(){
+                  try{
+                    const root=JSON.parse(AndroidSchedule.loadSchedule()||'{}');
+                    root._weeks=root._weeks||{};
+                    if(!root._weeks.A&&typeof weeks!=='undefined'&&weeks.A)root._weeks.A=clone(weeks.A);
+                    if(root._weeks.A){
+                      root._weeks.B=clone(root._weeks.A);
+                      root._weeks.C=clone(root._weeks.A);
+                      root._weeks.D=clone(root._weeks.A);
+                    }
+                    root._currentWeek='A';
+                    root._cycleLength=2;
+                    AndroidSchedule.saveSchedule(JSON.stringify(root));
+                  }catch(e){}
+                  try{
+                    if(typeof weeks!=='undefined'&&weeks.A){
+                      weeks.B=clone(weeks.A);weeks.C=clone(weeks.A);weeks.D=clone(weeks.A);
+                    }
+                    currentWeek='A';activeWeek='A';if(typeof weeks!=='undefined'&&weeks.A)state=weeks.A;
+                    AndroidSchedule.setCurrentWeek('A');
+                  }catch(e){}
+                }
+
+                function applyCycleChoice(n){
+                  n=Number(n)||2;
+                  const a=loadAdv();
+                  if(n===1){
+                    a.singleWeek=true;
+                    a.cycleLength=2;
+                    saveAdvObj(a);
+                    syncSingleSchedule();
+                  }else{
+                    a.singleWeek=false;
+                    a.cycleLength=Math.max(2,Math.min(4,n));
+                    saveAdvObj(a);
+                    try{
+                      const root=JSON.parse(AndroidSchedule.loadSchedule()||'{}');
+                      root._cycleLength=a.cycleLength;
+                      AndroidSchedule.saveSchedule(JSON.stringify(root));
+                    }catch(e){}
+                  }
+                  document.documentElement.classList.toggle('singleWeekMode',n===1);
+                  try{if(typeof render==='function')render()}catch(e){}
+                  setTimeout(()=>{
+                    if(window.refreshBulkCourseUi)window.refreshBulkCourseUi();
+                    if(window.refreshAdvancedFeatures)window.refreshAdvancedFeatures();
+                    applySingleUi();
+                    installCycleChoice();
+                  },0);
+                }
+
+                function installCycleChoice(){
+                  const sel=document.getElementById('advCycle');
+                  if(!sel)return;
+                  let one=sel.querySelector('option[value="1"]');
+                  if(!one){one=document.createElement('option');one.value='1';sel.insertBefore(one,sel.firstChild)}
+                  const lang=uiLang();
+                  const labels=lang==='de'?{1:'1 Woche (einheitlich)',2:'2 Wochen (A/B)',3:'3 Wochen (A/B/C)',4:'4 Wochen (A/B/C/D)'}:
+                    (lang==='en'?{1:'1 week (single)',2:'2 weeks (A/B)',3:'3 weeks (A/B/C)',4:'4 weeks (A/B/C/D)'}:{1:'1 semaine (unique)',2:'2 semaines (A/B)',3:'3 semaines (A/B/C)',4:'4 semaines (A/B/C/D)'});
+                  [...sel.options].forEach(o=>{if(labels[o.value])o.textContent=labels[o.value]});
+                  const a=loadAdv();
+                  sel.value=a.singleWeek===true?'1':String(Math.max(2,Math.min(4,Number(a.cycleLength)||2)));
+                  if(!sel.dataset.singleWeekChoiceBound){
+                    sel.dataset.singleWeekChoiceBound='1';
+                    sel.addEventListener('change',e=>{
+                      e.stopImmediatePropagation();
+                      applyCycleChoice(e.target.value);
+                    },true);
+                  }
+                }
+
+                function installVersionInfo(){
+                  const actions=document.querySelector('#settingsSheet .settingsActions');
+                  if(!actions)return;
+                  let v=document.getElementById('appVersionInfo');
+                  if(!v){
+                    v=document.createElement('div');v.id='appVersionInfo';
+                    v.style.cssText='text-align:center;margin:12px 0 -2px;color:#7a8494;font-size:.68rem;font-weight:700';
+                    actions.insertAdjacentElement('beforebegin',v);
+                  }
+                  v.textContent='Version '+APP_VERSION;
+                }
+
+                function wrapAdvancedRefresh(){
+                  if(typeof window.refreshAdvancedFeatures!=='function'||window.refreshAdvancedFeatures.__singleChoiceWrapped)return;
+                  const old=window.refreshAdvancedFeatures;
+                  const wrapped=function(){
+                    const out=old.apply(this,arguments);
+                    installCycleChoice();
+                    installVersionInfo();
+                    return out;
+                  };
+                  wrapped.__singleChoiceWrapped=true;
+                  window.refreshAdvancedFeatures=wrapped;
+                }
+
                 function refresh(){
                   ensureTitleSpan();
                   wrapRenderContext();
                   wrapToggleCurrentWeek();
                   wrapRender();
                   wrapBulkRefresh();
+                  wrapAdvancedRefresh();
                   bindWeekTab();
+                  installCycleChoice();
+                  installVersionInfo();
                   applySingleUi();
                   if(oneWeek()&&document.getElementById('viewWeek')?.classList.contains('active'))repairWeek();
                 }
