@@ -4,6 +4,7 @@ import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
@@ -63,7 +64,8 @@ public class UpcomingCoursesService extends RemoteViewsService {
             boolean dayMode=widgetId!=AppWidgetManager.INVALID_APPWIDGET_ID && WidgetModeStore.isDayMode(context,widgetId);
 
             if(dayMode){
-                loadWholeDay(now,nowMin,lunchStart,lunchEnd);
+                Calendar target=resolveDayTarget(now,nowMin);
+                loadWholeDay(target,now,lunchStart,lunchEnd);
                 return;
             }
 
@@ -110,20 +112,55 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 items.add(new Item(c.label,c.start+" - "+c.end,c.room,Item.COURSE,order,relativeLabel(now,targetDate,c),c.uncertain));
                 previousEnd=ScheduleData.toMinutes(c.end);
             }
+            ensureOneFollowingCourse(now,targetDate);
             trimForPreference();
         }
 
-        private void loadWholeDay(Calendar now,int nowMin,int lunchStart,int lunchEnd){
-            List<ScheduleData.Course> courses=ScheduleStore.getCourses(context,now);
+        private Calendar resolveDayTarget(Calendar now,int nowMin){
+            List<ScheduleData.Course> today=ScheduleStore.getCourses(context,now);
+            for(ScheduleData.Course c:today){
+                if(ScheduleData.toMinutes(c.end)>nowMin)return (Calendar)now.clone();
+            }
+            Calendar cursor=(Calendar)now.clone();
+            cursor.add(Calendar.DAY_OF_YEAR,1);
+            for(int add=0;add<21;add++){
+                List<ScheduleData.Course> list=ScheduleStore.getCourses(context,cursor);
+                if(list!=null&&!list.isEmpty())return (Calendar)cursor.clone();
+                cursor.add(Calendar.DAY_OF_YEAR,1);
+            }
+            return (Calendar)now.clone();
+        }
+
+        private void loadWholeDay(Calendar targetDate,Calendar now,int lunchStart,int lunchEnd){
+            List<ScheduleData.Course> courses=ScheduleStore.getCourses(context,targetDate);
             if(courses==null||courses.isEmpty())return;
+            boolean sameDay=targetDate.get(Calendar.YEAR)==now.get(Calendar.YEAR)
+                    && targetDate.get(Calendar.DAY_OF_YEAR)==now.get(Calendar.DAY_OF_YEAR);
             int previousEnd=-1;
             for(int i=0;i<courses.size();i++){
                 ScheduleData.Course c=courses.get(i);
                 int start=ScheduleData.toMinutes(c.start);
                 if(previousEnd>=0)appendBreaks(previousEnd,start,lunchStart,lunchEnd);
                 int order=c.slot>0?c.slot:i+1;
-                items.add(new Item(c.label,c.start+" - "+c.end,c.room,Item.COURSE,order,relativeLabel(now,now,c),c.uncertain));
+                String relative=sameDay?relativeLabel(now,targetDate,c):"";
+                items.add(new Item(c.label,c.start+" - "+c.end,c.room,Item.COURSE,order,relative,c.uncertain));
                 previousEnd=ScheduleData.toMinutes(c.end);
+            }
+        }
+
+        private void ensureOneFollowingCourse(Calendar now,Calendar afterDate){
+            for(Item item:items)if(item.type==Item.COURSE)return;
+            Calendar cursor=(Calendar)afterDate.clone();
+            cursor.add(Calendar.DAY_OF_YEAR,1);
+            for(int add=0;add<21;add++){
+                List<ScheduleData.Course> list=ScheduleStore.getCourses(context,cursor);
+                if(list!=null&&!list.isEmpty()){
+                    ScheduleData.Course c=list.get(0);
+                    int order=c.slot>0?c.slot:1;
+                    items.add(new Item(c.label,c.start+" - "+c.end,c.room,Item.COURSE,order,relativeLabel(now,cursor,c),c.uncertain));
+                    return;
+                }
+                cursor.add(Calendar.DAY_OF_YEAR,1);
             }
         }
 
@@ -228,17 +265,6 @@ public class UpcomingCoursesService extends RemoteViewsService {
             return "";
         }
 
-        private int courseColor(int order,String label){
-            int[] palette={0xFFF0335D,0xFFFF7B2F,0xFFFFEF88,0xFF21C877,0xFF18B9BE,0xFF2F83E8,0xFF9B55E9};
-            int index=order>0?order-1:Math.abs(String.valueOf(label).hashCode());
-            return palette[Math.floorMod(index,palette.length)];
-        }
-
-        private boolean darkTextForOrder(int order){
-            int i=Math.floorMod(Math.max(1,order)-1,7);
-            return i==2;
-        }
-
         @Override public RemoteViews getViewAt(int position){
             if(position<0||position>=items.size())return null;
             Item item=items.get(position);
@@ -248,45 +274,47 @@ public class UpcomingCoursesService extends RemoteViewsService {
             float scale=UiSettingsStore.widgetFontScale(context);
             float densityScale="compact".equals(density)?.93f:("comfortable".equals(density)?1.08f:1f);
 
-            v.setTextViewTextSize(R.id.rowDot,TypedValue.COMPLEX_UNIT_SP,8f*scale*densityScale);
             v.setTextViewTextSize(R.id.rowTitle,TypedValue.COMPLEX_UNIT_SP,10.5f*scale*densityScale);
             v.setTextViewTextSize(R.id.rowMeta,TypedValue.COMPLEX_UNIT_SP,8.5f*scale*densityScale);
             v.setTextViewTextSize(R.id.rowRelative,TypedValue.COMPLEX_UNIT_SP,8.5f*scale*densityScale);
 
             v.setViewVisibility(R.id.rowIndex,View.GONE);
+            v.setViewVisibility(R.id.rowDot,View.GONE);
+            v.setViewVisibility(R.id.rowLineTop,View.GONE);
+            v.setViewVisibility(R.id.rowLineBottom,View.GONE);
             v.setTextViewText(R.id.rowTitle,(item.uncertain?"⚠ ":"")+item.label);
             v.setTextViewText(R.id.rowRelative,item.relative);
             v.setViewVisibility(R.id.rowRelative,item.relative.isEmpty()?View.GONE:View.VISIBLE);
-            v.setViewVisibility(R.id.rowLineTop,position==0?View.INVISIBLE:View.VISIBLE);
-            v.setViewVisibility(R.id.rowLineBottom,position==items.size()-1?View.INVISIBLE:View.VISIBLE);
 
             if(item.type==Item.LUNCH){
-                v.setInt(R.id.rowContent,"setBackgroundColor",0xFFE9F0F7);
-                v.setTextViewText(R.id.rowMeta,AdvancedSettingsStore.showTimes(context)?item.time:"");
-                v.setViewVisibility(R.id.rowMeta,AdvancedSettingsStore.showTimes(context)?View.VISIBLE:View.GONE);
-                v.setTextColor(R.id.rowDot,0xFF46657D);
-                v.setTextColor(R.id.rowTitle,0xFF173653);
-                v.setTextColor(R.id.rowMeta,0xFF4E6578);
+                int bg=WidgetPaletteStore.lunchBackground(context),ink=WidgetPaletteStore.lunchText(context);
+                v.setInt(R.id.rowContent,"setBackgroundColor",bg);
+                String title=item.label;
+                if(AdvancedSettingsStore.showTimes(context))title+="  ·  "+item.time;
+                v.setTextViewText(R.id.rowTitle,title);
+                v.setInt(R.id.rowTitle,"setGravity",Gravity.CENTER);
+                v.setTextColor(R.id.rowTitle,ink);
+                v.setTextViewText(R.id.rowMeta,"");
+                v.setViewVisibility(R.id.rowMeta,View.GONE);
                 v.setViewVisibility(R.id.rowRelative,View.GONE);
             }else if(item.type==Item.GAP){
-                v.setInt(R.id.rowContent,"setBackgroundColor",0xFFF0E9FF);
+                int bg=WidgetPaletteStore.gapBackground(context),ink=WidgetPaletteStore.gapText(context);
+                v.setInt(R.id.rowContent,"setBackgroundColor",bg);
                 String meta=AdvancedSettingsStore.showTimes(context)?item.time+" · ":"";
                 meta+=UiSettingsStore.t(context,"noClass");
                 v.setTextViewText(R.id.rowMeta,meta);
-                v.setTextColor(R.id.rowDot,0xFF8B5DC2);
-                v.setTextColor(R.id.rowTitle,0xFF5E3E8E);
-                v.setTextColor(R.id.rowMeta,0xFF705A89);
+                v.setTextColor(R.id.rowTitle,ink);
+                v.setTextColor(R.id.rowMeta,ink);
                 v.setViewVisibility(R.id.rowRelative,View.GONE);
             }else{
-                int bg=courseColor(item.order,item.label);
-                boolean dark=darkTextForOrder(item.order);
+                int bg=WidgetPaletteStore.courseColor(context,item.order,item.label);
+                boolean dark=WidgetPaletteStore.useDarkText(context,item.order,item.label);
                 int ink=dark?0xFF17213A:0xFFFFFFFF;
                 int muted=dark?0xFF35435A:0xFFF7FBFF;
                 v.setInt(R.id.rowContent,"setBackgroundColor",bg);
                 String meta=courseMeta(item);
                 v.setTextViewText(R.id.rowMeta,meta);
                 v.setViewVisibility(R.id.rowMeta,meta.isEmpty()?View.GONE:View.VISIBLE);
-                v.setTextColor(R.id.rowDot,bg);
                 v.setTextColor(R.id.rowTitle,ink);
                 v.setTextColor(R.id.rowMeta,muted);
                 v.setTextColor(R.id.rowRelative,dark?0xFF72570B:0xFF9A2342);
@@ -298,7 +326,6 @@ public class UpcomingCoursesService extends RemoteViewsService {
             v.setOnClickFillInIntent(R.id.rowTitle,fill);
             v.setOnClickFillInIntent(R.id.rowMeta,fill);
             v.setOnClickFillInIntent(R.id.rowRelative,fill);
-            v.setOnClickFillInIntent(R.id.rowDot,fill);
             return v;
         }
 
