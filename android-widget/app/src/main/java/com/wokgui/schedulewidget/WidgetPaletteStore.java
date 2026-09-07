@@ -24,13 +24,7 @@ final class WidgetPaletteStore {
     }
 
     static int headerColor(Context context) {
-        switch (getPalette(context)) {
-            case "pastel": return 0xFFB75B77;
-            case "warm": return 0xFFD65A50;
-            case "cool": return 0xFF367DA5;
-            case "soft": return 0xFF566B7E;
-            default: return 0xFFC92F57;
-        }
+        return 0xFF55616D;
     }
 
     static int courseColor(Context context, int slot, String label) {
@@ -49,27 +43,19 @@ final class WidgetPaletteStore {
     }
 
     static int lunchBackground(Context context) {
-        switch (getPalette(context)) {
-            case "cool": return 0xFFEAF4F5;
-            case "soft": return 0xFFF0F1EE;
-            default: return 0xFFFFF1D7;
-        }
+        return 0xFFF4F1EA;
     }
 
     static int lunchText(Context context) {
-        switch (getPalette(context)) {
-            case "cool": return 0xFF315E68;
-            case "soft": return 0xFF566052;
-            default: return 0xFF8C5D13;
-        }
+        return 0xFF54504A;
     }
 
     static int gapBackground(Context context) {
-        return 0xFFF1ECFA;
+        return 0xFFF0F2F5;
     }
 
     static int gapText(Context context) {
-        return 0xFF654E87;
+        return 0xFF525C66;
     }
 
     private static int[] palette(Context context) {
