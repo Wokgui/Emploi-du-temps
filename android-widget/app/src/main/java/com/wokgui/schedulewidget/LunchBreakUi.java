@@ -7,11 +7,11 @@ final class LunchBreakUi {
         return """
             (function(){
               try {
-                if(window.__lunchBreakUiV7){
+                if(window.__lunchBreakUiV8){
                   if(window.refreshLunchBreakUi)window.refreshLunchBreakUi();
                   return;
                 }
-                window.__lunchBreakUiV7=true;
+                window.__lunchBreakUiV8=true;
                 const EMPTY_MARK=String.fromCharCode(8203);
 
                 const style=document.createElement('style');
@@ -93,35 +93,56 @@ final class LunchBreakUi {
                   }
                   return out.sort((a,b)=>min(a.start)-min(b.start)||((a.type==='lunchDynamic')?-1:0)-((b.type==='lunchDynamic')?-1:0)||min(a.end)-min(b.end));
                 }
+                window.uniqueWeekTimes=dynamicWeekTimes;
+                try{uniqueWeekTimes=dynamicWeekTimes}catch(e){}
 
-                const baseRenderBreakSettings=typeof renderBreakSettings==='function'?renderBreakSettings:null;
-                function renderBreakSettingsV7(){
-                  if(baseRenderBreakSettings)baseRenderBreakSettings();
+                function renderBreakSettingsV8(){
                   const gap=document.getElementById('gapLabel'),lunch=document.getElementById('lunchLabel');
+                  const gcb=document.getElementById('showGapBadge'),lcb=document.getElementById('showLunchBadge');
                   if(gap&&document.activeElement!==gap)gap.value=gapLabelText();
                   if(lunch&&document.activeElement!==lunch)lunch.value=lunchLabelText();
-                  const gcb=document.getElementById('showGapBadge'),lcb=document.getElementById('showLunchBadge');
                   if(gcb&&typeof breaks!=='undefined')gcb.checked=breaks.showGapBadge!==false;
                   if(lcb&&typeof breaks!=='undefined')lcb.checked=breaks.showLunchBadge!==false;
                 }
-                window.renderBreakSettings=renderBreakSettingsV7;
-                try{renderBreakSettings=renderBreakSettingsV7}catch(e){}
+                window.renderBreakSettings=renderBreakSettingsV8;
+                try{renderBreakSettings=renderBreakSettingsV8}catch(e){}
 
-                let saveTimer=null;
-                function commitBreakSettings(){
+                let persistTimer=null;
+                function syncBreakStateFromControls(){
+                  if(typeof breaks==='undefined'||!breaks)return;
+                  const gap=document.getElementById('gapLabel'),lunch=document.getElementById('lunchLabel');
+                  const gcb=document.getElementById('showGapBadge'),lcb=document.getElementById('showLunchBadge');
+                  if(gap)breaks.gapLabel=storedLabel(gap.value);
+                  if(lunch)breaks.lunchLabel=storedLabel(lunch.value);
+                  if(gcb)breaks.showGapBadge=gcb.checked;
+                  if(lcb)breaks.showLunchBadge=lcb.checked;
+                }
+                function persistBreakState(){
                   try{
-                    if(typeof breaks==='undefined'||!breaks)return;
-                    const gap=document.getElementById('gapLabel'),lunch=document.getElementById('lunchLabel');
-                    const gcb=document.getElementById('showGapBadge'),lcb=document.getElementById('showLunchBadge');
-                    if(gap)breaks.gapLabel=storedLabel(gap.value);
-                    if(lunch)breaks.lunchLabel=storedLabel(lunch.value);
-                    if(gcb)breaks.showGapBadge=gcb.checked;
-                    if(lcb)breaks.showLunchBadge=lcb.checked;
-                    if(typeof save==='function')save();
-                    setTimeout(()=>{renderBreakSettingsV7();fitBreakLabels();polishWeekNowMarker()},20);
+                    syncBreakStateFromControls();
+                    if(window.AndroidSchedule&&AndroidSchedule.saveSchedule&&typeof exportState==='function'){
+                      AndroidSchedule.saveSchedule(JSON.stringify(exportState()));
+                    }else if(typeof localStorage!=='undefined'&&typeof exportState==='function'){
+                      localStorage.setItem('edt',JSON.stringify(exportState()));
+                    }
                   }catch(e){}
                 }
-                function queueSave(){if(saveTimer)clearTimeout(saveTimer);saveTimer=setTimeout(commitBreakSettings,150)}
+                function queuePersist(){
+                  syncBreakStateFromControls();
+                  if(persistTimer)clearTimeout(persistTimer);
+                  persistTimer=setTimeout(persistBreakState,120);
+                }
+                function applyBreakSettingsV8(){
+                  syncBreakStateFromControls();
+                  persistBreakState();
+                  if(typeof mode!=='undefined'){
+                    if(mode==='today')renderTodayDynamic();
+                    else if(mode==='week')renderWeekDynamic();
+                  }
+                  setTimeout(()=>{renderBreakSettingsV8();fitBreakLabels();polishWeekNowMarker();if(window.refreshCourseColors)window.refreshCourseColors()},15);
+                }
+                window.applyBreakSettings=applyBreakSettingsV8;
+                try{applyBreakSettings=applyBreakSettingsV8}catch(e){}
 
                 function wireBreakSettings(){
                   const gap=document.getElementById('gapLabel'),lunch=document.getElementById('lunchLabel');
@@ -129,12 +150,17 @@ final class LunchBreakUi {
                   for(const input of [gap,lunch])if(input){
                     input.maxLength=28;
                     input.placeholder='Laisser vide pour aucun texte';
-                    input.onchange=commitBreakSettings;
-                    input.onblur=commitBreakSettings;
-                    input.oninput=queueSave;
+                    if(!input.__breakV8){
+                      input.__breakV8=true;
+                      input.addEventListener('input',()=>{syncBreakStateFromControls();queuePersist()});
+                      input.addEventListener('change',applyBreakSettingsV8);
+                      input.addEventListener('blur',applyBreakSettingsV8);
+                    }
                   }
-                  for(const cb of [gcb,lcb])if(cb)cb.onchange=commitBreakSettings;
-                  renderBreakSettingsV7();
+                  for(const cb of [gcb,lcb])if(cb&&!cb.__breakV8){
+                    cb.__breakV8=true;cb.addEventListener('change',applyBreakSettingsV8);
+                  }
+                  renderBreakSettingsV8();
                 }
 
                 function fitBreakLabel(el){
@@ -198,6 +224,7 @@ final class LunchBreakUi {
                     }
                     box.appendChild(row);
                   }
+                  setTimeout(()=>{if(window.refreshCourseColors)window.refreshCourseColors()},0);
                 }
 
                 function appendRegularWeekRow(box,t){
@@ -237,13 +264,12 @@ final class LunchBreakUi {
                   const corner=document.createElement('div');corner.className='wh timecol';corner.textContent='H';box.appendChild(corner);
                   for(const d of DAYS){const h=document.createElement('div');h.className='wh day';h.textContent=NAMES[d];box.appendChild(h)}
                   for(const t of times){if(t.type==='lunchDynamic')appendLunchBandRow(box);else appendRegularWeekRow(box,t)}
-                  setTimeout(()=>{fitBreakLabels();polishWeekNowMarker()},0);
+                  setTimeout(()=>{fitBreakLabels();polishWeekNowMarker();if(window.refreshCourseColors)window.refreshCourseColors()},0);
                 }
 
-                window.uniqueWeekTimes=dynamicWeekTimes;
                 window.renderToday=renderTodayDynamic;
                 window.renderWeek=renderWeekDynamic;
-                try{uniqueWeekTimes=dynamicWeekTimes;renderToday=renderTodayDynamic;renderWeek=renderWeekDynamic}catch(e){}
+                try{renderToday=renderTodayDynamic;renderWeek=renderWeekDynamic}catch(e){}
 
                 wireBreakSettings();
                 const weekGrid=document.getElementById('weekGrid');
