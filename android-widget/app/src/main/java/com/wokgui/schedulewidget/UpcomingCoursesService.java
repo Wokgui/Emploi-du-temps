@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -27,17 +28,37 @@ public class UpcomingCoursesService extends RemoteViewsService {
         static final int COURSE = 0;
         static final int LUNCH = 1;
         static final int GAP = 2;
-        final String label, time, room, relative;
-        final int type, order;
+
+        final String label;
+        final String time;
+        final String room;
+        final String relative;
+        final String colorId;
+        final int type;
+        final int order;
         final boolean uncertain;
-        Item(String label, String time, String room, int type, int order, String relative, boolean uncertain) {
-            this.label=label;this.time=time;this.room=room;this.type=type;this.order=order;this.relative=relative;this.uncertain=uncertain;
+
+        Item(String label, String time, String room, int type, int order,
+             String relative, boolean uncertain, String colorId) {
+            this.label = label;
+            this.time = time;
+            this.room = room;
+            this.type = type;
+            this.order = order;
+            this.relative = relative;
+            this.uncertain = uncertain;
+            this.colorId = colorId == null ? "" : colorId;
         }
     }
 
-    private static final class GapInfo {
-        final int start, end;
-        GapInfo(int start, int end) { this.start=start;this.end=end; }
+    private static final class Target {
+        final Calendar date;
+        final int firstCourse;
+
+        Target(Calendar date, int firstCourse) {
+            this.date = date;
+            this.firstCourse = firstCourse;
+        }
     }
 
     private static final class Factory implements RemoteViewsFactory {
@@ -47,303 +68,273 @@ public class UpcomingCoursesService extends RemoteViewsService {
         private boolean compactHeight;
 
         Factory(Context context, int widgetId) {
-            this.context=context;
-            this.widgetId=widgetId;
+            this.context = context;
+            this.widgetId = widgetId;
         }
 
-        @Override public void onCreate(){reload();}
-        @Override public void onDataSetChanged(){reload();}
-        @Override public void onDestroy(){items.clear();}
-        @Override public int getCount(){return items.size();}
+        @Override public void onCreate() { reload(); }
+        @Override public void onDataSetChanged() { reload(); }
+        @Override public void onDestroy() { items.clear(); }
+        @Override public int getCount() { return items.size(); }
 
-        private boolean isCompactHeight(){
-            if(widgetId==AppWidgetManager.INVALID_APPWIDGET_ID)return false;
-            Bundle options=AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId);
-            int h=options==null?180:options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,180);
-            return h>0&&h<=210;
+        private boolean isCompactHeight() {
+            if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return false;
+            Bundle options = AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId);
+            int h = options == null ? 120 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 120);
+            return h > 0 && h <= 145;
         }
 
         private void reload() {
             items.clear();
             ScheduleStore.ensureInitialized(context);
-            compactHeight=isCompactHeight();
-            Calendar now=Calendar.getInstance();
-            int nowMin=now.get(Calendar.HOUR_OF_DAY)*60+now.get(Calendar.MINUTE);
-            int lunchStart=ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context,4));
-            int lunchEnd=ScheduleData.toMinutes(ScheduleStore.getSlotStart(context,5));
-            boolean dayMode=widgetId!=AppWidgetManager.INVALID_APPWIDGET_ID && WidgetModeStore.isDayMode(context,widgetId) && !compactHeight;
+            compactHeight = isCompactHeight();
 
-            if(dayMode){
-                Calendar target=resolveDayTarget(now,nowMin);
-                loadWholeDay(target,now,lunchStart,lunchEnd);
+            Calendar now = Calendar.getInstance();
+            int nowMin = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
+            Target target = resolveTarget(now, nowMin);
+            if (target == null) return;
+
+            List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, target.date);
+            if (courses == null || courses.isEmpty() || target.firstCourse >= courses.size()) return;
+
+            int lunchStart = ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, 4));
+            int lunchEnd = ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, 5));
+            boolean futureDay = !sameDay(now, target.date);
+            int previousEnd = -1;
+            boolean firstVisibleCourse = true;
+
+            for (int i = target.firstCourse; i < courses.size(); i++) {
+                ScheduleData.Course c = courses.get(i);
+                int start = ScheduleData.toMinutes(c.start);
+                if (previousEnd >= 0 && !compactHeight) {
+                    appendBreaks(previousEnd, start, lunchStart, lunchEnd);
+                }
+
+                int order = c.slot > 0 ? c.slot : i + 1;
+                String relative = relativeLabel(now, target.date, c, futureDay && firstVisibleCourse);
+                items.add(new Item(
+                        c.label,
+                        c.start + " - " + c.end,
+                        c.room,
+                        Item.COURSE,
+                        order,
+                        relative,
+                        c.uncertain,
+                        c.color
+                ));
+                firstVisibleCourse = false;
+                previousEnd = ScheduleData.toMinutes(c.end);
+            }
+        }
+
+        private Target resolveTarget(Calendar now, int nowMin) {
+            List<ScheduleData.Course> today = ScheduleStore.getCourses(context, now);
+            if (today != null) {
+                for (int i = 0; i < today.size(); i++) {
+                    ScheduleData.Course c = today.get(i);
+                    if (ScheduleData.toMinutes(c.end) > nowMin) {
+                        return new Target((Calendar) now.clone(), i);
+                    }
+                }
+            }
+
+            Calendar cursor = (Calendar) now.clone();
+            cursor.add(Calendar.DAY_OF_YEAR, 1);
+            for (int add = 0; add < 21; add++) {
+                List<ScheduleData.Course> list = ScheduleStore.getCourses(context, cursor);
+                if (list != null && !list.isEmpty()) {
+                    return new Target((Calendar) cursor.clone(), 0);
+                }
+                cursor.add(Calendar.DAY_OF_YEAR, 1);
+            }
+            return null;
+        }
+
+        private void appendBreaks(int from, int to, int lunchStart, int lunchEnd) {
+            if (to <= from) return;
+            boolean lunchValid = lunchEnd > lunchStart;
+            if (!lunchValid || to <= lunchStart || from >= lunchEnd) {
+                addGap(from, to);
                 return;
             }
-
-            List<ScheduleData.Course> todayCourses=ScheduleStore.getCourses(context,now);
-            ScheduleData.Course current=null;
-            for(ScheduleData.Course c:todayCourses){
-                int s=ScheduleData.toMinutes(c.start),e=ScheduleData.toMinutes(c.end);
-                if(nowMin>=s&&nowMin<e){current=c;break;}
+            if (from < lunchStart) addGap(from, Math.min(to, lunchStart));
+            if (from <= lunchStart && to >= lunchEnd && AdvancedSettingsStore.showLunch(context)) {
+                items.add(new Item(
+                        localizedBreakLabel(true),
+                        minuteLabel(lunchStart) + " - " + minuteLabel(lunchEnd),
+                        "",
+                        Item.LUNCH,
+                        0,
+                        "",
+                        false,
+                        ""
+                ));
             }
-
-            boolean lunchValid=lunchEnd>lunchStart;
-            boolean inLunch=current==null&&lunchValid&&hasLunchGap(todayCourses,lunchStart,lunchEnd)&&nowMin>=lunchStart&&nowMin<lunchEnd;
-            GapInfo currentGap=current==null&&!inLunch?findCurrentGap(todayCourses,nowMin,lunchStart,lunchEnd):null;
-            Calendar targetDate;
-            int threshold,previousEnd;
-
-            if(current!=null){
-                targetDate=(Calendar)now.clone();threshold=ScheduleData.toMinutes(current.start)+1;previousEnd=ScheduleData.toMinutes(current.end);
-            }else if(inLunch){
-                targetDate=(Calendar)now.clone();threshold=lunchEnd;previousEnd=lunchEnd;
-            }else if(currentGap!=null){
-                targetDate=(Calendar)now.clone();threshold=currentGap.end;previousEnd=currentGap.end;
-            }else{
-                ScheduleData.Course topNext=null;targetDate=null;Calendar cursor=(Calendar)now.clone();
-                for(int add=0;add<21&&topNext==null;add++){
-                    List<ScheduleData.Course> courses=ScheduleStore.getCourses(context,cursor);
-                    for(ScheduleData.Course c:courses){
-                        if(add==0&&ScheduleData.toMinutes(c.start)<=nowMin)continue;
-                        topNext=c;targetDate=(Calendar)cursor.clone();break;
-                    }
-                    cursor.add(Calendar.DAY_OF_YEAR,1);
-                }
-                if(topNext==null||targetDate==null)return;
-                threshold=ScheduleData.toMinutes(topNext.start)+1;previousEnd=ScheduleData.toMinutes(topNext.end);
-            }
-
-            List<ScheduleData.Course> sameDay=ScheduleStore.getCourses(context,targetDate);
-            for(int i=0;i<sameDay.size();i++){
-                ScheduleData.Course c=sameDay.get(i);
-                int start=ScheduleData.toMinutes(c.start);
-                if(start<threshold)continue;
-                if(!compactHeight)appendBreaks(previousEnd,start,lunchStart,lunchEnd);
-                int order=c.slot>0?c.slot:i+1;
-                items.add(new Item(c.label,c.start+" - "+c.end,c.room,Item.COURSE,order,relativeLabel(now,targetDate,c),c.uncertain));
-                previousEnd=ScheduleData.toMinutes(c.end);
-                if(compactHeight)break;
-            }
-            ensureOneFollowingCourse(now,targetDate);
-            trimForPreference();
+            if (to > lunchEnd) addGap(Math.max(from, lunchEnd), to);
         }
 
-        private Calendar resolveDayTarget(Calendar now,int nowMin){
-            List<ScheduleData.Course> today=ScheduleStore.getCourses(context,now);
-            for(ScheduleData.Course c:today){
-                if(ScheduleData.toMinutes(c.end)>nowMin)return (Calendar)now.clone();
-            }
-            Calendar cursor=(Calendar)now.clone();
-            cursor.add(Calendar.DAY_OF_YEAR,1);
-            for(int add=0;add<21;add++){
-                List<ScheduleData.Course> list=ScheduleStore.getCourses(context,cursor);
-                if(list!=null&&!list.isEmpty())return (Calendar)cursor.clone();
-                cursor.add(Calendar.DAY_OF_YEAR,1);
-            }
-            return (Calendar)now.clone();
+        private void addGap(int start, int end) {
+            if (!AdvancedSettingsStore.showBreaks(context) || end <= start) return;
+            items.add(new Item(
+                    localizedBreakLabel(false),
+                    minuteLabel(start) + " - " + minuteLabel(end),
+                    "",
+                    Item.GAP,
+                    0,
+                    "",
+                    false,
+                    ""
+            ));
         }
 
-        private void loadWholeDay(Calendar targetDate,Calendar now,int lunchStart,int lunchEnd){
-            List<ScheduleData.Course> courses=ScheduleStore.getCourses(context,targetDate);
-            if(courses==null||courses.isEmpty())return;
-            boolean sameDay=targetDate.get(Calendar.YEAR)==now.get(Calendar.YEAR)
-                    && targetDate.get(Calendar.DAY_OF_YEAR)==now.get(Calendar.DAY_OF_YEAR);
-            int previousEnd=-1;
-            for(int i=0;i<courses.size();i++){
-                ScheduleData.Course c=courses.get(i);
-                int start=ScheduleData.toMinutes(c.start);
-                if(previousEnd>=0)appendBreaks(previousEnd,start,lunchStart,lunchEnd);
-                int order=c.slot>0?c.slot:i+1;
-                String relative=sameDay?relativeLabel(now,targetDate,c):"";
-                items.add(new Item(c.label,c.start+" - "+c.end,c.room,Item.COURSE,order,relative,c.uncertain));
-                previousEnd=ScheduleData.toMinutes(c.end);
-            }
-        }
-
-        private void ensureOneFollowingCourse(Calendar now,Calendar afterDate){
-            for(Item item:items)if(item.type==Item.COURSE)return;
-            Calendar cursor=(Calendar)afterDate.clone();
-            cursor.add(Calendar.DAY_OF_YEAR,1);
-            for(int add=0;add<21;add++){
-                List<ScheduleData.Course> list=ScheduleStore.getCourses(context,cursor);
-                if(list!=null&&!list.isEmpty()){
-                    ScheduleData.Course c=list.get(0);
-                    int order=c.slot>0?c.slot:1;
-                    items.add(new Item(c.label,c.start+" - "+c.end,c.room,Item.COURSE,order,relativeLabel(now,cursor,c),c.uncertain));
-                    return;
-                }
-                cursor.add(Calendar.DAY_OF_YEAR,1);
-            }
-        }
-
-        private boolean hasLunchGap(List<ScheduleData.Course> courses,int lunchStart,int lunchEnd){
-            if(courses==null||courses.isEmpty()||lunchEnd<=lunchStart)return false;
-            boolean before=false,after=false;
-            for(ScheduleData.Course c:courses){
-                int start=ScheduleData.toMinutes(c.start),end=ScheduleData.toMinutes(c.end);
-                if(end<=lunchStart)before=true;
-                if(start>=lunchEnd)after=true;
-                if(start<lunchEnd&&end>lunchStart)return false;
-            }
-            return before&&after;
-        }
-
-        private void trimForPreference() {
-            int requested=AdvancedSettingsStore.upcomingCount(context);
-            int maxCourses=compactHeight?1:("compact".equals(AdvancedSettingsStore.widgetFormat(context))?1:requested);
-            if(maxCourses<=0)return;
-            maxCourses=Math.max(1,maxCourses);
-            int courses=0,keep=items.size();
-            for(int i=0;i<items.size();i++){
-                if(items.get(i).type==Item.COURSE){
-                    courses++;
-                    if(courses>=maxCourses){keep=i+1;break;}
-                }
-            }
-            while(items.size()>keep)items.remove(items.size()-1);
-        }
-
-        private GapInfo findCurrentGap(List<ScheduleData.Course> courses,int minute,int lunchStart,int lunchEnd){
-            if(courses==null||courses.size()<2)return null;
-            int previousEnd=-1,nextStart=Integer.MAX_VALUE;
-            for(ScheduleData.Course c:courses){
-                int start=ScheduleData.toMinutes(c.start),end=ScheduleData.toMinutes(c.end);
-                if(end<=minute&&end>previousEnd)previousEnd=end;
-                if(start>minute&&start<nextStart)nextStart=start;
-            }
-            if(previousEnd<0||nextStart==Integer.MAX_VALUE||nextStart<=previousEnd)return null;
-            boolean lunchValid=lunchEnd>lunchStart;
-            if(lunchValid&&minute>=lunchStart&&minute<lunchEnd)return null;
-            int start=previousEnd,end=nextStart;
-            if(lunchValid){
-                if(minute<lunchStart&&end>lunchStart)end=lunchStart;
-                else if(minute>=lunchEnd&&start<lunchEnd)start=lunchEnd;
-            }
-            if(end<=start||minute<start||minute>=end)return null;
-            return new GapInfo(start,end);
-        }
-
-        private void appendBreaks(int from,int to,int lunchStart,int lunchEnd){
-            if(to<=from)return;
-            boolean lunchValid=lunchEnd>lunchStart;
-            if(!lunchValid||to<=lunchStart||from>=lunchEnd){addGap(from,to);return;}
-            if(from<lunchStart)addGap(from,Math.min(to,lunchStart));
-            if(from<=lunchStart&&to>=lunchEnd&&AdvancedSettingsStore.showLunch(context))
-                items.add(new Item(localizedBreakLabel(true),minuteLabel(lunchStart)+" - "+minuteLabel(lunchEnd),"",Item.LUNCH,0,"",false));
-            if(to>lunchEnd)addGap(Math.max(from,lunchEnd),to);
-        }
-
-        private void addGap(int start,int end){
-            if(!AdvancedSettingsStore.showBreaks(context))return;
-            int duration=end-start;
-            if(duration<=0)return;
-            items.add(new Item(localizedBreakLabel(false),minuteLabel(start)+" - "+minuteLabel(end),"",Item.GAP,0,"",false));
-        }
-
-        private String localizedBreakLabel(boolean lunch){
-            String custom=lunch?ScheduleStore.getLunchLabel(context):ScheduleStore.getGapLabel(context);
-            if(lunch&&"Pause de midi".equalsIgnoreCase(custom))return "Midi";
-            if(!lunch&&"Trou".equalsIgnoreCase(custom))return UiSettingsStore.t(context,"gap");
+        private String localizedBreakLabel(boolean lunch) {
+            String custom = lunch ? ScheduleStore.getLunchLabel(context) : ScheduleStore.getGapLabel(context);
+            if (lunch && "Pause de midi".equalsIgnoreCase(custom)) return "Midi";
+            if (!lunch && "Trou".equalsIgnoreCase(custom)) return UiSettingsStore.t(context, "gap");
             return custom;
         }
 
-        private String relativeLabel(Calendar now,Calendar targetDate,ScheduleData.Course course){
-            Calendar start=(Calendar)targetDate.clone();
-            int startMin=ScheduleData.toMinutes(course.start),endMin=ScheduleData.toMinutes(course.end);
-            start.set(Calendar.HOUR_OF_DAY,startMin/60);start.set(Calendar.MINUTE,startMin%60);start.set(Calendar.SECOND,0);start.set(Calendar.MILLISECOND,0);
-            Calendar end=(Calendar)targetDate.clone();
-            end.set(Calendar.HOUR_OF_DAY,endMin/60);end.set(Calendar.MINUTE,endMin%60);end.set(Calendar.SECOND,0);end.set(Calendar.MILLISECOND,0);
-            long nowMs=now.getTimeInMillis();
-            if(nowMs>=start.getTimeInMillis()&&nowMs<end.getTimeInMillis()){
-                long rem=Math.max(1L,(end.getTimeInMillis()-nowMs+59999L)/60000L);
-                return rem+" min";
+        private String relativeLabel(Calendar now, Calendar targetDate, ScheduleData.Course course, boolean includeDate) {
+            Calendar start = atMinute(targetDate, ScheduleData.toMinutes(course.start));
+            Calendar end = atMinute(targetDate, ScheduleData.toMinutes(course.end));
+            long nowMs = now.getTimeInMillis();
+
+            if (nowMs >= start.getTimeInMillis() && nowMs < end.getTimeInMillis()) {
+                long rem = Math.max(1L, (end.getTimeInMillis() - nowMs + 59999L) / 60000L);
+                return rem + " min";
             }
-            long diff=Math.max(0L,(start.getTimeInMillis()-nowMs)/60000L);
-            if(diff<=0)return "";
-            if(diff<60)return UiSettingsStore.t(context,"in")+" "+diff+" min";
-            boolean tomorrow=start.get(Calendar.YEAR)==now.get(Calendar.YEAR)&&start.get(Calendar.DAY_OF_YEAR)==now.get(Calendar.DAY_OF_YEAR)+1;
-            if(tomorrow&&diff>=12*60)return UiSettingsStore.t(context,"tomorrow");
-            long hours=Math.max(1L,Math.round(diff/60.0));
-            return UiSettingsStore.t(context,"in")+" "+hours+" h";
+
+            long diff = Math.max(0L, (start.getTimeInMillis() - nowMs) / 60000L);
+            if (diff <= 0) return "";
+
+            String base;
+            if (diff < 60) {
+                base = UiSettingsStore.t(context, "in") + " " + diff + " min";
+            } else {
+                long hours = Math.max(1L, Math.round(diff / 60.0));
+                base = UiSettingsStore.t(context, "in") + " " + hours + " h";
+            }
+
+            if (includeDate) base += dateSuffix(targetDate);
+            return base;
         }
 
-        private String minuteLabel(int minute){return String.format(Locale.FRANCE,"%02d:%02d",minute/60,minute%60);}
+        private Calendar atMinute(Calendar date, int minute) {
+            Calendar out = (Calendar) date.clone();
+            out.set(Calendar.HOUR_OF_DAY, minute / 60);
+            out.set(Calendar.MINUTE, minute % 60);
+            out.set(Calendar.SECOND, 0);
+            out.set(Calendar.MILLISECOND, 0);
+            return out;
+        }
 
-        private String courseMeta(Item item){
-            boolean times=AdvancedSettingsStore.showTimes(context),room=AdvancedSettingsStore.showRoom(context);
-            if(times&&room)return item.time+" · "+UiSettingsStore.t(context,"room")+" "+(item.room.isEmpty()?"—":item.room);
-            if(times)return item.time;
-            if(room)return UiSettingsStore.t(context,"room")+" "+(item.room.isEmpty()?"—":item.room);
+        private String dateSuffix(Calendar date) {
+            String lang = UiSettingsStore.language(context);
+            Locale locale = "de".equals(lang) ? Locale.GERMANY : ("en".equals(lang) ? Locale.UK : Locale.FRANCE);
+            if ("fr".equals(lang) || (!"de".equals(lang) && !"en".equals(lang))) {
+                String d = new SimpleDateFormat("EEEE d MMM.", locale).format(date.getTime());
+                return ", le " + d;
+            }
+            if ("de".equals(lang)) {
+                return ", am " + new SimpleDateFormat("EEEE, d. MMM.", locale).format(date.getTime());
+            }
+            return ", " + new SimpleDateFormat("EEE d MMM", locale).format(date.getTime());
+        }
+
+        private boolean sameDay(Calendar a, Calendar b) {
+            return a.get(Calendar.YEAR) == b.get(Calendar.YEAR)
+                    && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR);
+        }
+
+        private String minuteLabel(int minute) {
+            return String.format(Locale.FRANCE, "%02d:%02d", minute / 60, minute % 60);
+        }
+
+        private String courseMeta(Item item) {
+            boolean times = AdvancedSettingsStore.showTimes(context);
+            boolean room = AdvancedSettingsStore.showRoom(context);
+            if (times && room) return item.time + " · " + UiSettingsStore.t(context, "room") + " " + (item.room.isEmpty() ? "—" : item.room);
+            if (times) return item.time;
+            if (room) return UiSettingsStore.t(context, "room") + " " + (item.room.isEmpty() ? "—" : item.room);
             return "";
         }
 
-        @Override public RemoteViews getViewAt(int position){
-            if(position<0||position>=items.size())return null;
-            Item item=items.get(position);
-            String density=AdvancedSettingsStore.density(context);
-            int layout=compactHeight?R.layout.widget_course_row_compact:("compact".equals(density)?R.layout.widget_course_row_compact:("comfortable".equals(density)?R.layout.widget_course_row_comfortable:R.layout.widget_course_row));
-            RemoteViews v=new RemoteViews(context.getPackageName(),layout);
-            float scale=UiSettingsStore.widgetFontScale(context);
-            float densityScale=compactHeight?.93f:("compact".equals(density)?.93f:("comfortable".equals(density)?1.08f:1f));
+        @Override
+        public RemoteViews getViewAt(int position) {
+            if (position < 0 || position >= items.size()) return null;
+            Item item = items.get(position);
+            RemoteViews v = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
 
-            v.setTextViewTextSize(R.id.rowTitle,TypedValue.COMPLEX_UNIT_SP,10.5f*scale*densityScale);
-            v.setTextViewTextSize(R.id.rowMeta,TypedValue.COMPLEX_UNIT_SP,8.5f*scale*densityScale);
-            v.setTextViewTextSize(R.id.rowRelative,TypedValue.COMPLEX_UNIT_SP,8.5f*scale*densityScale);
+            float scale = UiSettingsStore.widgetFontScale(context);
+            v.setTextViewTextSize(R.id.rowTitle, TypedValue.COMPLEX_UNIT_SP, 13f * scale);
+            v.setTextViewTextSize(R.id.rowMeta, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
+            v.setTextViewTextSize(R.id.rowRelative, TypedValue.COMPLEX_UNIT_SP, 9f * scale);
 
-            v.setViewVisibility(R.id.rowIndex,View.GONE);
-            v.setViewVisibility(R.id.rowDot,View.GONE);
-            v.setViewVisibility(R.id.rowLineTop,View.GONE);
-            v.setViewVisibility(R.id.rowLineBottom,View.GONE);
-            v.setTextViewText(R.id.rowTitle,(item.uncertain?"⚠ ":"")+item.label);
-            v.setTextViewText(R.id.rowRelative,item.relative);
-            v.setViewVisibility(R.id.rowRelative,item.relative.isEmpty()?View.GONE:View.VISIBLE);
+            v.setViewVisibility(R.id.rowIndex, View.GONE);
+            v.setViewVisibility(R.id.rowDot, View.GONE);
+            v.setViewVisibility(R.id.rowLineTop, View.GONE);
+            v.setViewVisibility(R.id.rowLineBottom, View.GONE);
+            v.setTextViewText(R.id.rowTitle, (item.uncertain ? "⚠ " : "") + item.label);
+            v.setTextViewText(R.id.rowRelative, item.relative);
+            v.setViewVisibility(R.id.rowRelative, item.relative.isEmpty() ? View.GONE : View.VISIBLE);
+            v.setInt(R.id.rowRelative, "setGravity", Gravity.CENTER);
 
-            if(item.type==Item.LUNCH){
-                int bg=WidgetPaletteStore.lunchBackground(context),ink=WidgetPaletteStore.lunchText(context);
-                v.setInt(R.id.rowContent,"setBackgroundColor",bg);
-                v.setInt(R.id.rowTitle,"setGravity",Gravity.START|Gravity.CENTER_VERTICAL);
-                v.setTextViewText(R.id.rowTitle,item.label);
-                String meta=AdvancedSettingsStore.showTimes(context)?item.time:"";
-                v.setTextViewText(R.id.rowMeta,meta);
-                v.setViewVisibility(R.id.rowMeta,meta.isEmpty()?View.GONE:View.VISIBLE);
-                v.setTextColor(R.id.rowTitle,ink);
-                v.setTextColor(R.id.rowMeta,ink);
-                v.setViewVisibility(R.id.rowRelative,View.GONE);
-            }else if(item.type==Item.GAP){
-                int bg=WidgetPaletteStore.gapBackground(context),ink=WidgetPaletteStore.gapText(context);
-                v.setInt(R.id.rowContent,"setBackgroundColor",bg);
-                v.setInt(R.id.rowTitle,"setGravity",Gravity.START|Gravity.CENTER_VERTICAL);
-                String meta=AdvancedSettingsStore.showTimes(context)?item.time:"";
-                v.setTextViewText(R.id.rowMeta,meta);
-                v.setViewVisibility(R.id.rowMeta,meta.isEmpty()?View.GONE:View.VISIBLE);
-                v.setTextColor(R.id.rowTitle,ink);
-                v.setTextColor(R.id.rowMeta,ink);
-                v.setViewVisibility(R.id.rowRelative,View.GONE);
-            }else{
-                int bg=WidgetPaletteStore.courseColor(context,item.order,item.label);
-                boolean dark=WidgetPaletteStore.useDarkText(context,item.order,item.label);
-                int ink=dark?0xFF17213A:0xFFFFFFFF;
-                int muted=dark?0xFF35435A:0xFFF7FBFF;
-                v.setInt(R.id.rowContent,"setBackgroundColor",bg);
-                String meta=courseMeta(item);
-                v.setTextViewText(R.id.rowMeta,meta);
-                v.setViewVisibility(R.id.rowMeta,meta.isEmpty()?View.GONE:View.VISIBLE);
-                v.setTextColor(R.id.rowTitle,ink);
-                v.setTextColor(R.id.rowMeta,muted);
-                v.setTextColor(R.id.rowRelative,dark?0xFF72570B:0xFF9A2342);
+            if (item.type == Item.LUNCH) {
+                int bg = WidgetPaletteStore.lunchBackground(context);
+                int ink = WidgetPaletteStore.lunchText(context);
+                applyBreakRow(v, item, bg, ink);
+            } else if (item.type == Item.GAP) {
+                int bg = WidgetPaletteStore.gapBackground(context);
+                int ink = WidgetPaletteStore.gapText(context);
+                applyBreakRow(v, item, bg, ink);
+            } else {
+                int bg = WidgetPaletteStore.courseColor(context, item.order, item.label, item.colorId);
+                boolean dark = WidgetPaletteStore.useDarkText(context, item.order, item.label, item.colorId);
+                int ink = dark ? 0xFF17213A : 0xFFFFFFFF;
+                int muted = dark ? 0xFF35435A : 0xFFF7FBFF;
+                v.setInt(R.id.rowContent, "setBackgroundColor", bg);
+                String meta = courseMeta(item);
+                v.setTextViewText(R.id.rowMeta, meta);
+                v.setViewVisibility(R.id.rowMeta, meta.isEmpty() ? View.GONE : View.VISIBLE);
+                v.setTextColor(R.id.rowTitle, ink);
+                v.setTextColor(R.id.rowMeta, muted);
+                v.setTextColor(R.id.rowRelative, darken(bg));
             }
 
-            Intent fill=new Intent();
-            fill.putExtra("open_mode","week");
-            v.setOnClickFillInIntent(R.id.rowRoot,fill);
-            v.setOnClickFillInIntent(R.id.rowTitle,fill);
-            v.setOnClickFillInIntent(R.id.rowMeta,fill);
-            v.setOnClickFillInIntent(R.id.rowRelative,fill);
+            Intent fill = new Intent();
+            fill.putExtra("open_mode", "week");
+            v.setOnClickFillInIntent(R.id.rowRoot, fill);
+            v.setOnClickFillInIntent(R.id.rowContent, fill);
+            v.setOnClickFillInIntent(R.id.rowTitle, fill);
+            v.setOnClickFillInIntent(R.id.rowMeta, fill);
+            v.setOnClickFillInIntent(R.id.rowRelative, fill);
             return v;
         }
 
-        @Override public RemoteViews getLoadingView(){return null;}
-        @Override public int getViewTypeCount(){return 3;}
-        @Override public long getItemId(int position){return position;}
-        @Override public boolean hasStableIds(){return true;}
+        private void applyBreakRow(RemoteViews v, Item item, int bg, int ink) {
+            v.setInt(R.id.rowContent, "setBackgroundColor", bg);
+            v.setTextViewText(R.id.rowTitle, item.label);
+            String meta = AdvancedSettingsStore.showTimes(context) ? item.time : "";
+            v.setTextViewText(R.id.rowMeta, meta);
+            v.setViewVisibility(R.id.rowMeta, meta.isEmpty() ? View.GONE : View.VISIBLE);
+            v.setTextColor(R.id.rowTitle, ink);
+            v.setTextColor(R.id.rowMeta, ink);
+            v.setViewVisibility(R.id.rowRelative, View.GONE);
+        }
+
+        private int darken(int color) {
+            int r = (color >> 16) & 0xFF;
+            int g = (color >> 8) & 0xFF;
+            int b = color & 0xFF;
+            r = Math.max(25, (int) (r * .58f));
+            g = Math.max(25, (int) (g * .58f));
+            b = Math.max(25, (int) (b * .58f));
+            return 0xFF000000 | (r << 16) | (g << 8) | b;
+        }
+
+        @Override public RemoteViews getLoadingView() { return null; }
+        @Override public int getViewTypeCount() { return 1; }
+        @Override public long getItemId(int position) { return position; }
+        @Override public boolean hasStableIds() { return true; }
     }
 }
