@@ -1,7 +1,9 @@
 package com.wokgui.schedulewidget;
 
+import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 
 final class WidgetModeStore {
     private static final String PREFS = "widget_display_modes_v1";
@@ -15,6 +17,11 @@ final class WidgetModeStore {
     }
 
     static boolean isDayMode(Context context, int widgetId) {
+        if (widgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+            Bundle options = AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId);
+            int minHeight = options == null ? 180 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 180);
+            if (minHeight > 0 && minHeight <= 210) return false;
+        }
         return prefs(context).getBoolean(PREFIX + widgetId, false);
     }
 
