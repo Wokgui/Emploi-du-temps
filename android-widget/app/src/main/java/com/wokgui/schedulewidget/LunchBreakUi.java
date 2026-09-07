@@ -265,7 +265,7 @@ final class LunchBreakUi {
                     const grid=document.getElementById('weekGrid');
                     if(grid&&typeof state!=='undefined'){
                       const kids=Array.from(grid.children);for(let p=6;p+5<kids.length;p+=6){
-                        const timeText=(kids[p].textContent||'').match(/[0-2]?\d:[0-5]\d/g);if(!timeText||!timeText.length)continue;const start=timeText[0];
+                        const timeText=(kids[p].textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g);if(!timeText||!timeText.length)continue;const start=timeText[0];
                         for(let i=0;i<5;i++){const cell=kids[p+1+i];if(!cell||!cell.classList.contains('has'))continue;const c=state[DAYS[i]].courses.find(x=>x.start===start);setPill(cell.querySelector('.cellLabel'),courseBadge(c))}
                       }
                     }
