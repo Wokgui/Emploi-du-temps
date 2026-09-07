@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.RemoteViews;
@@ -22,6 +23,7 @@ import java.util.Locale;
 public class ScheduleWidgetProvider extends AppWidgetProvider {
     static final String ACTION_REFRESH = "com.wokgui.schedulewidget.REFRESH";
     static final String ACTION_BOUNDARY = "com.wokgui.schedulewidget.BOUNDARY";
+    static final String ACTION_TOGGLE_MODE = "com.wokgui.schedulewidget.TOGGLE_MODE";
 
     @Override
     public void onUpdate(Context context, AppWidgetManager manager, int[] appWidgetIds) {
@@ -35,6 +37,16 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
         String action = intent.getAction();
+        if (ACTION_TOGGLE_MODE.equals(action)) {
+            int id = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
+            if (id != AppWidgetManager.INVALID_APPWIDGET_ID) {
+                WidgetModeStore.toggle(context, id);
+                AppWidgetManager manager = AppWidgetManager.getInstance(context);
+                manager.notifyAppWidgetViewDataChanged(id, R.id.upcomingList);
+                updateWidget(context, manager, id);
+            }
+            return;
+        }
         if (ACTION_REFRESH.equals(action)
                 || ACTION_BOUNDARY.equals(action)
                 || Intent.ACTION_BOOT_COMPLETED.equals(action)
@@ -45,6 +57,14 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
             scheduleNextBoundary(context);
             ReminderScheduler.reschedule(context);
         }
+    }
+
+    @Override public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager, int appWidgetId, Bundle newOptions) {
+        updateWidget(context, manager, appWidgetId);
+    }
+
+    @Override public void onDeleted(Context context, int[] appWidgetIds) {
+        for (int id : appWidgetIds) WidgetModeStore.clear(context, id);
     }
 
     @Override public void onEnabled(Context context) {
@@ -69,6 +89,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         Calendar now = Calendar.getInstance();
         int minute = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
         List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, now);
+        boolean dayMode = WidgetModeStore.isDayMode(context, widgetId);
 
         ScheduleData.Course current = null;
         for (ScheduleData.Course c : courses) {
@@ -87,89 +108,93 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
 
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_schedule);
         applyAppearance(context, views);
+        views.setTextViewText(R.id.btnWidgetMode, dayMode ? localizedTwoCourses(context) : localizedDay(context));
 
-        Calendar tileDate = (current == null && !inLunch && gap == null && next != null) ? next.date : now;
+        Calendar tileDate = dayMode ? now : ((current == null && !inLunch && gap == null && next != null) ? next.date : now);
         views.setTextViewText(R.id.tvTileDate, formatWidgetDate(context, tileDate));
+        views.setViewVisibility(R.id.currentCard, dayMode ? View.GONE : View.VISIBLE);
         views.setViewVisibility(R.id.tvKindActive, View.GONE);
         views.setViewVisibility(R.id.tvKind, View.VISIBLE);
         views.setViewVisibility(R.id.tvRemaining, View.GONE);
         views.setViewVisibility(R.id.tvProgressPercent, View.GONE);
-        views.setViewVisibility(R.id.classProgress, AdvancedSettingsStore.showProgress(context) ? View.VISIBLE : View.GONE);
+        views.setViewVisibility(R.id.classProgress, View.GONE);
 
-        String accentLabel = null;
-        if (current != null) {
-            accentLabel = current.label;
-            views.setViewVisibility(R.id.tvKind, View.GONE);
-            views.setViewVisibility(R.id.tvKindActive, View.VISIBLE);
-            views.setTextViewText(R.id.tvKindActive, UiSettingsStore.t(context, "current"));
-            views.setTextViewText(R.id.tvStatus, displayLabel(current));
-            views.setTextViewText(R.id.tvSubstatus, courseMeta(context, current));
-            views.setViewVisibility(R.id.tvSubstatus, courseMeta(context, current).isEmpty() ? View.GONE : View.VISIBLE);
-        } else if (inLunch) {
-            String start = ScheduleStore.getSlotEnd(context, 4);
-            String end = ScheduleStore.getSlotStart(context, 5);
-            views.setViewVisibility(R.id.tvKind, View.GONE);
-            views.setTextViewText(R.id.tvStatus, localizedBreakLabel(context, true));
-            String meta = AdvancedSettingsStore.showTimes(context) ? start + " - " + end + " · " : "";
-            meta += UiSettingsStore.t(context, "backAt") + " " + end;
-            views.setTextViewText(R.id.tvSubstatus, meta);
-        } else if (gap != null) {
-            views.setViewVisibility(R.id.tvKind, View.GONE);
-            views.setTextViewText(R.id.tvStatus, localizedBreakLabel(context, false));
-            String meta = AdvancedSettingsStore.showTimes(context) ? minuteLabel(gap.start) + " - " + minuteLabel(gap.end) + " · " : "";
-            meta += durationLabel(gap.end - gap.start);
-            views.setTextViewText(R.id.tvSubstatus, meta);
-        } else if (next != null) {
-            accentLabel = next.course.label;
-            views.setTextViewText(R.id.tvKind, UiSettingsStore.t(context, "next"));
-            views.setTextViewText(R.id.tvStatus, displayLabel(next.course));
-            String meta = courseMeta(context, next.course);
-            views.setTextViewText(R.id.tvSubstatus, meta);
-            views.setViewVisibility(R.id.tvSubstatus, meta.isEmpty() ? View.GONE : View.VISIBLE);
-        } else {
-            views.setViewVisibility(R.id.tvKind, View.GONE);
-            views.setTextViewText(R.id.tvStatus, UiSettingsStore.t(context, "noCourse"));
-            views.setTextViewText(R.id.tvSubstatus, "");
-            views.setViewVisibility(R.id.tvSubstatus, View.GONE);
-        }
-
-        if (accentLabel != null) applyCourseAccent(context, views, accentLabel);
-
-        if (current != null) {
-            int progress = courseProgress(current, minute);
-            int remaining = Math.max(0, ScheduleData.toMinutes(current.end) - minute);
-            views.setProgressBar(R.id.classProgress, 100, progress, false);
-            if (AdvancedSettingsStore.showPercent(context) && AdvancedSettingsStore.showProgress(context)) {
-                views.setViewVisibility(R.id.tvProgressPercent, View.VISIBLE);
-                views.setTextViewText(R.id.tvProgressPercent, progress + "%");
-            }
-            if (AdvancedSettingsStore.showRemaining(context)) {
+        if (!dayMode) {
+            if (current != null) {
+                applyHeroColor(views, current.slot, current.label);
+                views.setViewVisibility(R.id.tvKind, View.GONE);
+                views.setViewVisibility(R.id.tvKindActive, View.VISIBLE);
+                views.setTextViewText(R.id.tvKindActive, UiSettingsStore.t(context, "current"));
+                views.setTextViewText(R.id.tvStatus, displayLabel(current));
+                String meta = courseMeta(context, current);
+                views.setTextViewText(R.id.tvSubstatus, meta);
+                views.setViewVisibility(R.id.tvSubstatus, meta.isEmpty() ? View.GONE : View.VISIBLE);
+                int remaining = Math.max(1, ScheduleData.toMinutes(current.end) - minute);
                 views.setViewVisibility(R.id.tvRemaining, View.VISIBLE);
-                views.setTextViewText(R.id.tvRemaining, remainingLabel(context, remaining));
+                views.setTextViewText(R.id.tvRemaining, shortMinutes(context, remaining));
+            } else if (inLunch) {
+                applyBreakHero(views, true);
+                String start = ScheduleStore.getSlotEnd(context, 4);
+                String end = ScheduleStore.getSlotStart(context, 5);
+                views.setViewVisibility(R.id.tvKind, View.GONE);
+                views.setTextViewText(R.id.tvStatus, localizedBreakLabel(context, true));
+                String meta = AdvancedSettingsStore.showTimes(context) ? start + " - " + end : "";
+                views.setTextViewText(R.id.tvSubstatus, meta);
+                views.setViewVisibility(R.id.tvSubstatus, meta.isEmpty() ? View.GONE : View.VISIBLE);
+            } else if (gap != null) {
+                applyBreakHero(views, false);
+                views.setViewVisibility(R.id.tvKind, View.GONE);
+                views.setTextViewText(R.id.tvStatus, localizedBreakLabel(context, false));
+                String meta = AdvancedSettingsStore.showTimes(context) ? minuteLabel(gap.start) + " - " + minuteLabel(gap.end) : "";
+                views.setTextViewText(R.id.tvSubstatus, meta);
+                views.setViewVisibility(R.id.tvSubstatus, meta.isEmpty() ? View.GONE : View.VISIBLE);
+            } else if (next != null) {
+                applyHeroColor(views, next.course.slot, next.course.label);
+                views.setTextViewText(R.id.tvKind, UiSettingsStore.t(context, "next"));
+                views.setTextViewText(R.id.tvStatus, displayLabel(next.course));
+                String meta = courseMeta(context, next.course);
+                views.setTextViewText(R.id.tvSubstatus, meta);
+                views.setViewVisibility(R.id.tvSubstatus, meta.isEmpty() ? View.GONE : View.VISIBLE);
+                long minutesUntil = minutesUntil(now, next.date, next.course.start);
+                if (minutesUntil >= 0 && minutesUntil < 24 * 60) {
+                    views.setViewVisibility(R.id.tvRemaining, View.VISIBLE);
+                    views.setTextViewText(R.id.tvRemaining, countdownLabel(context, minutesUntil));
+                }
+            } else {
+                views.setInt(R.id.currentCard, "setBackgroundColor", 0xFFE9F0F7);
+                views.setViewVisibility(R.id.tvKind, View.GONE);
+                views.setTextViewText(R.id.tvStatus, UiSettingsStore.t(context, "noCourse"));
+                views.setTextViewText(R.id.tvSubstatus, "");
+                views.setViewVisibility(R.id.tvSubstatus, View.GONE);
             }
-        } else {
-            views.setProgressBar(R.id.classProgress, 100, 100, false);
-            views.setViewVisibility(R.id.tvProgressPercent, View.GONE);
-            views.setViewVisibility(R.id.tvRemaining, View.GONE);
         }
 
         Intent listIntent = new Intent(context, UpcomingCoursesService.class);
         listIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId);
-        listIntent.setData(Uri.parse(listIntent.toUri(Intent.URI_INTENT_SCHEME)));
+        listIntent.setData(Uri.parse("edt://widget/" + widgetId + "/" + (dayMode ? "day" : "summary")));
         views.setRemoteAdapter(R.id.upcomingList, listIntent);
         views.setEmptyView(R.id.upcomingList, R.id.emptyUpcoming);
+        views.setTextViewText(R.id.emptyUpcoming, dayMode ? localizedNoCourseToday(context) : localizedNoOtherCourse(context));
 
         Intent openIntent = new Intent(context, MainActivity.class);
-        openIntent.putExtra("open_mode", "today");
+        openIntent.putExtra("open_mode", "week");
         PendingIntent openPending = PendingIntent.getActivity(context, 100 + widgetId, openIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.widgetRoot, openPending);
+        views.setOnClickPendingIntent(R.id.widgetHeader, openPending);
+        views.setOnClickPendingIntent(R.id.currentCard, openPending);
 
-        Intent editIntent = new Intent(context, MainActivity.class);
-        editIntent.putExtra("open_mode", "edit");
-        PendingIntent editPending = PendingIntent.getActivity(context, 200 + widgetId, editIntent,
+        Intent toggleIntent = new Intent(context, ScheduleWidgetProvider.class).setAction(ACTION_TOGGLE_MODE);
+        toggleIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId);
+        PendingIntent togglePending = PendingIntent.getBroadcast(context, 3000 + widgetId, toggleIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        views.setPendingIntentTemplate(R.id.upcomingList, editPending);
+        views.setOnClickPendingIntent(R.id.btnWidgetMode, togglePending);
+
+        Intent listOpenIntent = new Intent(context, MainActivity.class);
+        listOpenIntent.putExtra("open_mode", "week");
+        PendingIntent listPending = PendingIntent.getActivity(context, 4000 + widgetId, listOpenIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        views.setPendingIntentTemplate(R.id.upcomingList, listPending);
 
         manager.updateAppWidget(widgetId, views);
         manager.notifyAppWidgetViewDataChanged(widgetId, R.id.upcomingList);
@@ -191,48 +216,70 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
     private static void applyAppearance(Context context, RemoteViews views) {
         UiSettingsStore.Theme theme = UiSettingsStore.theme(context);
         float scale = UiSettingsStore.widgetFontScale(context);
-        int surface = theme.widgetSurface, card = theme.widgetCard, ink = theme.ink, muted = theme.muted, accent = theme.accent, track = theme.progressTrack;
+        int surface = theme.widgetSurface, card = theme.widgetCard, ink = theme.ink, muted = theme.muted;
         if ("high_contrast".equals(AdvancedSettingsStore.accessibility(context))) {
-            surface = 0xFFFFFFFF; card = 0xFFFFFFFF; ink = 0xFF000000; muted = 0xFF303030; accent = 0xFF0057B8; track = 0xFFBFC7D1;
+            surface = 0xFFFFFFFF; card = 0xFFFFFFFF; ink = 0xFF000000; muted = 0xFF303030;
         }
         views.setInt(R.id.widgetRoot, "setBackgroundColor", surface);
         views.setInt(R.id.currentCard, "setBackgroundColor", card);
-        views.setInt(R.id.tvKind, "setBackgroundColor", accent);
-        views.setInt(R.id.tvKindActive, "setBackgroundColor", accent);
         views.setTextColor(R.id.tvStatus, ink);
         views.setTextColor(R.id.tvSubstatus, muted);
-        views.setTextColor(R.id.tvTileDate, muted);
-        views.setTextColor(R.id.tvRemaining, muted);
-        views.setTextColor(R.id.tvProgressPercent, accent);
+        views.setTextColor(R.id.tvTileDate, 0xFFFFFFFF);
+        views.setTextColor(R.id.tvRemaining, 0xFF9A2342);
         views.setTextColor(R.id.emptyUpcoming, muted);
+        views.setViewVisibility(R.id.classProgress, View.GONE);
+        views.setViewVisibility(R.id.tvProgressPercent, View.GONE);
 
         String density = AdvancedSettingsStore.density(context);
         float densityScale = "compact".equals(density) ? .94f : ("comfortable".equals(density) ? 1.08f : 1f);
-        views.setTextViewTextSize(R.id.tvKind, TypedValue.COMPLEX_UNIT_SP, 10f * scale * densityScale);
-        views.setTextViewTextSize(R.id.tvKindActive, TypedValue.COMPLEX_UNIT_SP, 10f * scale * densityScale);
-        views.setTextViewTextSize(R.id.tvStatus, TypedValue.COMPLEX_UNIT_SP, 19f * scale * densityScale);
+        views.setTextViewTextSize(R.id.tvKind, TypedValue.COMPLEX_UNIT_SP, 9f * scale * densityScale);
+        views.setTextViewTextSize(R.id.tvKindActive, TypedValue.COMPLEX_UNIT_SP, 9f * scale * densityScale);
+        views.setTextViewTextSize(R.id.tvStatus, TypedValue.COMPLEX_UNIT_SP, 18f * scale * densityScale);
         views.setTextViewTextSize(R.id.tvSubstatus, TypedValue.COMPLEX_UNIT_SP, 11f * scale * densityScale);
-        views.setTextViewTextSize(R.id.tvTileDate, TypedValue.COMPLEX_UNIT_SP, 10f * scale * densityScale);
+        views.setTextViewTextSize(R.id.tvTileDate, TypedValue.COMPLEX_UNIT_SP, 11f * scale * densityScale);
         views.setTextViewTextSize(R.id.tvRemaining, TypedValue.COMPLEX_UNIT_SP, 10f * scale * densityScale);
-        views.setTextViewTextSize(R.id.tvProgressPercent, TypedValue.COMPLEX_UNIT_SP, 10f * scale * densityScale);
+        views.setTextViewTextSize(R.id.btnWidgetMode, TypedValue.COMPLEX_UNIT_SP, 10f * scale * densityScale);
         views.setTextViewTextSize(R.id.emptyUpcoming, TypedValue.COMPLEX_UNIT_SP, 10f * scale * densityScale);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            views.setColorStateList(R.id.classProgress, "setProgressTintList", ColorStateList.valueOf(accent));
-            views.setColorStateList(R.id.classProgress, "setProgressBackgroundTintList", ColorStateList.valueOf(track));
+            views.setColorStateList(R.id.classProgress, "setProgressTintList", ColorStateList.valueOf(theme.accent));
+            views.setColorStateList(R.id.classProgress, "setProgressBackgroundTintList", ColorStateList.valueOf(theme.progressTrack));
         }
     }
 
-    private static void applyCourseAccent(Context context, RemoteViews views, String label) {
-        UiSettingsStore.Theme theme = UiSettingsStore.theme(context);
-        int accent = AdvancedSettingsStore.classColor(context, label, theme.accent);
-        if ("high_contrast".equals(AdvancedSettingsStore.accessibility(context))) accent = 0xFF0057B8;
-        views.setInt(R.id.tvKind, "setBackgroundColor", accent);
-        views.setInt(R.id.tvKindActive, "setBackgroundColor", accent);
-        views.setTextColor(R.id.tvProgressPercent, accent);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            views.setColorStateList(R.id.classProgress, "setProgressTintList", ColorStateList.valueOf(accent));
+    private static void applyHeroColor(RemoteViews views, int slot, String label) {
+        int color = courseColor(slot, label);
+        boolean dark = darkText(slot);
+        int ink = dark ? 0xFF17213A : 0xFFFFFFFF;
+        int muted = dark ? 0xFF35435A : 0xFFF7FBFF;
+        views.setInt(R.id.currentCard, "setBackgroundColor", color);
+        views.setTextColor(R.id.tvStatus, ink);
+        views.setTextColor(R.id.tvSubstatus, muted);
+        views.setTextColor(R.id.tvKind, dark ? 0xFF72570B : 0xFF9A2342);
+        views.setTextColor(R.id.tvKindActive, dark ? 0xFF72570B : 0xFF9A2342);
+        views.setTextColor(R.id.tvRemaining, dark ? 0xFF72570B : 0xFF9A2342);
+    }
+
+    private static void applyBreakHero(RemoteViews views, boolean lunch) {
+        if (lunch) {
+            views.setInt(R.id.currentCard, "setBackgroundColor", 0xFFE9F0F7);
+            views.setTextColor(R.id.tvStatus, 0xFF173653);
+            views.setTextColor(R.id.tvSubstatus, 0xFF4E6578);
+        } else {
+            views.setInt(R.id.currentCard, "setBackgroundColor", 0xFFF0E9FF);
+            views.setTextColor(R.id.tvStatus, 0xFF5E3E8E);
+            views.setTextColor(R.id.tvSubstatus, 0xFF705A89);
         }
+    }
+
+    private static int courseColor(int slot, String label) {
+        int[] palette = {0xFFF0335D,0xFFFF7B2F,0xFFFFEF88,0xFF21C877,0xFF18B9BE,0xFF2F83E8,0xFF9B55E9};
+        int index = slot > 0 ? slot - 1 : Math.abs(String.valueOf(label).hashCode());
+        return palette[Math.floorMod(index, palette.length)];
+    }
+
+    private static boolean darkText(int slot) {
+        return Math.floorMod(Math.max(1, slot) - 1, 7) == 2;
     }
 
     private static String localizedBreakLabel(Context context, boolean lunch) {
@@ -263,15 +310,6 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         return new GapInfo(start, end, next);
     }
 
-    private static int courseProgress(ScheduleData.Course course, int minute) {
-        if (course == null) return 0;
-        int start = ScheduleData.toMinutes(course.start), end = ScheduleData.toMinutes(course.end);
-        int duration = end - start;
-        if (duration <= 0 || minute <= start) return 0;
-        if (minute >= end) return 100;
-        return clamp((int) Math.round((minute - start) * 100.0 / duration));
-    }
-
     private static NextCourseInfo findNextCourse(Context context, Calendar now) {
         int nowMin = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
         Calendar cursor = (Calendar) now.clone();
@@ -288,54 +326,70 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
 
     private static String formatWidgetDate(Context context, Calendar date) {
         Locale locale = UiSettingsStore.locale(context);
-        String label = new SimpleDateFormat("EEEE d MMMM", locale).format(date.getTime());
+        String label = new SimpleDateFormat("EEE d MMM", locale).format(date.getTime());
         if (!label.isEmpty()) label = Character.toUpperCase(label.charAt(0)) + label.substring(1);
         if (!AdvancedSettingsStore.showWeekInfo(context)) return label;
         return label + " · S" + date.get(Calendar.WEEK_OF_YEAR) + " · " + ScheduleStore.getWeekLetter(context, date);
     }
 
-    private static String remainingLabel(Context context, int minutes) {
-        if (minutes <= 0) return UiSettingsStore.t(context, "courseEnd");
-        int h = minutes / 60, m = minutes % 60;
-        String lang = UiSettingsStore.language(context);
-        if ("de".equals(lang)) {
-            if (h > 0 && m > 0) return h + " Std. " + m + " Min. übrig";
-            if (h > 0) return h + " " + UiSettingsStore.t(context, h == 1 ? "remainingHour" : "remainingHours");
-            return m + " " + UiSettingsStore.t(context, m == 1 ? "remainingMinute" : "remainingMinutes");
-        }
-        if ("en".equals(lang)) {
-            if (h > 0 && m > 0) return h + " h " + m + " min left";
-            if (h > 0) return h + " " + UiSettingsStore.t(context, h == 1 ? "remainingHour" : "remainingHours");
-            return m + " " + UiSettingsStore.t(context, m == 1 ? "remainingMinute" : "remainingMinutes");
-        }
-        if (h > 0 && m > 0) return h + " h " + m + " min restantes";
-        if (h > 0) return h + " " + UiSettingsStore.t(context, h == 1 ? "remainingHour" : "remainingHours");
-        return m + " " + UiSettingsStore.t(context, m == 1 ? "remainingMinute" : "remainingMinutes");
+    private static long minutesUntil(Calendar now, Calendar date, String start) {
+        Calendar target = (Calendar) date.clone();
+        int m = ScheduleData.toMinutes(start);
+        target.set(Calendar.HOUR_OF_DAY, m / 60);
+        target.set(Calendar.MINUTE, m % 60);
+        target.set(Calendar.SECOND, 0);
+        target.set(Calendar.MILLISECOND, 0);
+        return Math.max(0L, (target.getTimeInMillis() - now.getTimeInMillis()) / 60000L);
+    }
+
+    private static String countdownLabel(Context context, long minutes) {
+        if (minutes < 60) return UiSettingsStore.t(context, "in") + " " + Math.max(1, minutes) + " min";
+        long h = Math.max(1, Math.round(minutes / 60.0));
+        return UiSettingsStore.t(context, "in") + " " + h + " h";
+    }
+
+    private static String shortMinutes(Context context, int minutes) {
+        return Math.max(1, minutes) + " min";
+    }
+
+    private static String localizedDay(Context context) {
+        String l = UiSettingsStore.language(context);
+        return "de".equals(l) ? "Tag" : ("en".equals(l) ? "Day" : "Journée");
+    }
+
+    private static String localizedTwoCourses(Context context) {
+        String l = UiSettingsStore.language(context);
+        return "de".equals(l) ? "2 Std." : ("en".equals(l) ? "2 classes" : "2 cours");
+    }
+
+    private static String localizedNoCourseToday(Context context) {
+        String l = UiSettingsStore.language(context);
+        return "de".equals(l) ? "Heute kein Unterricht" : ("en".equals(l) ? "No classes today" : "Aucun cours aujourd’hui");
+    }
+
+    private static String localizedNoOtherCourse(Context context) {
+        String l = UiSettingsStore.language(context);
+        return "de".equals(l) ? "Keine weitere Stunde" : ("en".equals(l) ? "No other class scheduled" : "Aucun autre cours programmé");
     }
 
     private static String minuteLabel(int minute) { return String.format(Locale.FRANCE, "%02d:%02d", minute / 60, minute % 60); }
-    private static String durationLabel(int minutes) {
-        if (minutes <= 0) return "";
-        int h = minutes / 60, m = minutes % 60;
-        if (h > 0 && m > 0) return h + " h " + m;
-        if (h > 0) return h + " h";
-        return m + " min";
-    }
     private static String room(String room) { return room == null || room.trim().isEmpty() ? "—" : room; }
-    private static int clamp(int value) { return Math.max(0, Math.min(100, value)); }
 
     private static void scheduleNextBoundary(Context context) {
         Calendar now = Calendar.getInstance();
         long nowMs = now.getTimeInMillis(), targetMs = Long.MAX_VALUE;
         int nowMinute = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
         List<ScheduleData.Course> todayCourses = ScheduleStore.getCourses(context, now);
+        boolean needsMinuteTick = false;
         for (ScheduleData.Course c : todayCourses) {
             int start = ScheduleData.toMinutes(c.start), end = ScheduleData.toMinutes(c.end);
-            if (nowMinute >= start && nowMinute < end) {
-                Calendar tick = (Calendar) now.clone();
-                tick.add(Calendar.MINUTE, 1); tick.set(Calendar.SECOND, 2); tick.set(Calendar.MILLISECOND, 0);
-                targetMs = tick.getTimeInMillis(); break;
-            }
+            if (nowMinute >= start && nowMinute < end) { needsMinuteTick = true; break; }
+            if (start > nowMinute && start - nowMinute <= 180) needsMinuteTick = true;
+        }
+        if (needsMinuteTick) {
+            Calendar tick = (Calendar) now.clone();
+            tick.add(Calendar.MINUTE, 1); tick.set(Calendar.SECOND, 2); tick.set(Calendar.MILLISECOND, 0);
+            targetMs = tick.getTimeInMillis();
         }
         Calendar day = (Calendar) now.clone();
         for (int add = 0; add <= 21; add++) {
