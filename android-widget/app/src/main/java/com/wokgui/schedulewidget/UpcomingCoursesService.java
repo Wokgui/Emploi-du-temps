@@ -134,12 +134,12 @@ public class UpcomingCoursesService extends RemoteViewsService {
         private void addGap(int start,int end){
             if(!AdvancedSettingsStore.showBreaks(context))return;
             int duration=end-start;if(duration<=0)return;
-            items.add(new Item(localizedBreakLabel(false)+" · "+durationLabel(duration),minuteLabel(start)+" - "+minuteLabel(end),"",Item.GAP,0,"",false));
+            items.add(new Item(localizedBreakLabel(false),minuteLabel(start)+" - "+minuteLabel(end),"",Item.GAP,0,"",false));
         }
 
         private String localizedBreakLabel(boolean lunch){
             String custom=lunch?ScheduleStore.getLunchLabel(context):ScheduleStore.getGapLabel(context);
-            if(lunch&&"Pause de midi".equalsIgnoreCase(custom))return UiSettingsStore.t(context,"lunch");
+            if(lunch&&"Pause de midi".equalsIgnoreCase(custom))return "Midi";
             if(!lunch&&"Trou".equalsIgnoreCase(custom))return UiSettingsStore.t(context,"gap");
             return custom;
         }
@@ -155,7 +155,6 @@ public class UpcomingCoursesService extends RemoteViewsService {
         }
 
         private String minuteLabel(int minute){return String.format(Locale.FRANCE,"%02d:%02d",minute/60,minute%60);}
-        private String durationLabel(int minutes){int h=minutes/60,m=minutes%60;if(h>0&&m>0)return h+" h "+m;if(h>0)return h+" h";return m+" min";}
 
         private String courseMeta(Item item) {
             boolean times=AdvancedSettingsStore.showTimes(context), room=AdvancedSettingsStore.showRoom(context);
@@ -175,39 +174,36 @@ public class UpcomingCoursesService extends RemoteViewsService {
             UiSettingsStore.Theme theme=UiSettingsStore.theme(context);
             float densityScale="compact".equals(density)?.93f:("comfortable".equals(density)?1.08f:1f);
 
-            v.setTextViewTextSize(R.id.rowIndex,TypedValue.COMPLEX_UNIT_SP,8f*scale*densityScale);
             v.setTextViewTextSize(R.id.rowDot,TypedValue.COMPLEX_UNIT_SP,8f*scale*densityScale);
             v.setTextViewTextSize(R.id.rowTitle,TypedValue.COMPLEX_UNIT_SP,10.5f*scale*densityScale);
             v.setTextViewTextSize(R.id.rowMeta,TypedValue.COMPLEX_UNIT_SP,8.5f*scale*densityScale);
             v.setTextViewTextSize(R.id.rowRelative,TypedValue.COMPLEX_UNIT_SP,8.5f*scale*densityScale);
 
+            v.setViewVisibility(R.id.rowIndex,View.GONE);
             v.setTextViewText(R.id.rowTitle,(item.uncertain?"⚠ ":"")+item.label);
             v.setTextViewText(R.id.rowRelative,item.relative.isEmpty()?"":"◷  "+item.relative);
             v.setViewVisibility(R.id.rowLineTop,position==0?View.INVISIBLE:View.VISIBLE);
             v.setViewVisibility(R.id.rowLineBottom,position==items.size()-1?View.INVISIBLE:View.VISIBLE);
 
             if(item.type==Item.LUNCH){
-                v.setTextViewText(R.id.rowIndex,"");v.setViewVisibility(R.id.rowIndex,View.INVISIBLE);
                 v.setTextViewText(R.id.rowMeta,"");v.setViewVisibility(R.id.rowMeta,View.GONE);
                 v.setTextColor(R.id.rowDot,0xFFD09A49);v.setTextColor(R.id.rowTitle,0xFF9A6212);v.setViewVisibility(R.id.rowRelative,View.GONE);
             }else if(item.type==Item.GAP){
-                v.setTextViewText(R.id.rowIndex,"");v.setViewVisibility(R.id.rowIndex,View.INVISIBLE);
                 String meta=AdvancedSettingsStore.showTimes(context)?item.time+" · ":"";
                 meta+=UiSettingsStore.t(context,"noClass");
                 v.setTextViewText(R.id.rowMeta,meta);
                 v.setTextColor(R.id.rowDot,0xFF8B79C6);v.setTextColor(R.id.rowTitle,0xFF7254B5);v.setTextColor(R.id.rowMeta,0xFF75688C);v.setViewVisibility(R.id.rowRelative,View.GONE);
             }else{
-                v.setViewVisibility(R.id.rowIndex,View.VISIBLE);v.setTextViewText(R.id.rowIndex,String.valueOf(item.order));
                 String meta=courseMeta(item);v.setTextViewText(R.id.rowMeta,meta);v.setViewVisibility(R.id.rowMeta,meta.isEmpty()?View.GONE:View.VISIBLE);
                 int accent=AdvancedSettingsStore.classColor(context,item.label,theme.accent);
                 int ink=theme.ink, muted=theme.muted;
                 if("high_contrast".equals(AdvancedSettingsStore.accessibility(context))){ink=0xFF000000;muted=0xFF333333;accent=0xFF0057B8;}
-                v.setTextColor(R.id.rowIndex,accent);v.setTextColor(R.id.rowDot,accent);v.setTextColor(R.id.rowTitle,ink);v.setTextColor(R.id.rowMeta,muted);v.setTextColor(R.id.rowRelative,muted);
+                v.setTextColor(R.id.rowDot,accent);v.setTextColor(R.id.rowTitle,ink);v.setTextColor(R.id.rowMeta,muted);v.setTextColor(R.id.rowRelative,muted);
                 v.setViewVisibility(R.id.rowRelative,item.relative.isEmpty()?View.GONE:View.VISIBLE);
             }
 
             Intent fill=new Intent();fill.putExtra("open_mode",item.type==Item.COURSE?"edit":"today");
-            v.setOnClickFillInIntent(R.id.rowRoot,fill);v.setOnClickFillInIntent(R.id.rowTitle,fill);v.setOnClickFillInIntent(R.id.rowMeta,fill);v.setOnClickFillInIntent(R.id.rowRelative,fill);v.setOnClickFillInIntent(R.id.rowIndex,fill);v.setOnClickFillInIntent(R.id.rowDot,fill);
+            v.setOnClickFillInIntent(R.id.rowRoot,fill);v.setOnClickFillInIntent(R.id.rowTitle,fill);v.setOnClickFillInIntent(R.id.rowMeta,fill);v.setOnClickFillInIntent(R.id.rowRelative,fill);v.setOnClickFillInIntent(R.id.rowDot,fill);
             return v;
         }
 
