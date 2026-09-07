@@ -78,7 +78,7 @@ public class MainActivity extends Activity {
                         applyOpenMode();
                         injectBulkUi();
                         injectPersonalizationUi();
-                        webView.evaluateJavascript("if(window.refreshSettingsV3){refreshSettingsV3();}if(window.refreshAdvancedFeatures){refreshAdvancedFeatures();}if(window.refreshUiPolishSchool){refreshUiPolishSchool();}if(window.refreshCourseColors){refreshCourseColors();}if(window.refreshCoursePaletteV1){refreshCoursePaletteV1();}if(window.refreshLunchBreakUi){refreshLunchBreakUi();}if(window.refreshDoubleLunchUi){refreshDoubleLunchUi();}if(window.refreshBulkCourseUi){refreshBulkCourseUi();}", null);
+                        webView.evaluateJavascript("if(window.refreshSettingsV3){refreshSettingsV3();}if(window.refreshAdvancedFeatures){refreshAdvancedFeatures();}if(window.refreshUiPolishSchool){refreshUiPolishSchool();}if(window.refreshCourseColors){refreshCourseColors();}if(window.refreshCoursePaletteV1){refreshCoursePaletteV1();}if(window.refreshLunchBreakUi){refreshLunchBreakUi();}if(window.refreshDoubleLunchUi){refreshDoubleLunchUi();}if(window.refreshBulkCourseUi){refreshBulkCourseUi();}if(window.refreshWeekViewStability){refreshWeekViewStability();}", null);
                     }
             );
         }
@@ -195,7 +195,8 @@ public class MainActivity extends Activity {
 
     private void injectBulkUi() {
         if (webView == null) return;
-        webView.evaluateJavascript(BulkCourseUi.script(), null);
+        webView.evaluateJavascript(BulkCourseUi.script(), value ->
+                webView.evaluateJavascript(WeekViewStabilityUi.script(), null));
     }
 
     private void injectPersonalizationUi() {
@@ -207,7 +208,8 @@ public class MainActivity extends Activity {
                                         webView.evaluateJavascript(PaletteSelectorUi.script(), value5 ->
                                                 webView.evaluateJavascript(LunchBreakUi.script(), value6 ->
                                                         webView.evaluateJavascript(DoubleLunchUi.script(), value7 ->
-                                                                webView.evaluateJavascript(BulkCourseUi.script(), null))))))));
+                                                                webView.evaluateJavascript(BulkCourseUi.script(), value8 ->
+                                                                        webView.evaluateJavascript(WeekViewStabilityUi.script(), null)))))))));
     }
 
     private void maybeRequestNotificationPermission() {
