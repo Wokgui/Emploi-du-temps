@@ -57,9 +57,9 @@ final class ScheduleStore {
             if (!p.contains("slot_" + (i + 1) + "_end")) e.putString("slot_" + (i + 1) + "_end", DEFAULT_END[i]);
         }
         if (!p.contains(GAP_LABEL)) e.putString(GAP_LABEL, "Trou");
-        if (!p.contains(LUNCH_LABEL)) e.putString(LUNCH_LABEL, "Pause de midi");
-        if (!p.contains(SHOW_GAP_BADGE)) e.putBoolean(SHOW_GAP_BADGE, true);
-        if (!p.contains(SHOW_LUNCH_BADGE)) e.putBoolean(SHOW_LUNCH_BADGE, true);
+        if (!p.contains(LUNCH_LABEL)) e.putString(LUNCH_LABEL, "Midi");
+        if (!p.contains(SHOW_GAP_BADGE)) e.putBoolean(SHOW_GAP_BADGE, false);
+        if (!p.contains(SHOW_LUNCH_BADGE)) e.putBoolean(SHOW_LUNCH_BADGE, false);
         for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) e.putBoolean("enabled_" + day, true);
         e.apply();
 
@@ -110,17 +110,17 @@ final class ScheduleStore {
     static String getGapLabel(Context context) {
         ensureInitialized(context);
         String value = prefs(context).getString(GAP_LABEL, "Trou");
-        return value == null || value.trim().isEmpty() ? "Trou" : value.trim();
+        return value == null ? "Trou" : value.trim();
     }
 
     static String getLunchLabel(Context context) {
         ensureInitialized(context);
-        String value = prefs(context).getString(LUNCH_LABEL, "Pause de midi");
-        return value == null || value.trim().isEmpty() ? "Pause de midi" : value.trim();
+        String value = prefs(context).getString(LUNCH_LABEL, "Midi");
+        return value == null ? "Midi" : value.trim();
     }
 
-    static boolean showGapBadge(Context context) { ensureInitialized(context); return prefs(context).getBoolean(SHOW_GAP_BADGE, true); }
-    static boolean showLunchBadge(Context context) { ensureInitialized(context); return prefs(context).getBoolean(SHOW_LUNCH_BADGE, true); }
+    static boolean showGapBadge(Context context) { ensureInitialized(context); return prefs(context).getBoolean(SHOW_GAP_BADGE, false); }
+    static boolean showLunchBadge(Context context) { ensureInitialized(context); return prefs(context).getBoolean(SHOW_LUNCH_BADGE, false); }
 
     static String getWeekLetter(Context context, Calendar date) {
         ensureInitialized(context);
@@ -233,9 +233,9 @@ final class ScheduleStore {
             JSONObject breaks = root.optJSONObject("_breaks");
             if (breaks != null) {
                 editor.putString(GAP_LABEL, breaks.optString("gapLabel", "Trou"));
-                editor.putString(LUNCH_LABEL, breaks.optString("lunchLabel", "Pause de midi"));
-                editor.putBoolean(SHOW_GAP_BADGE, breaks.optBoolean("showGapBadge", true));
-                editor.putBoolean(SHOW_LUNCH_BADGE, breaks.optBoolean("showLunchBadge", true));
+                editor.putString(LUNCH_LABEL, breaks.optString("lunchLabel", "Midi"));
+                editor.putBoolean(SHOW_GAP_BADGE, false);
+                editor.putBoolean(SHOW_LUNCH_BADGE, false);
             }
 
             Calendar now = Calendar.getInstance();
@@ -301,6 +301,7 @@ final class ScheduleStore {
                 o.put("slot", c.slot);
                 o.put("uncertain", c.uncertain);
                 if (!c.color.isEmpty()) o.put("color", c.color);
+                if (!c.badge.isEmpty()) o.put("badge", c.badge);
                 arr.put(o);
             }
         } catch (Exception ignored) {}
@@ -321,12 +322,13 @@ final class ScheduleStore {
                 int slot = o.optInt("slot", 0);
                 boolean uncertain = o.optBoolean("uncertain", false);
                 String color = o.optString("color", "");
+                String badge = o.optString("badge", "");
                 if (slot == 0) {
                     for (int n = 0; n < 7; n++) {
                         if (DEFAULT_START[n].equals(start) && DEFAULT_END[n].equals(end)) { slot = n + 1; break; }
                     }
                 }
-                out.add(new ScheduleData.Course(start, end, label, room, slot, uncertain, color));
+                out.add(new ScheduleData.Course(start, end, label, room, slot, uncertain, color, badge));
             }
         } catch (Exception ignored) {}
         return out;
