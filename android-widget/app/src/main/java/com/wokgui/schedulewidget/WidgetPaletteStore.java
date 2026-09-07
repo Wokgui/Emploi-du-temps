@@ -24,17 +24,49 @@ final class WidgetPaletteStore {
     }
 
     static int headerColor(Context context) {
-        return 0xFF55616D;
+        return palette(context)[0];
     }
 
     static int courseColor(Context context, int slot, String label) {
+        return courseColor(context, slot, label, "");
+    }
+
+    static int courseColor(Context context, int slot, String label, String colorId) {
         int[] palette = palette(context);
-        int index = slot > 0 ? slot - 1 : Math.abs(String.valueOf(label).hashCode());
+        int custom = colorIndex(colorId);
+        int index = custom >= 0 ? custom : (slot > 0 ? slot - 1 : Math.abs(String.valueOf(label).hashCode()));
         return palette[Math.floorMod(index, palette.length)];
     }
 
     static boolean useDarkText(Context context, int slot, String label) {
-        int color = courseColor(context, slot, label);
+        return useDarkText(context, slot, label, "");
+    }
+
+    static boolean useDarkText(Context context, int slot, String label, String colorId) {
+        return isLight(courseColor(context, slot, label, colorId));
+    }
+
+    static int lunchBackground(Context context) {
+        int[] p = palette(context);
+        return p[Math.min(2, p.length - 1)];
+    }
+
+    static int lunchText(Context context) {
+        int bg = lunchBackground(context);
+        return isLight(bg) ? 0xFF4B3B09 : 0xFFFFFFFF;
+    }
+
+    static int gapBackground(Context context) {
+        int[] p = palette(context);
+        return p[Math.min(6, p.length - 1)];
+    }
+
+    static int gapText(Context context) {
+        int bg = gapBackground(context);
+        return isLight(bg) ? 0xFF33294A : 0xFFFFFFFF;
+    }
+
+    private static boolean isLight(int color) {
         int r = (color >> 16) & 0xFF;
         int g = (color >> 8) & 0xFF;
         int b = color & 0xFF;
@@ -42,20 +74,19 @@ final class WidgetPaletteStore {
         return luminance > 0.68;
     }
 
-    static int lunchBackground(Context context) {
-        return 0xFFF4F1EA;
-    }
-
-    static int lunchText(Context context) {
-        return 0xFF54504A;
-    }
-
-    static int gapBackground(Context context) {
-        return 0xFFF0F2F5;
-    }
-
-    static int gapText(Context context) {
-        return 0xFF525C66;
+    private static int colorIndex(String id) {
+        if (id == null || id.isEmpty()) return -1;
+        switch (id) {
+            case "butter": case "blue": return 0;
+            case "apricot": case "cyan": return 1;
+            case "peach": case "teal": return 2;
+            case "coral": case "green": return 3;
+            case "terracotta": case "sand": case "yellow": return 4;
+            case "rose": case "olive": case "orange": return 5;
+            case "berry": case "violet": return 6;
+            case "plum": case "red": case "graphite": return 6;
+            default: return -1;
+        }
     }
 
     private static int[] palette(Context context) {
