@@ -29,39 +29,53 @@ final class BulkCourseUi {
 
                 function ensureButton(){style();const base=document.getElementById('addCourse');if(!base)return;let b=document.getElementById('addBulkCourses');if(!b){b=document.createElement('button');b.id='addBulkCourses';b.type='button';b.textContent='＋ Ajouter plusieurs cours à une classe';base.insertAdjacentElement('afterend',b)}b.onclick=openBulk}
                 function ensureSingleState(){if(!oneWeek())return;try{currentWeek='A';activeWeek='A';if(typeof weeks!=='undefined'&&weeks.A)state=weeks.A}catch(e){}}
-                function repairWeek(){
+                function repairWeek(force){
                   if(!oneWeek())return;
                   const view=document.getElementById('viewWeek');if(!view||!view.classList.contains('active'))return;
                   ensureSingleState();
-                  try{if(typeof renderWeek==='function')renderWeek()}catch(e){try{if(typeof render==='function')render()}catch(ignore){}}
                   const grid=document.getElementById('weekGrid');
-                  if(grid&&grid.children.length<6){
-                    try{state=weeks.A;activeWeek='A';currentWeek='A';if(typeof renderWeek==='function')renderWeek()}catch(e){}
+                  const needsRender=force===true||!grid||grid.children.length<6;
+                  if(needsRender){
+                    try{if(typeof renderWeek==='function')renderWeek();else if(typeof render==='function')render()}catch(e){}
                   }
                   if(window.refreshLunchBreakUi)window.refreshLunchBreakUi();
                   if(window.refreshDoubleLunchUi)window.refreshDoubleLunchUi();
                 }
                 function bindWeekRepair(){
                   const nav=document.querySelector('.nav[data-mode="week"]');
-                  if(nav&&!nav.dataset.singleWeekRepair){nav.dataset.singleWeekRepair='1';nav.addEventListener('click',()=>setTimeout(repairWeek,20))}
+                  if(nav&&!nav.dataset.singleWeekRepair){
+                    nav.dataset.singleWeekRepair='1';
+                    nav.addEventListener('click',()=>setTimeout(()=>repairWeek(true),30));
+                  }
                 }
                 function setMode(n){
                   const a=loadAdv();a.singleWeek=n===1;a.cycleLength=n===3?3:2;saveAdv(a);
-                  if(n===1){const r=syncOne(loadRoot());saveRoot(r);try{AndroidSchedule.setCurrentWeek('A')}catch(e){};ensureSingleState()}
-                  setTimeout(()=>{if(window.refreshAdvancedFeatures)window.refreshAdvancedFeatures();ensureSingleState();if(typeof render==='function')render();refresh();setTimeout(repairWeek,30)},140)
+                  if(n===1){
+                    const r=syncOne(loadRoot());saveRoot(r);
+                    try{AndroidSchedule.setCurrentWeek('A')}catch(e){}
+                    ensureSingleState();
+                  }else{
+                    try{if(window.reloadSchedule)window.reloadSchedule()}catch(e){}
+                  }
+                  setTimeout(()=>{
+                    if(window.refreshAdvancedFeatures)window.refreshAdvancedFeatures();
+                    ensureSingleState();
+                    if(typeof render==='function')render();
+                    refresh();
+                  },140)
                 }
                 function ensureModeBar(){const edit=document.getElementById('viewEdit');if(!edit)return;let bar=document.getElementById('weekModeBar');if(!bar){bar=document.createElement('div');bar.id='weekModeBar';bar.innerHTML='<span class="weekModeLabel">Semaines :</span><div class="weekModeChoices"><button type="button" class="weekModeChoice" data-m="1">1 seule</button><button type="button" class="weekModeChoice" data-m="2">A / B</button><button type="button" class="weekModeChoice" data-m="3">A / B / C</button></div>';const anchor=document.getElementById('importStatus');anchor.insertAdjacentElement('afterend',bar);bar.querySelectorAll('button').forEach(b=>b.onclick=()=>setMode(Number(b.dataset.m)))}const a=loadAdv(),m=a.singleWeek===true?1:(Number(a.cycleLength)>=3?3:2);bar.querySelectorAll('button').forEach(b=>b.classList.toggle('active',Number(b.dataset.m)===m))}
                 function applySingleUi(){const one=oneWeek();document.documentElement.classList.toggle('singleWeekMode',one);if(!one)return;ensureSingleState();const cw=document.getElementById('currentWeekBtn');if(cw){cw.innerHTML='Semaine unique';cw.onclick=()=>{}}const e=document.getElementById('editDayTitle');if(e)e.textContent=(e.textContent||'').replace(/ · semaine [A-D]/i,'').replace(/ - semaine [A-D]/i,'');const t=document.getElementById('todayTitle');if(t)t.textContent=(t.textContent||'').replace(/ · semaine [A-D]/i,'').replace(/ - semaine [A-D]/i,'');const wh=document.querySelector('.weekTop h2');if(wh)wh.textContent='Aperçu semaine'}
-                function wrapSave(){if(typeof window.save!=='function'||window.save.__oneWrapped)return;const old=window.save;const f=function(){if(oneWeek()){try{weeks.B=deep(weeks.A);if(weeks.C)weeks.C=deep(weeks.A);if(weeks.D)weeks.D=deep(weeks.A);currentWeek='A';activeWeek='A';state=weeks.A}catch(e){}}const out=old.apply(this,arguments);setTimeout(repairWeek,30);return out};f.__oneWrapped=true;window.save=f}
+                function wrapSave(){if(typeof window.save!=='function'||window.save.__oneWrapped)return;const old=window.save;const f=function(){if(oneWeek()){try{weeks.B=deep(weeks.A);if(weeks.C)weeks.C=deep(weeks.A);if(weeks.D)weeks.D=deep(weeks.A);currentWeek='A';activeWeek='A';state=weeks.A}catch(e){}}return old.apply(this,arguments)};f.__oneWrapped=true;window.save=f}
 
                 function dayOpts(v){return DAYS.map(d=>`<option value="${d}" ${d===Number(v)?'selected':''}>${DN[d]}</option>`).join('')}
                 function slotOpts(root,v){return slots(root).map((s,i)=>`<option value="${i+1}" ${i+1===Number(v)?'selected':''}>${i+1}e · ${s.start}–${s.end}</option>`).join('')}
                 function addRow(root,w,d,sl,room=''){const box=document.getElementById('bulkRowsFixed');const row=document.createElement('div');row.className='bulkRow';row.innerHTML=`<select class="bd">${dayOpts(d)}</select><select class="bs">${slotOpts(root,sl)}</select><input class="br" placeholder="Salle" maxlength="20"><button type="button" class="bulkRm">×</button>`;row.querySelector('.br').value=room;row.querySelector('.bulkRm').onclick=()=>{if(box.children.length>1)row.remove()};row.querySelector('.bd').onchange=()=>{const r=loadRoot(),ww=activeWeek(r),dd=Number(row.querySelector('.bd').value);row.querySelector('.bs').innerHTML=slotOpts(r,firstFree(r,ww,dd))};box.appendChild(row)}
-                function ensureModal(){let m=document.getElementById('bulkModalFixed');if(m)return m;m=document.createElement('div');m.id='bulkModalFixed';m.innerHTML='<form id="bulkSheetFixed"><h3>Ajouter plusieurs cours à une classe</h3><div class="bulkClass"><label>Classe / groupe</label><input id="bulkLabelFixed" required maxlength="80"></div><div id="bulkRowsFixed" class="bulkRows"></div><button id="bulkMoreFixed" type="button" class="bulkMore">＋ Ajouter un autre jour / horaire</button><div class="bulkActions"><button type="button" id="bulkCancelFixed" class="btn">Annuler</button><button type="submit" class="btn primary">Ajouter tous les cours</button></div></form>';document.body.appendChild(m);document.getElementById('bulkCancelFixed').onclick=()=>m.classList.remove('show');m.onclick=e=>{if(e.target===m)m.classList.remove('show')};document.getElementById('bulkMoreFixed').onclick=()=>{const r=loadRoot(),w=activeWeek(r),rows=[...document.querySelectorAll('#bulkRowsFixed .bulkRow')],last=rows.at(-1),d=last?DAYS[(DAYS.indexOf(Number(last.querySelector('.bd').value))+1)%DAYS.length]:selDay();addRow(r,w,d,firstFree(r,w,d))};document.getElementById('bulkSheetFixed').onsubmit=e=>{e.preventDefault();let r=loadRoot(),w=activeWeek(r);ensureWeek(r,w);const label=document.getElementById('bulkLabelFixed').value.trim();if(!label)return;const ss=slots(r),seen=new Set(),adds=[],errs=[];document.querySelectorAll('#bulkRowsFixed .bulkRow').forEach(row=>{const d=Number(row.querySelector('.bd').value),n=Number(row.querySelector('.bs').value),room=row.querySelector('.br').value.trim(),s=ss[n-1];if(!s)return;const k=d+'|'+n;if(seen.has(k)){errs.push(DN[d]+' '+s.start+' : doublon');return}seen.add(k);const list=r._weeks[w][String(d)].courses;const occupied=list.some(c=>mins(c.start)<mins(s.end)&&mins(c.end)>mins(s.start));if(occupied){errs.push(DN[d]+' '+s.start+' : déjà occupé');return}adds.push({d,c:{start:s.start,end:s.end,label,room,slot:n}})});if(errs.length){alert(errs.join(' • '));return}adds.forEach(x=>r._weeks[w][String(x.d)].courses.push(x.c));if(oneWeek())r=syncOne(r);m.classList.remove('show');saveRoot(r);setTimeout(repairWeek,40)};return m}
+                function ensureModal(){let m=document.getElementById('bulkModalFixed');if(m)return m;m=document.createElement('div');m.id='bulkModalFixed';m.innerHTML='<form id="bulkSheetFixed"><h3>Ajouter plusieurs cours à une classe</h3><div class="bulkClass"><label>Classe / groupe</label><input id="bulkLabelFixed" required maxlength="80"></div><div id="bulkRowsFixed" class="bulkRows"></div><button id="bulkMoreFixed" type="button" class="bulkMore">＋ Ajouter un autre jour / horaire</button><div class="bulkActions"><button type="button" id="bulkCancelFixed" class="btn">Annuler</button><button type="submit" class="btn primary">Ajouter tous les cours</button></div></form>';document.body.appendChild(m);document.getElementById('bulkCancelFixed').onclick=()=>m.classList.remove('show');m.onclick=e=>{if(e.target===m)m.classList.remove('show')};document.getElementById('bulkMoreFixed').onclick=()=>{const r=loadRoot(),w=activeWeek(r),rows=[...document.querySelectorAll('#bulkRowsFixed .bulkRow')],last=rows.at(-1),d=last?DAYS[(DAYS.indexOf(Number(last.querySelector('.bd').value))+1)%DAYS.length]:selDay();addRow(r,w,d,firstFree(r,w,d))};document.getElementById('bulkSheetFixed').onsubmit=e=>{e.preventDefault();let r=loadRoot(),w=activeWeek(r);ensureWeek(r,w);const label=document.getElementById('bulkLabelFixed').value.trim();if(!label)return;const ss=slots(r),seen=new Set(),adds=[],errs=[];document.querySelectorAll('#bulkRowsFixed .bulkRow').forEach(row=>{const d=Number(row.querySelector('.bd').value),n=Number(row.querySelector('.bs').value),room=row.querySelector('.br').value.trim(),s=ss[n-1];if(!s)return;const k=d+'|'+n;if(seen.has(k)){errs.push(DN[d]+' '+s.start+' : doublon');return}seen.add(k);const list=r._weeks[w][String(d)].courses;const occupied=list.some(c=>mins(c.start)<mins(s.end)&&mins(c.end)>mins(s.start));if(occupied){errs.push(DN[d]+' '+s.start+' : déjà occupé');return}adds.push({d,c:{start:s.start,end:s.end,label,room,slot:n}})});if(errs.length){alert(errs.join(' • '));return}adds.forEach(x=>r._weeks[w][String(x.d)].courses.push(x.c));if(oneWeek())r=syncOne(r);m.classList.remove('show');saveRoot(r)};return m}
                 function openBulk(){const r=loadRoot(),w=activeWeek(r),m=ensureModal();ensureWeek(r,w);document.getElementById('bulkLabelFixed').value='';document.getElementById('bulkRowsFixed').innerHTML='';const d=selDay();addRow(r,w,d,firstFree(r,w,d));m.classList.add('show')}
 
-                function refresh(){ensureSingleState();ensureButton();ensureModeBar();wrapSave();bindWeekRepair();applySingleUi();setTimeout(repairWeek,25)}
-                window.openBulkCourses=openBulk;window.refreshBulkCourseUi=refresh;refresh();setTimeout(refresh,100);setTimeout(refresh,500);setInterval(refresh,1200);
+                function refresh(){ensureSingleState();ensureButton();ensureModeBar();wrapSave();bindWeekRepair();applySingleUi()}
+                window.openBulkCourses=openBulk;window.refreshBulkCourseUi=refresh;refresh();setTimeout(refresh,100);setTimeout(refresh,500);
               }catch(e){console.log('BulkCourseUi',e)}
             })();
             """;
