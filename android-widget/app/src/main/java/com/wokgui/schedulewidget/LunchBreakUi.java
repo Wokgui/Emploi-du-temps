@@ -7,20 +7,21 @@ final class LunchBreakUi {
         return """
             (function(){
               try {
-                if(window.__lunchBreakUiV2){
+                if(window.__lunchBreakUiV3){
                   if(window.refreshLunchBreakUi)window.refreshLunchBreakUi();
                   return;
                 }
-                window.__lunchBreakUiV2=true;
+                window.__lunchBreakUiV3=true;
 
                 const style=document.createElement('style');
                 style.textContent=`
-                  #weekGrid .dynamicLunchCell{position:relative;overflow:visible!important;background:#fff7e6!important;color:var(--lunch);z-index:2}
-                  #weekGrid .dynamicLunchCovered{background:#fff7e6!important;color:transparent}
+                  #weekGrid .dynamicLunchCell{position:relative;overflow:hidden!important;background:#fff7e6!important;color:var(--lunch);z-index:2}
                   #weekGrid .dynamicLunchEmpty{background:#fff!important}
-                  #weekGrid .dynamicLunchOverlay{position:absolute;left:1px;top:2px;bottom:2px;z-index:9;display:flex;align-items:center;justify-content:center;padding:2px 5px;border:1px solid #efc66f;border-radius:6px;background:linear-gradient(90deg,#fff0c8 0%,#ffe2a6 100%);color:#8d5810;box-shadow:0 1px 2px #8d581012;pointer-events:none;white-space:nowrap;overflow:hidden}
-                  #weekGrid .dynamicLunchOverlay .cellLabel{font-size:.58rem!important;line-height:1!important;-webkit-line-clamp:1!important}
-                  body.largeAppText #weekGrid .dynamicLunchOverlay .cellLabel{font-size:.62rem!important}
+                  #weekGrid .dynamicLunchOverlay{position:absolute;inset:2px 1px;z-index:9;display:flex;align-items:center;justify-content:center;padding:2px 3px;border:1px solid #efc66f;border-radius:6px;background:linear-gradient(90deg,#fff0c8 0%,#ffe2a6 100%);color:#8d5810;box-shadow:0 1px 2px #8d581012;pointer-events:none;white-space:nowrap;overflow:hidden}
+                  #weekGrid .breakFitLabel{display:block!important;max-width:100%;white-space:nowrap!important;overflow:hidden!important;text-overflow:clip!important;line-height:1!important;-webkit-line-clamp:1!important;-webkit-box-orient:initial!important;font-size:.58rem!important}
+                  body.largeAppText #weekGrid .breakFitLabel{font-size:.60rem!important}
+                  #weekGrid #weekNowRail{width:3px!important;border-radius:3px!important;opacity:.78}
+                  #weekGrid #weekNowDot{width:11px!important;height:11px!important}
                 `;
                 document.head.appendChild(style);
 
@@ -32,6 +33,55 @@ final class LunchBreakUi {
                   }catch(e){return {start:12*60,end:13*60}}
                 }
                 window.lunchBounds=lunchBounds;
+
+                function lunchLabelText(){
+                  const raw=String((typeof breaks!=='undefined'&&breaks&&breaks.lunchLabel)||'').trim();
+                  return !raw||raw.toLocaleLowerCase()==='pause de midi'?'Midi':raw;
+                }
+
+                function gapLabelText(){
+                  const raw=String((typeof breaks!=='undefined'&&breaks&&breaks.gapLabel)||'').trim();
+                  return raw||'Trou';
+                }
+
+                function syncBreakInputs(){
+                  try{
+                    const gap=document.getElementById('gapLabel'),lunch=document.getElementById('lunchLabel');
+                    if(gap){gap.maxLength=28;gap.placeholder='Trou';}
+                    if(lunch){lunch.maxLength=28;lunch.placeholder='Midi';if(lunch.value==='Pause de midi')lunch.value='Midi';}
+                  }catch(e){}
+                }
+
+                function fitBreakLabel(el){
+                  try{
+                    if(!el)return;
+                    el.style.removeProperty('font-size');
+                    let size=document.body.classList.contains('largeAppText')?.60:.58;
+                    el.style.setProperty('font-size',size+'rem','important');
+                    const holder=el.parentElement||el;
+                    const max=Math.max(8,holder.clientWidth-6);
+                    while(el.scrollWidth>max&&size>.38){size-=.02;el.style.setProperty('font-size',size.toFixed(2)+'rem','important')}
+                  }catch(e){}
+                }
+
+                function fitBreakLabels(){
+                  document.querySelectorAll('#weekGrid .breakFitLabel').forEach(fitBreakLabel);
+                }
+                window.fitBreakLabels=fitBreakLabels;
+
+                function polishWeekNowMarker(){
+                  try{
+                    const grid=document.getElementById('weekGrid'),rail=document.getElementById('weekNowRail'),dot=document.getElementById('weekNowDot');
+                    if(!grid||!rail||!dot)return;
+                    const now=new Date(),jsDay=now.getDay();
+                    if(jsDay<1||jsDay>5||typeof activeWeek==='undefined'||typeof currentWeek==='undefined'||activeWeek!==currentWeek){rail.style.display='none';dot.style.display='none';return}
+                    if(rail.style.display==='none'||dot.style.display==='none')return;
+                    const top=parseFloat(rail.style.top),dotTop=parseFloat(dot.style.top);
+                    if(!Number.isFinite(top)||!Number.isFinite(dotTop))return;
+                    rail.style.height=Math.max(2,dotTop-top)+'px';
+                  }catch(e){}
+                }
+                window.polishWeekNowMarker=polishWeekNowMarker;
 
                 function lunchForDay(list){
                   try{
@@ -99,10 +149,10 @@ final class LunchBreakUi {
                       row.onclick=()=>{activeWeek=currentWeek;selected=d;editing=state[d].courses.indexOf(c);openEditor(editing)};
                     }else if(ev.type==='gap'){
                       row.className='todayCourse gap';
-                      row.innerHTML=`<div class="time"><strong>${clock(ev.start)}</strong><br>${clock(ev.end)}</div><div><div class="label">${esc(breaks.gapLabel)}</div><div class="room">${durationLabel(ev.end-ev.start)} sans cours</div></div>${breaks.showGapBadge?'<div class="badge gap">Trou</div>':''}`;
+                      row.innerHTML=`<div class="time"><strong>${clock(ev.start)}</strong><br>${clock(ev.end)}</div><div><div class="label">${esc(gapLabelText())}</div><div class="room">${durationLabel(ev.end-ev.start)} sans cours</div></div>${breaks.showGapBadge?'<div class="badge gap">Trou</div>':''}`;
                     }else{
                       row.className='todayCourse lunch';
-                      row.innerHTML=`<div class="time"><strong>${esc(ev.l.start)}</strong><br>${esc(ev.l.end)}</div><div><div class="label">Midi</div></div>`;
+                      row.innerHTML=`<div class="time"><strong>${esc(ev.l.start)}</strong><br>${esc(ev.l.end)}</div><div><div class="label">${esc(lunchLabelText())}</div></div>`;
                     }
                     box.appendChild(row);
                   }
@@ -118,7 +168,7 @@ final class LunchBreakUi {
                       cell.onclick=()=>{selected=d;editing=state[d].courses.indexOf(c);openEditor(editing)};
                     }else{
                       const g=gapsForDay(state[d].courses).find(x=>Math.min(min(t.end),x.end)>Math.max(min(t.start),x.start));
-                      if(g){cell.className='wc gapCell';cell.innerHTML=`<div class="cellLabel">${esc(breaks.gapLabel)}</div>`}
+                      if(g){cell.className='wc gapCell';cell.innerHTML=`<div class="cellLabel breakFitLabel">${esc(gapLabelText())}</div>`}
                       else cell.className='wc emptyCell';
                       cell.onclick=()=>{selected=d;newPrefill={start:t.start,end:t.end};openEditor(null)};
                     }
@@ -129,24 +179,13 @@ final class LunchBreakUi {
                 function appendLunchBandRow(box){
                   const bounds=lunchBounds();
                   const th=document.createElement('div');th.className='wh timecol';th.innerHTML=`${clock(bounds.start)}<br>${clock(bounds.end)}`;box.appendChild(th);
-                  const infos=DAYS.map(d=>lunchForDay(state[d].courses));
-                  let i=0;
-                  while(i<DAYS.length){
-                    const info=infos[i];
-                    if(!info){const empty=document.createElement('div');empty.className='wc emptyCell dynamicLunchEmpty';box.appendChild(empty);i++;continue}
-                    let run=1;
-                    while(i+run<DAYS.length&&infos[i+run]&&infos[i+run].endM===info.endM&&infos[i+run].startM===info.startM)run++;
-                    for(let k=0;k<run;k++){
-                      const cell=document.createElement('div');
-                      cell.className='wc lunchCell '+(k===0?'dynamicLunchCell':'dynamicLunchCovered');
-                      if(k===0){
-                        const overlay=document.createElement('div');overlay.className='dynamicLunchOverlay';overlay.style.width=(run*100)+'%';
-                        overlay.innerHTML='<span class="cellLabel">Midi</span>';
-                        cell.appendChild(overlay);
-                      }
-                      box.appendChild(cell);
-                    }
-                    i+=run;
+                  for(const d of DAYS){
+                    const info=lunchForDay(state[d].courses),cell=document.createElement('div');
+                    if(!info){cell.className='wc emptyCell dynamicLunchEmpty';box.appendChild(cell);continue}
+                    cell.className='wc lunchCell dynamicLunchCell';
+                    const overlay=document.createElement('div');overlay.className='dynamicLunchOverlay';
+                    overlay.innerHTML=`<span class="cellLabel breakFitLabel">${esc(lunchLabelText())}</span>`;
+                    cell.appendChild(overlay);box.appendChild(cell);
                   }
                 }
 
@@ -156,6 +195,7 @@ final class LunchBreakUi {
                   const corner=document.createElement('div');corner.className='wh timecol';corner.textContent='H';box.appendChild(corner);
                   for(const d of DAYS){const h=document.createElement('div');h.className='wh day';h.textContent=NAMES[d];box.appendChild(h)}
                   for(const t of times){if(t.type==='lunchDynamic')appendLunchBandRow(box);else appendRegularWeekRow(box,t)}
+                  setTimeout(()=>{fitBreakLabels();polishWeekNowMarker()},0);
                 }
 
                 window.uniqueWeekTimes=dynamicWeekTimes;
@@ -163,8 +203,17 @@ final class LunchBreakUi {
                 window.renderWeek=renderWeekDynamic;
                 try{uniqueWeekTimes=dynamicWeekTimes;renderToday=renderTodayDynamic;renderWeek=renderWeekDynamic}catch(e){}
 
+                const weekGrid=document.getElementById('weekGrid');
+                if(weekGrid)new MutationObserver(()=>setTimeout(()=>{fitBreakLabels();polishWeekNowMarker()},0)).observe(weekGrid,{childList:true,subtree:false});
+                window.addEventListener('resize',()=>setTimeout(()=>{fitBreakLabels();polishWeekNowMarker()},30));
+                setInterval(()=>setTimeout(polishWeekNowMarker,20),60000);
+
                 function refresh(){
-                  try{if(typeof render==='function')render();if(window.refreshCourseColors)setTimeout(window.refreshCourseColors,15)}catch(e){}
+                  try{
+                    syncBreakInputs();
+                    if(typeof render==='function')render();
+                    setTimeout(()=>{fitBreakLabels();if(window.refreshCourseColors)window.refreshCourseColors();setTimeout(polishWeekNowMarker,25)},15);
+                  }catch(e){}
                 }
                 window.refreshLunchBreakUi=refresh;
                 refresh();
