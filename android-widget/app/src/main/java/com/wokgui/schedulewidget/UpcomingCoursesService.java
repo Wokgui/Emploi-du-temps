@@ -57,7 +57,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             ScheduleData.Course current=null;
             for(ScheduleData.Course c:todayCourses){int s=ScheduleData.toMinutes(c.start),e=ScheduleData.toMinutes(c.end);if(nowMin>=s&&nowMin<e){current=c;break;}}
 
-            boolean inLunch=current==null&&!todayCourses.isEmpty()&&lunchValid&&nowMin>=lunchStart&&nowMin<lunchEnd;
+            boolean inLunch=current==null&&lunchValid&&hasLunchGap(todayCourses,lunchStart,lunchEnd)&&nowMin>=lunchStart&&nowMin<lunchEnd;
             GapInfo currentGap=current==null&&!inLunch?findCurrentGap(todayCourses,nowMin,lunchStart,lunchEnd):null;
             Calendar targetDate;
             int threshold,previousEnd;
@@ -87,6 +87,18 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 previousEnd=ScheduleData.toMinutes(c.end);
             }
             trimForPreference();
+        }
+
+        private boolean hasLunchGap(List<ScheduleData.Course> courses,int lunchStart,int lunchEnd){
+            if(courses==null||courses.isEmpty()||lunchEnd<=lunchStart)return false;
+            boolean before=false,after=false;
+            for(ScheduleData.Course c:courses){
+                int start=ScheduleData.toMinutes(c.start),end=ScheduleData.toMinutes(c.end);
+                if(end<=lunchStart)before=true;
+                if(start>=lunchEnd)after=true;
+                if(start<lunchEnd&&end>lunchStart)return false;
+            }
+            return before&&after;
         }
 
         private void trimForPreference() {
@@ -176,11 +188,8 @@ public class UpcomingCoursesService extends RemoteViewsService {
 
             if(item.type==Item.LUNCH){
                 v.setTextViewText(R.id.rowIndex,"");v.setViewVisibility(R.id.rowIndex,View.INVISIBLE);
-                String meta=AdvancedSettingsStore.showTimes(context)?item.time:"";
-                if(!meta.isEmpty())meta+=" · ";
-                meta+=UiSettingsStore.t(context,"backAt")+" "+ScheduleStore.getSlotStart(context,5);
-                v.setTextViewText(R.id.rowMeta,meta);
-                v.setTextColor(R.id.rowDot,0xFFD09A49);v.setTextColor(R.id.rowTitle,0xFF9A6212);v.setTextColor(R.id.rowMeta,0xFF8D6C39);v.setViewVisibility(R.id.rowRelative,View.GONE);
+                v.setTextViewText(R.id.rowMeta,"");v.setViewVisibility(R.id.rowMeta,View.GONE);
+                v.setTextColor(R.id.rowDot,0xFFD09A49);v.setTextColor(R.id.rowTitle,0xFF9A6212);v.setViewVisibility(R.id.rowRelative,View.GONE);
             }else if(item.type==Item.GAP){
                 v.setTextViewText(R.id.rowIndex,"");v.setViewVisibility(R.id.rowIndex,View.INVISIBLE);
                 String meta=AdvancedSettingsStore.showTimes(context)?item.time+" · ":"";
