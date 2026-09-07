@@ -7,25 +7,17 @@ final class WeekViewStabilityUi {
         return """
             (function(){
               try{
-                if(window.__weekViewStabilityV1){
+                if(window.__weekViewStabilityV2){
                   if(window.refreshWeekViewStability)window.refreshWeekViewStability();
                   return;
                 }
-                window.__weekViewStabilityV1=true;
+                window.__weekViewStabilityV2=true;
 
                 function loadAdv(){
                   try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}
                   catch(e){return {}}
                 }
                 function oneWeek(){return loadAdv().singleWeek===true}
-
-                function ensureBadgeStyle(){
-                  if(document.getElementById('singleWeekBadgeStableStyle'))return;
-                  const s=document.createElement('style');
-                  s.id='singleWeekBadgeStableStyle';
-                  s.textContent='.singleWeekMode #currentWeekBtn{font-size:0!important}.singleWeekMode #currentWeekBtn *{font-size:0!important}.singleWeekMode #currentWeekBtn::after{content:"Semaine unique";font-size:.78rem!important;font-weight:800;line-height:normal}';
-                  document.head.appendChild(s);
-                }
 
                 function ensureTitleSpan(){
                   const h=document.querySelector('.weekTop h2');
@@ -47,24 +39,62 @@ final class WeekViewStabilityUi {
                   }catch(e){}
                 }
 
+                function paintBadge(){
+                  const cw=document.getElementById('currentWeekBtn');
+                  if(!cw)return;
+                  if(oneWeek()){
+                    if(cw.textContent!=='Semaine unique')cw.textContent='Semaine unique';
+                    cw.setAttribute('aria-label','Semaine unique');
+                  }
+                }
+
                 function applySingleUi(){
-                  ensureBadgeStyle();
                   const one=oneWeek();
                   document.documentElement.classList.toggle('singleWeekMode',one);
                   const span=ensureTitleSpan();
                   if(!one)return;
                   ensureSingleState();
                   if(span)span.textContent='A';
-                  const cw=document.getElementById('currentWeekBtn');
-                  if(cw){
-                    if(cw.textContent!=='Semaine unique')cw.innerHTML='Semaine unique';
-                    cw.setAttribute('aria-label','Semaine unique');
-                    cw.onclick=()=>{};
-                  }
+                  paintBadge();
                   const edit=document.getElementById('editDayTitle');
                   if(edit)edit.textContent=(edit.textContent||'').replace(/ · semaine [A-D]/i,'').replace(/ - semaine [A-D]/i,'');
                   const today=document.getElementById('todayTitle');
                   if(today)today.textContent=(today.textContent||'').replace(/ · semaine [A-D]/i,'').replace(/ - semaine [A-D]/i,'');
+                }
+
+                function wrapRenderContext(){
+                  if(typeof window.renderContext!=='function'||window.renderContext.__singleStableWrapped)return;
+                  const old=window.renderContext;
+                  const wrapped=function(){
+                    if(oneWeek()){
+                      ensureSingleState();
+                      const cw=document.getElementById('currentWeekBtn');
+                      if(cw){
+                        cw.textContent='Semaine unique';
+                        cw.setAttribute('aria-label','Semaine unique');
+                      }
+                      document.querySelectorAll('.weekTab').forEach(b=>b.classList.toggle('active',b.dataset.week==='A'));
+                      return;
+                    }
+                    return old.apply(this,arguments);
+                  };
+                  wrapped.__singleStableWrapped=true;
+                  window.renderContext=wrapped;
+                }
+
+                function wrapToggleCurrentWeek(){
+                  if(typeof window.toggleCurrentWeek!=='function'||window.toggleCurrentWeek.__singleStableWrapped)return;
+                  const old=window.toggleCurrentWeek;
+                  const wrapped=function(){
+                    if(oneWeek()){
+                      ensureSingleState();
+                      paintBadge();
+                      return;
+                    }
+                    return old.apply(this,arguments);
+                  };
+                  wrapped.__singleStableWrapped=true;
+                  window.toggleCurrentWeek=wrapped;
                 }
 
                 function repairWeek(){
@@ -89,7 +119,7 @@ final class WeekViewStabilityUi {
                 }
 
                 function wrapRender(){
-                  if(typeof window.render!=='function'||window.render.__weekStableWrapped)return;
+                  if(typeof window.render!=='function'||window.render.__weekStableV2Wrapped)return;
                   const old=window.render;
                   const wrapped=function(){
                     if(oneWeek()){
@@ -104,12 +134,12 @@ final class WeekViewStabilityUi {
                     }
                     return out;
                   };
-                  wrapped.__weekStableWrapped=true;
+                  wrapped.__weekStableV2Wrapped=true;
                   window.render=wrapped;
                 }
 
                 function wrapBulkRefresh(){
-                  if(typeof window.refreshBulkCourseUi!=='function'||window.refreshBulkCourseUi.__weekStableWrapped)return;
+                  if(typeof window.refreshBulkCourseUi!=='function'||window.refreshBulkCourseUi.__weekStableV2Wrapped)return;
                   const old=window.refreshBulkCourseUi;
                   const wrapped=function(){
                     ensureTitleSpan();
@@ -119,14 +149,14 @@ final class WeekViewStabilityUi {
                     if(oneWeek()&&document.getElementById('viewWeek')?.classList.contains('active'))setTimeout(repairWeek,0);
                     return out;
                   };
-                  wrapped.__weekStableWrapped=true;
+                  wrapped.__weekStableV2Wrapped=true;
                   window.refreshBulkCourseUi=wrapped;
                 }
 
                 function bindWeekTab(){
                   const nav=document.querySelector('.nav[data-mode="week"]');
-                  if(!nav||nav.dataset.weekStableBound)return;
-                  nav.dataset.weekStableBound='1';
+                  if(!nav||nav.dataset.weekStableV2Bound)return;
+                  nav.dataset.weekStableV2Bound='1';
                   nav.addEventListener('click',()=>{
                     if(oneWeek()){
                       ensureSingleState();
@@ -137,8 +167,9 @@ final class WeekViewStabilityUi {
                 }
 
                 function refresh(){
-                  ensureBadgeStyle();
                   ensureTitleSpan();
+                  wrapRenderContext();
+                  wrapToggleCurrentWeek();
                   wrapRender();
                   wrapBulkRefresh();
                   bindWeekTab();
