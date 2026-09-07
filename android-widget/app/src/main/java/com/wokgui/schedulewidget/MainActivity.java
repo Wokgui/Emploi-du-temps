@@ -54,6 +54,7 @@ public class MainActivity extends Activity {
             @Override public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 applyOpenMode();
+                injectBulkUi();
                 injectPersonalizationUi();
             }
         });
@@ -75,6 +76,7 @@ public class MainActivity extends Activity {
                     "if(window.reloadSchedule){reloadSchedule();}",
                     value -> {
                         applyOpenMode();
+                        injectBulkUi();
                         injectPersonalizationUi();
                         webView.evaluateJavascript("if(window.refreshSettingsV3){refreshSettingsV3();}if(window.refreshAdvancedFeatures){refreshAdvancedFeatures();}if(window.refreshUiPolishSchool){refreshUiPolishSchool();}if(window.refreshCourseColors){refreshCourseColors();}if(window.refreshCoursePaletteV1){refreshCoursePaletteV1();}if(window.refreshLunchBreakUi){refreshLunchBreakUi();}if(window.refreshDoubleLunchUi){refreshDoubleLunchUi();}if(window.refreshBulkCourseUi){refreshBulkCourseUi();}", null);
                     }
@@ -189,6 +191,11 @@ public class MainActivity extends Activity {
             webView.evaluateJavascript("if(window.setModeFromAndroid){setModeFromAndroid('" + mode + "');}", null);
             getIntent().removeExtra("open_mode");
         }
+    }
+
+    private void injectBulkUi() {
+        if (webView == null) return;
+        webView.evaluateJavascript(BulkCourseUi.script(), null);
     }
 
     private void injectPersonalizationUi() {
