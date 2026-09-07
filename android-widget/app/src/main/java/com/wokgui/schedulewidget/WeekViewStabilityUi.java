@@ -19,6 +19,14 @@ final class WeekViewStabilityUi {
                 }
                 function oneWeek(){return loadAdv().singleWeek===true}
 
+                function ensureBadgeStyle(){
+                  if(document.getElementById('singleWeekBadgeStableStyle'))return;
+                  const s=document.createElement('style');
+                  s.id='singleWeekBadgeStableStyle';
+                  s.textContent='.singleWeekMode #currentWeekBtn{font-size:0!important}.singleWeekMode #currentWeekBtn *{font-size:0!important}.singleWeekMode #currentWeekBtn::after{content:"Semaine unique";font-size:.78rem!important;font-weight:800;line-height:normal}';
+                  document.head.appendChild(s);
+                }
+
                 function ensureTitleSpan(){
                   const h=document.querySelector('.weekTop h2');
                   if(!h)return null;
@@ -40,6 +48,7 @@ final class WeekViewStabilityUi {
                 }
 
                 function applySingleUi(){
+                  ensureBadgeStyle();
                   const one=oneWeek();
                   document.documentElement.classList.toggle('singleWeekMode',one);
                   const span=ensureTitleSpan();
@@ -47,7 +56,11 @@ final class WeekViewStabilityUi {
                   ensureSingleState();
                   if(span)span.textContent='A';
                   const cw=document.getElementById('currentWeekBtn');
-                  if(cw)cw.innerHTML='Semaine unique';
+                  if(cw){
+                    if(cw.textContent!=='Semaine unique')cw.innerHTML='Semaine unique';
+                    cw.setAttribute('aria-label','Semaine unique');
+                    cw.onclick=()=>{};
+                  }
                   const edit=document.getElementById('editDayTitle');
                   if(edit)edit.textContent=(edit.textContent||'').replace(/ · semaine [A-D]/i,'').replace(/ - semaine [A-D]/i,'');
                   const today=document.getElementById('todayTitle');
@@ -124,6 +137,7 @@ final class WeekViewStabilityUi {
                 }
 
                 function refresh(){
+                  ensureBadgeStyle();
                   ensureTitleSpan();
                   wrapRender();
                   wrapBulkRefresh();
