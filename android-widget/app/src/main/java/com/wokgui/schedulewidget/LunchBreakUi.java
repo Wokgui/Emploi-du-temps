@@ -7,17 +7,18 @@ final class LunchBreakUi {
         return """
             (function(){
               try {
-                if(window.__lunchBreakUiV5){
+                if(window.__lunchBreakUiV6){
                   if(window.refreshLunchBreakUi)window.refreshLunchBreakUi();
                   return;
                 }
-                window.__lunchBreakUiV5=true;
+                window.__lunchBreakUiV6=true;
 
                 const style=document.createElement('style');
                 style.textContent=`
                   #todayClock{display:none!important}
                   #todayList #todayNowTime{display:none!important}
                   #todayList .todayCourse{grid-template-columns:58px minmax(0,1fr) auto!important;gap:4px!important}
+                  #todayList .time{text-align:center!important}
                   #todayList #todayNowRail{left:61px!important}
                   #todayList #todayNowDot{left:61px!important}
                   #weekGrid .dynamicLunchCell{position:relative;overflow:hidden!important;background:#fff7e6!important;color:var(--lunch);z-index:2}
@@ -30,6 +31,8 @@ final class LunchBreakUi {
                 `;
                 document.head.appendChild(style);
 
+                const BLANK=String.fromCharCode(8203);
+
                 function lunchBounds(){
                   try{
                     const start=(Array.isArray(slots)&&slots[3]&&slots[3].end)?min(slots[3].end):12*60;
@@ -41,12 +44,14 @@ final class LunchBreakUi {
 
                 function lunchLabelText(){
                   const raw=String((typeof breaks!=='undefined'&&breaks&&breaks.lunchLabel)||'').trim();
+                  if(raw===BLANK)return '';
                   if(!raw||raw.toLocaleLowerCase()==='pause de midi')return 'Midi';
                   return raw;
                 }
 
                 function gapLabelText(){
                   const raw=String((typeof breaks!=='undefined'&&breaks&&breaks.gapLabel)||'').trim();
+                  if(raw===BLANK)return '';
                   return raw||'Trou';
                 }
 
@@ -56,14 +61,15 @@ final class LunchBreakUi {
                     if(typeof breaks==='undefined'||!breaks)return;
                     const gap=document.getElementById('gapLabel'),lunch=document.getElementById('lunchLabel');
                     if(!gap&&!lunch)return;
-                    const nextGap=((gap?gap.value:breaks.gapLabel)||'Trou').trim().slice(0,28)||'Trou';
-                    const rawLunch=((lunch?lunch.value:breaks.lunchLabel)||'Midi').trim().slice(0,28)||'Midi';
-                    const nextLunch=rawLunch.toLocaleLowerCase()==='pause de midi'?'Midi':rawLunch;
+                    const rawGap=gap?gap.value.trim().slice(0,28):gapLabelText();
+                    const rawLunch=lunch?lunch.value.trim().slice(0,28):lunchLabelText();
+                    const nextGap=rawGap||BLANK;
+                    const nextLunch=!rawLunch?BLANK:(rawLunch.toLocaleLowerCase()==='pause de midi'?'Midi':rawLunch);
                     if(breaks.gapLabel===nextGap&&breaks.lunchLabel===nextLunch)return;
                     breaks.gapLabel=nextGap;
                     breaks.lunchLabel=nextLunch;
-                    if(gap&&gap.value!==nextGap)gap.value=nextGap;
-                    if(lunch&&lunch.value!==nextLunch)lunch.value=nextLunch;
+                    if(gap)gap.value=nextGap===BLANK?'':nextGap;
+                    if(lunch)lunch.value=nextLunch===BLANK?'':nextLunch;
                     if(typeof save==='function')save();
                     else if(window.AndroidSchedule&&AndroidSchedule.saveSchedule&&typeof exportState==='function')AndroidSchedule.saveSchedule(JSON.stringify(exportState()));
                     setTimeout(()=>{fitBreakLabels();polishWeekNowMarker()},25);
@@ -78,15 +84,15 @@ final class LunchBreakUi {
                 function syncBreakInputs(){
                   try{
                     const gap=document.getElementById('gapLabel'),lunch=document.getElementById('lunchLabel');
-                    if(typeof breaks!=='undefined'&&breaks&&String(breaks.lunchLabel||'').trim().toLocaleLowerCase()==='pause de midi'){
+                    if(typeof breaks!=='undefined'&&breaks&&String(breaks.lunchLabel||'').trim()!==BLANK&&String(breaks.lunchLabel||'').trim().toLocaleLowerCase()==='pause de midi'){
                       breaks.lunchLabel='Midi';
-                      if(typeof save==='function'&&!window.__lunchDefaultMigratedV5){window.__lunchDefaultMigratedV5=true;setTimeout(()=>save(),0)}
+                      if(typeof save==='function'&&!window.__lunchDefaultMigratedV6){window.__lunchDefaultMigratedV6=true;setTimeout(()=>save(),0)}
                     }
                     if(gap){
                       gap.maxLength=28;gap.placeholder='Trou';
                       if(typeof breaks!=='undefined'&&breaks&&document.activeElement!==gap)gap.value=gapLabelText();
-                      if(!gap.__breakLiveV5){
-                        gap.__breakLiveV5=true;
+                      if(!gap.__breakLiveV6){
+                        gap.__breakLiveV6=true;
                         gap.addEventListener('input',queueBreakSave);
                         gap.addEventListener('change',commitBreakLabels);
                         gap.addEventListener('blur',commitBreakLabels);
@@ -95,8 +101,8 @@ final class LunchBreakUi {
                     if(lunch){
                       lunch.maxLength=28;lunch.placeholder='Midi';
                       if(document.activeElement!==lunch)lunch.value=lunchLabelText();
-                      if(!lunch.__breakLiveV5){
-                        lunch.__breakLiveV5=true;
+                      if(!lunch.__breakLiveV6){
+                        lunch.__breakLiveV6=true;
                         lunch.addEventListener('input',queueBreakSave);
                         lunch.addEventListener('change',commitBreakLabels);
                         lunch.addEventListener('blur',commitBreakLabels);
@@ -207,8 +213,9 @@ final class LunchBreakUi {
                       row.onclick=()=>{activeWeek=currentWeek;selected=d;editing=state[d].courses.indexOf(c);openEditor(editing)};
                     }else if(ev.type==='gap'){
                       row.className='todayCourse gap';
-                      const gapBadge=breaks.showGapBadge?'<div class="badge gap">'+esc(gapLabelText())+'</div>':'';
-                      row.innerHTML=`<div class="time"><strong>${clock(ev.start)}</strong><br>${clock(ev.end)}</div><div><div class="label">${esc(gapLabelText())}</div><div class="room">${durationLabel(ev.end-ev.start)} sans cours</div></div>${gapBadge}`;
+                      const gapText=gapLabelText();
+                      const gapBadge=breaks.showGapBadge&&gapText?'<div class="badge gap">'+esc(gapText)+'</div>':'';
+                      row.innerHTML=`<div class="time"><strong>${clock(ev.start)}</strong><br>${clock(ev.end)}</div><div><div class="label">${esc(gapText)}</div><div class="room">${durationLabel(ev.end-ev.start)} sans cours</div></div>${gapBadge}`;
                     }else{
                       row.className='todayCourse lunch';
                       row.innerHTML=`<div class="time"><strong>${esc(ev.l.start)}</strong><br>${esc(ev.l.end)}</div><div><div class="label">${esc(lunchLabelText())}</div></div>`;
