@@ -207,7 +207,7 @@ final class UiSettingsStore {
             case "room": return "salle";
             case "noCourse": return "Aucun cours programmé";
             case "gap": return "Trou";
-            case "lunch": return "Pause de midi";
+            case "lunch": return "Midi";
             case "backAt": return "Reprise à";
             case "noClass": return "sans cours";
             case "in": return "Dans";
