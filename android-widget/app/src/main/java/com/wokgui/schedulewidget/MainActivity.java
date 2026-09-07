@@ -53,8 +53,8 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
+                primeWeekBadge();
                 applyOpenMode();
-                injectBulkUi();
                 injectPersonalizationUi();
             }
         });
@@ -65,7 +65,9 @@ public class MainActivity extends Activity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        primeWeekBadge();
         applyOpenMode();
+        injectPersonalizationUi();
     }
 
     @Override
@@ -75,10 +77,9 @@ public class MainActivity extends Activity {
             webView.evaluateJavascript(
                     "if(window.reloadSchedule){reloadSchedule();}",
                     value -> {
+                        primeWeekBadge();
                         applyOpenMode();
-                        injectBulkUi();
                         injectPersonalizationUi();
-                        webView.evaluateJavascript("if(window.refreshSettingsV3){refreshSettingsV3();}if(window.refreshAdvancedFeatures){refreshAdvancedFeatures();}if(window.refreshUiPolishSchool){refreshUiPolishSchool();}if(window.refreshCourseColors){refreshCourseColors();}if(window.refreshCoursePaletteV1){refreshCoursePaletteV1();}if(window.refreshLunchBreakUi){refreshLunchBreakUi();}if(window.refreshDoubleLunchUi){refreshDoubleLunchUi();}if(window.refreshBulkCourseUi){refreshBulkCourseUi();}if(window.refreshWeekViewStability){refreshWeekViewStability();}", null);
                     }
             );
         }
@@ -184,10 +185,22 @@ public class MainActivity extends Activity {
         } catch (Exception ignored) {}
     }
 
+    private void primeWeekBadge() {
+        if (webView == null || !AdvancedSettingsStore.json(this).optBoolean("singleWeek", false)) return;
+        String language = UiSettingsStore.language(this);
+        String label = "de".equals(language) ? "Einzelwoche" : ("en".equals(language) ? "Single week" : "Semaine unique");
+        String quoted = JSONObject.quote(label);
+        webView.evaluateJavascript(
+                "(function(){try{if(typeof currentWeek!=='undefined')currentWeek='A';if(typeof activeWeek!=='undefined')activeWeek='A';var b=document.getElementById('currentWeekBtn');if(b){b.textContent=" + quoted + ";b.setAttribute('aria-label'," + quoted + ");}var s=document.getElementById('weekTitleLetter');if(s)s.textContent='A';}catch(e){}})();",
+                null
+        );
+    }
+
     private void applyOpenMode() {
         if (webView == null || getIntent() == null) return;
         String mode = getIntent().getStringExtra("open_mode");
         if ("today".equals(mode) || "week".equals(mode) || "edit".equals(mode)) {
+            if ("week".equals(mode)) primeWeekBadge();
             webView.evaluateJavascript("if(window.setModeFromAndroid){setModeFromAndroid('" + mode + "');}", null);
             getIntent().removeExtra("open_mode");
         }
@@ -201,15 +214,17 @@ public class MainActivity extends Activity {
 
     private void injectPersonalizationUi() {
         if (webView == null) return;
-        webView.evaluateJavascript(PersonalizationUi2.script(), value ->
-                webView.evaluateJavascript(AdvancedFeaturesUi.script(), value2 ->
-                        webView.evaluateJavascript(UiPolishAndSchoolCalendarUi.script(), value3 ->
-                                webView.evaluateJavascript(CourseColorUi.script(), value4 ->
-                                        webView.evaluateJavascript(PaletteSelectorUi.script(), value5 ->
-                                                webView.evaluateJavascript(LunchBreakUi.script(), value6 ->
-                                                        webView.evaluateJavascript(DoubleLunchUi.script(), value7 ->
-                                                                webView.evaluateJavascript(BulkCourseUi.script(), value8 ->
-                                                                        webView.evaluateJavascript(WeekViewStabilityUi.script(), null)))))))));
+        webView.evaluateJavascript(
+                "(function(){if(window.__settingsV3&&!document.getElementById('settingsBtn')){var m=document.getElementById('settingsModal');if(m)m.remove();window.__settingsV3=false;}})();",
+                prep -> webView.evaluateJavascript(PersonalizationUi2.script(), value ->
+                        webView.evaluateJavascript(AdvancedFeaturesUi.script(), value2 ->
+                                webView.evaluateJavascript(UiPolishAndSchoolCalendarUi.script(), value3 ->
+                                        webView.evaluateJavascript(CourseColorUi.script(), value4 ->
+                                                webView.evaluateJavascript(PaletteSelectorUi.script(), value5 ->
+                                                        webView.evaluateJavascript(LunchBreakUi.script(), value6 ->
+                                                                webView.evaluateJavascript(DoubleLunchUi.script(), value7 ->
+                                                                        webView.evaluateJavascript(BulkCourseUi.script(), value8 ->
+                                                                                webView.evaluateJavascript(WeekViewStabilityUi.script(), value9 -> primeWeekBadge())))))))))));
     }
 
     private void maybeRequestNotificationPermission() {
