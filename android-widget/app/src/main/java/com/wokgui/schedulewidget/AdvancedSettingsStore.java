@@ -173,8 +173,8 @@ final class AdvancedSettingsStore {
             if (index < 0) continue;
             ScheduleData.Course old = out.get(index);
             if ("cancel".equals(type)) out.remove(index);
-            else if ("room".equals(type)) out.set(index, new ScheduleData.Course(old.start, old.end, old.label, e.optString("room", old.room), old.slot, old.uncertain));
-            else if ("move".equals(type)) out.set(index, new ScheduleData.Course(e.optString("start", old.start), e.optString("end", old.end), e.optString("label", old.label), e.optString("room", old.room), 0, old.uncertain));
+            else if ("room".equals(type)) out.set(index, new ScheduleData.Course(old.start, old.end, old.label, e.optString("room", old.room), old.slot, old.uncertain, old.color, old.badge));
+            else if ("move".equals(type)) out.set(index, new ScheduleData.Course(e.optString("start", old.start), e.optString("end", old.end), e.optString("label", old.label), e.optString("room", old.room), 0, old.uncertain, old.color, old.badge));
         }
         Collections.sort(out, Comparator.comparingInt(c -> ScheduleData.toMinutes(c.start)));
         return out;
