@@ -76,7 +76,7 @@ public class MainActivity extends Activity {
                     value -> {
                         applyOpenMode();
                         injectPersonalizationUi();
-                        webView.evaluateJavascript("if(window.refreshSettingsV3){refreshSettingsV3();}if(window.refreshAdvancedFeatures){refreshAdvancedFeatures();}if(window.refreshUiPolishSchool){refreshUiPolishSchool();}if(window.refreshCourseColors){refreshCourseColors();}if(window.refreshCoursePaletteV1){refreshCoursePaletteV1();}if(window.refreshLunchBreakUi){refreshLunchBreakUi();}", null);
+                        webView.evaluateJavascript("if(window.refreshSettingsV3){refreshSettingsV3();}if(window.refreshAdvancedFeatures){refreshAdvancedFeatures();}if(window.refreshUiPolishSchool){refreshUiPolishSchool();}if(window.refreshCourseColors){refreshCourseColors();}if(window.refreshCoursePaletteV1){refreshCoursePaletteV1();}if(window.refreshLunchBreakUi){refreshLunchBreakUi();}if(window.refreshDoubleLunchUi){refreshDoubleLunchUi();}if(window.refreshBulkCourseUi){refreshBulkCourseUi();}", null);
                     }
             );
         }
@@ -199,7 +199,9 @@ public class MainActivity extends Activity {
                                 webView.evaluateJavascript(CourseColorUi.script(), value4 ->
                                         webView.evaluateJavascript(PaletteSelectorUi.script(), value5 ->
                                                 webView.evaluateJavascript(LunchBreakUi.script(), value6 ->
-                                                        webView.evaluateJavascript(DoubleLunchUi.script(), null)))))));
+                                                        webView.evaluateJavascript(DoubleLunchUi.script(), value7 ->
+                                                                webView.evaluateJavascript(BulkCourseUi.script(), value8 ->
+                                                                        webView.evaluateJavascript("if(window.refreshSettingsV3){refreshSettingsV3();}if(window.refreshAdvancedFeatures){refreshAdvancedFeatures();}if(window.refreshUiPolishSchool){refreshUiPolishSchool();}if(window.refreshBulkCourseUi){refreshBulkCourseUi();}", null))))))));
     }
 
     private void maybeRequestNotificationPermission() {
