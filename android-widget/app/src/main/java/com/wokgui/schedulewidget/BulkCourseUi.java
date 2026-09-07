@@ -38,24 +38,24 @@ final class BulkCourseUi {
                 function ensureSettingsButton(){
                   const header=document.querySelector('.header');
                   if(!header)return;
-                  let btn=document.getElementById('settingsBtn');
+                  let btn=document.getElementById('settingsBtn'),created=false;
                   if(!btn){
-                    btn=document.createElement('button');btn.id='settingsBtn';btn.type='button';btn.textContent='⚙';btn.setAttribute('aria-label','Réglages');header.appendChild(btn);
+                    btn=document.createElement('button');btn.id='settingsBtn';btn.type='button';btn.textContent='⚙';btn.setAttribute('aria-label','Réglages');header.appendChild(btn);created=true;
                   }
                   btn.style.setProperty('display','flex','important');
                   btn.style.setProperty('visibility','visible','important');
                   btn.style.setProperty('opacity','1','important');
-                  btn.onclick=()=>{
-                    const modal=document.getElementById('settingsModal');
-                    if(modal){
-                      modal.classList.add('show');
-                      const language=document.getElementById('languageSelect');
-                      try{if(window.refreshSettingsV3)window.refreshSettingsV3()}catch(e){}
-                      try{if(window.refreshAdvancedFeatures)window.refreshAdvancedFeatures()}catch(e){}
-                      try{if(window.refreshUiPolishSchool)window.refreshUiPolishSchool()}catch(e){}
-                      if(language)language.dispatchEvent(new Event('change',{bubbles:false}));
-                    }
-                  };
+                  if(created||!btn.onclick){
+                    btn.onclick=()=>{
+                      const settingsModal=document.getElementById('settingsModal');
+                      if(settingsModal){
+                        settingsModal.classList.add('show');
+                        try{if(window.refreshSettingsV3)window.refreshSettingsV3()}catch(e){}
+                        try{if(window.refreshAdvancedFeatures)window.refreshAdvancedFeatures()}catch(e){}
+                        try{if(window.refreshUiPolishSchool)window.refreshUiPolishSchool()}catch(e){}
+                      }
+                    };
+                  }
                 }
 
                 function dayName(d){return ({2:'Lun',3:'Mar',4:'Mer',5:'Jeu',6:'Ven'})[d]||'Jour'}
