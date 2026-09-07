@@ -198,7 +198,8 @@ public class MainActivity extends Activity {
                         webView.evaluateJavascript(UiPolishAndSchoolCalendarUi.script(), value3 ->
                                 webView.evaluateJavascript(CourseColorUi.script(), value4 ->
                                         webView.evaluateJavascript(PaletteSelectorUi.script(), value5 ->
-                                                webView.evaluateJavascript(LunchBreakUi.script(), null))))));
+                                                webView.evaluateJavascript(LunchBreakUi.script(), value6 ->
+                                                        webView.evaluateJavascript(DoubleLunchUi.script(), null)))))));
     }
 
     private void maybeRequestNotificationPermission() {
