@@ -7,14 +7,16 @@ final class LunchBreakUi {
         return """
             (function(){
               try {
-                if(window.__lunchBreakUiV3){
+                if(window.__lunchBreakUiV4){
                   if(window.refreshLunchBreakUi)window.refreshLunchBreakUi();
                   return;
                 }
-                window.__lunchBreakUiV3=true;
+                window.__lunchBreakUiV4=true;
 
                 const style=document.createElement('style');
                 style.textContent=`
+                  #todayClock{display:none!important}
+                  #todayList #todayNowTime{display:none!important}
                   #weekGrid .dynamicLunchCell{position:relative;overflow:hidden!important;background:#fff7e6!important;color:var(--lunch);z-index:2}
                   #weekGrid .dynamicLunchEmpty{background:#fff!important}
                   #weekGrid .dynamicLunchOverlay{position:absolute;inset:2px 1px;z-index:9;display:flex;align-items:center;justify-content:center;padding:2px 3px;border:1px solid #efc66f;border-radius:6px;background:linear-gradient(90deg,#fff0c8 0%,#ffe2a6 100%);color:#8d5810;box-shadow:0 1px 2px #8d581012;pointer-events:none;white-space:nowrap;overflow:hidden}
@@ -36,7 +38,7 @@ final class LunchBreakUi {
 
                 function lunchLabelText(){
                   const raw=String((typeof breaks!=='undefined'&&breaks&&breaks.lunchLabel)||'').trim();
-                  return !raw||raw.toLocaleLowerCase()==='pause de midi'?'Midi':raw;
+                  return raw||'Midi';
                 }
 
                 function gapLabelText(){
@@ -44,11 +46,55 @@ final class LunchBreakUi {
                   return raw||'Trou';
                 }
 
+                let breakSaveTimer=null;
+                function commitBreakLabels(){
+                  try{
+                    if(typeof breaks==='undefined'||!breaks)return;
+                    const gap=document.getElementById('gapLabel'),lunch=document.getElementById('lunchLabel');
+                    if(!gap||!lunch)return;
+                    const nextGap=(gap.value.trim()||'Trou').slice(0,28);
+                    const nextLunch=(lunch.value.trim()||'Midi').slice(0,28);
+                    if(breaks.gapLabel===nextGap&&breaks.lunchLabel===nextLunch)return;
+                    breaks.gapLabel=nextGap;
+                    breaks.lunchLabel=nextLunch;
+                    if(typeof save==='function')save();
+                    else if(window.AndroidSchedule&&AndroidSchedule.saveSchedule&&typeof exportState==='function')AndroidSchedule.saveSchedule(JSON.stringify(exportState()));
+                    setTimeout(()=>{fitBreakLabels();polishWeekNowMarker()},25);
+                  }catch(e){}
+                }
+
+                function queueBreakSave(){
+                  if(breakSaveTimer)clearTimeout(breakSaveTimer);
+                  breakSaveTimer=setTimeout(commitBreakLabels,180);
+                }
+
                 function syncBreakInputs(){
                   try{
                     const gap=document.getElementById('gapLabel'),lunch=document.getElementById('lunchLabel');
-                    if(gap){gap.maxLength=28;gap.placeholder='Trou';}
-                    if(lunch){lunch.maxLength=28;lunch.placeholder='Midi';if(lunch.value==='Pause de midi')lunch.value='Midi';}
+                    if(typeof breaks!=='undefined'&&breaks&&!window.__lunchDefaultMigratedV4&&String(breaks.lunchLabel||'').trim().toLocaleLowerCase()==='pause de midi'){
+                      window.__lunchDefaultMigratedV4=true;
+                      breaks.lunchLabel='Midi';
+                      if(typeof save==='function')setTimeout(()=>save(),0);
+                    }
+                    if(gap){
+                      gap.maxLength=28;gap.placeholder='Trou';
+                      if(!gap.__breakLiveV4){
+                        gap.__breakLiveV4=true;
+                        gap.addEventListener('input',queueBreakSave);
+                        gap.addEventListener('change',commitBreakLabels);
+                        gap.addEventListener('blur',commitBreakLabels);
+                      }
+                    }
+                    if(lunch){
+                      lunch.maxLength=28;lunch.placeholder='Midi';
+                      if(typeof breaks!=='undefined'&&breaks&&String(breaks.lunchLabel||'').trim())lunch.value=String(breaks.lunchLabel).trim();
+                      if(!lunch.__breakLiveV4){
+                        lunch.__breakLiveV4=true;
+                        lunch.addEventListener('input',queueBreakSave);
+                        lunch.addEventListener('change',commitBreakLabels);
+                        lunch.addEventListener('blur',commitBreakLabels);
+                      }
+                    }
                   }catch(e){}
                 }
 
@@ -76,6 +122,12 @@ final class LunchBreakUi {
                     const now=new Date(),jsDay=now.getDay();
                     if(jsDay<1||jsDay>5||typeof activeWeek==='undefined'||typeof currentWeek==='undefined'||activeWeek!==currentWeek){rail.style.display='none';dot.style.display='none';return}
                     if(rail.style.display==='none'||dot.style.display==='none')return;
+                    const firstDayCell=grid.querySelector('.wc');
+                    if(firstDayCell){
+                      const separatorX=firstDayCell.offsetLeft;
+                      rail.style.left=separatorX+'px';
+                      dot.style.left=separatorX+'px';
+                    }
                     const top=parseFloat(rail.style.top),dotTop=parseFloat(dot.style.top);
                     if(!Number.isFinite(top)||!Number.isFinite(dotTop))return;
                     rail.style.height=Math.max(2,dotTop-top)+'px';
@@ -131,7 +183,7 @@ final class LunchBreakUi {
                   const d=todayKey(),now=new Date(),list=state[d].courses,cur=currentCourse(d);
                   $('todayTitle').textContent=FULL[d]+' · semaine '+currentWeek;
                   $('todayDate').textContent=now.toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
-                  $('todayClock').textContent=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+                  if($('todayClock')){$('todayClock').textContent='';$('todayClock').style.display='none'}
                   $('todayProgress').style.width=progressPercent()+'%';
                   $('scaleStart').textContent=list[0]?.start||slots[0].start;
                   $('scaleEnd').textContent=list[list.length-1]?.end||slots[6].end;
@@ -149,7 +201,7 @@ final class LunchBreakUi {
                       row.onclick=()=>{activeWeek=currentWeek;selected=d;editing=state[d].courses.indexOf(c);openEditor(editing)};
                     }else if(ev.type==='gap'){
                       row.className='todayCourse gap';
-                      row.innerHTML=`<div class="time"><strong>${clock(ev.start)}</strong><br>${clock(ev.end)}</div><div><div class="label">${esc(gapLabelText())}</div><div class="room">${durationLabel(ev.end-ev.start)} sans cours</div></div>${breaks.showGapBadge?'<div class="badge gap">Trou</div>':''}`;
+                      row.innerHTML=`<div class="time"><strong>${clock(ev.start)}</strong><br>${clock(ev.end)}</div><div><div class="label">${esc(gapLabelText())}</div><div class="room">${durationLabel(ev.end-ev.start)} sans cours</div></div>${breaks.showGapBadge?'<div class="badge gap">${esc(gapLabelText())}</div>':''}`;
                     }else{
                       row.className='todayCourse lunch';
                       row.innerHTML=`<div class="time"><strong>${esc(ev.l.start)}</strong><br>${esc(ev.l.end)}</div><div><div class="label">${esc(lunchLabelText())}</div></div>`;
@@ -206,13 +258,17 @@ final class LunchBreakUi {
                 const weekGrid=document.getElementById('weekGrid');
                 if(weekGrid)new MutationObserver(()=>setTimeout(()=>{fitBreakLabels();polishWeekNowMarker()},0)).observe(weekGrid,{childList:true,subtree:false});
                 window.addEventListener('resize',()=>setTimeout(()=>{fitBreakLabels();polishWeekNowMarker()},30));
-                setInterval(()=>setTimeout(polishWeekNowMarker,20),60000);
+                setInterval(()=>setTimeout(polishWeekNowMarker,45),60000);
 
                 function refresh(){
                   try{
                     syncBreakInputs();
                     if(typeof render==='function')render();
-                    setTimeout(()=>{fitBreakLabels();if(window.refreshCourseColors)window.refreshCourseColors();setTimeout(polishWeekNowMarker,25)},15);
+                    setTimeout(()=>{
+                      syncBreakInputs();fitBreakLabels();
+                      if(window.refreshCourseColors)window.refreshCourseColors();
+                      setTimeout(polishWeekNowMarker,40);
+                    },15);
                   }catch(e){}
                 }
                 window.refreshLunchBreakUi=refresh;
