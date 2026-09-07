@@ -224,7 +224,7 @@ public class MainActivity extends Activity {
                                                         webView.evaluateJavascript(LunchBreakUi.script(), value6 ->
                                                                 webView.evaluateJavascript(DoubleLunchUi.script(), value7 ->
                                                                         webView.evaluateJavascript(BulkCourseUi.script(), value8 ->
-                                                                                webView.evaluateJavascript(WeekViewStabilityUi.script(), value9 -> primeWeekBadge())))))))))));
+                                                                                webView.evaluateJavascript(WeekViewStabilityUi.script(), value9 -> primeWeekBadge()))))))))));
     }
 
     private void maybeRequestNotificationPermission() {
