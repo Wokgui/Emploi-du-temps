@@ -40,7 +40,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         if (ACTION_TOGGLE_MODE.equals(action)) {
             int id = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
             if (id != AppWidgetManager.INVALID_APPWIDGET_ID) {
-                WidgetModeStore.toggle(context, id);
+                WidgetModeStore.toggleAndHide(context, id);
                 AppWidgetManager manager = AppWidgetManager.getInstance(context);
                 manager.notifyAppWidgetViewDataChanged(id, R.id.upcomingList);
                 updateWidget(context, manager, id);
@@ -110,6 +110,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_schedule);
         applyAppearance(context, views);
         views.setTextViewText(R.id.btnWidgetMode, dayMode ? localizedTwoCourses(context) : localizedDay(context));
+        views.setViewVisibility(R.id.btnWidgetMode, WidgetModeStore.isModeButtonHidden(context, widgetId) ? View.GONE : View.VISIBLE);
 
         Calendar tileDate = dayMode ? dayTarget : ((current == null && !inLunch && gap == null && next != null) ? next.date : now);
         views.setTextViewText(R.id.tvTileDate, formatWidgetDate(context, tileDate));
@@ -181,7 +182,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
 
         Intent listIntent = new Intent(context, UpcomingCoursesService.class);
         listIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId);
-        listIntent.setData(Uri.parse("edt://widget/" + widgetId + "/" + (dayMode ? "day" : "summary") + "/" + tileDate.get(Calendar.DAY_OF_YEAR)));
+        listIntent.setData(Uri.parse("edt://widget/" + widgetId + "/" + (dayMode ? "day" : "summary") + "/" + tileDate.get(Calendar.DAY_OF_YEAR) + "/" + minHeight));
         views.setRemoteAdapter(R.id.upcomingList, listIntent);
         views.setEmptyView(R.id.upcomingList, R.id.emptyUpcoming);
         views.setTextViewText(R.id.emptyUpcoming, dayMode ? localizedNoCourseToday(context) : localizedNoOtherCourse(context));
