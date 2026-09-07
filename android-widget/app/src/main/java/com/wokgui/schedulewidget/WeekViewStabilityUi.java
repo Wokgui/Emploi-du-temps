@@ -7,13 +7,14 @@ final class WeekViewStabilityUi {
         return """
             (function(){
               try{
-                if(window.__weekViewStabilityV3){
+                if(window.__weekViewStabilityV4){
                   if(window.refreshWeekViewStability)window.refreshWeekViewStability();
                   return;
                 }
-                window.__weekViewStabilityV3=true;
+                window.__weekViewStabilityV4=true;
 
                 const APP_VERSION='5.8';
+                let fixingCycle=false;
                 function clone(o){return JSON.parse(JSON.stringify(o))}
                 function loadAdv(){
                   try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}
@@ -127,7 +128,7 @@ final class WeekViewStabilityUi {
                 }
 
                 function wrapRender(){
-                  if(typeof window.render!=='function'||window.render.__weekStableV3Wrapped)return;
+                  if(typeof window.render!=='function'||window.render.__weekStableV4Wrapped)return;
                   const old=window.render;
                   const wrapped=function(){
                     if(oneWeek()){
@@ -142,12 +143,12 @@ final class WeekViewStabilityUi {
                     }
                     return out;
                   };
-                  wrapped.__weekStableV3Wrapped=true;
+                  wrapped.__weekStableV4Wrapped=true;
                   window.render=wrapped;
                 }
 
                 function wrapBulkRefresh(){
-                  if(typeof window.refreshBulkCourseUi!=='function'||window.refreshBulkCourseUi.__weekStableV3Wrapped)return;
+                  if(typeof window.refreshBulkCourseUi!=='function'||window.refreshBulkCourseUi.__weekStableV4Wrapped)return;
                   const old=window.refreshBulkCourseUi;
                   const wrapped=function(){
                     ensureTitleSpan();
@@ -157,14 +158,14 @@ final class WeekViewStabilityUi {
                     if(oneWeek()&&document.getElementById('viewWeek')?.classList.contains('active'))setTimeout(repairWeek,0);
                     return out;
                   };
-                  wrapped.__weekStableV3Wrapped=true;
+                  wrapped.__weekStableV4Wrapped=true;
                   window.refreshBulkCourseUi=wrapped;
                 }
 
                 function bindWeekTab(){
                   const nav=document.querySelector('.nav[data-mode="week"]');
-                  if(!nav||nav.dataset.weekStableV3Bound)return;
-                  nav.dataset.weekStableV3Bound='1';
+                  if(!nav||nav.dataset.weekStableV4Bound)return;
+                  nav.dataset.weekStableV4Bound='1';
                   nav.addEventListener('click',()=>{
                     if(oneWeek()){
                       ensureSingleState();
@@ -225,23 +226,49 @@ final class WeekViewStabilityUi {
                   },0);
                 }
 
+                function cycleLabels(){
+                  const lang=uiLang();
+                  return lang==='de'?{1:'1 Woche (einheitlich)',2:'2 Wochen (A/B)',3:'3 Wochen (A/B/C)',4:'4 Wochen (A/B/C/D)'}:
+                    (lang==='en'?{1:'1 week (single)',2:'2 weeks (A/B)',3:'3 weeks (A/B/C)',4:'4 weeks (A/B/C/D)'}:{1:'1 semaine (unique)',2:'2 semaines (A/B)',3:'3 semaines (A/B/C)',4:'4 semaines (A/B/C/D)'});
+                }
+
                 function installCycleChoice(){
                   const sel=document.getElementById('advCycle');
-                  if(!sel)return;
-                  let one=sel.querySelector('option[value="1"]');
-                  if(!one){one=document.createElement('option');one.value='1';sel.insertBefore(one,sel.firstChild)}
-                  const lang=uiLang();
-                  const labels=lang==='de'?{1:'1 Woche (einheitlich)',2:'2 Wochen (A/B)',3:'3 Wochen (A/B/C)',4:'4 Wochen (A/B/C/D)'}:
-                    (lang==='en'?{1:'1 week (single)',2:'2 weeks (A/B)',3:'3 weeks (A/B/C)',4:'4 weeks (A/B/C/D)'}:{1:'1 semaine (unique)',2:'2 semaines (A/B)',3:'3 semaines (A/B/C)',4:'4 semaines (A/B/C/D)'});
-                  [...sel.options].forEach(o=>{if(labels[o.value])o.textContent=labels[o.value]});
-                  const a=loadAdv();
-                  sel.value=a.singleWeek===true?'1':String(Math.max(2,Math.min(4,Number(a.cycleLength)||2)));
-                  if(!sel.dataset.singleWeekChoiceBound){
-                    sel.dataset.singleWeekChoiceBound='1';
-                    sel.addEventListener('change',e=>{
-                      e.stopImmediatePropagation();
-                      applyCycleChoice(e.target.value);
-                    },true);
+                  if(!sel||fixingCycle)return;
+                  fixingCycle=true;
+                  try{
+                    const labels=cycleLabels();
+                    const wanted=['1','2','3','4'];
+                    const current=[...sel.options].map(o=>o.value);
+                    const structureWrong=current.length!==4||wanted.some((v,i)=>current[i]!==v);
+                    if(structureWrong){
+                      sel.innerHTML='';
+                      wanted.forEach(v=>{
+                        const o=document.createElement('option');
+                        o.value=v;o.textContent=labels[v];sel.appendChild(o);
+                      });
+                    }else{
+                      [...sel.options].forEach(o=>{const txt=labels[o.value];if(txt&&o.textContent!==txt)o.textContent=txt});
+                    }
+                    const a=loadAdv();
+                    const desired=a.singleWeek===true?'1':String(Math.max(2,Math.min(4,Number(a.cycleLength)||2)));
+                    if(sel.value!==desired)sel.value=desired;
+                    if(!sel.dataset.singleWeekChoiceBoundV4){
+                      sel.dataset.singleWeekChoiceBoundV4='1';
+                      sel.addEventListener('change',e=>{
+                        e.stopImmediatePropagation();
+                        applyCycleChoice(e.target.value);
+                      },true);
+                    }
+                    if(!sel.__cycleStableObserver){
+                      const observer=new MutationObserver(()=>{
+                        if(!fixingCycle)queueMicrotask(installCycleChoice);
+                      });
+                      observer.observe(sel,{childList:true,subtree:true,characterData:true});
+                      sel.__cycleStableObserver=observer;
+                    }
+                  }finally{
+                    fixingCycle=false;
                   }
                 }
 
@@ -258,7 +285,7 @@ final class WeekViewStabilityUi {
                 }
 
                 function wrapAdvancedRefresh(){
-                  if(typeof window.refreshAdvancedFeatures!=='function'||window.refreshAdvancedFeatures.__singleChoiceWrapped)return;
+                  if(typeof window.refreshAdvancedFeatures!=='function'||window.refreshAdvancedFeatures.__singleChoiceV4Wrapped)return;
                   const old=window.refreshAdvancedFeatures;
                   const wrapped=function(){
                     const out=old.apply(this,arguments);
@@ -266,7 +293,7 @@ final class WeekViewStabilityUi {
                     installVersionInfo();
                     return out;
                   };
-                  wrapped.__singleChoiceWrapped=true;
+                  wrapped.__singleChoiceV4Wrapped=true;
                   window.refreshAdvancedFeatures=wrapped;
                 }
 
