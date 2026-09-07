@@ -260,6 +260,11 @@ public class MainActivity extends Activity {
         @JavascriptInterface public void pickTimetablePhoto() { runOnUiThread(MainActivity.this::pickTimetablePhoto); }
         @JavascriptInterface public String loadUiSettings() { return UiSettingsStore.exportJson(MainActivity.this); }
         @JavascriptInterface public void saveUiSettings(String json) { UiSettingsStore.importJson(MainActivity.this, json); }
+        @JavascriptInterface public String loadWidgetPalette() { return WidgetPaletteStore.getPalette(MainActivity.this); }
+        @JavascriptInterface public void saveWidgetPalette(String id) {
+            WidgetPaletteStore.setPalette(MainActivity.this, id);
+            runOnUiThread(() -> ScheduleWidgetProvider.refreshAll(MainActivity.this));
+        }
 
         @JavascriptInterface public String loadAdvancedSettings() { return AdvancedSettingsStore.exportJson(MainActivity.this); }
         @JavascriptInterface public void saveAdvancedSettings(String json) {
