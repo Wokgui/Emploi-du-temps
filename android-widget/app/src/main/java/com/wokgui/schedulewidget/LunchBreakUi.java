@@ -13,34 +13,38 @@ final class LunchBreakUi {
                 }
                 window.__lunchBreakUiV2=true;
 
-                const NOON=12*60, ONE_PM=13*60, TWO_PM=14*60;
-
                 const style=document.createElement('style');
                 style.textContent=`
                   #weekGrid .dynamicLunchCell{position:relative;overflow:visible!important;background:#fff7e6!important;color:var(--lunch);z-index:2}
                   #weekGrid .dynamicLunchCovered{background:#fff7e6!important;color:transparent}
                   #weekGrid .dynamicLunchEmpty{background:#fff!important}
-                  #weekGrid .dynamicLunchOverlay{position:absolute;left:1px;top:2px;bottom:2px;z-index:9;display:flex;align-items:center;justify-content:center;gap:4px;padding:2px 5px;border:1px solid #efc66f;border-radius:6px;background:linear-gradient(90deg,#fff0c8 0%,#ffe2a6 100%);color:#8d5810;box-shadow:0 1px 2px #8d581012;pointer-events:none;white-space:nowrap;overflow:hidden}
+                  #weekGrid .dynamicLunchOverlay{position:absolute;left:1px;top:2px;bottom:2px;z-index:9;display:flex;align-items:center;justify-content:center;padding:2px 5px;border:1px solid #efc66f;border-radius:6px;background:linear-gradient(90deg,#fff0c8 0%,#ffe2a6 100%);color:#8d5810;box-shadow:0 1px 2px #8d581012;pointer-events:none;white-space:nowrap;overflow:hidden}
                   #weekGrid .dynamicLunchOverlay .cellLabel{font-size:.58rem!important;line-height:1!important;-webkit-line-clamp:1!important}
-                  #weekGrid .dynamicLunchTime{font-size:.48rem;color:#9a6b2d;font-weight:750;white-space:nowrap}
                   body.largeAppText #weekGrid .dynamicLunchOverlay .cellLabel{font-size:.62rem!important}
-                  body.largeAppText #weekGrid .dynamicLunchTime{font-size:.52rem}
                 `;
                 document.head.appendChild(style);
+
+                function lunchBounds(){
+                  try{
+                    const start=(Array.isArray(slots)&&slots[3]&&slots[3].end)?min(slots[3].end):12*60;
+                    const end=(Array.isArray(slots)&&slots[4]&&slots[4].start)?min(slots[4].start):13*60;
+                    return {start,end};
+                  }catch(e){return {start:12*60,end:13*60}}
+                }
+                window.lunchBounds=lunchBounds;
 
                 function lunchForDay(list){
                   try{
                     const courses=(Array.isArray(list)?list:[]).slice().sort((a,b)=>min(a.start)-min(b.start));
                     if(!courses.length)return null;
-                    const hasBefore=courses.some(c=>min(c.end)<=NOON);
-                    if(!hasBefore)return null;
-                    let nextStart=Infinity;
-                    for(const c of courses){const s=min(c.start);if(s>=ONE_PM&&s<nextStart)nextStart=s}
-                    if(!isFinite(nextStart))return null;
-                    const end=nextStart>=TWO_PM?TWO_PM:ONE_PM;
-                    const overlaps=courses.some(c=>min(c.start)<end&&min(c.end)>NOON);
+                    const bounds=lunchBounds(),start=bounds.start,end=bounds.end;
+                    if(end<=start)return null;
+                    const hasBefore=courses.some(c=>min(c.end)<=start);
+                    const hasAfter=courses.some(c=>min(c.start)>=end);
+                    if(!hasBefore||!hasAfter)return null;
+                    const overlaps=courses.some(c=>min(c.start)<end&&min(c.end)>start);
                     if(overlaps)return null;
-                    return {start:'12:00',end:clock(end),startM:NOON,endM:end,duration:end-NOON};
+                    return {start:clock(start),end:clock(end),startM:start,endM:end,duration:end-start};
                   }catch(e){return null}
                 }
                 window.lunchForDay=lunchForDay;
@@ -65,7 +69,10 @@ final class LunchBreakUi {
                   for(const s of slots)map.set(s.start+'|'+s.end,{start:s.start,end:s.end,type:'slot'});
                   for(const d of DAYS)for(const c of state[d].courses)map.set(c.start+'|'+c.end,{start:c.start,end:c.end,type:'course'});
                   const out=[...map.values()];
-                  if(DAYS.some(d=>lunchForDay(state[d].courses)))out.push({start:'12:00',end:'12:59',type:'lunchDynamic'});
+                  if(DAYS.some(d=>lunchForDay(state[d].courses))){
+                    const b=lunchBounds();
+                    out.push({start:clock(b.start),end:clock(b.end),type:'lunchDynamic'});
+                  }
                   return out.sort((a,b)=>min(a.start)-min(b.start)||((a.type==='lunchDynamic')?-1:0)-((b.type==='lunchDynamic')?-1:0)||min(a.end)-min(b.end));
                 }
 
@@ -95,7 +102,7 @@ final class LunchBreakUi {
                       row.innerHTML=`<div class="time"><strong>${clock(ev.start)}</strong><br>${clock(ev.end)}</div><div><div class="label">${esc(breaks.gapLabel)}</div><div class="room">${durationLabel(ev.end-ev.start)} sans cours</div></div>${breaks.showGapBadge?'<div class="badge gap">Trou</div>':''}`;
                     }else{
                       row.className='todayCourse lunch';
-                      row.innerHTML=`<div class="time"><strong>${esc(ev.l.start)}</strong><br>${esc(ev.l.end)}</div><div><div class="label">${esc(breaks.lunchLabel)}</div><div class="room">${durationLabel(ev.l.duration)} · Reprise à ${esc(ev.l.end)}</div></div>${breaks.showLunchBadge?'<div class="badge lunch">Pause</div>':''}`;
+                      row.innerHTML=`<div class="time"><strong>${esc(ev.l.start)}</strong><br>${esc(ev.l.end)}</div><div><div class="label">Midi</div></div>`;
                     }
                     box.appendChild(row);
                   }
@@ -120,20 +127,21 @@ final class LunchBreakUi {
                 }
 
                 function appendLunchBandRow(box){
-                  const th=document.createElement('div');th.className='wh timecol';th.innerHTML='12:00<br>—';box.appendChild(th);
+                  const bounds=lunchBounds();
+                  const th=document.createElement('div');th.className='wh timecol';th.innerHTML=`${clock(bounds.start)}<br>${clock(bounds.end)}`;box.appendChild(th);
                   const infos=DAYS.map(d=>lunchForDay(state[d].courses));
                   let i=0;
                   while(i<DAYS.length){
                     const info=infos[i];
                     if(!info){const empty=document.createElement('div');empty.className='wc emptyCell dynamicLunchEmpty';box.appendChild(empty);i++;continue}
                     let run=1;
-                    while(i+run<DAYS.length&&infos[i+run]&&infos[i+run].endM===info.endM)run++;
+                    while(i+run<DAYS.length&&infos[i+run]&&infos[i+run].endM===info.endM&&infos[i+run].startM===info.startM)run++;
                     for(let k=0;k<run;k++){
                       const cell=document.createElement('div');
                       cell.className='wc lunchCell '+(k===0?'dynamicLunchCell':'dynamicLunchCovered');
                       if(k===0){
                         const overlay=document.createElement('div');overlay.className='dynamicLunchOverlay';overlay.style.width=(run*100)+'%';
-                        overlay.innerHTML=`<span class="cellLabel">${esc(breaks.lunchLabel)} · ${esc(durationLabel(info.duration))}</span><span class="dynamicLunchTime">${esc(info.start)}–${esc(info.end)}</span>`;
+                        overlay.innerHTML='<span class="cellLabel">Midi</span>';
                         cell.appendChild(overlay);
                       }
                       box.appendChild(cell);
