@@ -200,8 +200,7 @@ public class MainActivity extends Activity {
                                         webView.evaluateJavascript(PaletteSelectorUi.script(), value5 ->
                                                 webView.evaluateJavascript(LunchBreakUi.script(), value6 ->
                                                         webView.evaluateJavascript(DoubleLunchUi.script(), value7 ->
-                                                                webView.evaluateJavascript(BulkCourseUi.script(), value8 ->
-                                                                        webView.evaluateJavascript("if(window.refreshSettingsV3){refreshSettingsV3();}if(window.refreshAdvancedFeatures){refreshAdvancedFeatures();}if(window.refreshUiPolishSchool){refreshUiPolishSchool();}if(window.refreshBulkCourseUi){refreshBulkCourseUi();}", null))))))));
+                                                                webView.evaluateJavascript(BulkCourseUi.script(), null))))))));
     }
 
     private void maybeRequestNotificationPermission() {
