@@ -3,6 +3,7 @@ package com.wokgui.schedulewidget;
 import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
@@ -43,6 +44,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
         private final Context context;
         private final int widgetId;
         private final List<Item> items = new ArrayList<>();
+        private boolean compactHeight;
 
         Factory(Context context, int widgetId) {
             this.context=context;
@@ -54,14 +56,22 @@ public class UpcomingCoursesService extends RemoteViewsService {
         @Override public void onDestroy(){items.clear();}
         @Override public int getCount(){return items.size();}
 
+        private boolean isCompactHeight(){
+            if(widgetId==AppWidgetManager.INVALID_APPWIDGET_ID)return false;
+            Bundle options=AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId);
+            int h=options==null?180:options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,180);
+            return h>0&&h<=210;
+        }
+
         private void reload() {
             items.clear();
             ScheduleStore.ensureInitialized(context);
+            compactHeight=isCompactHeight();
             Calendar now=Calendar.getInstance();
             int nowMin=now.get(Calendar.HOUR_OF_DAY)*60+now.get(Calendar.MINUTE);
             int lunchStart=ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context,4));
             int lunchEnd=ScheduleData.toMinutes(ScheduleStore.getSlotStart(context,5));
-            boolean dayMode=widgetId!=AppWidgetManager.INVALID_APPWIDGET_ID && WidgetModeStore.isDayMode(context,widgetId);
+            boolean dayMode=widgetId!=AppWidgetManager.INVALID_APPWIDGET_ID && WidgetModeStore.isDayMode(context,widgetId) && !compactHeight;
 
             if(dayMode){
                 Calendar target=resolveDayTarget(now,nowMin);
@@ -107,10 +117,11 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 ScheduleData.Course c=sameDay.get(i);
                 int start=ScheduleData.toMinutes(c.start);
                 if(start<threshold)continue;
-                appendBreaks(previousEnd,start,lunchStart,lunchEnd);
+                if(!compactHeight)appendBreaks(previousEnd,start,lunchStart,lunchEnd);
                 int order=c.slot>0?c.slot:i+1;
                 items.add(new Item(c.label,c.start+" - "+c.end,c.room,Item.COURSE,order,relativeLabel(now,targetDate,c),c.uncertain));
                 previousEnd=ScheduleData.toMinutes(c.end);
+                if(compactHeight)break;
             }
             ensureOneFollowingCourse(now,targetDate);
             trimForPreference();
@@ -178,7 +189,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
 
         private void trimForPreference() {
             int requested=AdvancedSettingsStore.upcomingCount(context);
-            int maxCourses="compact".equals(AdvancedSettingsStore.widgetFormat(context))?1:requested;
+            int maxCourses=compactHeight?1:("compact".equals(AdvancedSettingsStore.widgetFormat(context))?1:requested);
             if(maxCourses<=0)return;
             maxCourses=Math.max(1,maxCourses);
             int courses=0,keep=items.size();
@@ -269,10 +280,10 @@ public class UpcomingCoursesService extends RemoteViewsService {
             if(position<0||position>=items.size())return null;
             Item item=items.get(position);
             String density=AdvancedSettingsStore.density(context);
-            int layout="compact".equals(density)?R.layout.widget_course_row_compact:("comfortable".equals(density)?R.layout.widget_course_row_comfortable:R.layout.widget_course_row);
+            int layout=compactHeight?R.layout.widget_course_row_compact:("compact".equals(density)?R.layout.widget_course_row_compact:("comfortable".equals(density)?R.layout.widget_course_row_comfortable:R.layout.widget_course_row));
             RemoteViews v=new RemoteViews(context.getPackageName(),layout);
             float scale=UiSettingsStore.widgetFontScale(context);
-            float densityScale="compact".equals(density)?.93f:("comfortable".equals(density)?1.08f:1f);
+            float densityScale=compactHeight?.93f:("compact".equals(density)?.93f:("comfortable".equals(density)?1.08f:1f));
 
             v.setTextViewTextSize(R.id.rowTitle,TypedValue.COMPLEX_UNIT_SP,10.5f*scale*densityScale);
             v.setTextViewTextSize(R.id.rowMeta,TypedValue.COMPLEX_UNIT_SP,8.5f*scale*densityScale);
@@ -289,20 +300,21 @@ public class UpcomingCoursesService extends RemoteViewsService {
             if(item.type==Item.LUNCH){
                 int bg=WidgetPaletteStore.lunchBackground(context),ink=WidgetPaletteStore.lunchText(context);
                 v.setInt(R.id.rowContent,"setBackgroundColor",bg);
-                String title=item.label;
-                if(AdvancedSettingsStore.showTimes(context))title+="  ·  "+item.time;
-                v.setTextViewText(R.id.rowTitle,title);
-                v.setInt(R.id.rowTitle,"setGravity",Gravity.CENTER);
+                v.setInt(R.id.rowTitle,"setGravity",Gravity.START|Gravity.CENTER_VERTICAL);
+                v.setTextViewText(R.id.rowTitle,item.label);
+                String meta=AdvancedSettingsStore.showTimes(context)?item.time:"";
+                v.setTextViewText(R.id.rowMeta,meta);
+                v.setViewVisibility(R.id.rowMeta,meta.isEmpty()?View.GONE:View.VISIBLE);
                 v.setTextColor(R.id.rowTitle,ink);
-                v.setTextViewText(R.id.rowMeta,"");
-                v.setViewVisibility(R.id.rowMeta,View.GONE);
+                v.setTextColor(R.id.rowMeta,ink);
                 v.setViewVisibility(R.id.rowRelative,View.GONE);
             }else if(item.type==Item.GAP){
                 int bg=WidgetPaletteStore.gapBackground(context),ink=WidgetPaletteStore.gapText(context);
                 v.setInt(R.id.rowContent,"setBackgroundColor",bg);
-                String meta=AdvancedSettingsStore.showTimes(context)?item.time+" · ":"";
-                meta+=UiSettingsStore.t(context,"noClass");
+                v.setInt(R.id.rowTitle,"setGravity",Gravity.START|Gravity.CENTER_VERTICAL);
+                String meta=AdvancedSettingsStore.showTimes(context)?item.time:"";
                 v.setTextViewText(R.id.rowMeta,meta);
+                v.setViewVisibility(R.id.rowMeta,meta.isEmpty()?View.GONE:View.VISIBLE);
                 v.setTextColor(R.id.rowTitle,ink);
                 v.setTextColor(R.id.rowMeta,ink);
                 v.setViewVisibility(R.id.rowRelative,View.GONE);
