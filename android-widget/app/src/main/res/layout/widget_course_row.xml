@@ -64,9 +64,9 @@
         </LinearLayout>
 
         <!--
-          A fixed-width slot keeps the centre of every timing bubble on exactly the same
-          vertical axis.  The bubble itself remains wrap_content, so "43 min", "Dans 42 min",
-          "Libre 2 h" and longer date labels keep their adaptive width.
+          The right slot stays fixed so all timing labels occupy one stable area,
+          while the adaptive bubble itself is anchored to the widget's right edge.
+          Vertical centring is unchanged.
         -->
         <FrameLayout
             android:layout_width="174dp"
@@ -77,7 +77,7 @@
                 android:id="@+id/rowRelative"
                 android:layout_width="wrap_content"
                 android:layout_height="34dp"
-                android:layout_gravity="center"
+                android:layout_gravity="end|center_vertical"
                 android:gravity="center"
                 android:minWidth="64dp"
                 android:maxWidth="174dp"
