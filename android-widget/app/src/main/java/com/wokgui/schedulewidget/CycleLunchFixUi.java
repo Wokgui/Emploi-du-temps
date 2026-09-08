@@ -7,18 +7,13 @@ final class CycleLunchFixUi {
         return """
             (function(){
               try{
-                if(window.__cycleLunchFixV2){
-                  if(window.refreshCycleLunchFix){
-                    window.refreshCycleLunchFix();
-                    setTimeout(window.refreshCycleLunchFix,90);
-                    setTimeout(window.refreshCycleLunchFix,260);
-                  }
+                if(window.__cycleLunchFixV3){
+                  if(window.refreshCycleLunchFix)window.refreshCycleLunchFix();
                   return;
                 }
-                window.__cycleLunchFixV2=true;
-                const APP_VERSION='6.6';
+                window.__cycleLunchFixV3=true;
+                const APP_VERSION='6.7';
                 let switching=false;
-                let observer=null;
 
                 function loadAdv(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
                 function saveAdv(o){try{AndroidSchedule.saveAdvancedSettings(JSON.stringify(o))}catch(e){}}
@@ -27,28 +22,71 @@ final class CycleLunchFixUi {
                 function letters(n){return ['A','B','C','D'].slice(0,Math.max(2,Math.min(4,Number(n)||2)))}
 
                 const style=document.createElement('style');
-                style.id='cycleLunchFixV2Style';
+                style.id='cycleLunchFixV3Style';
                 style.textContent=`
-                  /* Keep the cycle selector geometrically stable while its state changes. */
-                  #weekModeBar{min-height:42px!important;box-sizing:border-box!important}
-                  #weekModeBar .weekModeChoices{min-height:30px!important;align-items:stretch!important}
-                  #weekModeBar .weekModeChoice{height:30px!important;box-sizing:border-box!important;transition:none!important;animation:none!important;transform:none!important}
+                  /* The four cycle choices always occupy exactly the same geometry.
+                     Active state changes colour only: never padding, border width, font size or weight. */
+                  #weekModeBar{min-height:44px!important;box-sizing:border-box!important;contain:layout style!important}
+                  #weekModeBar .weekModeChoices{
+                    display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;
+                    grid-template-rows:32px!important;gap:4px!important;height:32px!important;min-height:32px!important;
+                    align-items:stretch!important;overflow:visible!important
+                  }
+                  #weekModeBar .weekModeChoice,
+                  #weekModeBar .weekModeChoice.active{
+                    width:100%!important;height:32px!important;min-height:32px!important;max-height:32px!important;min-width:0!important;
+                    margin:0!important;padding:0 3px!important;box-sizing:border-box!important;
+                    border-width:1px!important;border-style:solid!important;border-radius:8px!important;
+                    font-size:.64rem!important;font-weight:800!important;line-height:30px!important;letter-spacing:0!important;
+                    white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+                    transform:none!important;scale:1!important;box-shadow:none!important;
+                    transition:none!important;animation:none!important;-webkit-tap-highlight-color:transparent!important
+                  }
                   body.cycleSwitchBusy #weekModeBar .weekModeChoice{pointer-events:none!important}
-
-                  /* Single-week mode uses the available context-bar width cleanly. */
                   body.singleWeekMode #currentWeekBtn{margin-left:auto!important;margin-right:auto!important}
                   body.singleWeekMode #weekTabs{display:none!important}
 
-                  /* Joined lunch cells overlap the grid seam by two pixels, so the top and bottom strokes are continuous. */
-                  html body #viewWeek #weekGrid#weekGrid .wc.finalLunchCell{position:relative!important;overflow:visible!important}
-                  html body #viewWeek #weekGrid#weekGrid .wc.finalLunchJoinedRight{border-right-color:transparent!important;z-index:6!important}
-                  html body #viewWeek #weekGrid#weekGrid .wc.finalLunchJoinedRight::after{
-                    content:""!important;position:absolute!important;right:-2px!important;top:0!important;bottom:0!important;width:3px!important;
+                  /* Midi is painted by one stable pseudo-layer instead of alternating legacy borders/box-shadows.
+                     Its outline is 2 px: exactly the same thickness as the hours-column and days-row separators. */
+                  html body #viewWeek #weekGrid#weekGrid .wc.lunchCell{
+                    position:relative!important;overflow:visible!important;border-radius:0!important;outline:0!important;
+                    background:var(--ft-midi,#FFF9E8)!important;box-shadow:none!important
+                  }
+                  html body #viewWeek #weekGrid#weekGrid .wc.lunchCell::before{
+                    content:""!important;position:absolute!important;left:0!important;right:0;top:0!important;bottom:0!important;
+                    z-index:0!important;pointer-events:none!important;box-sizing:border-box!important;
                     background:var(--ft-midi,#FFF9E8)!important;
                     border-top:2px solid var(--ft-midi-border,#C7AA62)!important;
                     border-bottom:2px solid var(--ft-midi-border,#C7AA62)!important;
-                    box-sizing:border-box!important;z-index:12!important;pointer-events:none!important
+                    border-left:0 solid transparent!important;border-right:0 solid transparent!important
                   }
+                  html body #viewWeek #weekGrid#weekGrid .wh.timecol + .wc.lunchCell::before,
+                  html body #viewWeek #weekGrid#weekGrid .wc:not(.lunchCell) + .wc.lunchCell::before{
+                    border-left-width:2px!important;border-left-color:var(--ft-midi-border,#C7AA62)!important
+                  }
+                  html body #viewWeek #weekGrid#weekGrid .wc.lunchCell:not(:has(+ .wc.lunchCell))::before{
+                    border-right-width:2px!important;border-right-color:var(--ft-midi-border,#C7AA62)!important
+                  }
+                  html body #viewWeek #weekGrid#weekGrid .wc.lunchCell:has(+ .wc.lunchCell){
+                    border-right-color:transparent!important
+                  }
+                  html body #viewWeek #weekGrid#weekGrid .wc.lunchCell:has(+ .wc.lunchCell)::before{
+                    right:-2px!important
+                  }
+                  html body #viewWeek #weekGrid#weekGrid .wc.lunchCell .dynamicLunchOverlay,
+                  html body #viewWeek #weekGrid#weekGrid .wc.lunchCell .nativeLunchLabel{
+                    inset:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;
+                    background:transparent!important;z-index:2!important
+                  }
+                  html body #viewWeek #weekGrid#weekGrid .wc.lunchCell .cellLabel,
+                  html body #viewWeek #weekGrid#weekGrid .wc.lunchCell .breakFitLabel{position:relative!important;z-index:3!important}
+
+                  /* Older finalLunch classes may still be present, but they no longer alter the visible band. */
+                  html body #viewWeek #weekGrid#weekGrid .wc.finalLunchCell,
+                  html body #viewWeek #weekGrid#weekGrid .wc.finalLunchJoinedRight{
+                    box-shadow:none!important;border-radius:0!important
+                  }
+                  html body #viewWeek #weekGrid#weekGrid .wc.finalLunchJoinedRight::after{display:none!important}
 
                   /* Center both copy actions inside Week cycle. */
                   #settingsSheet .cycleCopyCentered .advButtons{justify-content:center!important;text-align:center!important}
@@ -65,8 +103,8 @@ final class CycleLunchFixUi {
                     if(tabs)tabs.style.setProperty('display','none','important');
                     if(cw){cw.textContent=tr('Semaine unique','Single week','Einzelwoche');cw.onclick=null}
                     if(letter)letter.textContent='A';
-                  }else{
-                    if(tabs)tabs.style.removeProperty('display');
+                  }else if(tabs){
+                    tabs.style.removeProperty('display');
                   }
                 }
 
@@ -77,26 +115,16 @@ final class CycleLunchFixUi {
 
                 function markCycleButtons(){
                   const a=loadAdv(),mode=a.singleWeek===true?1:Math.max(2,Math.min(4,Number(a.cycleLength)||2));
-                  document.querySelectorAll('#weekModeBar .weekModeChoice').forEach(b=>{
-                    b.classList.toggle('active',Number(b.dataset.m)===mode);
-                  });
-                }
-
-                function renderOnce(){
-                  try{if(typeof render==='function')render()}catch(e){}
-                  if(window.refreshFinalPolish)window.refreshFinalPolish();
-                  if(window.refreshWeekendUi)window.refreshWeekendUi();
+                  document.querySelectorAll('#weekModeBar .weekModeChoice').forEach(b=>b.classList.toggle('active',Number(b.dataset.m)===mode));
                 }
 
                 function switchCycle(n){
                   n=Number(n);if(![1,2,3,4].includes(n)||switching)return;
+                  const a0=loadAdv(),oldMode=a0.singleWeek===true?1:Math.max(2,Math.min(4,Number(a0.cycleLength)||2));
+                  if(oldMode===n){markCycleButtons();return}
                   switching=true;document.body.classList.add('cycleSwitchBusy');
                   try{
-                    const a=loadAdv();
-                    a.singleWeek=n===1;
-                    a.cycleLength=n===1?2:n;
-                    saveAdv(a);
-
+                    const a=loadAdv();a.singleWeek=n===1;a.cycleLength=n===1?2:n;saveAdv(a);
                     if(n===1){
                       try{if(typeof currentWeek!=='undefined')currentWeek='A';if(typeof activeWeek!=='undefined')activeWeek='A'}catch(e){}
                       try{if(window.AndroidSchedule&&AndroidSchedule.setCurrentWeek)AndroidSchedule.setCurrentWeek('A')}catch(e){}
@@ -107,47 +135,37 @@ final class CycleLunchFixUi {
                         if(typeof activeWeek!=='undefined'&&!allowed.includes(activeWeek))activeWeek=(typeof currentWeek!=='undefined'?currentWeek:'A');
                       }catch(e){}
                     }
-
-                    /* Do not dispatch the old hidden selector: it rendered several times and caused the flash/resize. */
                     const sel=document.getElementById('advCycle');if(sel&&n>1)sel.value=String(n);
+
+                    /* One state refresh, then one timetable render. No synthetic onchange and no repeated delayed renders. */
                     if(window.refreshAdvancedFeatures)window.refreshAdvancedFeatures();
-                    applySingleWeekUi();markCycleButtons();centerCycleCopy();renderOnce();
-                  }catch(e){}finally{
-                    requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.classList.remove('cycleSwitchBusy');switching=false;markCycleButtons();applySingleWeekUi()}));
-                  }
+                    applySingleWeekUi();centerCycleCopy();markCycleButtons();
+                    try{if(typeof render==='function')render()}catch(e){}
+                    requestAnimationFrame(()=>{
+                      try{if(window.refreshFinalPolish)window.refreshFinalPolish()}catch(e){}
+                      applySingleWeekUi();markCycleButtons();
+                      document.body.classList.remove('cycleSwitchBusy');switching=false;
+                    });
+                  }catch(e){document.body.classList.remove('cycleSwitchBusy');switching=false}
                 }
+                window.switchCycleStable=switchCycle;
 
                 function bindCycleButtons(){
                   document.querySelectorAll('#weekModeBar .weekModeChoice').forEach(b=>{
-                    if(b.__cycleLunchFixBound)return;
-                    b.__cycleLunchFixBound=true;
+                    if(b.__cycleLunchFixBound)return;b.__cycleLunchFixBound=true;
                     b.onclick=function(e){e.preventDefault();e.stopPropagation();switchCycle(Number(b.dataset.m));return false};
                   });
                   markCycleButtons();
                 }
 
-                function bridgeLunch(){
-                  /* FinalPolish determines which adjacent cells really have the same lunch interval.
-                     The pseudo-element above only bridges those exact groups. */
-                  if(window.refreshFinalPolish)window.refreshFinalPolish();
-                }
-
                 function setVersion(){const v=document.getElementById('appVersionInfo');if(v)v.textContent='Version '+APP_VERSION}
 
-                function watchCycleBar(){
-                  const root=document.getElementById('weekModeBar');if(!root)return;
-                  if(observer)observer.disconnect();
-                  observer=new MutationObserver(()=>{bindCycleButtons();markCycleButtons()});
-                  observer.observe(root,{childList:true,subtree:true});
-                }
-
-                function refresh(){
-                  bindCycleButtons();applySingleWeekUi();centerCycleCopy();setVersion();bridgeLunch();watchCycleBar();
-                }
+                function refresh(){bindCycleButtons();applySingleWeekUi();centerCycleCopy();setVersion()}
                 window.refreshCycleLunchFix=refresh;
 
                 refresh();
-                [50,140,320,700,1250].forEach(ms=>setTimeout(refresh,ms));
+                /* One late pass is enough because this layer is injected after FineTuneUi. */
+                setTimeout(refresh,120);
               }catch(e){console.log('CycleLunchFixUi',e)}
             })();
             """;
