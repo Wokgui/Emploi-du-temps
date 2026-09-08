@@ -7,11 +7,11 @@ final class DoubleLunchUi {
         return """
             (function(){
               try {
-                if(window.__doubleLunchUiV1){
+                if(window.__doubleLunchUiV2){
                   if(window.refreshDoubleLunchUi)window.refreshDoubleLunchUi();
                   return;
                 }
-                window.__doubleLunchUiV1=true;
+                window.__doubleLunchUiV2=true;
 
                 function toMin(v){
                   try{
@@ -29,8 +29,14 @@ final class DoubleLunchUi {
                     const overlay=cell.querySelector('.dynamicLunchOverlay');
                     if(overlay){
                       overlay.style.removeProperty('top');
+                      overlay.style.removeProperty('left');
+                      overlay.style.removeProperty('right');
                       overlay.style.removeProperty('bottom');
+                      overlay.style.removeProperty('width');
                       overlay.style.removeProperty('height');
+                      overlay.style.removeProperty('margin');
+                      overlay.style.removeProperty('padding');
+                      overlay.style.removeProperty('box-sizing');
                       overlay.style.removeProperty('align-items');
                     }
                   });
@@ -72,9 +78,18 @@ final class DoubleLunchUi {
                       cell.setAttribute('data-double-lunch','1');
                       cell.style.setProperty('overflow','visible','important');
                       cell.style.setProperty('z-index','20','important');
-                      overlay.style.setProperty('top','2px','important');
+
+                      // The lunch surface must coincide exactly with the temporal grid:
+                      // no 1/2 px inset, no rounded card floating inside the cell.
+                      overlay.style.setProperty('top','0px','important');
+                      overlay.style.setProperty('left','0px','important');
+                      overlay.style.setProperty('right','0px','important');
                       overlay.style.setProperty('bottom','auto','important');
-                      overlay.style.setProperty('height',Math.max(cell.offsetHeight,totalHeight-4)+'px','important');
+                      overlay.style.setProperty('width','auto','important');
+                      overlay.style.setProperty('height',Math.max(cell.offsetHeight,totalHeight)+'px','important');
+                      overlay.style.setProperty('margin','0','important');
+                      overlay.style.setProperty('padding','0','important');
+                      overlay.style.setProperty('box-sizing','border-box','important');
                       overlay.style.setProperty('align-items','center','important');
                     });
                   }catch(e){}
