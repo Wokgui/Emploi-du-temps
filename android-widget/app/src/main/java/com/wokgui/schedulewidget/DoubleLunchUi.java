@@ -6,355 +6,308 @@ final class DoubleLunchUi {
     static String script() {
         return """
             (function(){
-              try{
-                if(window.__gridGeometryV6){
-                  if(window.refreshDisplayLabelsUi)window.refreshDisplayLabelsUi();
-                  if(window.refreshDoubleLunchUi)window.refreshDoubleLunchUi(true);
+              try {
+                if(window.__weekGeometryV8){
+                  if(window.refreshDoubleLunchUi)window.refreshDoubleLunchUi();
                   return;
                 }
-                window.__gridGeometryV6=true;
+                window.__weekGeometryV8=true;
 
                 const style=document.createElement('style');
                 style.textContent=`
                   html body #viewWeek #weekGrid .wh,
-                  html body #viewWeek #weekGrid .wc{min-height:48px!important}
+                  html body #viewWeek #weekGrid .wc{min-height:49px!important}
                   @media(max-width:560px){
                     html body #viewWeek #weekGrid .wh,
-                    html body #viewWeek #weekGrid .wc{min-height:47px!important}
+                    html body #viewWeek #weekGrid .wc{min-height:48px!important}
                   }
 
-                  /* Aucun état géométrique intermédiaire n'est montré. */
-                  #weekGrid.geometryPending{visibility:hidden!important}
+                  #weekGrid #weekNowRail,#weekGrid #weekNowDot{display:none!important}
+                  #weekGrid .dynamicLunchOverlay{display:none!important}
 
-                  /* Les anciens marqueurs restent dans le DOM pour compatibilité mais ne sont
-                     plus dessinés : le rail est désormais porté directement par les cellules. */
-                  #weekGrid #weekNowRail,#weekGrid #weekNowDot{
-                    visibility:hidden!important;opacity:0!important;pointer-events:none!important
-                  }
-
-                  #weekGrid .weekTodayRailCell{position:relative!important}
-                  #weekGrid .weekTodayRailCell::before{
-                    content:'';position:absolute;left:-1px;top:0;bottom:0;width:2px;
-                    background:#248cf1;z-index:45;pointer-events:none
-                  }
-                  #weekGrid #gridNowDotV6{
-                    position:absolute;width:12px;height:12px;border-radius:50%;
-                    background:#0877f9;border:3px solid #d9ecff;
-                    box-sizing:content-box;transform:translate(-50%,-50%);
-                    z-index:60;pointer-events:none;box-shadow:0 1px 2px #0b5fa533
-                  }
-
-                  /* Midi est une vraie surface rectangulaire mesurée sur les cellules du tableau.
-                     Le cadre est peint par-dessus le fond, sans arrondi ni coin transparent. */
-                  #weekGrid .lunchSurfaceCell,
-                  #weekGrid .dynamicLunchContinuation{
-                    position:relative!important;background:transparent!important;
-                    color:var(--ft-midi-ink)!important;border-radius:0!important;
-                    box-shadow:none!important;z-index:22!important
-                  }
-                  #weekGrid .lunchSurfaceCell>*{position:relative;z-index:28}
-                  #weekGrid .dynamicLunchContinuation>*{visibility:hidden!important}
-                  #weekGrid .dynamicLunchOverlay{
-                    position:absolute!important;z-index:30!important;display:flex!important;
-                    align-items:center!important;justify-content:center!important;
-                    margin:0!important;padding:0!important;background:transparent!important;
-                    border:0!important;border-radius:0!important;box-shadow:none!important;
-                    color:var(--ft-midi-ink)!important;pointer-events:none!important;
-                    box-sizing:border-box!important
-                  }
-                  #weekGrid .lunchSegmentSurfaceV6{
-                    position:absolute;z-index:18;pointer-events:none;
+                  #weekGrid .geoLunchCell{
+                    padding:0!important;
+                    border-radius:0!important;
                     background:var(--ft-midi)!important;
-                    border:1px solid var(--ft-midi-border)!important;
-                    border-radius:0!important;box-sizing:border-box!important;
-                    background-clip:border-box!important
+                    color:var(--ft-midi-ink)!important;
+                    box-shadow:none!important;
+                    overflow:hidden!important;
+                  }
+                  #weekGrid .geoLunchCell>*{visibility:hidden!important}
+                  #weekGrid .geoLunchLabel{
+                    position:absolute;z-index:90;display:flex;align-items:center;justify-content:center;
+                    gap:4px;padding:0 3px;box-sizing:border-box;pointer-events:none;
+                    color:var(--ft-midi-ink);font-weight:850;font-size:.60rem;line-height:1;
+                    white-space:nowrap;overflow:hidden;text-overflow:clip;
                   }
 
-                  /* Deux intitulés distincts : application / widget. */
-                  .breakSettings .breakWidgetLegendV6{
-                    display:grid;grid-template-columns:64px minmax(0,1fr) minmax(0,1fr);
-                    gap:7px;padding:5px 8px 3px;color:var(--muted);font-size:.62rem;
-                    font-weight:800;border-bottom:1px solid #eef1f5
+                  #weekGrid #weekNowRailV8{
+                    position:absolute;z-index:95;width:2px;background:#1888f2;border-radius:0;
+                    pointer-events:none;display:none;
                   }
-                  html body .breakSettings .breakRow{
-                    grid-template-columns:64px minmax(0,1fr) minmax(0,1fr)!important
+                  #weekGrid #weekNowDotV8{
+                    position:absolute;z-index:96;width:14px;height:14px;border-radius:50%;
+                    background:#1688f4;border:4px solid #d9ecff;box-sizing:content-box;
+                    box-shadow:0 1px 4px #0b6acb38;pointer-events:none;display:none;
                   }
-                  .breakSettings .widgetBreakLabelV6{min-width:0;width:100%;padding:7px 8px;
-                    border:1px solid var(--line);border-radius:6px;color:var(--ink);
-                    background:#fff;font-size:.76rem}
-                  #courseWidgetLabelFieldV6 .fieldHintV6{margin-top:3px;color:var(--muted);font-size:.63rem}
+
+                  .dualBreakInputs{display:grid;grid-template-columns:72px minmax(0,1fr);gap:5px 7px;align-items:center}
+                  .dualBreakInputs .dualLabel{font-size:.66rem;color:var(--muted);font-weight:750}
+                  .breakSettings .breakRow{grid-template-columns:64px minmax(0,1fr)!important;align-items:start!important}
+                  #courseWidgetLabelField input{width:100%;border:1px solid var(--line);border-radius:7px;padding:9px;font:inherit;background:#fff;color:var(--ink)}
                 `;
                 document.head.appendChild(style);
 
-                let frame=0,lateTimer=0,ignoreMutationsUntil=0,labelSaveTimer=0;
+                let raf=0,late=0,mutating=false;
 
                 function toMin(v){
                   const p=String(v||'').split(':').map(Number);
                   return (p[0]||0)*60+(p[1]||0);
                 }
-                function clean(v,max){return String(v==null?'':v).trim().slice(0,max||40)}
-                function labelKey(v){return clean(v,80).toLocaleLowerCase('fr-FR')}
-                function loadAdv(){
-                  try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}
+                function cssVar(name,fallback){
+                  const v=getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+                  return v||fallback;
                 }
-                function saveAdv(o){
-                  try{AndroidSchedule.saveAdvancedSettings(JSON.stringify(o||{}))}catch(e){}
-                }
-
-                /* ---------- Intitulés application / widget ---------- */
-                function installBreakWidgetLabels(){
-                  const box=document.querySelector('.breakSettings');
-                  if(!box)return;
-                  let legend=box.querySelector('.breakWidgetLegendV6');
-                  if(!legend){
-                    legend=document.createElement('div');legend.className='breakWidgetLegendV6';
-                    legend.innerHTML='<span></span><span>Application</span><span>Widget</span>';
-                    box.insertBefore(legend,box.firstChild);
+                function rowsOf(grid){
+                  const rows=[];
+                  const timeCells=Array.from(grid.querySelectorAll('.wh.timecol'));
+                  for(const t of timeCells){
+                    const found=(t.textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[];
+                    if(found.length<2)continue;
+                    const cells=[];let n=t.nextElementSibling;
+                    while(n&&cells.length<5){
+                      if(n.classList&&n.classList.contains('wc'))cells.push(n);
+                      n=n.nextElementSibling;
+                    }
+                    if(cells.length===5)rows.push({time:t,start:toMin(found[0]),end:toMin(found[1]),cells});
                   }
-                  const adv=loadAdv();
-                  const defs=[
-                    ['gapLabel','gapWidgetLabelV6','widgetGapLabel'],
-                    ['lunchLabel','lunchWidgetLabelV6','widgetLunchLabel']
-                  ];
-                  defs.forEach(([appId,widgetId,key])=>{
-                    const app=document.getElementById(appId);if(!app)return;
-                    const row=app.closest('.breakRow');if(!row)return;
-                    let input=document.getElementById(widgetId);
-                    if(!input){
-                      input=document.createElement('input');input.type='text';input.id=widgetId;
-                      input.maxLength=28;input.className='widgetBreakLabelV6';
-                      input.placeholder='Même intitulé';row.appendChild(input);
-                    }
-                    if(document.activeElement!==input)input.value=clean(adv[key]||'',28);
-                    if(!input.dataset.boundV6){
-                      input.dataset.boundV6='1';
-                      input.addEventListener('input',queueWidgetBreakSave);
-                      input.addEventListener('change',saveWidgetBreakLabels);
-                      input.addEventListener('blur',saveWidgetBreakLabels);
-                    }
+                  rows.sort((a,b)=>a.time.offsetTop-b.time.offsetTop);
+                  return rows;
+                }
+                function ensureLayers(grid){
+                  let rail=document.getElementById('weekNowRailV8');
+                  let dot=document.getElementById('weekNowDotV8');
+                  if(!rail){rail=document.createElement('div');rail.id='weekNowRailV8';grid.appendChild(rail)}
+                  if(!dot){dot=document.createElement('div');dot.id='weekNowDotV8';grid.appendChild(dot)}
+                  return {rail,dot};
+                }
+                function resetPaint(grid){
+                  grid.querySelectorAll('.geoLunchLabel').forEach(e=>e.remove());
+                  grid.querySelectorAll('.geoLunchCell').forEach(cell=>{
+                    cell.classList.remove('geoLunchCell');
+                    for(const p of ['background','box-shadow','border-radius','padding','overflow','border-right-color','border-bottom-color'])cell.style.removeProperty(p);
+                  });
+                  grid.querySelectorAll('[data-geo-edge="1"]').forEach(el=>{
+                    el.style.removeProperty('border-right-color');
+                    el.style.removeProperty('border-bottom-color');
+                    el.removeAttribute('data-geo-edge');
                   });
                 }
-                function saveWidgetBreakLabels(){
-                  if(labelSaveTimer){clearTimeout(labelSaveTimer);labelSaveTimer=0}
-                  const a=loadAdv();
-                  const g=document.getElementById('gapWidgetLabelV6');
-                  const l=document.getElementById('lunchWidgetLabelV6');
-                  if(g)a.widgetGapLabel=clean(g.value,28);
-                  if(l)a.widgetLunchLabel=clean(l.value,28);
-                  saveAdv(a);
+                function edge(el,prop,value){
+                  if(!el)return;
+                  el.style.setProperty(prop,value,'important');
+                  el.setAttribute('data-geo-edge','1');
                 }
-                function queueWidgetBreakSave(){
-                  if(labelSaveTimer)clearTimeout(labelSaveTimer);
-                  labelSaveTimer=setTimeout(saveWidgetBreakLabels,220);
-                }
-
-                function ensureCourseWidgetField(){
-                  const form=document.getElementById('courseForm');
-                  const appInput=document.getElementById('fLabel');
-                  if(!form||!appInput)return;
-                  const appField=appInput.closest('.field');
-                  if(appField){const lab=appField.querySelector('label');if(lab)lab.textContent='Intitulé dans l’application'}
-                  let field=document.getElementById('courseWidgetLabelFieldV6');
-                  if(!field){
-                    field=document.createElement('div');field.id='courseWidgetLabelFieldV6';field.className='field';
-                    field.innerHTML='<label>Intitulé dans le widget</label><input id="fWidgetLabelV6" type="text" maxlength="60" placeholder="Même intitulé que dans l’application"><div class="fieldHintV6">Laisser vide pour reprendre automatiquement l’intitulé de l’application.</div>';
-                    if(appField&&appField.nextSibling)appField.parentNode.insertBefore(field,appField.nextSibling);
-                    else form.insertBefore(field,form.querySelector('.sheetActions'));
-                  }
-                }
-                function currentEditedCourse(){
+                function lunchFor(dayIndex){
                   try{
-                    if(typeof editing==='undefined'||editing==null||typeof weeks==='undefined')return null;
-                    return weeks[activeWeek]&&weeks[activeWeek][selected]?weeks[activeWeek][selected].courses[editing]||null:null;
-                  }catch(e){return null}
-                }
-                function syncCourseWidgetField(){
-                  ensureCourseWidgetField();
-                  const input=document.getElementById('fWidgetLabelV6');if(!input)return;
-                  const c=currentEditedCourse(),a=loadAdv();
-                  const map=a.widgetCourseLabels&&typeof a.widgetCourseLabels==='object'?a.widgetCourseLabels:{};
-                  input.value=c?clean(map[labelKey(c.label)]||'',60):'';
-                }
-                function saveCourseWidgetLabel(oldLabel,newLabel,widgetLabel){
-                  const a=loadAdv();
-                  const map=a.widgetCourseLabels&&typeof a.widgetCourseLabels==='object'?a.widgetCourseLabels:{};
-                  const oldKey=labelKey(oldLabel),newKey=labelKey(newLabel),value=clean(widgetLabel,60);
-                  if(oldKey&&oldKey!==newKey)delete map[oldKey];
-                  if(newKey){if(value)map[newKey]=value;else delete map[newKey]}
-                  a.widgetCourseLabels=map;saveAdv(a);
-                }
-                function wrapCourseSubmitForWidgetLabel(){
-                  ensureCourseWidgetField();
-                  const form=document.getElementById('courseForm');
-                  if(!form||!form.onsubmit||form.onsubmit.__widgetLabelV6)return;
-                  const old=form.onsubmit;
-                  const wrapped=function(e){
-                    const current=currentEditedCourse();
-                    const oldLabel=current?current.label:'';
-                    const newLabel=clean((document.getElementById('fLabel')||{}).value||'',80);
-                    const widgetLabel=clean((document.getElementById('fWidgetLabelV6')||{}).value||'',60);
-                    const out=old.call(this,e);
-                    setTimeout(()=>saveCourseWidgetLabel(oldLabel,newLabel,widgetLabel),0);
-                    return out;
-                  };
-                  wrapped.__widgetLabelV6=true;form.onsubmit=wrapped;
-                }
-                function installDisplayLabelsUi(){
-                  installBreakWidgetLabels();
-                  ensureCourseWidgetField();
-                  wrapCourseSubmitForWidgetLabel();
-                }
-                window.refreshDisplayLabelsUi=installDisplayLabelsUi;
-
-                const modal=document.getElementById('modal');
-                if(modal)new MutationObserver(()=>{
-                  if(modal.classList.contains('show'))setTimeout(()=>{
-                    ensureCourseWidgetField();syncCourseWidgetField();wrapCourseSubmitForWidgetLabel();
-                  },0);
-                }).observe(modal,{attributes:true,attributeFilter:['class']});
-
-                /* ---------- Géométrie semaine ---------- */
-                function resetGeometry(grid){
-                  grid.querySelectorAll('.lunchSegmentSurfaceV6').forEach(x=>x.remove());
-                  grid.querySelectorAll('.lunchSurfaceCell').forEach(x=>x.classList.remove('lunchSurfaceCell'));
-                  grid.querySelectorAll('.dynamicLunchContinuation').forEach(x=>x.classList.remove('dynamicLunchContinuation'));
-                  grid.querySelectorAll('.weekTodayRailCell').forEach(x=>x.classList.remove('weekTodayRailCell'));
-                  const dot=document.getElementById('gridNowDotV6');if(dot)dot.remove();
-                  grid.querySelectorAll('.dynamicLunchCell').forEach(cell=>{
-                    cell.removeAttribute('data-double-lunch');
-                    cell.style.removeProperty('z-index');cell.style.removeProperty('overflow');
-                    const overlay=cell.querySelector('.dynamicLunchOverlay');
-                    if(overlay){['top','left','right','bottom','width','height'].forEach(p=>overlay.style.removeProperty(p))}
-                  });
-                }
-
-                function makeLunchSurface(grid,cells){
-                  if(!cells||!cells.length)return;
-                  const first=cells[0],last=cells[cells.length-1];
-                  cells.forEach(c=>c.classList.add('lunchSurfaceCell'));
-                  const surface=document.createElement('div');surface.className='lunchSegmentSurfaceV6';
-                  surface.style.left=first.offsetLeft+'px';
-                  surface.style.top=first.offsetTop+'px';
-                  surface.style.width=first.offsetWidth+'px';
-                  surface.style.height=((last.offsetTop+last.offsetHeight)-first.offsetTop)+'px';
-                  grid.appendChild(surface);
-                  const overlay=first.querySelector('.dynamicLunchOverlay');
-                  if(overlay){
-                    overlay.style.setProperty('top','0px','important');overlay.style.setProperty('left','0px','important');
-                    overlay.style.setProperty('right','0px','important');overlay.style.setProperty('bottom','auto','important');
-                    overlay.style.setProperty('width','100%','important');
-                    overlay.style.setProperty('height',surface.style.height,'important');
-                  }
-                }
-
-                function syncLunchGeometry(grid){
-                  if(typeof state==='undefined'||typeof DAYS==='undefined'||typeof slots==='undefined')return;
-                  const kids=Array.from(grid.children).filter(x=>!x.classList.contains('lunchSegmentSurfaceV6'));
-                  if(kids.length<12)return;
-                  const secondStart=slots[4]&&slots[4].start?toMin(slots[4].start):13*60;
-                  const secondEnd=slots[4]&&slots[4].end?toMin(slots[4].end):14*60;
-                  let secondRow=-1;
-                  for(let p=6;p+5<kids.length;p+=6){
-                    const times=(kids[p].textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[];
-                    if(times.length>=2&&toMin(times[0])===secondStart&&toMin(times[1])===secondEnd){secondRow=p;break}
-                  }
-
-                  Array.from(grid.querySelectorAll('.dynamicLunchCell')).forEach(cell=>{
-                    const idx=kids.indexOf(cell),dayIndex=(idx%6)-1;if(dayIndex<0||dayIndex>=DAYS.length)return;
-                    const segment=[cell];
-                    if(secondRow>=0&&secondEnd>secondStart){
-                      const day=state[DAYS[dayIndex]],courses=day&&Array.isArray(day.courses)?day.courses:[];
-                      const occupied=courses.some(c=>toMin(c.start)<secondEnd&&toMin(c.end)>secondStart);
-                      const hasAfter=courses.some(c=>toMin(c.start)>=secondEnd);
-                      const next=kids[secondRow+1+dayIndex];
-                      if(!occupied&&hasAfter&&next&&next.classList&&next.classList.contains('wc')){
-                        next.classList.add('dynamicLunchContinuation');
-                        cell.setAttribute('data-double-lunch','1');cell.style.setProperty('overflow','visible','important');
-                        segment.push(next);
-                      }
+                    if(typeof DAYS==='undefined'||typeof state==='undefined')return null;
+                    const d=DAYS[dayIndex],list=state[d]&&Array.isArray(state[d].courses)?state[d].courses:[];
+                    if(typeof lunchForDay==='function')return lunchForDay(list);
+                    if(typeof lunch==='function'){
+                      const l=lunch();if(!l)return null;
+                      const s=toMin(l.start),e=toMin(l.end);
+                      const before=list.some(c=>toMin(c.end)<=s),after=list.some(c=>toMin(c.start)>=e);
+                      const occupied=list.some(c=>toMin(c.start)<e&&toMin(c.end)>s);
+                      return before&&after&&!occupied?{startM:s,endM:e}:null;
                     }
-                    makeLunchSurface(grid,segment);
-                  });
-                  grid.querySelectorAll('.wc.lunchCell:not(.dynamicLunchCell)').forEach(cell=>makeLunchSurface(grid,[cell]));
+                  }catch(e){}
+                  return null;
                 }
+                function lunchLabel(){
+                  try{return typeof lunchLabelText==='function'?lunchLabelText():String((breaks&&breaks.lunchLabel)||'Midi').trim()}
+                  catch(e){return 'Midi'}
+                }
+                function paintLunch(grid,rows){
+                  const bg=cssVar('--ft-midi','#FFF9E8');
+                  const border=cssVar('--ft-midi-border','#CBBE9E');
+                  const label=lunchLabel();
+                  for(let dayIndex=0;dayIndex<5;dayIndex++){
+                    const l=lunchFor(dayIndex);if(!l)continue;
+                    const ls=Number(l.startM!=null?l.startM:toMin(l.start));
+                    const le=Number(l.endM!=null?l.endM:toMin(l.end));
+                    if(!(le>ls))continue;
+                    const segment=[];
+                    for(const row of rows){
+                      if(Math.min(row.end,le)>Math.max(row.start,ls))segment.push({row,cell:row.cells[dayIndex]});
+                    }
+                    if(!segment.length)continue;
 
-                function syncCurrentMarker(grid){
-                  const legacyRail=document.getElementById('weekNowRail'),legacyDot=document.getElementById('weekNowDot');
-                  if(legacyRail)legacyRail.style.setProperty('visibility','hidden','important');
-                  if(legacyDot)legacyDot.style.setProperty('visibility','hidden','important');
-                  grid.querySelectorAll('.weekTodayRailCell').forEach(x=>x.classList.remove('weekTodayRailCell'));
-                  const oldDot=document.getElementById('gridNowDotV6');if(oldDot)oldDot.remove();
+                    segment.forEach(({cell},i)=>{
+                      cell.classList.add('geoLunchCell');
+                      cell.style.setProperty('background','var(--ft-midi)','important');
+                      cell.style.setProperty('box-shadow','none','important');
+                      cell.style.setProperty('border-radius','0','important');
+                      cell.style.setProperty('padding','0','important');
+                      cell.style.setProperty('overflow','hidden','important');
+                      const leftNeighbor=cell.previousElementSibling;
+                      edge(leftNeighbor,'border-right-color',border);
+                      edge(cell,'border-right-color',border);
+                      edge(cell,'border-bottom-color',i===segment.length-1?border:bg);
+                    });
 
+                    const firstIndex=rows.indexOf(segment[0].row);
+                    const above=firstIndex>0?rows[firstIndex-1].cells[dayIndex]:grid.querySelectorAll('.wh.day')[dayIndex];
+                    edge(above,'border-bottom-color',border);
+
+                    if(label){
+                      const first=segment[0].cell,last=segment[segment.length-1].cell;
+                      const lab=document.createElement('div');lab.className='geoLunchLabel';
+                      lab.innerHTML='<span aria-hidden="true">🍴</span><span></span>';
+                      lab.lastElementChild.textContent=label;
+                      lab.style.left=first.offsetLeft+'px';
+                      lab.style.top=first.offsetTop+'px';
+                      lab.style.width=first.offsetWidth+'px';
+                      lab.style.height=Math.max(first.offsetHeight,last.offsetTop+last.offsetHeight-first.offsetTop)+'px';
+                      grid.appendChild(lab);
+                    }
+                  }
+                }
+                function paintNow(grid,rows){
+                  const layers=ensureLayers(grid),rail=layers.rail,dot=layers.dot;
+                  rail.style.display=dot.style.display='none';
                   const now=new Date(),day=now.getDay();
-                  if(day<1||day>5)return;
+                  if(day<1||day>5||!rows.length)return;
                   try{if(typeof activeWeek!=='undefined'&&typeof currentWeek!=='undefined'&&activeWeek!==currentWeek)return}catch(e){}
-
-                  const kids=Array.from(grid.children).filter(x=>!x.classList.contains('lunchSegmentSurfaceV6'));
-                  if(kids.length<12)return;
                   const minute=now.getHours()*60+now.getMinutes();
-                  let target=null,rowStart=-1,rowEnd=-1;
-                  const dayCells=[];
-                  for(let p=6;p+5<kids.length;p+=6){
-                    const cell=kids[p+day];if(!cell||!cell.classList.contains('wc'))continue;
-                    dayCells.push(cell);cell.classList.add('weekTodayRailCell');
-                    const times=(kids[p].textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[];
-                    if(times.length>=2){
-                      const s=toMin(times[0]),e=toMin(times[1]);
-                      if(minute>=s&&minute<=e){target=cell;rowStart=s;rowEnd=e}
-                    }
-                  }
-                  if(!target||rowEnd<=rowStart)return;
-                  const frac=Math.max(0,Math.min(1,(minute-rowStart)/(rowEnd-rowStart)));
-                  const dot=document.createElement('div');dot.id='gridNowDotV6';
-                  dot.style.left=target.offsetLeft+'px';
-                  dot.style.top=(target.offsetTop+target.offsetHeight*frac)+'px';
-                  grid.appendChild(dot);
+                  const dayIndex=day-1;
+                  let target=null;
+                  for(const row of rows){if(minute>=row.start&&minute<row.end){target=row;break}}
+                  if(!target)return;
+                  const first=rows[0].cells[dayIndex],cell=target.cells[dayIndex];
+                  if(!first||!cell)return;
+                  const frac=Math.max(0,Math.min(1,(minute-target.start)/Math.max(1,target.end-target.start)));
+                  const x=cell.offsetLeft;
+                  const top=first.offsetTop;
+                  const y=cell.offsetTop+cell.offsetHeight*frac;
+                  rail.style.setProperty('left',(x-1)+'px','important');
+                  rail.style.setProperty('top',top+'px','important');
+                  rail.style.setProperty('height',Math.max(2,y-top)+'px','important');
+                  rail.style.setProperty('display','block','important');
+                  dot.style.setProperty('left',(x-11)+'px','important');
+                  dot.style.setProperty('top',(y-11)+'px','important');
+                  dot.style.setProperty('display','block','important');
                 }
-
-                function synchronize(){
+                function syncGeometry(){
                   const grid=document.getElementById('weekGrid');if(!grid)return;
-                  ignoreMutationsUntil=performance.now()+100;
+                  mutating=true;
                   try{
                     grid.style.setProperty('position','relative','important');
-                    resetGeometry(grid);syncLunchGeometry(grid);syncCurrentMarker(grid);installDisplayLabelsUi();
-                  }finally{grid.classList.remove('geometryPending')}
+                    grid.style.setProperty('overflow','hidden','important');
+                    const rows=rowsOf(grid);if(!rows.length)return;
+                    resetPaint(grid);
+                    paintLunch(grid,rows);
+                    paintNow(grid,rows);
+                  }finally{mutating=false}
                 }
-                function schedule(structural){
-                  const grid=document.getElementById('weekGrid');if(!grid)return;
-                  if(structural)grid.classList.add('geometryPending');
-                  if(frame)cancelAnimationFrame(frame);if(lateTimer)clearTimeout(lateTimer);
-                  frame=requestAnimationFrame(()=>requestAnimationFrame(()=>{
-                    synchronize();lateTimer=setTimeout(synchronize,110);
+                function scheduleGeometry(){
+                  if(raf)cancelAnimationFrame(raf);if(late)clearTimeout(late);
+                  raf=requestAnimationFrame(()=>requestAnimationFrame(()=>{
+                    syncGeometry();late=setTimeout(syncGeometry,120);
                   }));
                 }
-                window.refreshDoubleLunchUi=function(structural){schedule(structural!==false)};
+                window.refreshDoubleLunchUi=scheduleGeometry;
 
-                function wrap(name){
-                  const fn=window[name];if(typeof fn!=='function'||fn.__geometryV6)return;
-                  const wrapped=function(){
-                    const grid=document.getElementById('weekGrid');if(grid)grid.classList.add('geometryPending');
-                    const out=fn.apply(this,arguments);schedule(true);return out;
-                  };
-                  wrapped.__geometryV6=true;window[name]=wrapped;
+                function loadAdv(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
+                function saveAdv(o){try{AndroidSchedule.saveAdvancedSettings(JSON.stringify(o))}catch(e){}}
+                function keyFor(week,day,start,end){return String(week||'A')+'|'+String(day||2)+'|'+String(start||'')+'|'+String(end||'')}
+                function ensureCourseWidgetField(){
+                  const form=document.getElementById('courseForm');if(!form)return;
+                  let field=document.getElementById('courseWidgetLabelField');
+                  if(!field){
+                    field=document.createElement('div');field.id='courseWidgetLabelField';field.className='field';
+                    field.innerHTML='<label>Intitulé dans le widget (facultatif)</label><input id="fWidgetLabel" type="text" maxlength="80" placeholder="Vide = même intitulé que dans l\'application">';
+                    const app=document.getElementById('fLabel'),appField=app?app.closest('.field'):null;
+                    if(appField&&appField.nextSibling)appField.parentNode.insertBefore(field,appField.nextSibling);else form.appendChild(field);
+                  }
                 }
-                wrap('render');wrap('renderWeek');
+                function currentCourse(){
+                  try{if(typeof editing==='undefined'||editing==null)return null;return weeks[activeWeek][selected].courses[editing]||null}catch(e){return null}
+                }
+                function fillCourseWidgetField(){
+                  ensureCourseWidgetField();const input=document.getElementById('fWidgetLabel');if(!input)return;
+                  const c=currentCourse();if(!c){input.value='';return}
+                  const a=loadAdv(),map=a.widgetCourseLabels||{};
+                  input.value=String(map[keyFor(activeWeek,selected,c.start,c.end)]||'');
+                }
+                function wrapCourseSubmitLabels(){
+                  ensureCourseWidgetField();
+                  const form=document.getElementById('courseForm');if(!form||!form.onsubmit||form.onsubmit.__widgetLabelsV8)return;
+                  const old=form.onsubmit;
+                  const wrapped=function(e){
+                    const oldCourse=currentCourse();
+                    const oldKey=oldCourse?keyFor(activeWeek,selected,oldCourse.start,oldCourse.end):null;
+                    const slot=Number((document.getElementById('fSlot')||{}).value||0);
+                    let start='',end='';
+                    if(slot>0&&typeof slots!=='undefined'&&slots[slot-1]){start=slots[slot-1].start;end=slots[slot-1].end}
+                    else if(oldCourse){start=oldCourse.start;end=oldCourse.end}
+                    else if(typeof newPrefill!=='undefined'&&newPrefill){start=newPrefill.start;end=newPrefill.end}
+                    const widgetLabel=String((document.getElementById('fWidgetLabel')||{}).value||'').trim();
+                    const week=typeof activeWeek!=='undefined'?activeWeek:'A',day=typeof selected!=='undefined'?selected:2;
+                    const out=old.call(this,e);
+                    try{
+                      const a=loadAdv();a.widgetCourseLabels=(a.widgetCourseLabels&&typeof a.widgetCourseLabels==='object')?a.widgetCourseLabels:{};
+                      if(oldKey)delete a.widgetCourseLabels[oldKey];
+                      const newKey=keyFor(week,day,start,end);
+                      if(widgetLabel)a.widgetCourseLabels[newKey]=widgetLabel;else delete a.widgetCourseLabels[newKey];
+                      saveAdv(a);
+                    }catch(ex){}
+                    return out;
+                  };
+                  wrapped.__widgetLabelsV8=true;form.onsubmit=wrapped;
+                }
+                function installBreakWidgetInputs(){
+                  const pairs=[['gapLabel','gapWidgetLabel'],['lunchLabel','lunchWidgetLabel']];
+                  const a=loadAdv();
+                  for(const [appId,key] of pairs){
+                    const app=document.getElementById(appId);if(!app)continue;
+                    let host=app.closest('.dualBreakInputs');
+                    let widget=document.getElementById(appId+'Widget');
+                    if(!host){
+                      host=document.createElement('div');host.className='dualBreakInputs';
+                      const parent=app.parentElement;parent.insertBefore(host,app);
+                      const l1=document.createElement('div');l1.className='dualLabel';l1.textContent='Application';host.appendChild(l1);host.appendChild(app);
+                      const l2=document.createElement('div');l2.className='dualLabel';l2.textContent='Widget';host.appendChild(l2);
+                      widget=document.createElement('input');widget.id=appId+'Widget';widget.type='text';widget.maxLength=35;widget.placeholder='Vide = même intitulé';host.appendChild(widget);
+                    }
+                    if(widget&&document.activeElement!==widget)widget.value=String(a[key]||'');
+                    if(widget&&!widget.__widgetLabelBound){
+                      widget.__widgetLabelBound=true;
+                      const persist=()=>{const x=loadAdv();x[key]=String(widget.value||'').trim();saveAdv(x)};
+                      widget.addEventListener('change',persist);widget.addEventListener('blur',persist);
+                    }
+                  }
+                }
+                function installLabelsUi(){
+                  ensureCourseWidgetField();wrapCourseSubmitLabels();installBreakWidgetInputs();
+                  const modal=document.getElementById('modal');
+                  if(modal&&!modal.__widgetLabelsObserver){
+                    modal.__widgetLabelsObserver=true;
+                    new MutationObserver(()=>{if(modal.classList.contains('show'))setTimeout(()=>{fillCourseWidgetField();wrapCourseSubmitLabels()},0)}).observe(modal,{attributes:true,attributeFilter:['class']});
+                  }
+                }
 
                 const grid=document.getElementById('weekGrid');
                 if(grid){
-                  new MutationObserver(muts=>{
-                    if(performance.now()<ignoreMutationsUntil)return;
-                    const structural=muts.some(m=>m.type==='childList'&&m.target===grid);
-                    schedule(structural);
-                  }).observe(grid,{childList:true,subtree:true});
-                  if(window.ResizeObserver)new ResizeObserver(()=>schedule(false)).observe(grid);
+                  new MutationObserver(()=>{if(!mutating)scheduleGeometry()}).observe(grid,{childList:true,subtree:true});
+                  if(window.ResizeObserver)new ResizeObserver(()=>scheduleGeometry()).observe(grid);
                 }
-                const breaksBox=document.querySelector('.breakSettings');
-                if(breaksBox)new MutationObserver(()=>setTimeout(installDisplayLabelsUi,0)).observe(breaksBox,{childList:true,subtree:true});
-                window.addEventListener('resize',()=>schedule(false));
-                document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule(false)});
-                setInterval(()=>schedule(false),60000);
-                installDisplayLabelsUi();schedule(true);
-              }catch(e){console.log('Grid geometry V6',e)}
+                window.addEventListener('resize',scheduleGeometry);
+                document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleGeometry()});
+                setInterval(scheduleGeometry,60000);
+                if(document.fonts&&document.fonts.ready)document.fonts.ready.then(scheduleGeometry);
+                installLabelsUi();
+                scheduleGeometry();
+              }catch(e){console.log('Week geometry V8',e)}
             })();
             """;
     }
