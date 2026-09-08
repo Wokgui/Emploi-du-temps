@@ -46,24 +46,25 @@ final class WidgetPaletteStore {
         return isLight(courseColor(context, slot, label, colorId));
     }
 
+    /**
+     * Special rows deliberately do not borrow one of the course colours.
+     * Lunch uses the validated sand/champagne treatment and free periods stay white,
+     * so both remain immediately distinguishable from real courses in every palette.
+     */
     static int lunchBackground(Context context) {
-        int[] p = palette(context);
-        return p[Math.min(2, p.length - 1)];
+        return 0xFFFFF9E8;
     }
 
     static int lunchText(Context context) {
-        int bg = lunchBackground(context);
-        return isLight(bg) ? 0xFF4B3B09 : 0xFFFFFFFF;
+        return 0xFF22283A;
     }
 
     static int gapBackground(Context context) {
-        int[] p = palette(context);
-        return p[Math.min(6, p.length - 1)];
+        return 0xFFFFFFFF;
     }
 
     static int gapText(Context context) {
-        int bg = gapBackground(context);
-        return isLight(bg) ? 0xFF33294A : 0xFFFFFFFF;
+        return 0xFF22283A;
     }
 
     private static boolean isLight(int color) {
