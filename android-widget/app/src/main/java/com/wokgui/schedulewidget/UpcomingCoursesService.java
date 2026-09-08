@@ -165,7 +165,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
                         "",
                         Item.LUNCH,
                         0,
-                        "",
+                        lunchRelative(lunchEnd),
                         false,
                         ""
                 ));
@@ -181,7 +181,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
                     "",
                     Item.GAP,
                     0,
-                    "",
+                    gapRelative(start, end),
                     false,
                     ""
             ));
@@ -192,6 +192,28 @@ public class UpcomingCoursesService extends RemoteViewsService {
             if (lunch && "Pause de midi".equalsIgnoreCase(custom)) return "Midi";
             if (!lunch && "Trou".equalsIgnoreCase(custom)) return UiSettingsStore.t(context, "gap");
             return custom;
+        }
+
+        private String lunchRelative(int endMinute) {
+            String lang = UiSettingsStore.language(context);
+            String time;
+            if ("fr".equals(lang) && endMinute % 60 == 0) time = (endMinute / 60) + " h";
+            else time = minuteLabel(endMinute);
+            return UiSettingsStore.t(context, "backAt") + " " + time;
+        }
+
+        private String gapRelative(int start, int end) {
+            int duration = Math.max(0, end - start);
+            String lang = UiSettingsStore.language(context);
+            if (duration % 60 == 0 && duration >= 60) {
+                int hours = duration / 60;
+                if ("de".equals(lang)) return "Frei " + hours + " Std.";
+                if ("en".equals(lang)) return "Free " + hours + " h";
+                return "Libre " + hours + " h";
+            }
+            if ("de".equals(lang)) return "Frei " + duration + " Min.";
+            if ("en".equals(lang)) return "Free " + duration + " min";
+            return "Libre " + duration + " min";
         }
 
         private String relativeLabel(Calendar now, Calendar targetDate, ScheduleData.Course course, boolean includeDate) {
@@ -274,19 +296,19 @@ public class UpcomingCoursesService extends RemoteViewsService {
             v.setViewVisibility(R.id.rowDot, View.GONE);
             v.setViewVisibility(R.id.rowLineTop, View.GONE);
             v.setViewVisibility(R.id.rowLineBottom, View.GONE);
-            v.setTextViewText(R.id.rowTitle, (item.uncertain ? "⚠ " : "") + item.label);
+
+            String title = item.label;
+            if (item.type == Item.LUNCH) title = "🍴 " + title;
+            if (item.type == Item.COURSE && item.uncertain) title = "⚠ " + title;
+            v.setTextViewText(R.id.rowTitle, title);
             v.setTextViewText(R.id.rowRelative, item.relative);
             v.setViewVisibility(R.id.rowRelative, item.relative.isEmpty() ? View.GONE : View.VISIBLE);
             v.setInt(R.id.rowRelative, "setGravity", Gravity.CENTER);
 
             if (item.type == Item.LUNCH) {
-                int bg = WidgetPaletteStore.lunchBackground(context);
-                int ink = WidgetPaletteStore.lunchText(context);
-                applyBreakRow(v, item, bg, ink);
+                applyBreakRow(v, item, R.drawable.widget_lunch_row, WidgetPaletteStore.lunchText(context), 0xFF6C5323);
             } else if (item.type == Item.GAP) {
-                int bg = WidgetPaletteStore.gapBackground(context);
-                int ink = WidgetPaletteStore.gapText(context);
-                applyBreakRow(v, item, bg, ink);
+                applyBreakRow(v, item, R.drawable.widget_gap_row, WidgetPaletteStore.gapText(context), 0xFF465369);
             } else {
                 int bg = WidgetPaletteStore.courseColor(context, item.order, item.label, item.colorId);
                 boolean dark = WidgetPaletteStore.useDarkText(context, item.order, item.label, item.colorId);
@@ -311,15 +333,16 @@ public class UpcomingCoursesService extends RemoteViewsService {
             return v;
         }
 
-        private void applyBreakRow(RemoteViews v, Item item, int bg, int ink) {
-            v.setInt(R.id.rowContent, "setBackgroundColor", bg);
-            v.setTextViewText(R.id.rowTitle, item.label);
+        private void applyBreakRow(RemoteViews v, Item item, int backgroundRes, int ink, int pillInk) {
+            v.setInt(R.id.rowContent, "setBackgroundResource", backgroundRes);
             String meta = AdvancedSettingsStore.showTimes(context) ? item.time : "";
             v.setTextViewText(R.id.rowMeta, meta);
             v.setViewVisibility(R.id.rowMeta, meta.isEmpty() ? View.GONE : View.VISIBLE);
             v.setTextColor(R.id.rowTitle, ink);
             v.setTextColor(R.id.rowMeta, ink);
-            v.setViewVisibility(R.id.rowRelative, View.GONE);
+            v.setTextViewText(R.id.rowRelative, item.relative);
+            v.setViewVisibility(R.id.rowRelative, item.relative.isEmpty() ? View.GONE : View.VISIBLE);
+            v.setTextColor(R.id.rowRelative, pillInk);
         }
 
         private int darken(int color) {
