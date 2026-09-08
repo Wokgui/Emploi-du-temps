@@ -3,8 +3,16 @@ tasks.register('patchOcrEscapes80') {
     doLast {
         def f=file('src/main/java/com/wokgui/schedulewidget/OcrImport80Ui.java')
         def s=f.getText('UTF-8')
+
+        // With no readable day header, keep the first timetable row instead of treating
+        // it as a header. The column-clustering fallback can then import headerless grids.
+        s=s.replace(
+                "const headerY=headers.length?Math.max(...headers.map(h=>h.y)):Math.min(...lines.map(l=>l.cy));",
+                "const headerY=headers.length?Math.max(...headers.map(h=>h.y)):Math.min(...lines.map(l=>l.cy))-4;"
+        )
+
         // Java text blocks still interpret backslash escapes. Double the JavaScript
-        // regexp escapes so the script received by WebView contains real \d, \s and \b.
+        // regexp escapes so the script received by WebView contains real \\d, \\s and \\b.
         s=s.replace('\\d','\\\\d')
         s=s.replace('\\s','\\\\s')
         s=s.replace('\\b','\\\\b')
