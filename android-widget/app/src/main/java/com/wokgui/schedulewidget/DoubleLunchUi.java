@@ -7,11 +7,41 @@ final class DoubleLunchUi {
         return """
             (function(){
               try {
-                if(window.__doubleLunchUiV2){
+                if(window.__doubleLunchUiV3){
                   if(window.refreshDoubleLunchUi)window.refreshDoubleLunchUi();
                   return;
                 }
-                window.__doubleLunchUiV2=true;
+                window.__doubleLunchUiV3=true;
+
+                const polish=document.createElement('style');
+                polish.textContent=`
+                  /* Un peu plus de hauteur pour mieux occuper l'écran en vue semaine. */
+                  html body #viewWeek #weekGrid .wh,
+                  html body #viewWeek #weekGrid .wc{min-height:47px!important}
+                  @media(max-width:560px){
+                    html body #viewWeek #weekGrid .wh,
+                    html body #viewWeek #weekGrid .wc{min-height:46px!important}
+                  }
+
+                  /* Les cases Midi adjacentes se touchent réellement : pas de double trait
+                     ni de petit interstice entre deux jours ayant Midi côte à côte. */
+                  html body #viewWeek #weekGrid .dynamicLunchOverlay{
+                    box-sizing:border-box!important;
+                    border:1px solid var(--ft-midi-border)!important;
+                    border-radius:0!important;
+                    box-shadow:none!important;
+                  }
+                  html body #viewWeek #weekGrid .dynamicLunchCell:has(+ .dynamicLunchCell){
+                    border-right-color:transparent!important;
+                  }
+                  html body #viewWeek #weekGrid .dynamicLunchCell:has(+ .dynamicLunchCell) .dynamicLunchOverlay{
+                    border-right-width:0!important;
+                  }
+                  html body #viewWeek #weekGrid .dynamicLunchCell + .dynamicLunchCell .dynamicLunchOverlay{
+                    border-left-width:1px!important;
+                  }
+                `;
+                document.head.appendChild(polish);
 
                 function toMin(v){
                   try{
@@ -79,8 +109,7 @@ final class DoubleLunchUi {
                       cell.style.setProperty('overflow','visible','important');
                       cell.style.setProperty('z-index','20','important');
 
-                      // The lunch surface must coincide exactly with the temporal grid:
-                      // no 1/2 px inset, no rounded card floating inside the cell.
+                      // The lunch surface coincides exactly with the time grid.
                       overlay.style.setProperty('top','0px','important');
                       overlay.style.setProperty('left','0px','important');
                       overlay.style.setProperty('right','0px','important');
