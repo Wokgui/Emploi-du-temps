@@ -1,0 +1,17 @@
+tasks.register('patchOcrEscapes80') {
+    dependsOn tasks.named('patchStability80')
+    doLast {
+        def f=file('src/main/java/com/wokgui/schedulewidget/OcrImport80Ui.java')
+        def s=f.getText('UTF-8')
+        // Java text blocks still interpret backslash escapes. Double the JavaScript
+        // regexp escapes so the script received by WebView contains real \d, \s and \b.
+        s=s.replace('\\d','\\\\d')
+        s=s.replace('\\s','\\\\s')
+        s=s.replace('\\b','\\\\b')
+        f.write(s,'UTF-8')
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('patchOcrEscapes80')
+}
