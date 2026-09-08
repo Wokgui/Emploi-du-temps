@@ -42,6 +42,9 @@ final class AdvancedSettingsStore {
             o.put("holidayMode", "alsace_moselle");
             o.put("exceptions", new JSONArray());
             o.put("dayOffRanges", new JSONArray());
+            o.put("gapWidgetLabel", "");
+            o.put("lunchWidgetLabel", "");
+            o.put("widgetCourseLabels", new JSONObject());
         } catch (Exception ignored) {}
         return o;
     }
@@ -114,6 +117,9 @@ final class AdvancedSettingsStore {
         merged.put("holidayMode", holiday);
         if (!(merged.opt("exceptions") instanceof JSONArray)) merged.put("exceptions", new JSONArray());
         if (!(merged.opt("dayOffRanges") instanceof JSONArray)) merged.put("dayOffRanges", new JSONArray());
+        if (!(merged.opt("widgetCourseLabels") instanceof JSONObject)) merged.put("widgetCourseLabels", new JSONObject());
+        merged.put("gapWidgetLabel", merged.optString("gapWidgetLabel", "").trim());
+        merged.put("lunchWidgetLabel", merged.optString("lunchWidgetLabel", "").trim());
     }
 
     static int cycleLength(Context context) { return clamp(json(context).optInt("cycleLength", 2), 2, 4); }
@@ -133,6 +139,31 @@ final class AdvancedSettingsStore {
     static boolean remindersEnabled(Context context) { return json(context).optBoolean("remindersEnabled", false); }
     static int reminderMinutes(Context context) { return clamp(json(context).optInt("reminderMinutes", 10), 0, 120); }
     static String holidayMode(Context context) { return json(context).optString("holidayMode", "alsace_moselle"); }
+
+    static String widgetGapLabel(Context context, String fallback) {
+        String value = json(context).optString("gapWidgetLabel", "").trim();
+        return value.isEmpty() ? (fallback == null ? "" : fallback) : value;
+    }
+
+    static String widgetLunchLabel(Context context, String fallback) {
+        String value = json(context).optString("lunchWidgetLabel", "").trim();
+        return value.isEmpty() ? (fallback == null ? "" : fallback) : value;
+    }
+
+    static String widgetCourseLabel(Context context, Calendar date, ScheduleData.Course course) {
+        if (course == null) return "";
+        String fallback = course.label == null ? "" : course.label;
+        try {
+            JSONObject map = json(context).optJSONObject("widgetCourseLabels");
+            if (map == null) return fallback;
+            String week = ScheduleStore.getWeekLetter(context, date);
+            String key = week + "|" + date.get(Calendar.DAY_OF_WEEK) + "|" + course.start + "|" + course.end;
+            String value = map.optString(key, "").trim();
+            return value.isEmpty() ? fallback : value;
+        } catch (Exception ignored) {
+            return fallback;
+        }
+    }
 
     static boolean isDayOff(Context context, Calendar date) {
         int dow = date.get(Calendar.DAY_OF_WEEK);
