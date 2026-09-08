@@ -64,20 +64,25 @@ final class FineTuneUi {
                   .specialColorRow input[type=range]{width:100%;accent-color:var(--blue)}
                   .specialWidgetTitle{font-size:.66rem;font-weight:900;color:var(--ink);margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}
 
-                  /* Les couleurs Midi/Trou sont calculées dynamiquement. Le liseré Midi suit la couleur. */
-                  #todayList .todayCourse.lunch{background:var(--ft-midi)!important;color:var(--ft-midi-ink)!important;border:1px solid var(--ft-midi-border)!important}
-                  #todayList .todayCourse.gap{background:var(--ft-gap)!important;color:var(--ft-gap-ink)!important;border:1px solid var(--ft-gap-border)!important}
+                  /* Midi reste coloré avec un liseré assorti, mais occupe toute la case sans encadré arrondi interne. */
+                  #todayList .todayCourse.lunch{background:var(--ft-midi)!important;color:var(--ft-midi-ink)!important;border:0!important;border-radius:0!important;box-shadow:inset 0 0 0 1px var(--ft-midi-border)!important}
+                  #todayList .todayCourse.gap{background:var(--ft-gap)!important;color:var(--ft-gap-ink)!important;border:0!important;border-radius:0!important;box-shadow:none!important}
                   #todayList .todayCourse.lunch .time,#todayList .todayCourse.lunch .room,#todayList .todayCourse.lunch .label{color:var(--ft-midi-ink)!important}
                   #todayList .todayCourse.gap .time,#todayList .todayCourse.gap .room,#todayList .todayCourse.gap .label{color:var(--ft-gap-ink)!important}
                   #todayList .todayCourse.lunch .label:before{content:'🍴'!important;display:inline-block!important;margin-right:6px!important}
                   #todayList .todayCourse.gap .label:before{content:none!important;display:none!important}
-                  #weekGrid .wc.gapCell{background:var(--ft-gap)!important;color:var(--ft-gap-ink)!important;box-shadow:inset 0 0 0 1px var(--ft-gap-border)!important}
+
+                  /* Trou : aucun rectangle intérieur, juste la cellule blanche du tableau. */
+                  #weekGrid .wc.gapCell{background:var(--ft-gap)!important;color:var(--ft-gap-ink)!important;box-shadow:none!important;border-radius:0!important}
                   #weekGrid .wc.gapCell *{color:var(--ft-gap-ink)!important}
                   #weekGrid .wc.gapCell .cellLabel:before{content:none!important;display:none!important}
+
+                  /* Midi : cellule totalement rectangulaire, liseré bord-à-bord de la teinte choisie. */
+                  #weekGrid .wc.lunchCell{border-radius:0!important}
                   #weekGrid .wc.lunchCell:not(.dynamicLunchCell){background:var(--ft-midi)!important;color:var(--ft-midi-ink)!important;box-shadow:inset 0 0 0 1px var(--ft-midi-border)!important}
                   #weekGrid .wc.lunchCell:not(.dynamicLunchCell) *{color:var(--ft-midi-ink)!important}
-                  #weekGrid .dynamicLunchCell{background:#fff!important;color:var(--ft-midi-ink)!important}
-                  #weekGrid .dynamicLunchOverlay{background:var(--ft-midi)!important;color:var(--ft-midi-ink)!important;border:1px solid var(--ft-midi-border)!important;box-shadow:none!important}
+                  #weekGrid .dynamicLunchCell{background:var(--ft-midi)!important;color:var(--ft-midi-ink)!important;border-radius:0!important;overflow:hidden!important}
+                  #weekGrid .dynamicLunchOverlay{inset:0!important;background:var(--ft-midi)!important;color:var(--ft-midi-ink)!important;border:0!important;border-radius:0!important;box-shadow:inset 0 0 0 1px var(--ft-midi-border)!important}
                   #weekGrid .dynamicLunchOverlay *{color:var(--ft-midi-ink)!important}
                   #weekGrid .wc.lunchCell .cellLabel:before{content:'🍴'!important;display:inline-block!important;margin-right:3px!important;font-size:.72em!important;vertical-align:middle!important}
                   @media(max-width:560px){#viewWeek .wh,#viewWeek .wc{min-height:42px!important}}
