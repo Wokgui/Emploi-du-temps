@@ -1,0 +1,230 @@
+tasks.register('patchNoFlicker68') {
+    dependsOn tasks.named('patchStableVisual67')
+    doLast {
+        // 1) Week tabs: never destroy/recreate them. Keep four fixed slots and only toggle visibility/state.
+        def advFile = file('src/main/java/com/wokgui/schedulewidget/AdvancedFeaturesUi.java')
+        def adv = advFile.getText('UTF-8')
+        def oldTabs = '''                function buildWeekTabs(){
+                  const box=document.getElementById('weekTabs');if(!box||typeof activeWeek==='undefined')return;
+                  ensureExtraWeeks();const list=letters();if(list.indexOf(activeWeek)<0)activeWeek=currentWeek;if(list.indexOf(currentWeek)<0)currentWeek='A';box.innerHTML='';
+                  for(const w of list){const b=document.createElement('button');b.className='weekTab'+(w===activeWeek?' active':'');b.dataset.week=w;b.textContent=(uiLang()==='de'?'Woche ':(uiLang()==='en'?'Week ':'Semaine '))+w;b.onclick=()=>{activeWeek=w;if(typeof render==='function')render();setTimeout(refreshAdvancedFeatures,0)};box.appendChild(b)}
+                  const cw=document.getElementById('currentWeekBtn');if(cw){cw.onclick=()=>{const ls=letters();const idx=ls.indexOf(currentWeek);currentWeek=ls[(idx+1)%ls.length];activeWeek=currentWeek;if(typeof save==='function')save();if(window.AndroidSchedule&&AndroidSchedule.setCurrentWeek)AndroidSchedule.setCurrentWeek(currentWeek);buildWeekTabs();setTimeout(refreshAdvancedFeatures,0)}}
+                }
+'''
+        def newTabs = '''                function buildWeekTabs(){
+                  const box=document.getElementById('weekTabs');if(!box||typeof activeWeek==='undefined')return;
+                  ensureExtraWeeks();const list=letters();if(list.indexOf(activeWeek)<0)activeWeek=currentWeek;if(list.indexOf(currentWeek)<0)currentWeek='A';
+                  const prefix=(uiLang()==='de'?'Woche ':(uiLang()==='en'?'Week ':'Semaine '));
+                  for(const w of ['A','B','C','D']){
+                    let b=box.querySelector('.weekTab[data-week="'+w+'"]');
+                    if(!b){b=document.createElement('button');b.type='button';b.className='weekTab';b.dataset.week=w;box.appendChild(b)}
+                    const visible=list.indexOf(w)>=0;
+                    b.textContent=prefix+w;
+                    b.className='weekTab'+(w===(mode==='today'?currentWeek:activeWeek)?' active':'');
+                    b.style.visibility=visible?'visible':'hidden';
+                    b.style.pointerEvents=visible?'auto':'none';
+                    b.setAttribute('aria-hidden',visible?'false':'true');
+                    b.tabIndex=visible?0:-1;
+                    b.onclick=visible?(()=>{if(activeWeek===w)return;activeWeek=w;if(typeof render==='function')render()}):null;
+                  }
+                  const cw=document.getElementById('currentWeekBtn');
+                  if(cw){
+                    if(adv.singleWeek===true)cw.onclick=null;
+                    else cw.onclick=()=>{const ls=letters(),idx=ls.indexOf(currentWeek);currentWeek=ls[(idx+1)%ls.length];activeWeek=currentWeek;if(window.AndroidSchedule&&AndroidSchedule.setCurrentWeek)AndroidSchedule.setCurrentWeek(currentWeek);if(typeof save==='function')save();else if(typeof render==='function')render()};
+                  }
+                }
+'''
+        if (!adv.contains(oldTabs) && !adv.contains("const prefix=(uiLang()==='de'?'Woche '")) throw new GradleException('6.8: stable buildWeekTabs patch target not found')
+        if (adv.contains(oldTabs)) adv = adv.replace(oldTabs, newTabs)
+
+        // AdvancedFeatures used a zero-delay second paint for Today. Make the enhancement synchronous,
+        // so the user never sees the legacy 'Pause de midi' frame before the final 'Midi' frame.
+        def oldAfter = "                function after(name,fn){const old=window[name];if(typeof old!=='function'||old.__advancedAfter)return;const wrapped=function(){const r=old.apply(this,arguments);setTimeout(fn,0);return r};wrapped.__advancedAfter=true;window[name]=wrapped}"
+        def newAfter = "                function after(name,fn){const old=window[name];if(typeof old!=='function'||old.__advancedAfter)return;const wrapped=function(){const r=old.apply(this,arguments);try{fn()}catch(e){}return r};wrapped.__advancedAfter=true;window[name]=wrapped}"
+        if (!adv.contains(oldAfter) && !adv.contains('try{fn()}catch(e){}return r')) throw new GradleException('6.8: synchronous AdvancedFeatures paint patch target not found')
+        if (adv.contains(oldAfter)) adv = adv.replace(oldAfter, newAfter)
+        advFile.write(adv, 'UTF-8')
+
+        // 2) LunchBreak UI: refreshing settings must not redraw the whole active view.
+        def lunchFile = file('src/main/java/com/wokgui/schedulewidget/LunchBreakUi.java')
+        def lunch = lunchFile.getText('UTF-8')
+        lunch = lunch.replace(
+                "                  setTimeout(()=>{syncBreakCells();decorateCourseBadges();if(window.refreshCourseColors)window.refreshCourseColors()},0);",
+                "                  syncBreakCells();decorateCourseBadges();if(window.refreshCourseColors)window.refreshCourseColors();")
+        lunch = lunch.replace(
+                "                  setTimeout(()=>{syncBreakCells();fitBreakLabels();polishWeekNowMarker();decorateCourseBadges();if(window.refreshCourseColors)window.refreshCourseColors()},0);",
+                "                  syncBreakCells();fitBreakLabels();polishWeekNowMarker();decorateCourseBadges();if(window.refreshCourseColors)window.refreshCourseColors();")
+        def oldLunchRefresh = '''                function refresh(){
+                  try{
+                    bindOverrides();wireBreakSettings();ensureCourseBadgeField();wrapCourseSubmit();
+                    if(typeof render==='function')render();
+                    setTimeout(()=>{bindOverrides();wireBreakSettings();syncBreakCells();fitBreakLabels();decorateCourseBadges();if(window.refreshCourseColors)window.refreshCourseColors();setTimeout(polishWeekNowMarker,35)},15);
+                  }catch(e){}
+                }
+'''
+        def newLunchRefresh = '''                function refresh(){
+                  try{
+                    bindOverrides();wireBreakSettings();ensureCourseBadgeField();wrapCourseSubmit();
+                    syncBreakCells();fitBreakLabels();decorateCourseBadges();if(window.refreshCourseColors)window.refreshCourseColors();polishWeekNowMarker();
+                  }catch(e){}
+                }
+'''
+        if (lunch.contains(oldLunchRefresh)) lunch = lunch.replace(oldLunchRefresh, newLunchRefresh)
+        else if (!lunch.contains('syncBreakCells();fitBreakLabels();decorateCourseBadges();if(window.refreshCourseColors)window.refreshCourseColors();polishWeekNowMarker();')) throw new GradleException('6.8: LunchBreak refresh patch target not found')
+        lunchFile.write(lunch, 'UTF-8')
+
+        // 3) DoubleLunch was deliberately moving its old stylesheet to the end one frame later,
+        // then rebuilding lunch children again after 30/120/350/800/1500 ms. That is the main Midi blink.
+        def geoFile = file('src/main/java/com/wokgui/schedulewidget/DoubleLunchUi.java')
+        def geo = geoFile.getText('UTF-8')
+        geo = geo.replace('#weekGrid .geoLunchLabel,#weekGrid .dynamicLunchOverlay{display:none!important}', '#weekGrid .geoLunchLabel{display:none!important}')
+        def oldKeep = '''                function keepStyleLast(){
+                  if(style.parentNode&&document.head.lastElementChild!==style)document.head.appendChild(style);
+                }
+                new MutationObserver(()=>requestAnimationFrame(keepStyleLast)).observe(document.head,{childList:true});
+'''
+        def newKeep = '''                function keepStyleLast(){}
+'''
+        if (geo.contains(oldKeep)) geo = geo.replace(oldKeep, newKeep)
+        else if (!geo.contains('function keepStyleLast(){}')) throw new GradleException('6.8: DoubleLunch stylesheet reorder patch target not found')
+
+        def oldNormalize = '''                function normalizeLunch(cell,label){
+                  if(!cell)return;
+                  cell.classList.add('nativeLunchCell');
+                  cell.querySelectorAll('.dynamicLunchOverlay,.geoLunchLabel').forEach(x=>x.remove());
+                  let holder=cell.querySelector(':scope > .nativeLunchLabel');
+                  if(!holder){
+                    holder=document.createElement('div');
+                    holder.className='nativeLunchLabel';
+                    cell.replaceChildren(holder);
+                  }
+                  holder.replaceChildren();
+                  if(label){
+                    const icon=document.createElement('span');
+                    icon.className='nativeLunchIcon';icon.setAttribute('aria-hidden','true');icon.textContent='🍴';
+                    const text=document.createElement('span');text.textContent=label;
+                    holder.append(icon,text);
+                  }
+                  cell.style.setProperty('background','var(--ft-midi)','important');
+                  cell.style.setProperty('box-shadow','none','important');
+                  cell.style.setProperty('outline','0','important');
+                  cell.style.setProperty('border-left','0','important');
+                  cell.style.setProperty('border-top','0','important');
+                  cell.style.setProperty('border-radius','0','important');
+                  cell.style.setProperty('padding','0','important');
+                  cell.style.setProperty('margin','0','important');
+                }
+'''
+        def newNormalize = '''                function normalizeLunch(cell,label){
+                  if(!cell)return;
+                  cell.classList.add('nativeLunchCell');
+                  cell.querySelectorAll('.geoLunchLabel').forEach(x=>x.remove());
+                  const holder=cell.querySelector('.dynamicLunchOverlay')||cell;
+                  let text=holder.querySelector('.cellLabel');
+                  if(label){
+                    if(!text){text=document.createElement('span');text.className='cellLabel breakFitLabel';holder.appendChild(text)}
+                    if(text.textContent!==label)text.textContent=label;
+                  }else if(text){text.remove()}
+                  cell.style.setProperty('background','var(--ft-midi)','important');
+                  cell.style.setProperty('box-shadow','none','important');
+                  cell.style.setProperty('outline','0','important');
+                  cell.style.setProperty('border-left','0','important');
+                  cell.style.setProperty('border-top','0','important');
+                  cell.style.setProperty('border-radius','0','important');
+                  cell.style.setProperty('padding','0','important');
+                  cell.style.setProperty('margin','0','important');
+                }
+'''
+        if (geo.contains(oldNormalize)) geo = geo.replace(oldNormalize, newNormalize)
+        else if (!geo.contains("const holder=cell.querySelector('.dynamicLunchOverlay')||cell;")) throw new GradleException('6.8: DoubleLunch DOM-stable lunch patch target not found')
+
+        def oldSchedule = '''                function scheduleGrid(){
+                  if(raf)cancelAnimationFrame(raf);
+                  if(lateTimer)clearTimeout(lateTimer);
+                  raf=requestAnimationFrame(()=>requestAnimationFrame(syncGrid));
+                  lateTimer=setTimeout(syncGrid,100);
+                }
+'''
+        def newSchedule = '''                function scheduleGrid(){
+                  if(raf)cancelAnimationFrame(raf);
+                  if(lateTimer)clearTimeout(lateTimer);
+                  syncGrid();
+                }
+'''
+        if (geo.contains(oldSchedule)) geo = geo.replace(oldSchedule, newSchedule)
+        else if (!geo.contains('function scheduleGrid(){\n                  if(raf)cancelAnimationFrame(raf);\n                  if(lateTimer)clearTimeout(lateTimer);\n                  syncGrid();')) throw new GradleException('6.8: DoubleLunch synchronous geometry patch target not found')
+        geo = geo.replace('                [30,120,350,800,1500].forEach(ms=>setTimeout(syncGrid,ms));', '                syncGrid();')
+        geoFile.write(geo, 'UTF-8')
+
+        // 4) Weekend support must never force a delayed Today redraw just to refresh its buttons.
+        def weekendFile = file('src/main/java/com/wokgui/schedulewidget/WeekendUi.java')
+        def weekend = weekendFile.getText('UTF-8')
+        weekend = weekend.replace(
+                "                  const wrapped=function(){const out=old.apply(this,arguments);setTimeout(refresh,0);return out};wrapped.__weekendRefreshWrapped=true;window[name]=wrapped;",
+                "                  const wrapped=function(){const out=old.apply(this,arguments);refresh();return out};wrapped.__weekendRefreshWrapped=true;window[name]=wrapped;")
+        weekend = weekend.replace("                    if(typeof mode!=='undefined'&&mode==='today'&&typeof renderToday==='function')renderToday();\n", '')
+        weekend = weekend.replace('                setTimeout(refresh,80);setTimeout(refresh,350);setTimeout(refresh,900);', '')
+        weekendFile.write(weekend, 'UTF-8')
+
+        // 5) Final polish must happen in the same paint cycle, not over five delayed passes.
+        def finalFile = file('src/main/java/com/wokgui/schedulewidget/FinalPolishUi.java')
+        def fin = finalFile.getText('UTF-8')
+        fin = fin.replace("                const grid=document.getElementById('weekGrid');if(grid){new MutationObserver(()=>requestAnimationFrame(paintWeek)).observe(grid,{childList:true,subtree:false})}",
+                          "                const grid=document.getElementById('weekGrid');if(grid){new MutationObserver(()=>paintWeek()).observe(grid,{childList:true,subtree:false})}")
+        fin = fin.replace('                refresh();[40,120,300,700,1400].forEach(ms=>setTimeout(refresh,ms));', '                refresh();')
+        fin = fin.replace("const APP_VERSION='6.5';", "const APP_VERSION='6.8';")
+        fin = fin.replace("const APP_VERSION='6.6';", "const APP_VERSION='6.8';")
+        fin = fin.replace("const APP_VERSION='6.7';", "const APP_VERSION='6.8';")
+        finalFile.write(fin, 'UTF-8')
+
+        // 6) The late helper itself no longer schedules another zero-delay visual pass.
+        def lateFile = file('src/main/java/com/wokgui/schedulewidget/FinalPolishLateUi.java')
+        def late = lateFile.getText('UTF-8')
+        def oldRerun = '''                function rerun(delay){
+                  if(late)clearTimeout(late);
+                  late=setTimeout(()=>{try{if(window.refreshFinalPolish)window.refreshFinalPolish()}catch(e){}},delay==null?0:delay);
+                }
+'''
+        def newRerun = '''                function rerun(delay){
+                  if(late)clearTimeout(late);
+                  const run=()=>{try{if(window.refreshFinalPolish)window.refreshFinalPolish()}catch(e){}};
+                  if(delay&&delay>0)late=setTimeout(run,delay);else run();
+                }
+'''
+        if (late.contains(oldRerun)) late = late.replace(oldRerun, newRerun)
+        late = late.replace("                  wrap('refreshAdvancedFeatures',0);\n", '')
+        late = late.replace('                install();[100,360,900].forEach(ms=>setTimeout(install,ms));', '                install();')
+        lateFile.write(late, 'UTF-8')
+
+        // 7) Fixed geometry for both week selectors. Active state changes colour only.
+        def cycleFile = file('src/main/java/com/wokgui/schedulewidget/CycleLunchFixUi.java')
+        def cycle = cycleFile.getText('UTF-8')
+        def cssNeedle = '''                  body.singleWeekMode #currentWeekBtn{margin-left:auto!important;margin-right:auto!important}
+                  body.singleWeekMode #weekTabs{display:none!important}
+'''
+        def cssReplacement = '''                  .contextBar{gap:5px!important;padding-left:7px!important;padding-right:7px!important;overflow:hidden!important}
+                  #currentWeekBtn,#currentWeekBtn.currentWeek{flex:0 0 132px!important;width:132px!important;height:30px!important;min-height:30px!important;max-height:30px!important;margin:0!important;padding:0 7px!important;box-sizing:border-box!important;font-size:.68rem!important;line-height:1!important;display:flex!important;align-items:center!important;justify-content:center!important;white-space:nowrap!important;overflow:hidden!important;transition:none!important;animation:none!important;transform:none!important}
+                  #weekTabs.weekTabs{flex:0 0 199px!important;width:199px!important;min-width:199px!important;max-width:199px!important;height:30px!important;display:grid!important;grid-template-columns:repeat(4,47.5px)!important;grid-template-rows:30px!important;gap:3px!important;align-items:stretch!important;overflow:hidden!important}
+                  #weekTabs .weekTab,#weekTabs .weekTab.active{width:47.5px!important;height:30px!important;min-width:47.5px!important;max-width:47.5px!important;min-height:30px!important;max-height:30px!important;margin:0!important;padding:0 1px!important;box-sizing:border-box!important;border-width:1px!important;border-style:solid!important;border-radius:999px!important;font-size:.575rem!important;font-weight:800!important;line-height:1!important;letter-spacing:-.01em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:clip!important;display:flex!important;align-items:center!important;justify-content:center!important;transform:none!important;scale:1!important;box-shadow:none!important;transition:none!important;animation:none!important;-webkit-tap-highlight-color:transparent!important}
+                  #weekTabs .weekTab[aria-hidden="true"]{visibility:hidden!important;pointer-events:none!important}
+                  body.singleWeekMode #currentWeekBtn{margin:0!important}
+                  body.singleWeekMode #weekTabs{visibility:hidden!important;display:grid!important}
+'''
+        if (cycle.contains(cssNeedle)) cycle = cycle.replace(cssNeedle, cssReplacement)
+        else if (!cycle.contains('#weekTabs.weekTabs{flex:0 0 199px')) throw new GradleException('6.8: fixed top week-tab geometry patch target not found')
+        cycle = cycle.replace('                setTimeout(refresh,120);', '')
+        cycle = cycle.replace("const APP_VERSION='6.6';", "const APP_VERSION='6.8';")
+        cycle = cycle.replace("const APP_VERSION='6.7';", "const APP_VERSION='6.8';")
+        cycleFile.write(cycle, 'UTF-8')
+
+        // Keep the older version display aligned too.
+        def stabilityFile = file('src/main/java/com/wokgui/schedulewidget/WeekViewStabilityUi.java')
+        def stability = stabilityFile.getText('UTF-8')
+        ['6.5','6.6','6.7'].each { old -> stability = stability.replace("const APP_VERSION='${old}';", "const APP_VERSION='6.8';") }
+        stabilityFile.write(stability, 'UTF-8')
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('patchNoFlicker68')
+}
