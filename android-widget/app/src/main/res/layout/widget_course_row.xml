@@ -30,7 +30,7 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingLeft="10dp"
-        android:paddingRight="4dp"
+        android:paddingRight="3dp"
         android:background="#FFF0335D">
 
         <LinearLayout
@@ -64,12 +64,12 @@
         </LinearLayout>
 
         <!--
-          The timing area is deliberately narrow and attached to the right side. Every
-          adaptive bubble is centred inside the same slot, so their centres stay aligned
-          while the complete group sits farther to the right of the widget.
+          One narrow slot is attached to the right edge. Every adaptive bubble is centred
+          inside this same slot, so all bubble centres stay aligned while the whole column
+          sits noticeably farther right.
         -->
         <FrameLayout
-            android:layout_width="128dp"
+            android:layout_width="104dp"
             android:layout_height="match_parent"
             android:layout_marginLeft="5dp">
 
@@ -80,7 +80,7 @@
                 android:layout_gravity="center"
                 android:gravity="center"
                 android:minWidth="64dp"
-                android:maxWidth="128dp"
+                android:maxWidth="104dp"
                 android:paddingLeft="9dp"
                 android:paddingRight="9dp"
                 android:background="@drawable/widget_timer_pill"
