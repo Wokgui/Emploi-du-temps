@@ -1,0 +1,149 @@
+tasks.register('patchStability83') {
+    dependsOn tasks.named('patchStability82')
+    doLast {
+        // A language change must be one fast pass over the existing DOM, not a rebuild of the
+        // settings UI followed by another translation pass.
+        def locFile=file('src/main/java/com/wokgui/schedulewidget/Localization75Ui.java')
+        def loc=locFile.getText('UTF-8')
+        loc=loc.replace("                    try{if(typeof window.refreshSettingsV3==='function')window.refreshSettingsV3()}catch(e){}\n","")
+        locFile.write(loc,'UTF-8')
+
+        def uiFile=file('src/main/java/com/wokgui/schedulewidget/Stability81Ui.java')
+        def ui=uiFile.getText('UTF-8')
+
+        // Translate only the part just rendered.  Scanning the complete document after each tap
+        // was the remaining cause of sluggish buttons in 6.21/6.22.
+        def oldApply='''                function applyTranslation81(){
+                  if(translating81)return;translating81=true;
+                  try{
+                    fixPeriodLabels81();translateExtras81(document.body);
+                    const v=document.getElementById('appVersionInfo');if(v)v.textContent='Version '+APP_VERSION;
+                    document.documentElement.lang=language81().replace('_','-');
+                  }finally{translating81=false}
+                }
+'''
+        def newApply='''                function applyTranslation81(root){
+                  if(translating81)return;translating81=true;
+                  try{
+                    const scope=root&&root.nodeType===1?root:document.body;
+                    if(scope===document.body||scope.id==='viewEdit'||scope.id==='settingsSheet')fixPeriodLabels81();
+                    translateExtras81(scope);
+                    const v=document.getElementById('appVersionInfo');if(v)v.textContent='Version '+APP_VERSION;
+                    document.documentElement.lang=language81().replace('_','-');
+                  }finally{translating81=false}
+                }
+'''
+        if(!ui.contains(oldApply)) throw new GradleException('6.23: Stability81 applyTranslation block not found')
+        ui=ui.replace(oldApply,newApply)
+
+        def oldLanguage='''                        applyTranslation81();
+                        requestAnimationFrame(()=>{try{if(window.refreshLocalization75)window.refreshLocalization75()}catch(ex){};applyTranslation81()});'''
+        def newLanguage='''                        try{if(window.refreshLocalization75)window.refreshLocalization75()}catch(ex){}
+                        applyTranslation81(document.body);'''
+        if(!ui.contains(oldLanguage)) throw new GradleException('6.23: in-place language transition not found')
+        ui=ui.replace(oldLanguage,newLanguage)
+
+        def oldDownloaded='''                        applyTranslation81();
+                        requestAnimationFrame(()=>{try{if(window.refreshLocalization75)window.refreshLocalization75()}catch(e){};applyTranslation81();ensureLanguageSelect81()});'''
+        def newDownloaded='''                        try{if(window.refreshLocalization75)window.refreshLocalization75()}catch(e){}
+                        applyTranslation81(document.body);ensureLanguageSelect81();'''
+        if(!ui.contains(oldDownloaded)) throw new GradleException('6.23: downloaded language transition not found')
+        ui=ui.replace(oldDownloaded,newDownloaded)
+
+        def oldWrap='''                function wrap81(name){
+                  const old=window[name];if(typeof old!=='function'||old.__language81)return;
+                  const w=function(){const r=old.apply(this,arguments);applyTranslation81();return r};w.__language81=true;window[name]=w;try{eval(name+'=w')}catch(e){}
+                }
+                ['render','renderToday','renderWeek','renderEdit','renderContext','renderSlots','fillSlotOptions','openEditor','setActiveWeek'].forEach(wrap81);
+                const bottom=document.querySelector('.bottom');if(bottom&&!bottom.__language81){bottom.__language81=true;bottom.addEventListener('click',e=>{if(e.target.closest('.nav'))applyTranslation81()})}
+'''
+        def newWrap='''                function root81(name){
+                  if(name==='renderToday')return document.getElementById('viewToday');
+                  if(name==='renderWeek'||name==='setActiveWeek')return document.getElementById('viewWeek');
+                  if(name==='renderEdit'||name==='renderSlots'||name==='fillSlotOptions')return document.getElementById('viewEdit');
+                  if(name==='renderContext')return document.querySelector('.contextBar');
+                  if(name==='openEditor')return document.getElementById('modal');
+                  return document.querySelector('.view.active')||document.body;
+                }
+                function wrap81(name){
+                  const old=window[name];if(typeof old!=='function'||old.__language81)return;
+                  const w=function(){const r=old.apply(this,arguments);applyTranslation81(root81(name));return r};w.__language81=true;window[name]=w;try{eval(name+'=w')}catch(e){}
+                }
+                ['render','renderToday','renderWeek','renderEdit','renderContext','renderSlots','fillSlotOptions','openEditor','setActiveWeek'].forEach(wrap81);
+                const bottom=document.querySelector('.bottom');if(bottom)bottom.__language81=true;
+'''
+        if(!ui.contains(oldWrap)) throw new GradleException('6.23: Stability81 render wrapper not found')
+        ui=ui.replace(oldWrap,newWrap)
+
+        // Remove touch delays consistently from every interactive control, not only the bottom nav.
+        def styleMarker='''                  #slotSettings .slotRow{grid-template-columns:92px 1fr 1fr!important}
+'''
+        def styleReplacement='''                  button,.nav,.weekTab,.dayTab,select,input,label,[role="button"]{touch-action:manipulation!important;-webkit-tap-highlight-color:transparent!important}
+                  button,.nav,.weekTab,.dayTab{transition:none!important}
+                  #slotSettings .slotRow{grid-template-columns:92px 1fr 1fr!important}
+'''
+        if(!ui.contains(styleMarker)) throw new GradleException('6.23: Stability81 style marker not found')
+        ui=ui.replace(styleMarker,styleReplacement)
+        ui=ui.replace("const APP_VERSION='6.22';","const APP_VERSION='6.23';")
+        uiFile.write(ui,'UTF-8')
+
+        // “Aucune exception” is an empty-state message, so centre it like the surrounding heading
+        // and action instead of leaving it against the left edge.
+        def advFile=file('src/main/java/com/wokgui/schedulewidget/AdvancedFeaturesUi.java')
+        def adv=advFile.getText('UTF-8')
+        def oldEmpty='''box.innerHTML='<div class="advSmall" style="padding:7px 0">'+T().noException+'</div>';'''
+        def newEmpty='''box.innerHTML='<div class="advSmall" style="padding:7px 0;text-align:center;width:100%">'+T().noException+'</div>';'''
+        if(!adv.contains(oldEmpty)) throw new GradleException('6.23: empty exception label not found')
+        adv=adv.replace(oldEmpty,newEmpty)
+        advFile.write(adv,'UTF-8')
+
+        // The future-day indication was confined to an 82dp one-line pill.  Give it two lines and
+        // a little more width, then deliberately break before the date so the complete
+        // “Dans …, le mardi …” information remains visible.
+        def rowFile=file('src/main/res/layout/widget_course_row.xml')
+        def row=rowFile.getText('UTF-8')
+        row=row.replace('android:layout_width="82dp"\n            android:layout_height="match_parent"','android:layout_width="118dp"\n            android:layout_height="match_parent"')
+        row=row.replace('android:layout_height="34dp"','android:layout_height="44dp"')
+        row=row.replace('android:maxWidth="82dp"','android:maxWidth="118dp"')
+        row=row.replace('android:maxLines="1"\n                android:textColor="#A72B45"','android:maxLines="2"\n                android:textColor="#A72B45"')
+        rowFile.write(row,'UTF-8')
+
+        def serviceFile=file('src/main/java/com/wokgui/schedulewidget/UpcomingCoursesService.java')
+        def service=serviceFile.getText('UTF-8')
+        service=service.replace('return ", le " + d;','return ",\\nle " + d;')
+        service=service.replace('if ("de".equals(lang)) return ", am " + new SimpleDateFormat("EEEE, d. MMM.", locale).format(date.getTime());','if ("de".equals(lang)) return ",\\nam " + new SimpleDateFormat("EEEE, d. MMM.", locale).format(date.getTime());')
+        service=service.replace('return ", " + new SimpleDateFormat("EEE d MMM", locale).format(date.getTime());','return ",\\n" + new SimpleDateFormat("EEE d MMM", locale).format(date.getTime());')
+        serviceFile.write(service,'UTF-8')
+
+        // Updating the app language also refreshes widget text immediately.
+        def mainFile=file('src/main/java/com/wokgui/schedulewidget/MainActivity.java')
+        def main=mainFile.getText('UTF-8')
+        def saveUi='''        @JavascriptInterface public void saveUiSettings(String json) { UiSettingsStore.importJson(MainActivity.this, json); }
+'''
+        def saveUiNew='''        @JavascriptInterface public void saveUiSettings(String json) {
+            UiSettingsStore.importJson(MainActivity.this, json);
+            runOnUiThread(() -> ScheduleWidgetProvider.refreshAll(MainActivity.this));
+        }
+'''
+        if(main.contains(saveUi)) main=main.replace(saveUi,saveUiNew)
+        mainFile.write(main,'UTF-8')
+
+        for(def path:[
+                'src/main/java/com/wokgui/schedulewidget/Stability81Ui.java','src/main/java/com/wokgui/schedulewidget/Stability80Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability79Ui.java','src/main/java/com/wokgui/schedulewidget/Stability78Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/LayoutLanguage77Ui.java','src/main/java/com/wokgui/schedulewidget/Localization75Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability74Ui.java','src/main/java/com/wokgui/schedulewidget/Stability73Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability72Ui.java','src/main/java/com/wokgui/schedulewidget/Stability71Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability70Ui.java','src/main/java/com/wokgui/schedulewidget/Stability69Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/FinalPolishUi.java','src/main/java/com/wokgui/schedulewidget/CycleLunchFixUi.java',
+                'src/main/java/com/wokgui/schedulewidget/WeekViewStabilityUi.java']) {
+            def f=file(path);if(!f.exists())continue
+            def txt=f.getText('UTF-8').replaceAll(/const APP_VERSION='6\.[0-9]+';/,"const APP_VERSION='6.23';")
+            f.write(txt,'UTF-8')
+        }
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('patchStability83')
+}
