@@ -10,8 +10,6 @@ import android.view.View;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
 
-import org.json.JSONObject;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -70,6 +68,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
         private final int widgetId;
         private final List<Item> items = new ArrayList<>();
         private boolean compactHeight;
+        private Calendar currentTargetDate;
 
         Factory(Context context, int widgetId) {
             this.context = context;
@@ -97,6 +96,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             int nowMin = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
             Target target = resolveTarget(now, nowMin);
             if (target == null) return;
+            currentTargetDate = (Calendar) target.date.clone();
 
             List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, target.date);
             if (courses == null || courses.isEmpty() || target.firstCourse >= courses.size()) return;
@@ -114,7 +114,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
 
                 int order = c.slot > 0 ? c.slot : i + 1;
                 String relative = relativeLabel(now, target.date, c, futureDay && firstVisibleCourse);
-                String displayLabel = widgetCourseLabel(c.label);
+                String displayLabel = AdvancedSettingsStore.widgetCourseLabel(context, target.date, c);
                 items.add(new Item(
                         displayLabel,
                         c.label,
@@ -159,10 +159,11 @@ public class UpcomingCoursesService extends RemoteViewsService {
             }
             if (from < lunchStart) addGap(from, Math.min(to, lunchStart));
             if (from <= lunchStart && to >= lunchEnd && AdvancedSettingsStore.showLunch(context)) {
-                String label = localizedBreakLabel(true);
+                String appLabel = localizedAppBreakLabel(true);
+                String label = AdvancedSettingsStore.widgetLunchLabel(context, appLabel);
                 items.add(new Item(
                         label,
-                        label,
+                        appLabel,
                         minuteLabel(lunchStart) + " - " + minuteLabel(lunchEnd),
                         "",
                         Item.LUNCH,
@@ -177,10 +178,11 @@ public class UpcomingCoursesService extends RemoteViewsService {
 
         private void addGap(int start, int end) {
             if (!AdvancedSettingsStore.showBreaks(context) || end <= start) return;
-            String label = localizedBreakLabel(false);
+            String appLabel = localizedAppBreakLabel(false);
+            String label = AdvancedSettingsStore.widgetGapLabel(context, appLabel);
             items.add(new Item(
                     label,
-                    label,
+                    appLabel,
                     minuteLabel(start) + " - " + minuteLabel(end),
                     "",
                     Item.GAP,
@@ -191,33 +193,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             ));
         }
 
-        private JSONObject advanced() {
-            try { return AdvancedSettingsStore.json(context); }
-            catch (Exception e) { return new JSONObject(); }
-        }
-
-        private String normalizedLabelKey(String label) {
-            return label == null ? "" : label.trim().toLowerCase(Locale.ROOT);
-        }
-
-        private String widgetCourseLabel(String appLabel) {
-            try {
-                JSONObject map = advanced().optJSONObject("widgetCourseLabels");
-                if (map != null) {
-                    String custom = map.optString(normalizedLabelKey(appLabel), "").trim();
-                    if (!custom.isEmpty()) return custom;
-                }
-            } catch (Exception ignored) {}
-            return appLabel == null ? "" : appLabel;
-        }
-
-        private String localizedBreakLabel(boolean lunch) {
-            try {
-                String key = lunch ? "widgetLunchLabel" : "widgetGapLabel";
-                String customWidget = advanced().optString(key, "").trim();
-                if (!customWidget.isEmpty()) return customWidget;
-            } catch (Exception ignored) {}
-
+        private String localizedAppBreakLabel(boolean lunch) {
             String custom = lunch ? ScheduleStore.getLunchLabel(context) : ScheduleStore.getGapLabel(context);
             if (lunch && "Pause de midi".equalsIgnoreCase(custom)) return "Midi";
             if (!lunch && "Trou".equalsIgnoreCase(custom)) return UiSettingsStore.t(context, "gap");
