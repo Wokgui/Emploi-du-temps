@@ -30,7 +30,7 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingLeft="10dp"
-        android:paddingRight="3dp"
+        android:paddingRight="0dp"
         android:background="#FFF0335D">
 
         <LinearLayout
@@ -64,12 +64,12 @@
         </LinearLayout>
 
         <!--
-          One narrow slot is attached to the right edge. Every adaptive bubble is centred
-          inside this same slot, so all bubble centres stay aligned while the whole column
-          sits noticeably farther right.
+          Toutes les bulles sont centrées sur le même axe, mais cet axe est désormais
+          plus proche du bord droit du widget. La largeur reste suffisante pour les
+          libellés longs comme « Reprise à 13 h ».
         -->
         <FrameLayout
-            android:layout_width="104dp"
+            android:layout_width="82dp"
             android:layout_height="match_parent"
             android:layout_marginLeft="5dp">
 
@@ -79,10 +79,10 @@
                 android:layout_height="34dp"
                 android:layout_gravity="center"
                 android:gravity="center"
-                android:minWidth="64dp"
-                android:maxWidth="104dp"
-                android:paddingLeft="9dp"
-                android:paddingRight="9dp"
+                android:minWidth="60dp"
+                android:maxWidth="82dp"
+                android:paddingLeft="7dp"
+                android:paddingRight="7dp"
                 android:background="@drawable/widget_timer_pill"
                 android:ellipsize="end"
                 android:maxLines="1"
