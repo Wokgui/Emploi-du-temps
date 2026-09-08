@@ -13,7 +13,7 @@ final class WeekViewStabilityUi {
                 }
                 window.__weekViewStabilityV6=true;
 
-                const APP_VERSION='6.0';
+                const APP_VERSION='6.2';
                 let fixingCycle=false;
                 function clone(o){return JSON.parse(JSON.stringify(o))}
                 function loadAdv(){
@@ -30,24 +30,28 @@ final class WeekViewStabilityUi {
 
                 /*
                  * Final visual corrections for the week grid.
-                 * - Midi fills the whole cell edge-to-edge, with no rounded inner card.
+                 * - Midi uses the grid's own borders: no inset/double rectangle.
                  * - Trou keeps only the normal grid lines, with no extra rectangle.
-                 * - The current-time rail sits exactly on the LEFT border of today's column.
+                 * - The current-time rail remains vertical and is centered exactly on the LEFT border of today's column.
                  */
                 const polish=document.createElement('style');
                 polish.textContent=`
-                  html body #weekGrid .wc.lunchCell{padding:0!important;border-radius:0!important}
+                  html body #weekGrid .wc.lunchCell{
+                    padding:0!important;
+                    border-radius:0!important;
+                    box-shadow:none!important;
+                  }
                   html body #weekGrid .wc.lunchCell:not(.dynamicLunchCell){
                     background:var(--ft-midi)!important;
                     color:var(--ft-midi-ink)!important;
-                    box-shadow:inset 0 0 0 1px var(--ft-midi-border)!important;
+                    box-shadow:none!important;
                   }
                   html body #weekGrid .dynamicLunchCell{
                     padding:0!important;
                     background:var(--ft-midi)!important;
                     color:var(--ft-midi-ink)!important;
                     border-radius:0!important;
-                    overflow:visible!important;
+                    overflow:hidden!important;
                     box-shadow:none!important;
                   }
                   html body #weekGrid .dynamicLunchOverlay{
@@ -56,13 +60,20 @@ final class WeekViewStabilityUi {
                     box-sizing:border-box!important;
                     background:var(--ft-midi)!important;color:var(--ft-midi-ink)!important;
                     border:0!important;border-radius:0!important;
-                    box-shadow:inset 0 0 0 1px var(--ft-midi-border)!important;
+                    box-shadow:none!important;
                   }
                   html body #weekGrid .wc.gapCell{box-shadow:none!important;border-radius:0!important}
                   #weekGrid .scheduleNowRail,#weekGrid .scheduleNowDot{transition:none!important}
-                  /* LunchBreakUi historically pins the marker to Monday via --week-now-x.
-                     This later rule deliberately uses a dedicated variable for today's real column. */
-                  #weekGrid #weekNowRail,#weekGrid #weekNowDot{left:var(--actual-week-now-x,39px)!important}
+                  /* The x coordinate is the grid border itself. Translate by half the marker width
+                     so the blue rail and dot are centered on that border instead of sitting to its right. */
+                  #weekGrid #weekNowRail{
+                    left:var(--actual-week-now-x,39px)!important;
+                    transform:translateX(-50%)!important;
+                  }
+                  #weekGrid #weekNowDot{
+                    left:var(--actual-week-now-x,39px)!important;
+                    transform:translate(-50%,-50%)!important;
+                  }
                 `;
                 document.head.appendChild(polish);
 
@@ -93,8 +104,7 @@ final class WeekViewStabilityUi {
                     const header=headers[dayIndex];
                     const first=cells[dayIndex],target=cells[row*5+dayIndex],last=cells[(times.length-1)*5+dayIndex];
                     if(!header||!first||!target||!last)return;
-                    // Use the actual weekday header as the horizontal source of truth.
-                    // This avoids any interference from dynamic lunch rows or the fixed time column.
+                    // Exact x coordinate of the left border of today's column.
                     const left=header.offsetLeft;
                     grid.style.setProperty('--actual-week-now-x',left+'px');
                     const top=first.offsetTop+2;
