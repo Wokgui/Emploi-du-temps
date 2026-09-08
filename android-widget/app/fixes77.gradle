@@ -1,0 +1,53 @@
+tasks.register('patchLanguageLayout77') {
+    dependsOn tasks.named('patchResponsiveness76')
+    doLast {
+        // 6.16 accidentally left a literal "\\n" between two generated JS functions.
+        // That makes the localization layer fail to parse even though the APK itself compiles.
+        def locFile=file('src/main/java/com/wokgui/schedulewidget/Localization75Ui.java')
+        def loc=locFile.getText('UTF-8')
+        loc=loc.replace("\\\\n                function currentLang()", "\n                function currentLang()")
+        if(loc.contains("\\\\n                function currentLang()")) throw new GradleException('6.17: localization newline repair failed')
+        locFile.write(loc,'UTF-8')
+
+        def mainFile=file('src/main/java/com/wokgui/schedulewidget/MainActivity.java')
+        def main=mainFile.getText('UTF-8')
+
+        // The UI is loaded from file:///android_asset. Allow its HTTPS language-pack downloads.
+        if(!main.contains('setAllowUniversalAccessFromFileURLs(true)')) {
+            def settingsNeedle='''        settings.setJavaScriptEnabled(true);
+        settings.setDomStorageEnabled(true);
+'''
+            if(!main.contains(settingsNeedle)) throw new GradleException('6.17: WebView settings target not found')
+            main=main.replace(settingsNeedle,settingsNeedle+'''        settings.setAllowUniversalAccessFromFileURLs(true);
+''')
+        }
+
+        // Run the final alignment/language safety layer after localization has been installed.
+        if(!main.contains('LayoutLanguage77Ui.script()')) {
+            def target='webView.evaluateJavascript(Localization75Ui.script(), null)'
+            if(!main.contains(target)) throw new GradleException('6.17: localization injection target not found')
+            main=main.replace(target,'webView.evaluateJavascript(Localization75Ui.script(), value17 -> webView.evaluateJavascript(LayoutLanguage77Ui.script(), null))')
+        }
+        mainFile.write(main,'UTF-8')
+
+        for(def path:[
+                'src/main/java/com/wokgui/schedulewidget/Localization75Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability74Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability73Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability72Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability71Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability70Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability69Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/FinalPolishUi.java',
+                'src/main/java/com/wokgui/schedulewidget/CycleLunchFixUi.java',
+                'src/main/java/com/wokgui/schedulewidget/WeekViewStabilityUi.java']) {
+            def f=file(path);if(!f.exists())continue
+            def txt=f.getText('UTF-8').replace("const APP_VERSION='6.16';","const APP_VERSION='6.17';")
+            f.write(txt,'UTF-8')
+        }
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('patchLanguageLayout77')
+}
