@@ -11,7 +11,7 @@ android {
         minSdk 26
         targetSdk 35
         versionCode project.hasProperty('versionCode') ? project.property('versionCode').toInteger() : 101
-        versionName '6.13'
+        versionName '6.14'
     }
 
     buildTypes {
@@ -56,6 +56,7 @@ apply from: 'fixes70.gradle'
 apply from: 'fixes71.gradle'
 apply from: 'fixes72.gradle'
 apply from: 'fixes73.gradle'
+apply from: 'fixes74.gradle'
 
 dependencies {
     implementation 'com.google.mlkit:text-recognition:16.0.1'
