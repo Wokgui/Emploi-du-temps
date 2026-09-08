@@ -1,0 +1,143 @@
+tasks.register('patchStability80') {
+    dependsOn tasks.named('patchStability79')
+    doLast {
+        // Build a canonical French language template from the existing complete pack keys.
+        // This stays inside the APK, so generating another language does not depend on GitHub.
+        def esFile=file('../../language-packs/es.json')
+        if(!esFile.exists()) throw new GradleException('6.20: language-packs/es.json not found')
+        def es=new groovy.json.JsonSlurper().parseText(esFile.getText('UTF-8'))
+        def strings=[:]
+        es.strings.keySet().each { k -> strings[k]=k }
+        [
+                'Application','Widget','Taille du texte','Télécharger une langue','Toutes les langues disponibles sont déjà installées.',
+                'Téléchargement du modèle de langue et traduction de toute l’interface…','Langue téléchargée. Application en cours…',
+                'La langue a été téléchargée mais n’a pas pu être appliquée.','Langue non prise en charge',
+                'Intitulé dans le widget (facultatif)','Vide = même intitulé que dans l’application','Badge (facultatif)',
+                'Horaire libre','Aucun cours ce jour.','Analyse de la photo…','Lecture du texte et repérage des cases.',
+                'Import annulé.','Aucun texte détecté sur la photo.','Je ne reconnais pas assez clairement les colonnes des jours.',
+                'Aucun cours exploitable détecté.','Les horaires ne sont pas assez lisibles.',
+                'Le texte a été lu, mais aucun cours n’a pu être converti automatiquement.',
+                'Importer une photo d’emploi du temps'
+        ].each { k -> strings[k]=k }
+        def widget=[
+                next:'Prochain cours',current:'● En cours',room:'salle',noCourse:'Aucun cours programmé',gap:'Trou',lunch:'Midi',
+                backAt:'Reprise à',noClass:'sans cours',in:'Dans',tomorrow:'Demain',remainingMinute:'min restante',
+                remainingMinutes:'min restantes',remainingHour:'h restante',remainingHours:'h restantes',courseEnd:'Fin du cours',singleWeek:'Semaine unique'
+        ]
+        def template=[version:1,code:'fr',name:'Français',strings:strings,widget:widget]
+        def assetDir=file('src/main/assets');assetDir.mkdirs()
+        file('src/main/assets/language_template_fr.json').setText(groovy.json.JsonOutput.toJson(template),'UTF-8')
+
+        def mainFile=file('src/main/java/com/wokgui/schedulewidget/MainActivity.java')
+        def main=mainFile.getText('UTF-8')
+
+        // Hide the WebView during a language reload so the old and new languages never flash successively.
+        if(!main.contains('private void reloadForLanguageUi()')) {
+            def reveal='''    private void revealWebViewStable() {
+        if (webView == null || !pageLoaded) return;
+        webView.postDelayed(() -> {
+            if (webView == null || !pageLoaded) return;
+            webView.setAlpha(1f);
+            webView.setVisibility(View.VISIBLE);
+        }, 70);
+    }
+'''
+            if(!main.contains(reveal)) throw new GradleException('6.20: revealWebViewStable not found')
+            main=main.replace(reveal,reveal+'''
+    private void reloadForLanguageUi() {
+        if (webView == null) return;
+        pageLoaded = false;
+        hideWebViewUntilWeekIsReady();
+        webView.post(webView::reload);
+    }
+''')
+        }
+
+        // Native bridge: all ML Kit translation languages can be downloaded and turned into a local interface pack.
+        if(!main.contains('supportedTranslationLanguages()')) {
+            def bridge='''        @JavascriptInterface public String downloadLanguagePack(String url) { return NativeLanguageDownloader.downloadAndSave(MainActivity.this, url); }
+'''
+            if(!main.contains(bridge)) throw new GradleException('6.20: 6.19 language bridge not found')
+            main=main.replace(bridge,bridge+'''        @JavascriptInterface public String supportedTranslationLanguages() { return MlLanguagePackGenerator.supportedLanguagesJson(); }
+        @JavascriptInterface public void generateLanguagePack(String code, String name) {
+            runOnUiThread(() -> MlLanguagePackGenerator.generate(MainActivity.this, code, name, new MlLanguagePackGenerator.Callback() {
+                @Override public void onSuccess(String raw) {
+                    runOnUiThread(() -> {
+                        if (webView == null) return;
+                        String quoted = JSONObject.quote(raw);
+                        webView.evaluateJavascript("if(window.onGeneratedLanguagePack80){window.onGeneratedLanguagePack80(" + quoted + ");}", null);
+                    });
+                }
+                @Override public void onFailure(String message) {
+                    runOnUiThread(() -> {
+                        if (webView == null) return;
+                        String quoted = JSONObject.quote(message == null ? "Téléchargement impossible" : message);
+                        webView.evaluateJavascript("if(window.onGeneratedLanguagePackError80){window.onGeneratedLanguagePackError80(" + quoted + ");}", null);
+                    });
+                }
+            }));
+        }
+        @JavascriptInterface public void reloadForLanguage() { runOnUiThread(MainActivity.this::reloadForLanguageUi); }
+''')
+        }
+
+        // Stability80 and the tolerant OCR parser are the final passes before reveal.
+        if(!main.contains('Stability80Ui.script()')) {
+            def oldFinal='''webView.evaluateJavascript(Stability79Ui.script(), value20 -> {
+                                                if (!forceWeekOpening) revealWebViewStable();
+                                            })'''
+            def newFinal='''webView.evaluateJavascript(Stability79Ui.script(), value20 ->
+                                            webView.evaluateJavascript(Stability80Ui.script(), value21 ->
+                                                    webView.evaluateJavascript(OcrImport80Ui.script(), value22 -> {
+                                                        if (!forceWeekOpening) revealWebViewStable();
+                                                    })))'''
+            if(!main.contains(oldFinal)) throw new GradleException('6.20: Stability79 final callback not found')
+            main=main.replace(oldFinal,newFinal)
+        }
+        mainFile.write(main,'UTF-8')
+
+        // Make the capital S native in the base render too; Stability80 also protects later legacy wrappers synchronously.
+        def asset=file('src/main/assets/index.html')
+        def html=asset.getText('UTF-8')
+        html=html.replace(' · semaine ',' · Semaine ')
+        asset.write(html,'UTF-8')
+
+        // Ensure downloaded pack codes survive native settings import even if an older patch did not match this build.
+        def uiFile=file('src/main/java/com/wokgui/schedulewidget/UiSettingsStore.java')
+        def ui=uiFile.getText('UTF-8')
+        ui=ui.replace('''        if ("de".equals(value) || "en".equals(value)) return value;
+        return "fr";
+''','''        if ("fr".equals(value) || "de".equals(value) || "en".equals(value) || LanguagePackStore.has(context, value)) return value;
+        return "fr";
+''')
+        ui=ui.replace('''            if (!"de".equals(lang) && !"en".equals(lang)) lang = "fr";
+''','''            if (!"fr".equals(lang) && !"de".equals(lang) && !"en".equals(lang) && !LanguagePackStore.has(context, lang)) lang = "fr";
+''')
+        uiFile.write(ui,'UTF-8')
+
+        // Keep every visible version label aligned with the APK.
+        for(def path:[
+                'src/main/java/com/wokgui/schedulewidget/Stability80Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability79Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability78Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/LayoutLanguage77Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Localization75Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability74Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability73Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability72Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability71Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability70Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability69Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/FinalPolishUi.java',
+                'src/main/java/com/wokgui/schedulewidget/CycleLunchFixUi.java',
+                'src/main/java/com/wokgui/schedulewidget/WeekViewStabilityUi.java']) {
+            def f=file(path);if(!f.exists())continue
+            def txt=f.getText('UTF-8').replaceAll(/const APP_VERSION='6\.[0-9]+';/,"const APP_VERSION='6.20';")
+            f.write(txt,'UTF-8')
+        }
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('patchStability80')
+}
