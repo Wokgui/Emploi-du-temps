@@ -7,13 +7,13 @@ final class WeekViewStabilityUi {
         return """
             (function(){
               try{
-                if(window.__weekViewStabilityV5){
+                if(window.__weekViewStabilityV6){
                   if(window.refreshWeekViewStability)window.refreshWeekViewStability();
                   return;
                 }
-                window.__weekViewStabilityV5=true;
+                window.__weekViewStabilityV6=true;
 
-                const APP_VERSION='5.9';
+                const APP_VERSION='6.0';
                 let fixingCycle=false;
                 function clone(o){return JSON.parse(JSON.stringify(o))}
                 function loadAdv(){
@@ -53,12 +53,16 @@ final class WeekViewStabilityUi {
                   html body #weekGrid .dynamicLunchOverlay{
                     left:0!important;right:0!important;top:0!important;bottom:0!important;
                     width:auto!important;height:auto!important;margin:0!important;padding:0!important;
+                    box-sizing:border-box!important;
                     background:var(--ft-midi)!important;color:var(--ft-midi-ink)!important;
                     border:0!important;border-radius:0!important;
                     box-shadow:inset 0 0 0 1px var(--ft-midi-border)!important;
                   }
                   html body #weekGrid .wc.gapCell{box-shadow:none!important;border-radius:0!important}
                   #weekGrid .scheduleNowRail,#weekGrid .scheduleNowDot{transition:none!important}
+                  /* LunchBreakUi historically pins the marker to Monday via --week-now-x.
+                     This later rule deliberately uses a dedicated variable for today's real column. */
+                  #weekGrid #weekNowRail,#weekGrid #weekNowDot{left:var(--actual-week-now-x,39px)!important}
                 `;
                 document.head.appendChild(polish);
 
@@ -83,12 +87,16 @@ final class WeekViewStabilityUi {
                       if(m>=s&&m<=e){row=i;frac=(m-s)/Math.max(1,e-s);break}
                     }
                     const cells=Array.from(grid.querySelectorAll('.wc'));
-                    if(row<0||!cells.length){rail.style.display=dot.style.display='none';return}
+                    const headers=Array.from(grid.querySelectorAll('.wh.day'));
+                    if(row<0||!cells.length||headers.length<5){rail.style.display=dot.style.display='none';return}
                     const dayIndex=day-1;
+                    const header=headers[dayIndex];
                     const first=cells[dayIndex],target=cells[row*5+dayIndex],last=cells[(times.length-1)*5+dayIndex];
-                    if(!first||!target||!last)return;
-                    // Exact column border: no +4px inset, so the marker stays out of the course text.
-                    const left=target.offsetLeft;
+                    if(!header||!first||!target||!last)return;
+                    // Use the actual weekday header as the horizontal source of truth.
+                    // This avoids any interference from dynamic lunch rows or the fixed time column.
+                    const left=header.offsetLeft;
+                    grid.style.setProperty('--actual-week-now-x',left+'px');
                     const top=first.offsetTop+2;
                     const bottom=last.offsetTop+last.offsetHeight-2;
                     rail.style.display=dot.style.display='block';
@@ -199,7 +207,7 @@ final class WeekViewStabilityUi {
                 }
 
                 function wrapRender(){
-                  if(typeof window.render!=='function'||window.render.__weekStableV5Wrapped)return;
+                  if(typeof window.render!=='function'||window.render.__weekStableV6Wrapped)return;
                   const old=window.render;
                   const wrapped=function(){
                     if(oneWeek()){
@@ -215,12 +223,12 @@ final class WeekViewStabilityUi {
                     }
                     return out;
                   };
-                  wrapped.__weekStableV5Wrapped=true;
+                  wrapped.__weekStableV6Wrapped=true;
                   window.render=wrapped;
                 }
 
                 function wrapBulkRefresh(){
-                  if(typeof window.refreshBulkCourseUi!=='function'||window.refreshBulkCourseUi.__weekStableV5Wrapped)return;
+                  if(typeof window.refreshBulkCourseUi!=='function'||window.refreshBulkCourseUi.__weekStableV6Wrapped)return;
                   const old=window.refreshBulkCourseUi;
                   const wrapped=function(){
                     ensureTitleSpan();
@@ -231,14 +239,14 @@ final class WeekViewStabilityUi {
                     if(oneWeek()&&document.getElementById('viewWeek')?.classList.contains('active'))setTimeout(repairWeek,0);
                     return out;
                   };
-                  wrapped.__weekStableV5Wrapped=true;
+                  wrapped.__weekStableV6Wrapped=true;
                   window.refreshBulkCourseUi=wrapped;
                 }
 
                 function bindWeekTab(){
                   const nav=document.querySelector('.nav[data-mode="week"]');
-                  if(!nav||nav.dataset.weekStableV5Bound)return;
-                  nav.dataset.weekStableV5Bound='1';
+                  if(!nav||nav.dataset.weekStableV6Bound)return;
+                  nav.dataset.weekStableV6Bound='1';
                   nav.addEventListener('click',()=>{
                     if(oneWeek()){
                       ensureSingleState();
@@ -327,8 +335,8 @@ final class WeekViewStabilityUi {
                     const a=loadAdv();
                     const desired=a.singleWeek===true?'1':String(Math.max(2,Math.min(4,Number(a.cycleLength)||2)));
                     if(sel.value!==desired)sel.value=desired;
-                    if(!sel.dataset.singleWeekChoiceBoundV5){
-                      sel.dataset.singleWeekChoiceBoundV5='1';
+                    if(!sel.dataset.singleWeekChoiceBoundV6){
+                      sel.dataset.singleWeekChoiceBoundV6='1';
                       sel.addEventListener('change',e=>{
                         e.stopImmediatePropagation();
                         applyCycleChoice(e.target.value);
@@ -359,7 +367,7 @@ final class WeekViewStabilityUi {
                 }
 
                 function wrapAdvancedRefresh(){
-                  if(typeof window.refreshAdvancedFeatures!=='function'||window.refreshAdvancedFeatures.__singleChoiceV5Wrapped)return;
+                  if(typeof window.refreshAdvancedFeatures!=='function'||window.refreshAdvancedFeatures.__singleChoiceV6Wrapped)return;
                   const old=window.refreshAdvancedFeatures;
                   const wrapped=function(){
                     const out=old.apply(this,arguments);
@@ -367,7 +375,7 @@ final class WeekViewStabilityUi {
                     installVersionInfo();
                     return out;
                   };
-                  wrapped.__singleChoiceV5Wrapped=true;
+                  wrapped.__singleChoiceV6Wrapped=true;
                   window.refreshAdvancedFeatures=wrapped;
                 }
 
