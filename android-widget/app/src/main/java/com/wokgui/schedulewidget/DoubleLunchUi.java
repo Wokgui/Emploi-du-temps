@@ -298,7 +298,15 @@ final class DoubleLunchUi {
 
                 const grid=document.getElementById('weekGrid');
                 if(grid){
-                  new MutationObserver(()=>{if(!mutating)scheduleGeometry()}).observe(grid,{childList:true,subtree:true});
+                  new MutationObserver(muts=>{
+                    if(mutating)return;
+                    const external=muts.some(m=>{
+                      const nodes=[...m.addedNodes,...m.removedNodes];
+                      if(!nodes.length)return false;
+                      return nodes.some(n=>!(n.nodeType===1&&(n.classList?.contains('geoLunchLabel')||n.id==='weekNowRailV8'||n.id==='weekNowDotV8')));
+                    });
+                    if(external)scheduleGeometry();
+                  }).observe(grid,{childList:true});
                   if(window.ResizeObserver)new ResizeObserver(()=>scheduleGeometry()).observe(grid);
                 }
                 window.addEventListener('resize',scheduleGeometry);
