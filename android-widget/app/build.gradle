@@ -29,6 +29,25 @@ android {
 
 apply from: 'patches.gradle'
 
+tasks.register('patchLateFinalPolish') {
+    doLast {
+        def f = file('src/main/java/com/wokgui/schedulewidget/MainActivity.java')
+        def src = f.getText('UTF-8')
+        def needle = '''    private void injectPersonalizationUi() {
+        if (webView == null) return;
+'''
+        if (!src.contains('FinalPolishLateUi.script()')) {
+            if (!src.contains(needle)) throw new GradleException('Unable to locate injectPersonalizationUi for late polish')
+            src = src.replace(needle, needle + '        webView.evaluateJavascript(FinalPolishLateUi.script(), null);\n')
+            f.write(src, 'UTF-8')
+        }
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('patchLateFinalPolish')
+}
+
 dependencies {
     implementation 'com.google.mlkit:text-recognition:16.0.1'
 }
