@@ -41,8 +41,8 @@ tasks.register('patchStability78') {
         if(!main.contains('Stability78Ui.script()')) {
             def target='webView.evaluateJavascript(LayoutLanguage77Ui.script(), null)'
             if(!main.contains(target)) throw new GradleException('6.18: final 6.17 UI injection target not found')
-            main=main.replace(target,'''webView.evaluateJavascript(LayoutLanguage77Ui.script(), value17 ->
-                                        webView.evaluateJavascript(Stability78Ui.script(), value18 -> {
+            main=main.replace(target,'''webView.evaluateJavascript(LayoutLanguage77Ui.script(), value18 ->
+                                        webView.evaluateJavascript(Stability78Ui.script(), value19 -> {
                                             if (!forceWeekOpening) revealWebViewStable();
                                         }))''')
         }
