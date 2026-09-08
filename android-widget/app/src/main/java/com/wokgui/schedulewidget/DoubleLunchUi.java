@@ -7,15 +7,15 @@ final class DoubleLunchUi {
         return """
             (function(){
               try{
-                if(window.__weekGeometryV10){
+                if(window.__weekGeometryV11){
                   if(window.refreshDoubleLunchUi)window.refreshDoubleLunchUi();
                   return;
                 }
-                window.__weekGeometryV10=true;
+                window.__weekGeometryV11=true;
 
-                const baseStyle=document.createElement('style');
-                baseStyle.id='weekGeometryV10Base';
-                baseStyle.textContent=`
+                const style=document.createElement('style');
+                style.id='weekGeometryV11Style';
+                style.textContent=`
                   html body #viewWeek #weekGrid .wh,
                   html body #viewWeek #weekGrid .wc{min-height:49px!important}
                   @media(max-width:560px){
@@ -23,36 +23,46 @@ final class DoubleLunchUi {
                     html body #viewWeek #weekGrid .wc{min-height:48px!important}
                   }
 
+                  /* Tous les anciens marqueurs et toutes les anciennes surcouches Midi sont neutralisés. */
                   #weekGrid #weekNowRail,#weekGrid #weekNowDot,
-                  #weekGrid #weekNowRailV8,#weekGrid #weekNowDotV8{display:none!important}
-                  #weekGrid .dynamicLunchOverlay{display:none!important}
+                  #weekGrid #weekNowRailV8,#weekGrid #weekNowDotV8,
+                  #weekGrid .scheduleNowRail,#weekGrid .scheduleNowDot,
+                  #weekGrid .geoLunchLabel,#weekGrid .dynamicLunchOverlay{display:none!important}
 
-                  #weekGrid .geoLunchCell{
+                  /* Midi est maintenant la vraie cellule de la grille. Aucune bordure supplémentaire. */
+                  #weekGrid .wc.lunchCell,
+                  #weekGrid .wc.dynamicLunchCell,
+                  #weekGrid .wc.nativeLunchCell{
                     padding:0!important;
+                    margin:0!important;
                     border-radius:0!important;
-                    background:var(--ft-midi)!important;
-                    color:var(--ft-midi-ink)!important;
+                    outline:0!important;
                     box-shadow:none!important;
-                    outline:none!important;
+                    background:var(--ft-midi,#FFF9E8)!important;
+                    color:var(--ft-midi-ink,#22283A)!important;
                     overflow:hidden!important;
+                    position:relative!important;
                   }
-                  #weekGrid .geoLunchCell>*{visibility:hidden!important}
-                  #weekGrid .geoLunchLabel{
-                    position:absolute;z-index:90;display:flex;align-items:center;justify-content:center;
-                    gap:4px;padding:0 3px;box-sizing:border-box;pointer-events:none;
-                    background:transparent!important;border:0!important;outline:0!important;box-shadow:none!important;
-                    color:var(--ft-midi-ink);font-weight:850;font-size:.60rem;line-height:1;
-                    white-space:nowrap;overflow:hidden;text-overflow:clip;
+                  #weekGrid .wc.lunchCell>*,
+                  #weekGrid .wc.dynamicLunchCell>*,
+                  #weekGrid .wc.nativeLunchCell>*{visibility:visible!important}
+                  #weekGrid .nativeLunchLabel{
+                    width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+                    gap:4px;padding:2px 3px;box-sizing:border-box;white-space:nowrap;overflow:hidden;
+                    color:var(--ft-midi-ink,#22283A)!important;font-weight:850;font-size:.60rem;line-height:1;
+                    pointer-events:none;
                   }
+                  #weekGrid .nativeLunchLabel .nativeLunchIcon{font-size:.84em;line-height:1}
 
-                  #weekGrid #weekNowRailV10{
-                    position:absolute;z-index:95;width:2px;background:#1888f2;border-radius:0;
-                    pointer-events:none;display:none;
+                  /* Marqueur courant unique. */
+                  #weekGrid #finalWeekNowRail{
+                    position:absolute;z-index:120;width:2px;background:#1688F4;pointer-events:none;
+                    display:none;border-radius:0;transform:none!important;
                   }
-                  #weekGrid #weekNowDotV10{
-                    position:absolute;z-index:96;width:14px;height:14px;border-radius:50%;
-                    background:#1688f4;border:4px solid #d9ecff;box-sizing:content-box;
-                    box-shadow:0 1px 4px #0b6acb38;pointer-events:none;display:none;
+                  #weekGrid #finalWeekNowDot{
+                    position:absolute;z-index:121;width:16px;height:16px;border-radius:50%;
+                    background:#1688F4;border:4px solid #D9ECFF;box-sizing:border-box;
+                    box-shadow:0 1px 4px #0B6ACB38;pointer-events:none;display:none;transform:none!important;
                   }
 
                   .dualBreakInputs{display:grid;grid-template-columns:72px minmax(0,1fr);gap:5px 7px;align-items:center}
@@ -60,304 +70,328 @@ final class DoubleLunchUi {
                   .breakSettings .breakRow{grid-template-columns:64px minmax(0,1fr)!important;align-items:start!important}
                   #courseWidgetLabelField input{width:100%;border:1px solid var(--line);border-radius:7px;padding:9px;font:inherit;background:#fff;color:var(--ink)}
                 `;
-                document.head.appendChild(baseStyle);
+                document.head.appendChild(style);
 
-                /*
-                 * FineTuneUi et WeekViewStabilityUi sont injectés après ce module et possédaient
-                 * encore d'anciens box-shadow internes pour Midi. Ce style est maintenu EN DERNIER
-                 * dans <head> pour garantir qu'aucun cadre artificiel ne puisse revenir.
-                 * Le liseré visible est donc uniquement la bordure 1 px native de la grille,
-                 * recolorée par paintLunch().
-                 */
-                const finalStyle=document.createElement('style');
-                finalStyle.id='weekGeometryV10Final';
-                finalStyle.textContent=`
-                  html body #viewWeek #weekGrid .wc.geoLunchCell,
-                  html body #viewWeek #weekGrid .wc.lunchCell,
-                  html body #viewWeek #weekGrid .wc.lunchCell:not(.dynamicLunchCell),
-                  html body #viewWeek #weekGrid .wc.dynamicLunchCell{
-                    box-shadow:none!important;outline:none!important;border-radius:0!important;
-                  }
-                  html body #viewWeek #weekGrid .dynamicLunchOverlay{
-                    display:none!important;background:transparent!important;border:0!important;
-                    outline:0!important;box-shadow:none!important;
-                  }
-                  html body #viewWeek #weekGrid .geoLunchLabel{
-                    background:transparent!important;border:0!important;outline:0!important;box-shadow:none!important;
-                  }
-                `;
-                document.head.appendChild(finalStyle);
-                let headGuard=false;
-                new MutationObserver(()=>{
-                  if(headGuard)return;
-                  if(document.head.lastElementChild!==finalStyle){
-                    headGuard=true;
-                    document.head.appendChild(finalStyle);
-                    headGuard=false;
-                  }
-                }).observe(document.head,{childList:true});
+                let raf=0;
+                let internal=false;
 
-                let raf=0,late=0,mutating=false;
+                function moveStyleLast(){
+                  if(style.parentNode)document.head.appendChild(style);
+                }
 
                 function toMin(v){
                   const p=String(v||'').split(':').map(Number);
                   return (p[0]||0)*60+(p[1]||0);
                 }
-                function cssVar(name,fallback){
-                  const v=getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-                  return v||fallback;
+
+                function lunchText(){
+                  try{
+                    if(typeof lunchLabelText==='function')return String(lunchLabelText()||'').trim();
+                    if(typeof breaks!=='undefined'&&breaks)return String(breaks.lunchLabel||'Midi').trim();
+                  }catch(e){}
+                  return 'Midi';
                 }
+
                 function rowsOf(grid){
                   const rows=[];
-                  const timeCells=Array.from(grid.querySelectorAll('.wh.timecol'));
-                  for(const t of timeCells){
-                    const found=(t.textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[];
+                  const times=Array.from(grid.querySelectorAll('.wh.timecol'));
+                  for(const time of times){
+                    const found=(time.textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[];
                     if(found.length<2)continue;
-                    const cells=[];let n=t.nextElementSibling;
+                    const cells=[];
+                    let n=time.nextElementSibling;
                     while(n&&cells.length<5){
                       if(n.classList&&n.classList.contains('wc'))cells.push(n);
                       n=n.nextElementSibling;
                     }
-                    if(cells.length===5)rows.push({time:t,start:toMin(found[0]),end:toMin(found[1]),cells});
+                    if(cells.length===5)rows.push({
+                      time,
+                      start:toMin(found[0]),
+                      end:toMin(found[1]),
+                      cells
+                    });
                   }
                   rows.sort((a,b)=>a.time.offsetTop-b.time.offsetTop);
                   return rows;
                 }
-                function ensureLayers(grid){
-                  let rail=document.getElementById('weekNowRailV10');
-                  let dot=document.getElementById('weekNowDotV10');
-                  if(!rail){rail=document.createElement('div');rail.id='weekNowRailV10';grid.appendChild(rail)}
-                  if(!dot){dot=document.createElement('div');dot.id='weekNowDotV10';grid.appendChild(dot)}
-                  return {rail,dot};
-                }
-                function resetPaint(grid){
-                  grid.querySelectorAll('.geoLunchLabel').forEach(e=>e.remove());
-                  grid.querySelectorAll('.geoLunchCell').forEach(cell=>{
-                    cell.classList.remove('geoLunchCell');
-                    for(const p of ['background','box-shadow','outline','border-radius','padding','overflow'])cell.style.removeProperty(p);
-                  });
-                  grid.querySelectorAll('[data-geo-edge="1"]').forEach(el=>{
+
+                function clearNativeEdges(grid){
+                  grid.querySelectorAll('[data-native-midi-edge="1"]').forEach(el=>{
                     el.style.removeProperty('border-right-color');
                     el.style.removeProperty('border-bottom-color');
-                    el.removeAttribute('data-geo-edge');
+                    el.removeAttribute('data-native-midi-edge');
                   });
                 }
-                function edge(el,prop,value){
+
+                function paintEdge(el,prop,color){
                   if(!el)return;
-                  el.style.setProperty(prop,value,'important');
-                  el.setAttribute('data-geo-edge','1');
+                  el.style.setProperty(prop,color,'important');
+                  el.setAttribute('data-native-midi-edge','1');
                 }
-                function lunchFor(dayIndex){
-                  try{
-                    if(typeof DAYS==='undefined'||typeof state==='undefined')return null;
-                    const d=DAYS[dayIndex],list=state[d]&&Array.isArray(state[d].courses)?state[d].courses:[];
-                    if(typeof lunchForDay==='function')return lunchForDay(list);
-                    if(typeof lunch==='function'){
-                      const l=lunch();if(!l)return null;
-                      const s=toMin(l.start),e=toMin(l.end);
-                      const before=list.some(c=>toMin(c.end)<=s),after=list.some(c=>toMin(c.start)>=e);
-                      const occupied=list.some(c=>toMin(c.start)<e&&toMin(c.end)>s);
-                      return before&&after&&!occupied?{startM:s,endM:e}:null;
-                    }
-                  }catch(e){}
-                  return null;
-                }
-                function lunchLabel(){
-                  try{return typeof lunchLabelText==='function'?lunchLabelText():String((breaks&&breaks.lunchLabel)||'Midi').trim()}
-                  catch(e){return 'Midi'}
+
+                function normalizeLunchCell(cell,label){
+                  if(!cell)return;
+                  cell.classList.add('nativeLunchCell');
+                  cell.querySelectorAll('.dynamicLunchOverlay,.geoLunchLabel').forEach(x=>x.remove());
+                  let holder=cell.querySelector(':scope > .nativeLunchLabel');
+                  if(!holder){
+                    holder=document.createElement('div');
+                    holder.className='nativeLunchLabel';
+                    cell.replaceChildren(holder);
+                  }
+                  holder.replaceChildren();
+                  if(label){
+                    const icon=document.createElement('span');
+                    icon.className='nativeLunchIcon';
+                    icon.setAttribute('aria-hidden','true');
+                    icon.textContent='🍴';
+                    const text=document.createElement('span');
+                    text.textContent=label;
+                    holder.append(icon,text);
+                  }
+                  cell.style.setProperty('background','var(--ft-midi)','important');
+                  cell.style.setProperty('box-shadow','none','important');
+                  cell.style.setProperty('outline','0','important');
+                  cell.style.setProperty('border-radius','0','important');
+                  cell.style.setProperty('padding','0','important');
+                  cell.style.setProperty('margin','0','important');
                 }
 
                 function paintLunch(grid,rows){
-                  const bg=cssVar('--ft-midi','#FFF9E8');
-                  const border=cssVar('--ft-midi-border','#CBBE9E');
-                  const label=lunchLabel();
+                  const border=(getComputedStyle(document.documentElement).getPropertyValue('--ft-midi-border')||'#CBBE9E').trim();
+                  const label=lunchText();
+                  clearNativeEdges(grid);
 
-                  for(let dayIndex=0;dayIndex<5;dayIndex++){
-                    const l=lunchFor(dayIndex);if(!l)continue;
-                    const ls=Number(l.startM!=null?l.startM:toMin(l.start));
-                    const le=Number(l.endM!=null?l.endM:toMin(l.end));
-                    if(!(le>ls))continue;
+                  rows.forEach((row,rowIndex)=>{
+                    row.cells.forEach((cell,dayIndex)=>{
+                      const isLunch=cell.classList.contains('lunchCell')||cell.classList.contains('dynamicLunchCell');
+                      if(!isLunch)return;
+                      normalizeLunchCell(cell,label);
 
-                    const segment=[];
-                    for(const row of rows){
-                      if(Math.min(row.end,le)>Math.max(row.start,ls))segment.push({row,cell:row.cells[dayIndex]});
-                    }
-                    if(!segment.length)continue;
+                      /* On ne change JAMAIS l'épaisseur : uniquement la couleur des vraies lignes 1 px. */
+                      paintEdge(cell,'border-right-color',border);
+                      paintEdge(cell,'border-bottom-color',border);
 
-                    /* Le fond est celui des cellules réelles. Aucune bordure nouvelle n'est créée. */
-                    segment.forEach(({cell},i)=>{
-                      cell.classList.add('geoLunchCell');
-                      cell.style.setProperty('background','var(--ft-midi)','important');
-                      cell.style.setProperty('box-shadow','none','important');
-                      cell.style.setProperty('outline','none','important');
-                      cell.style.setProperty('border-radius','0','important');
-                      cell.style.setProperty('padding','0','important');
-                      cell.style.setProperty('overflow','hidden','important');
+                      const left=cell.previousElementSibling;
+                      paintEdge(left,'border-right-color',border);
 
-                      /* Bord gauche = border-right de la cellule réellement voisine.
-                         Bord droit/bas = bordures natives de la cellule Midi elle-même. */
-                      edge(cell.previousElementSibling,'border-right-color',border);
-                      edge(cell,'border-right-color',border);
-                      edge(cell,'border-bottom-color',i===segment.length-1?border:bg);
+                      if(rowIndex>0){
+                        const above=rows[rowIndex-1].cells[dayIndex];
+                        paintEdge(above,'border-bottom-color',border);
+                      }else{
+                        const header=grid.querySelectorAll('.wh.day')[dayIndex];
+                        paintEdge(header,'border-bottom-color',border);
+                      }
                     });
+                  });
+                }
 
-                    /* Bord haut = border-bottom de la vraie cellule juste au-dessus. */
-                    const firstIndex=rows.indexOf(segment[0].row);
-                    const above=firstIndex>0?rows[firstIndex-1].cells[dayIndex]:grid.querySelectorAll('.wh.day')[dayIndex];
-                    edge(above,'border-bottom-color',border);
-
-                    /* Le texte peut couvrir plusieurs lignes, mais ce calque est totalement transparent
-                       et ne dessine jamais le rectangle. */
-                    if(label){
-                      const first=segment[0].cell,last=segment[segment.length-1].cell;
-                      const lab=document.createElement('div');lab.className='geoLunchLabel';
-                      lab.innerHTML='<span aria-hidden="true">🍴</span><span></span>';
-                      lab.lastElementChild.textContent=label;
-                      lab.style.left=first.offsetLeft+'px';
-                      lab.style.top=first.offsetTop+'px';
-                      lab.style.width=first.offsetWidth+'px';
-                      lab.style.height=(last.offsetTop+last.offsetHeight-first.offsetTop)+'px';
-                      grid.appendChild(lab);
-                    }
-                  }
+                function ensureNowLayers(grid){
+                  let rail=document.getElementById('finalWeekNowRail');
+                  let dot=document.getElementById('finalWeekNowDot');
+                  if(!rail){rail=document.createElement('div');rail.id='finalWeekNowRail';grid.appendChild(rail)}
+                  if(!dot){dot=document.createElement('div');dot.id='finalWeekNowDot';grid.appendChild(dot)}
+                  return {rail,dot};
                 }
 
                 function paintNow(grid,rows){
-                  const {rail,dot}=ensureLayers(grid);
-                  rail.style.display=dot.style.display='none';
+                  const {rail,dot}=ensureNowLayers(grid);
+                  rail.style.display='none';
+                  dot.style.display='none';
                   const now=new Date(),day=now.getDay();
                   if(day<1||day>5||!rows.length)return;
-                  try{if(typeof activeWeek!=='undefined'&&typeof currentWeek!=='undefined'&&activeWeek!==currentWeek)return}catch(e){}
-                  const minute=now.getHours()*60+now.getMinutes(),dayIndex=day-1;
-                  let target=null;
-                  for(const row of rows){if(minute>=row.start&&minute<row.end){target=row;break}}
-                  if(!target)return;
-                  const first=rows[0].cells[dayIndex],cell=target.cells[dayIndex];
-                  if(!first||!cell)return;
-                  const frac=Math.max(0,Math.min(1,(minute-target.start)/Math.max(1,target.end-target.start)));
-                  const x=cell.offsetLeft-1;
-                  const top=first.offsetTop;
-                  const y=cell.offsetTop+cell.offsetHeight*frac;
-                  rail.style.setProperty('left',x+'px','important');
+                  try{
+                    if(typeof activeWeek!=='undefined'&&typeof currentWeek!=='undefined'&&activeWeek!==currentWeek)return;
+                  }catch(e){}
+
+                  const minute=now.getHours()*60+now.getMinutes();
+                  let row=null;
+                  for(const r of rows){if(minute>=r.start&&minute<r.end){row=r;break}}
+                  if(!row)return;
+
+                  const dayIndex=day-1;
+                  const first=rows[0].cells[dayIndex];
+                  const target=row.cells[dayIndex];
+                  if(!first||!target)return;
+
+                  const gr=grid.getBoundingClientRect();
+                  const fr=first.getBoundingClientRect();
+                  const tr=target.getBoundingClientRect();
+                  const frac=Math.max(0,Math.min(1,(minute-row.start)/Math.max(1,row.end-row.start)));
+
+                  /* Le bord gauche réel de la cellule est la seule source de vérité. */
+                  const x=tr.left-gr.left;
+                  const top=fr.top-gr.top;
+                  const y=tr.top-gr.top+tr.height*frac;
+
+                  rail.style.setProperty('left',(x-1)+'px','important');
                   rail.style.setProperty('top',top+'px','important');
                   rail.style.setProperty('height',Math.max(2,y-top)+'px','important');
                   rail.style.setProperty('display','block','important');
-                  dot.style.setProperty('left',(x-10)+'px','important');
-                  dot.style.setProperty('top',(y-11)+'px','important');
+
+                  dot.style.setProperty('left',(x-8)+'px','important');
+                  dot.style.setProperty('top',(y-8)+'px','important');
                   dot.style.setProperty('display','block','important');
                 }
 
-                function syncGeometry(){
-                  const grid=document.getElementById('weekGrid');if(!grid)return;
-                  mutating=true;
+                function syncGrid(){
+                  const grid=document.getElementById('weekGrid');
+                  if(!grid)return;
+                  internal=true;
                   try{
+                    moveStyleLast();
                     grid.style.setProperty('position','relative','important');
-                    grid.style.setProperty('overflow','hidden','important');
-                    const rows=rowsOf(grid);if(!rows.length)return;
-                    resetPaint(grid);
+                    const rows=rowsOf(grid);
+                    if(!rows.length)return;
                     paintLunch(grid,rows);
                     paintNow(grid,rows);
-                  }finally{mutating=false}
+                  }finally{
+                    internal=false;
+                  }
                 }
-                function scheduleGeometry(){
-                  if(raf)cancelAnimationFrame(raf);if(late)clearTimeout(late);
-                  raf=requestAnimationFrame(()=>requestAnimationFrame(()=>{
-                    syncGeometry();
-                    late=setTimeout(syncGeometry,180);
-                  }));
-                }
-                window.refreshDoubleLunchUi=scheduleGeometry;
 
-                function loadAdv(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
-                function saveAdv(o){try{AndroidSchedule.saveAdvancedSettings(JSON.stringify(o))}catch(e){}}
-                function norm(s){return String(s||'').trim().replace(/ +/g,' ').toLocaleLowerCase()}
+                function scheduleGrid(){
+                  if(raf)cancelAnimationFrame(raf);
+                  raf=requestAnimationFrame(()=>requestAnimationFrame(syncGrid));
+                }
+                window.refreshDoubleLunchUi=scheduleGrid;
+
+                function loadAdv(){
+                  try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}
+                  catch(e){return {}}
+                }
+                function saveAdv(o){
+                  try{AndroidSchedule.saveAdvancedSettings(JSON.stringify(o))}catch(e){}
+                }
+                function keyFor(week,day,start,end){
+                  return String(week||'A')+'|'+String(day||2)+'|'+String(start||'')+'|'+String(end||'');
+                }
 
                 function ensureCourseWidgetField(){
                   const form=document.getElementById('courseForm');if(!form)return;
                   let field=document.getElementById('courseWidgetLabelField');
-                  if(!field){
-                    field=document.createElement('div');field.id='courseWidgetLabelField';field.className='field';
-                    field.innerHTML='<label>Intitulé dans le widget (facultatif)</label><input id="fWidgetLabel" type="text" maxlength="80" placeholder="Vide = même intitulé que dans l\'application">';
-                    const app=document.getElementById('fLabel'),appField=app?app.closest('.field'):null;
-                    if(appField&&appField.nextSibling)appField.parentNode.insertBefore(field,appField.nextSibling);else form.appendChild(field);
-                  }
+                  if(field)return;
+                  field=document.createElement('div');
+                  field.id='courseWidgetLabelField';field.className='field';
+                  field.innerHTML='<label>Intitulé dans le widget (facultatif)</label><input id="fWidgetLabel" type="text" maxlength="80" placeholder="Vide = même intitulé que dans l\'application">';
+                  const app=document.getElementById('fLabel'),appField=app?app.closest('.field'):null;
+                  if(appField&&appField.nextSibling)appField.parentNode.insertBefore(field,appField.nextSibling);
+                  else form.insertBefore(field,form.querySelector('.sheetActions'));
                 }
+
                 function editedCourse(){
-                  try{if(typeof editing==='undefined'||editing==null)return null;return weeks[activeWeek][selected].courses[editing]||null}catch(e){return null}
+                  try{
+                    if(typeof editing==='undefined'||editing==null)return null;
+                    return weeks[activeWeek][selected].courses[editing]||null;
+                  }catch(e){return null}
                 }
+
                 function fillCourseWidgetField(){
-                  ensureCourseWidgetField();const input=document.getElementById('fWidgetLabel');if(!input)return;
-                  const c=editedCourse();if(!c){input.value='';return}
-                  const a=loadAdv(),map=a.widgetCourseLabels||{};
-                  input.value=String(map[norm(c.label)]||'');
-                }
-                function wrapCourseSubmitLabels(){
                   ensureCourseWidgetField();
-                  const form=document.getElementById('courseForm');if(!form||!form.onsubmit||form.onsubmit.__widgetLabelsV10)return;
+                  const input=document.getElementById('fWidgetLabel');if(!input)return;
+                  const c=editedCourse();if(!c){input.value='';return}
+                  const a=loadAdv(),map=(a.widgetCourseLabels&&typeof a.widgetCourseLabels==='object')?a.widgetCourseLabels:{};
+                  input.value=String(map[keyFor(activeWeek,selected,c.start,c.end)]||'');
+                }
+
+                function wrapCourseSubmit(){
+                  ensureCourseWidgetField();
+                  const form=document.getElementById('courseForm');
+                  if(!form||!form.onsubmit||form.onsubmit.__widgetLabelsV11)return;
                   const old=form.onsubmit;
                   const wrapped=function(e){
-                    const oldCourse=editedCourse(),oldLabel=oldCourse?oldCourse.label:'';
-                    const appLabel=String((document.getElementById('fLabel')||{}).value||'').trim();
+                    const c=editedCourse();
+                    const oldKey=c?keyFor(activeWeek,selected,c.start,c.end):null;
+                    const week=typeof activeWeek!=='undefined'?activeWeek:'A';
+                    const day=typeof selected!=='undefined'?selected:2;
+                    const slot=Number((document.getElementById('fSlot')||{}).value||0);
+                    let start='',end='';
+                    if(slot>0&&typeof slots!=='undefined'&&slots[slot-1]){start=slots[slot-1].start;end=slots[slot-1].end}
+                    else if(c){start=c.start;end=c.end}
+                    else if(typeof newPrefill!=='undefined'&&newPrefill){start=newPrefill.start;end=newPrefill.end}
                     const widgetLabel=String((document.getElementById('fWidgetLabel')||{}).value||'').trim();
-                    const out=old.call(this,e);
+                    const result=old.call(this,e);
                     try{
-                      const a=loadAdv();a.widgetCourseLabels=(a.widgetCourseLabels&&typeof a.widgetCourseLabels==='object')?a.widgetCourseLabels:{};
-                      if(oldLabel)delete a.widgetCourseLabels[norm(oldLabel)];
-                      if(appLabel&&widgetLabel)a.widgetCourseLabels[norm(appLabel)]=widgetLabel;
-                      else if(appLabel)delete a.widgetCourseLabels[norm(appLabel)];
+                      const a=loadAdv();
+                      a.widgetCourseLabels=(a.widgetCourseLabels&&typeof a.widgetCourseLabels==='object')?a.widgetCourseLabels:{};
+                      if(oldKey)delete a.widgetCourseLabels[oldKey];
+                      const newKey=keyFor(week,day,start,end);
+                      if(widgetLabel)a.widgetCourseLabels[newKey]=widgetLabel;
+                      else delete a.widgetCourseLabels[newKey];
                       saveAdv(a);
                     }catch(ex){}
-                    return out;
+                    return result;
                   };
-                  wrapped.__widgetLabelsV10=true;form.onsubmit=wrapped;
+                  wrapped.__widgetLabelsV11=true;
+                  form.onsubmit=wrapped;
                 }
+
                 function installBreakWidgetInputs(){
-                  const pairs=[['gapLabel','gapWidgetLabel'],['lunchLabel','lunchWidgetLabel']];
-                  const a=loadAdv();
-                  for(const [appId,key] of pairs){
+                  const defs=[['gapLabel','gapWidgetLabel'],['lunchLabel','lunchWidgetLabel']];
+                  const adv=loadAdv();
+                  for(const [appId,key] of defs){
                     const app=document.getElementById(appId);if(!app)continue;
                     let host=app.closest('.dualBreakInputs');
                     let widget=document.getElementById(appId+'Widget');
                     if(!host){
                       host=document.createElement('div');host.className='dualBreakInputs';
                       const parent=app.parentElement;parent.insertBefore(host,app);
-                      const l1=document.createElement('div');l1.className='dualLabel';l1.textContent='Application';host.appendChild(l1);host.appendChild(app);
-                      const l2=document.createElement('div');l2.className='dualLabel';l2.textContent='Widget';host.appendChild(l2);
-                      widget=document.createElement('input');widget.id=appId+'Widget';widget.type='text';widget.maxLength=35;widget.placeholder='Vide = même intitulé';host.appendChild(widget);
+                      const aLabel=document.createElement('div');aLabel.className='dualLabel';aLabel.textContent='Application';
+                      const wLabel=document.createElement('div');wLabel.className='dualLabel';wLabel.textContent='Widget';
+                      host.append(aLabel,app,wLabel);
+                      widget=document.createElement('input');
+                      widget.id=appId+'Widget';widget.type='text';widget.maxLength=35;widget.placeholder='Vide = même intitulé';
+                      host.appendChild(widget);
                     }
-                    if(widget&&document.activeElement!==widget)widget.value=String(a[key]||'');
-                    if(widget&&!widget.__widgetLabelBound){
-                      widget.__widgetLabelBound=true;
-                      const persist=()=>{const x=loadAdv();x[key]=String(widget.value||'').trim();saveAdv(x)};
-                      widget.addEventListener('change',persist);widget.addEventListener('blur',persist);
+                    if(widget&&document.activeElement!==widget)widget.value=String(adv[key]||'');
+                    if(widget&&!widget.__labelV11){
+                      widget.__labelV11=true;
+                      const persist=()=>{
+                        const a=loadAdv();a[key]=String(widget.value||'').trim();saveAdv(a);
+                      };
+                      widget.addEventListener('change',persist);
+                      widget.addEventListener('blur',persist);
                     }
                   }
                 }
-                function installLabelsUi(){
-                  ensureCourseWidgetField();wrapCourseSubmitLabels();installBreakWidgetInputs();
+
+                function installLabelUi(){
+                  ensureCourseWidgetField();
+                  wrapCourseSubmit();
+                  installBreakWidgetInputs();
                   const modal=document.getElementById('modal');
-                  if(modal&&!modal.__widgetLabelsObserverV10){
-                    modal.__widgetLabelsObserverV10=true;
-                    new MutationObserver(()=>{if(modal.classList.contains('show'))setTimeout(()=>{fillCourseWidgetField();wrapCourseSubmitLabels()},0)}).observe(modal,{attributes:true,attributeFilter:['class']});
+                  if(modal&&!modal.__widgetLabelsV11){
+                    modal.__widgetLabelsV11=true;
+                    new MutationObserver(()=>{
+                      if(modal.classList.contains('show'))setTimeout(()=>{fillCourseWidgetField();wrapCourseSubmit()},0);
+                    }).observe(modal,{attributes:true,attributeFilter:['class']});
                   }
                 }
 
                 const grid=document.getElementById('weekGrid');
                 if(grid){
                   new MutationObserver(muts=>{
-                    if(mutating)return;
-                    const external=muts.some(m=>[...m.addedNodes,...m.removedNodes].some(n=>!(n.nodeType===1&&(n.classList?.contains('geoLunchLabel')||n.id==='weekNowRailV10'||n.id==='weekNowDotV10'))));
-                    if(external)scheduleGeometry();
-                  }).observe(grid,{childList:true});
-                  if(window.ResizeObserver)new ResizeObserver(scheduleGeometry).observe(grid);
+                    if(internal)return;
+                    const relevant=muts.some(m=>{
+                      const nodes=[...m.addedNodes,...m.removedNodes];
+                      if(!nodes.length)return false;
+                      return nodes.some(n=>!(n.nodeType===1&&(n.id==='finalWeekNowRail'||n.id==='finalWeekNowDot'||n.classList?.contains('nativeLunchLabel'))));
+                    });
+                    if(relevant)scheduleGrid();
+                  }).observe(grid,{childList:true,subtree:true});
+                  if(window.ResizeObserver)new ResizeObserver(scheduleGrid).observe(grid);
                 }
-                window.addEventListener('resize',scheduleGeometry);
-                document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleGeometry()});
-                setInterval(scheduleGeometry,60000);
-                if(document.fonts&&document.fonts.ready)document.fonts.ready.then(scheduleGeometry);
-                installLabelsUi();
-                scheduleGeometry();
-              }catch(e){console.log('Week geometry V10',e)}
+
+                window.addEventListener('resize',scheduleGrid);
+                document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleGrid()});
+                setInterval(scheduleGrid,60000);
+                if(document.fonts&&document.fonts.ready)document.fonts.ready.then(scheduleGrid);
+
+                installLabelUi();
+                scheduleGrid();
+                setTimeout(()=>{moveStyleLast();scheduleGrid()},120);
+                setTimeout(()=>{moveStyleLast();scheduleGrid()},350);
+              }catch(e){console.log('Week geometry V11',e)}
             })();
             """;
     }
