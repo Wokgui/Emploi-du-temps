@@ -7,11 +7,11 @@ final class DoubleLunchUi {
         return """
             (function(){
               try {
-                if(window.__doubleLunchUiV3){
+                if(window.__doubleLunchUiV4){
                   if(window.refreshDoubleLunchUi)window.refreshDoubleLunchUi();
                   return;
                 }
-                window.__doubleLunchUiV3=true;
+                window.__doubleLunchUiV4=true;
 
                 const polish=document.createElement('style');
                 polish.textContent=`
@@ -23,22 +23,32 @@ final class DoubleLunchUi {
                     html body #viewWeek #weekGrid .wc{min-height:46px!important}
                   }
 
-                  /* Les cases Midi adjacentes se touchent réellement : pas de double trait
-                     ni de petit interstice entre deux jours ayant Midi côte à côte. */
+                  /* Midi utilise les vraies limites des cellules du tableau : plus de liseré
+                     dessiné un pixel à l'intérieur, donc les rectangles coïncident avec la grille. */
+                  html body #viewWeek #weekGrid .wc.lunchCell{
+                    position:relative!important;
+                    padding:0!important;
+                    border-radius:0!important;
+                    box-shadow:none!important;
+                    background:var(--ft-midi)!important;
+                    overflow:visible!important;
+                  }
+                  html body #viewWeek #weekGrid .wc.lunchCell:not(.dynamicLunchCell)::after{
+                    content:'';
+                    position:absolute;
+                    inset:-1px;
+                    border:1px solid var(--ft-midi-border)!important;
+                    border-radius:0!important;
+                    box-sizing:border-box!important;
+                    pointer-events:none;
+                    z-index:15;
+                  }
                   html body #viewWeek #weekGrid .dynamicLunchOverlay{
                     box-sizing:border-box!important;
                     border:1px solid var(--ft-midi-border)!important;
                     border-radius:0!important;
                     box-shadow:none!important;
-                  }
-                  html body #viewWeek #weekGrid .dynamicLunchCell:has(+ .dynamicLunchCell){
-                    border-right-color:transparent!important;
-                  }
-                  html body #viewWeek #weekGrid .dynamicLunchCell:has(+ .dynamicLunchCell) .dynamicLunchOverlay{
-                    border-right-width:0!important;
-                  }
-                  html body #viewWeek #weekGrid .dynamicLunchCell + .dynamicLunchCell .dynamicLunchOverlay{
-                    border-left-width:1px!important;
+                    background:var(--ft-midi)!important;
                   }
                 `;
                 document.head.appendChild(polish);
@@ -49,6 +59,27 @@ final class DoubleLunchUi {
                     const p=String(v||'').split(':').map(Number);
                     return (p[0]||0)*60+(p[1]||0);
                   }catch(e){return 0}
+                }
+
+                function alignCurrentRail(){
+                  try{
+                    const grid=document.getElementById('weekGrid');
+                    const rail=document.getElementById('weekNowRail');
+                    const dot=document.getElementById('weekNowDot');
+                    if(!grid||!rail||!dot)return;
+                    const day=new Date().getDay();
+                    if(day<1||day>5)return;
+                    const headers=Array.from(grid.querySelectorAll('.wh.day'));
+                    const header=headers[day-1];
+                    if(!header)return;
+                    const g=grid.getBoundingClientRect();
+                    const h=header.getBoundingClientRect();
+                    const boundary=h.left-g.left;
+                    /* Le rail fait 2 px : son bord gauche doit être 1 px avant la ligne
+                       pour que son axe soit exactement superposé à la ligne verticale. */
+                    rail.style.setProperty('left',(boundary-1)+'px','important');
+                    dot.style.setProperty('left',boundary+'px','important');
+                  }catch(e){}
                 }
 
                 function reset(grid){
@@ -80,7 +111,7 @@ final class DoubleLunchUi {
                     const kids=Array.from(grid.children);
                     const secondStart=slots[4]&&slots[4].start?toMin(slots[4].start):13*60;
                     const secondEnd=slots[4]&&slots[4].end?toMin(slots[4].end):14*60;
-                    if(secondEnd<=secondStart)return;
+                    if(secondEnd<=secondStart){alignCurrentRail();return}
 
                     let secondRow=-1;
                     const startText=(typeof clock==='function')?clock(secondStart):String(slots[4]?.start||'13:00');
@@ -89,7 +120,7 @@ final class DoubleLunchUi {
                       const times=(kids[p].textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[];
                       if(times[0]===startText&&times[1]===endText){secondRow=p;break}
                     }
-                    if(secondRow<0)return;
+                    if(secondRow<0){alignCurrentRail();return}
 
                     grid.querySelectorAll('.dynamicLunchCell').forEach(cell=>{
                       const idx=kids.indexOf(cell),dayIndex=(idx%6)-1;
@@ -109,10 +140,11 @@ final class DoubleLunchUi {
                       cell.style.setProperty('overflow','visible','important');
                       cell.style.setProperty('z-index','20','important');
 
-                      // The lunch surface coincides exactly with the time grid.
-                      overlay.style.setProperty('top','0px','important');
-                      overlay.style.setProperty('left','0px','important');
-                      overlay.style.setProperty('right','0px','important');
+                      /* Un élément absolute est positionné depuis l'intérieur de la bordure
+                         de la cellule. -1 px le remet exactement sur les lignes de la grille. */
+                      overlay.style.setProperty('top','-1px','important');
+                      overlay.style.setProperty('left','-1px','important');
+                      overlay.style.setProperty('right','-1px','important');
                       overlay.style.setProperty('bottom','auto','important');
                       overlay.style.setProperty('width','auto','important');
                       overlay.style.setProperty('height',Math.max(cell.offsetHeight,totalHeight)+'px','important');
@@ -121,19 +153,25 @@ final class DoubleLunchUi {
                       overlay.style.setProperty('box-sizing','border-box','important');
                       overlay.style.setProperty('align-items','center','important');
                     });
+                    alignCurrentRail();
                   }catch(e){}
                 }
 
                 function schedule(){
                   if(window.__doubleLunchFrame)cancelAnimationFrame(window.__doubleLunchFrame);
-                  window.__doubleLunchFrame=requestAnimationFrame(()=>requestAnimationFrame(apply));
+                  window.__doubleLunchFrame=requestAnimationFrame(()=>requestAnimationFrame(()=>{
+                    apply();
+                    alignCurrentRail();
+                    setTimeout(alignCurrentRail,40);
+                    setTimeout(alignCurrentRail,180);
+                  }));
                 }
                 window.refreshDoubleLunchUi=schedule;
 
                 const grid=document.getElementById('weekGrid');
                 if(grid)new MutationObserver(schedule).observe(grid,{childList:true,subtree:true});
                 window.addEventListener('resize',schedule);
-                setInterval(schedule,60000);
+                setInterval(()=>{apply();alignCurrentRail()},60000);
                 schedule();
               }catch(e){console.log('Double lunch UI',e)}
             })();
