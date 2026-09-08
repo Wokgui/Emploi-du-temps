@@ -24,7 +24,6 @@ final class DoubleLunchUi {
                     html body #viewWeek #weekGrid .wc{min-height:48px!important}
                   }
 
-                  /* V14 : les anciens rails et les anciens rectangles Midi ne sont plus utilisés. */
                   #weekGrid #weekNowRail,#weekGrid #weekNowDot,
                   #weekGrid #weekNowRailV8,#weekGrid #weekNowDotV8,
                   #weekGrid #finalWeekNowRailV12,#weekGrid #finalWeekNowDotV12,
@@ -32,7 +31,6 @@ final class DoubleLunchUi {
                   #weekGrid .scheduleNowRail,#weekGrid .scheduleNowDot,
                   #weekGrid .geoLunchLabel,#weekGrid .dynamicLunchOverlay{display:none!important}
 
-                  /* La cellule de grille elle-même porte le fond Midi. Aucune boîte intérieure. */
                   html body #weekGrid#weekGrid .wc.lunchCell,
                   html body #weekGrid#weekGrid .wc.dynamicLunchCell,
                   html body #weekGrid#weekGrid .wc.nativeLunchCell,
@@ -62,8 +60,6 @@ final class DoubleLunchUi {
                   }
                   html body #weekGrid#weekGrid .nativeLunchIcon{font-size:.84em!important;line-height:1!important}
 
-                  /* V14 : la ligne temporelle est attachée à chaque cellule du jour courant,
-                     donc aucune coordonnée X globale n'est calculée. */
                   #weekGrid .nativeNowFull,
                   #weekGrid .nativeNowPartial{
                     position:absolute!important;
@@ -88,6 +84,7 @@ final class DoubleLunchUi {
                     z-index:141!important;pointer-events:none!important;
                   }
                   #weekGrid .wc{position:relative!important}
+                  html body #weekGrid#weekGrid .wc.nativeNowTrackCell{overflow:visible!important;z-index:5!important}
 
                   .dualBreakInputs{display:grid;grid-template-columns:72px minmax(0,1fr);gap:5px 7px;align-items:center}
                   .dualBreakInputs .dualLabel{font-size:.66rem;color:var(--muted);font-weight:750}
@@ -187,8 +184,6 @@ final class DoubleLunchUi {
                     row.cells.forEach((cell,dayIndex)=>{
                       if(!(cell.classList.contains('lunchCell')||cell.classList.contains('dynamicLunchCell')||cell.classList.contains('nativeLunchCell')))return;
                       normalizeLunch(cell,label);
-
-                      /* Aucune nouvelle bordure n'est créée : on recolore uniquement les traits 1 px déjà présents. */
                       edge(cell,'border-right-color',border);
                       edge(cell,'border-bottom-color',border);
                       edge(cell.previousElementSibling,'border-right-color',border);
@@ -201,6 +196,7 @@ final class DoubleLunchUi {
                 function removeLegacyNow(grid){
                   grid.querySelectorAll('[id*="weekNow"],[id*="WeekNow"],.scheduleNowRail,.scheduleNowDot').forEach(x=>x.remove());
                   grid.querySelectorAll('.nativeNowFull,.nativeNowPartial,.nativeNowDot').forEach(x=>x.remove());
+                  grid.querySelectorAll('.nativeNowTrackCell').forEach(x=>x.classList.remove('nativeNowTrackCell'));
                 }
 
                 function paintNow(grid,rows){
@@ -222,6 +218,10 @@ final class DoubleLunchUi {
                   if(currentIndex<0)return;
                   const dayIndex=day-1;
 
+                  for(let i=0;i<=currentIndex;i++){
+                    const cell=rows[i].cells[dayIndex];
+                    if(cell)cell.classList.add('nativeNowTrackCell');
+                  }
                   for(let i=0;i<currentIndex;i++){
                     const cell=rows[i].cells[dayIndex];
                     if(!cell)continue;
