@@ -40,7 +40,7 @@ final class Stability78Ui {
                   #settingsSheet #fineSpecialColors>.coursePaletteHint{display:none!important}
                   #settingsSheet #breakVisibility70{border-top:0!important;padding-top:0!important;margin-top:5px!important}
                   #settingsSheet #fineSpecialColors.embeddedFullColors74,
-                  #settingsSheet #breakDisplaySetting #fineSpecialColors{border-top:0!important!important;padding-top:4px!important;margin-top:5px!important}
+                  #settingsSheet #breakDisplaySetting #fineSpecialColors{border-top:0!important;padding-top:4px!important;margin-top:5px!important}
                   #settingsSheet #fineSpecialColors .specialWidgetTitle{border-top:0!important;padding-top:4px!important}
 
                   /* Explicit Today / Week / Widget visibility rows. */
