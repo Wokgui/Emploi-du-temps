@@ -30,7 +30,7 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingLeft="10dp"
-        android:paddingRight="7dp"
+        android:paddingRight="4dp"
         android:background="#FFF0335D">
 
         <LinearLayout
@@ -64,14 +64,14 @@
         </LinearLayout>
 
         <!--
-          The whole timing area remains on the right side of the widget. Inside this
-          fixed right-side slot, adaptive bubbles are centred on one common vertical axis.
-          This keeps "31 min", "Libre 2 h", "Reprise à 13 h" and future-date labels aligned.
+          The timing area is deliberately narrow and attached to the right side. Every
+          adaptive bubble is centred inside the same slot, so their centres stay aligned
+          while the complete group sits farther to the right of the widget.
         -->
         <FrameLayout
-            android:layout_width="160dp"
+            android:layout_width="128dp"
             android:layout_height="match_parent"
-            android:layout_marginLeft="7dp">
+            android:layout_marginLeft="5dp">
 
             <TextView
                 android:id="@+id/rowRelative"
@@ -80,7 +80,7 @@
                 android:layout_gravity="center"
                 android:gravity="center"
                 android:minWidth="64dp"
-                android:maxWidth="160dp"
+                android:maxWidth="128dp"
                 android:paddingLeft="9dp"
                 android:paddingRight="9dp"
                 android:background="@drawable/widget_timer_pill"
