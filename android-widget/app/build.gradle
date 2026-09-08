@@ -64,6 +64,7 @@ apply from: 'fixes77.gradle'
 apply from: 'fixes78.gradle'
 apply from: 'fixes79.gradle'
 apply from: 'fixes80.gradle'
+apply from: 'fixes80b.gradle'
 
 dependencies {
     implementation 'com.google.mlkit:text-recognition:16.0.1'
