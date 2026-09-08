@@ -106,7 +106,9 @@ public class UpcomingCoursesService extends RemoteViewsService {
             for (int i = target.firstCourse; i < courses.size(); i++) {
                 ScheduleData.Course c = courses.get(i);
                 int start = ScheduleData.toMinutes(c.start);
-                if (previousEnd >= 0 && !compactHeight) {
+                // Les interruptions font partie de la chronologie, même lorsque le widget est très bas.
+                // La ListView reste défilable : on ne les supprime donc plus en mode compact.
+                if (previousEnd >= 0) {
                     appendBreaks(previousEnd, start, lunchStart, lunchEnd);
                 }
 
@@ -306,9 +308,11 @@ public class UpcomingCoursesService extends RemoteViewsService {
             v.setInt(R.id.rowRelative, "setGravity", Gravity.CENTER);
 
             if (item.type == Item.LUNCH) {
-                applyBreakRow(v, item, R.drawable.widget_lunch_row, WidgetPaletteStore.lunchText(context), 0xFF6C5323);
+                int bg = WidgetPaletteStore.lunchBackground(context);
+                applyBreakRow(v, item, bg, WidgetPaletteStore.lunchText(context), darken(bg));
             } else if (item.type == Item.GAP) {
-                applyBreakRow(v, item, R.drawable.widget_gap_row, WidgetPaletteStore.gapText(context), 0xFF465369);
+                int bg = WidgetPaletteStore.gapBackground(context);
+                applyBreakRow(v, item, bg, WidgetPaletteStore.gapText(context), darken(bg));
             } else {
                 int bg = WidgetPaletteStore.courseColor(context, item.order, item.label, item.colorId);
                 boolean dark = WidgetPaletteStore.useDarkText(context, item.order, item.label, item.colorId);
@@ -333,8 +337,8 @@ public class UpcomingCoursesService extends RemoteViewsService {
             return v;
         }
 
-        private void applyBreakRow(RemoteViews v, Item item, int backgroundRes, int ink, int pillInk) {
-            v.setInt(R.id.rowContent, "setBackgroundResource", backgroundRes);
+        private void applyBreakRow(RemoteViews v, Item item, int background, int ink, int pillInk) {
+            v.setInt(R.id.rowContent, "setBackgroundColor", background);
             String meta = AdvancedSettingsStore.showTimes(context) ? item.time : "";
             v.setTextViewText(R.id.rowMeta, meta);
             v.setViewVisibility(R.id.rowMeta, meta.isEmpty() ? View.GONE : View.VISIBLE);
