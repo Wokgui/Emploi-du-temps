@@ -1,21 +1,19 @@
 tasks.register('patchStability70') {
     dependsOn tasks.named('patchStability69')
     doLast {
-        // Run Stability70 only after the complete personalization chain. This is essential: older layers
-        // were still repainting the vertical marker after Stability69 had already run.
+        // Run Stability70 after the full personalization chain. fixes66/fixes69 insert their own
+        // callbacks before primeWeekBadge(), so key off the final prime/reveal block instead.
         def mainFile = file('src/main/java/com/wokgui/schedulewidget/MainActivity.java')
         def main = mainFile.getText('UTF-8')
-        def finalNeedle = '''                                                                                        webView.evaluateJavascript(FineTuneUi.script(), value10 -> {
-                                                                                            primeWeekBadge();
-                                                                                            if (forceWeekOpening) settleWeekAndReveal();
-                                                                                        })'''
-        def finalReplacement = '''                                                                                        webView.evaluateJavascript(FineTuneUi.script(), value10 -> {
-                                                                                            primeWeekBadge();
+        def primeNeedle = '''                                                                                            primeWeekBadge();
+                                                                                            if (forceWeekOpening) settleWeekAndReveal();'''
+        def primeReplacement = '''                                                                                            primeWeekBadge();
                                                                                             webView.evaluateJavascript(Stability70Ui.script(), null);
-                                                                                            if (forceWeekOpening) settleWeekAndReveal();
-                                                                                        })'''
-        if (main.contains(finalNeedle)) main = main.replace(finalNeedle, finalReplacement)
-        else if (!main.contains('webView.evaluateJavascript(Stability70Ui.script(), null);')) throw new GradleException('6.10: final Stability70 injection target not found')
+                                                                                            if (forceWeekOpening) settleWeekAndReveal();'''
+        if (!main.contains('webView.evaluateJavascript(Stability70Ui.script(), null);')) {
+            if (!main.contains(primeNeedle)) throw new GradleException('6.10: final Stability70 injection target not found')
+            main = main.replace(primeNeedle, primeReplacement)
+        }
 
         def bulkNeedle = '''        webView.evaluateJavascript(BulkCourseUi.script(), value ->
                 webView.evaluateJavascript(WeekViewStabilityUi.script(), value2 ->
