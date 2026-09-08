@@ -7,11 +7,11 @@ final class DoubleLunchUi {
         return """
             (function(){
               try {
-                if(window.__weekGeometryV8){
+                if(window.__weekGeometryV9){
                   if(window.refreshDoubleLunchUi)window.refreshDoubleLunchUi();
                   return;
                 }
-                window.__weekGeometryV8=true;
+                window.__weekGeometryV9=true;
 
                 const style=document.createElement('style');
                 style.textContent=`
@@ -25,12 +25,16 @@ final class DoubleLunchUi {
                   #weekGrid #weekNowRail,#weekGrid #weekNowDot{display:none!important}
                   #weekGrid .dynamicLunchOverlay{display:none!important}
 
+                  /* Midi utilise désormais les vraies cellules de la grille. Aucun cadre,
+                     outline ou inset supplémentaire : seules les bordures 1px déjà présentes
+                     dans le tableau changent de couleur. */
                   #weekGrid .geoLunchCell{
                     padding:0!important;
                     border-radius:0!important;
                     background:var(--ft-midi)!important;
                     color:var(--ft-midi-ink)!important;
                     box-shadow:none!important;
+                    outline:none!important;
                     overflow:hidden!important;
                   }
                   #weekGrid .geoLunchCell>*{visibility:hidden!important}
@@ -60,13 +64,38 @@ final class DoubleLunchUi {
 
                 let raf=0,late=0,mutating=false;
 
+                /* FineTuneUi et WeekViewStabilityUi sont injectés après ce module. Pour éviter
+                   qu'ils réintroduisent un box-shadow autour de Midi, on remet cette règle en
+                   toute fin de <head>. Elle ne crée aucune bordure : elle supprime seulement
+                   les anciens cadres artificiels. */
+                function installFinalLunchCss(){
+                  let s=document.getElementById('weekNativeLunchBorderV9');
+                  if(s)s.remove();
+                  s=document.createElement('style');s.id='weekNativeLunchBorderV9';
+                  s.textContent=`
+                    html body #viewWeek #weekGrid .wc.geoLunchCell,
+                    html body #viewWeek #weekGrid .wc.lunchCell,
+                    html body #viewWeek #weekGrid .wc.dynamicLunchCell{
+                      background:var(--ft-midi)!important;
+                      color:var(--ft-midi-ink)!important;
+                      border-radius:0!important;
+                      box-shadow:none!important;
+                      outline:none!important;
+                    }
+                    html body #viewWeek #weekGrid .dynamicLunchOverlay{
+                      display:none!important;
+                      border:0!important;
+                      border-radius:0!important;
+                      box-shadow:none!important;
+                      outline:none!important;
+                    }
+                  `;
+                  document.head.appendChild(s);
+                }
+
                 function toMin(v){
                   const p=String(v||'').split(':').map(Number);
                   return (p[0]||0)*60+(p[1]||0);
-                }
-                function cssVar(name,fallback){
-                  const v=getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-                  return v||fallback;
                 }
                 function rowsOf(grid){
                   const rows=[];
@@ -95,7 +124,7 @@ final class DoubleLunchUi {
                   grid.querySelectorAll('.geoLunchLabel').forEach(e=>e.remove());
                   grid.querySelectorAll('.geoLunchCell').forEach(cell=>{
                     cell.classList.remove('geoLunchCell');
-                    for(const p of ['background','box-shadow','border-radius','padding','overflow','border-right-color','border-bottom-color'])cell.style.removeProperty(p);
+                    for(const p of ['background','box-shadow','outline','border-radius','padding','overflow','border-right-color','border-bottom-color'])cell.style.removeProperty(p);
                   });
                   grid.querySelectorAll('[data-geo-edge="1"]').forEach(el=>{
                     el.style.removeProperty('border-right-color');
@@ -128,8 +157,8 @@ final class DoubleLunchUi {
                   catch(e){return 'Midi'}
                 }
                 function paintLunch(grid,rows){
-                  const bg=cssVar('--ft-midi','#FFF9E8');
-                  const border=cssVar('--ft-midi-border','#CBBE9E');
+                  const border='var(--ft-midi-border)';
+                  const bg='var(--ft-midi)';
                   const label=lunchLabel();
                   for(let dayIndex=0;dayIndex<5;dayIndex++){
                     const l=lunchFor(dayIndex);if(!l)continue;
@@ -146,9 +175,15 @@ final class DoubleLunchUi {
                       cell.classList.add('geoLunchCell');
                       cell.style.setProperty('background','var(--ft-midi)','important');
                       cell.style.setProperty('box-shadow','none','important');
+                      cell.style.setProperty('outline','none','important');
                       cell.style.setProperty('border-radius','0','important');
                       cell.style.setProperty('padding','0','important');
                       cell.style.setProperty('overflow','hidden','important');
+
+                      /* Le rectangle Midi est exactement le rectangle de grille :
+                         gauche = bordure droite de la cellule voisine,
+                         haut = bordure basse de la cellule au-dessus,
+                         droite/bas = bordures natives de la cellule Midi. */
                       const leftNeighbor=cell.previousElementSibling;
                       edge(leftNeighbor,'border-right-color',border);
                       edge(cell,'border-right-color',border);
@@ -201,6 +236,7 @@ final class DoubleLunchUi {
                   const grid=document.getElementById('weekGrid');if(!grid)return;
                   mutating=true;
                   try{
+                    installFinalLunchCss();
                     grid.style.setProperty('position','relative','important');
                     grid.style.setProperty('overflow','hidden','important');
                     const rows=rowsOf(grid);if(!rows.length)return;
@@ -315,7 +351,10 @@ final class DoubleLunchUi {
                 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(scheduleGeometry);
                 installLabelsUi();
                 scheduleGeometry();
-              }catch(e){console.log('Week geometry V8',e)}
+                setTimeout(()=>{installFinalLunchCss();scheduleGeometry()},0);
+                setTimeout(()=>{installFinalLunchCss();scheduleGeometry()},180);
+                setTimeout(()=>{installFinalLunchCss();scheduleGeometry()},420);
+              }catch(e){console.log('Week geometry V9',e)}
             })();
             """;
     }
