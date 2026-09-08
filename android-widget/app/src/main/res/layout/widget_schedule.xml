@@ -59,7 +59,7 @@
             android:divider="@android:color/transparent"
             android:dividerHeight="0dp"
             android:scrollbars="vertical"
-            android:scrollbarStyle="insideInset"
+            android:scrollbarStyle="insideOverlay"
             android:fadingEdge="none"
             android:overScrollMode="never" />
 
