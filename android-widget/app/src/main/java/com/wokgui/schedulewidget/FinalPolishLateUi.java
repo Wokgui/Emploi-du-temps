@@ -7,8 +7,8 @@ final class FinalPolishLateUi {
         return """
             (function(){
               try{
-                if(window.__finalPolishLateV1){if(window.refreshFinalPolish)window.refreshFinalPolish();return}
-                window.__finalPolishLateV1=true;
+                if(window.__finalPolishLateV2){if(window.refreshFinalPolish)window.refreshFinalPolish();return}
+                window.__finalPolishLateV2=true;
                 let late=0;
                 function rerun(delay){
                   if(late)clearTimeout(late);
@@ -19,19 +19,14 @@ final class FinalPolishLateUi {
                   const w=function(){const r=old.apply(this,arguments);rerun(delay);return r};w.__finalLateWrapped=true;window[name]=w;
                 }
                 function install(){
+                  /* Only settings/bulk refreshes need a late layout pass.
+                     Lunch and week-grid observers were intentionally removed: they caused repeated repaint cycles and visible blinking. */
                   wrap('refreshSettingsV3',0);
                   wrap('refreshAdvancedFeatures',0);
                   wrap('refreshBulkCourseUi',0);
-                  wrap('refreshLunchBreakUi',30);
-                  wrap('refreshDoubleLunchUi',140);
-                  const grid=document.getElementById('weekGrid');
-                  if(grid&&!grid.__finalLateObserver){
-                    grid.__finalLateObserver=true;
-                    new MutationObserver(()=>rerun(140)).observe(grid,{childList:true,subtree:false});
-                  }
                   rerun(0);
                 }
-                install();[80,220,500,1000,1800].forEach(ms=>setTimeout(install,ms));
+                install();[100,360,900].forEach(ms=>setTimeout(install,ms));
               }catch(e){console.log('FinalPolishLateUi',e)}
             })();
             """;
