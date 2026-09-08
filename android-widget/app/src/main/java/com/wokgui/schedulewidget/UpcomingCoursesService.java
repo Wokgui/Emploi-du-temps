@@ -10,6 +10,8 @@ import android.view.View;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
 
+import org.json.JSONObject;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -30,6 +32,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
         static final int GAP = 2;
 
         final String label;
+        final String sourceLabel;
         final String time;
         final String room;
         final String relative;
@@ -38,9 +41,10 @@ public class UpcomingCoursesService extends RemoteViewsService {
         final int order;
         final boolean uncertain;
 
-        Item(String label, String time, String room, int type, int order,
+        Item(String label, String sourceLabel, String time, String room, int type, int order,
              String relative, boolean uncertain, String colorId) {
             this.label = label;
+            this.sourceLabel = sourceLabel == null ? label : sourceLabel;
             this.time = time;
             this.room = room;
             this.type = type;
@@ -106,13 +110,13 @@ public class UpcomingCoursesService extends RemoteViewsService {
             for (int i = target.firstCourse; i < courses.size(); i++) {
                 ScheduleData.Course c = courses.get(i);
                 int start = ScheduleData.toMinutes(c.start);
-                if (previousEnd >= 0) {
-                    appendBreaks(previousEnd, start, lunchStart, lunchEnd);
-                }
+                if (previousEnd >= 0) appendBreaks(previousEnd, start, lunchStart, lunchEnd);
 
                 int order = c.slot > 0 ? c.slot : i + 1;
                 String relative = relativeLabel(now, target.date, c, futureDay && firstVisibleCourse);
+                String displayLabel = widgetCourseLabel(c.label);
                 items.add(new Item(
+                        displayLabel,
                         c.label,
                         c.start + " - " + c.end,
                         c.room,
@@ -132,9 +136,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             if (today != null) {
                 for (int i = 0; i < today.size(); i++) {
                     ScheduleData.Course c = today.get(i);
-                    if (ScheduleData.toMinutes(c.end) > nowMin) {
-                        return new Target((Calendar) now.clone(), i);
-                    }
+                    if (ScheduleData.toMinutes(c.end) > nowMin) return new Target((Calendar) now.clone(), i);
                 }
             }
 
@@ -142,9 +144,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             cursor.add(Calendar.DAY_OF_YEAR, 1);
             for (int add = 0; add < 21; add++) {
                 List<ScheduleData.Course> list = ScheduleStore.getCourses(context, cursor);
-                if (list != null && !list.isEmpty()) {
-                    return new Target((Calendar) cursor.clone(), 0);
-                }
+                if (list != null && !list.isEmpty()) return new Target((Calendar) cursor.clone(), 0);
                 cursor.add(Calendar.DAY_OF_YEAR, 1);
             }
             return null;
@@ -159,8 +159,10 @@ public class UpcomingCoursesService extends RemoteViewsService {
             }
             if (from < lunchStart) addGap(from, Math.min(to, lunchStart));
             if (from <= lunchStart && to >= lunchEnd && AdvancedSettingsStore.showLunch(context)) {
+                String label = localizedBreakLabel(true);
                 items.add(new Item(
-                        localizedBreakLabel(true),
+                        label,
+                        label,
                         minuteLabel(lunchStart) + " - " + minuteLabel(lunchEnd),
                         "",
                         Item.LUNCH,
@@ -175,8 +177,10 @@ public class UpcomingCoursesService extends RemoteViewsService {
 
         private void addGap(int start, int end) {
             if (!AdvancedSettingsStore.showBreaks(context) || end <= start) return;
+            String label = localizedBreakLabel(false);
             items.add(new Item(
-                    localizedBreakLabel(false),
+                    label,
+                    label,
                     minuteLabel(start) + " - " + minuteLabel(end),
                     "",
                     Item.GAP,
@@ -187,7 +191,33 @@ public class UpcomingCoursesService extends RemoteViewsService {
             ));
         }
 
+        private JSONObject advanced() {
+            try { return AdvancedSettingsStore.json(context); }
+            catch (Exception e) { return new JSONObject(); }
+        }
+
+        private String normalizedLabelKey(String label) {
+            return label == null ? "" : label.trim().toLowerCase(Locale.ROOT);
+        }
+
+        private String widgetCourseLabel(String appLabel) {
+            try {
+                JSONObject map = advanced().optJSONObject("widgetCourseLabels");
+                if (map != null) {
+                    String custom = map.optString(normalizedLabelKey(appLabel), "").trim();
+                    if (!custom.isEmpty()) return custom;
+                }
+            } catch (Exception ignored) {}
+            return appLabel == null ? "" : appLabel;
+        }
+
         private String localizedBreakLabel(boolean lunch) {
+            try {
+                String key = lunch ? "widgetLunchLabel" : "widgetGapLabel";
+                String customWidget = advanced().optString(key, "").trim();
+                if (!customWidget.isEmpty()) return customWidget;
+            } catch (Exception ignored) {}
+
             String custom = lunch ? ScheduleStore.getLunchLabel(context) : ScheduleStore.getGapLabel(context);
             if (lunch && "Pause de midi".equalsIgnoreCase(custom)) return "Midi";
             if (!lunch && "Trou".equalsIgnoreCase(custom)) return UiSettingsStore.t(context, "gap");
@@ -230,9 +260,8 @@ public class UpcomingCoursesService extends RemoteViewsService {
             if (diff <= 0) return "";
 
             String base;
-            if (diff < 60) {
-                base = UiSettingsStore.t(context, "in") + " " + diff + " min";
-            } else {
+            if (diff < 60) base = UiSettingsStore.t(context, "in") + " " + diff + " min";
+            else {
                 long hours = Math.max(1L, Math.round(diff / 60.0));
                 base = UiSettingsStore.t(context, "in") + " " + hours + " h";
             }
@@ -257,9 +286,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 String d = new SimpleDateFormat("EEEE d MMM.", locale).format(date.getTime());
                 return ", le " + d;
             }
-            if ("de".equals(lang)) {
-                return ", am " + new SimpleDateFormat("EEEE, d. MMM.", locale).format(date.getTime());
-            }
+            if ("de".equals(lang)) return ", am " + new SimpleDateFormat("EEEE, d. MMM.", locale).format(date.getTime());
             return ", " + new SimpleDateFormat("EEE d MMM", locale).format(date.getTime());
         }
 
@@ -313,8 +340,8 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 int ink = WidgetPaletteStore.gapText(context);
                 applyBreakRow(v, item, bg, ink, ink);
             } else {
-                int bg = WidgetPaletteStore.courseColor(context, item.order, item.label, item.colorId);
-                boolean dark = WidgetPaletteStore.useDarkText(context, item.order, item.label, item.colorId);
+                int bg = WidgetPaletteStore.courseColor(context, item.order, item.sourceLabel, item.colorId);
+                boolean dark = WidgetPaletteStore.useDarkText(context, item.order, item.sourceLabel, item.colorId);
                 int ink = dark ? 0xFF17213A : 0xFFFFFFFF;
                 int muted = dark ? 0xFF35435A : 0xFFF7FBFF;
                 v.setInt(R.id.rowContent, "setBackgroundColor", bg);
