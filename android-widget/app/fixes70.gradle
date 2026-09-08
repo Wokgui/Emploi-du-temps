@@ -54,10 +54,12 @@ tasks.register('patchStability70') {
         adv = adv.replace("if(ev.type==='gap'&&!adv.showBreaks)continue;", "if(ev.type==='gap'&&adv.showBreaksToday===false)continue;")
         advFile.write(adv, 'UTF-8')
 
-        // Dynamic Today fallback also honours the two new application toggles and all nine periods.
+        // Dynamic Today fallback also uses all nine periods.
         def lunchFile = file('src/main/java/com/wokgui/schedulewidget/LunchBreakUi.java')
         def lunch = lunchFile.getText('UTF-8')
-        lunch = lunch.replace("$('scaleEnd').textContent=list[list.length-1]?.end||slots[6].end;", "$('scaleEnd').textContent=list[list.length-1]?.end||slots[slots.length-1].end;")
+        lunch = lunch.replace(
+                '''$('scaleEnd').textContent=list[list.length-1]?.end||slots[6].end;''',
+                '''$('scaleEnd').textContent=list[list.length-1]?.end||slots[slots.length-1].end;''')
         lunchFile.write(lunch, 'UTF-8')
 
         // Stability69 may still be called by older refresh hooks. Never let it rebuild the current-week label.
