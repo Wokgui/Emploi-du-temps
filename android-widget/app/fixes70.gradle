@@ -1,0 +1,87 @@
+tasks.register('patchStability70') {
+    dependsOn tasks.named('patchStability69')
+    doLast {
+        // Run Stability70 only after the complete personalization chain. This is essential: older layers
+        // were still repainting the vertical marker after Stability69 had already run.
+        def mainFile = file('src/main/java/com/wokgui/schedulewidget/MainActivity.java')
+        def main = mainFile.getText('UTF-8')
+        def finalNeedle = '''                                                                                        webView.evaluateJavascript(FineTuneUi.script(), value10 -> {
+                                                                                            primeWeekBadge();
+                                                                                            if (forceWeekOpening) settleWeekAndReveal();
+                                                                                        })'''
+        def finalReplacement = '''                                                                                        webView.evaluateJavascript(FineTuneUi.script(), value10 -> {
+                                                                                            primeWeekBadge();
+                                                                                            webView.evaluateJavascript(Stability70Ui.script(), null);
+                                                                                            if (forceWeekOpening) settleWeekAndReveal();
+                                                                                        })'''
+        if (main.contains(finalNeedle)) main = main.replace(finalNeedle, finalReplacement)
+        else if (!main.contains('webView.evaluateJavascript(Stability70Ui.script(), null);')) throw new GradleException('6.10: final Stability70 injection target not found')
+
+        def bulkNeedle = '''        webView.evaluateJavascript(BulkCourseUi.script(), value ->
+                webView.evaluateJavascript(WeekViewStabilityUi.script(), value2 ->
+                        webView.evaluateJavascript(FineTuneUi.script(), null)));'''
+        def bulkReplacement = '''        webView.evaluateJavascript(BulkCourseUi.script(), value ->
+                webView.evaluateJavascript(WeekViewStabilityUi.script(), value2 ->
+                        webView.evaluateJavascript(FineTuneUi.script(), value3 ->
+                                webView.evaluateJavascript(Stability70Ui.script(), null))));'''
+        if (main.contains(bulkNeedle)) main = main.replace(bulkNeedle, bulkReplacement)
+        mainFile.write(main, 'UTF-8')
+
+        // Base page: stop rebuilding the current-week button and retain its visible space after the colon.
+        def assetFile = file('src/main/assets/index.html')
+        def html = assetFile.getText('UTF-8')
+        html = html.replace(
+                '''function renderContext(){$('currentWeekBtn').innerHTML=`Cette semaine : <b>${currentWeek}</b>`;document.querySelectorAll('.weekTab').forEach(b=>b.classList.toggle('active',b.dataset.week===(mode==='today'?currentWeek:activeWeek)))}''',
+                '''function renderContext(){if(window.setCurrentWeekLabel70)window.setCurrentWeekLabel70(currentWeek);else $('currentWeekBtn').textContent='Cette semaine : '+currentWeek;document.querySelectorAll('.weekTab').forEach(b=>b.classList.toggle('active',b.dataset.week===(mode==='today'?currentWeek:activeWeek)))}''')
+        html = html.replace('Horaires des 7 heures', 'Horaires des 9 heures')
+        assetFile.write(html, 'UTF-8')
+
+        // Personalization translations must no longer reset the 9-period heading or recreate the week badge.
+        def personalFile = file('src/main/java/com/wokgui/schedulewidget/PersonalizationUi2.java')
+        def personal = personalFile.getText('UTF-8')
+        personal = personal.replace('Horaires des 7 heures', 'Horaires des 9 heures')
+        personal = personal.replace('7 period times', '9 period times')
+        personal = personal.replace('Zeiten der 7 Stunden', 'Zeiten der 9 Stunden')
+        personal = personal.replace(
+                "cw.innerHTML=t.thisWeek+' : <b>'+l+'</b>'",
+                "if(window.setCurrentWeekLabel70)window.setCurrentWeekLabel70(l);else cw.textContent=t.thisWeek+' : '+l")
+        personalFile.write(personal, 'UTF-8')
+
+        // Effective Today uses its own app visibility settings. The original two toggles remain available for the widget.
+        def advFile = file('src/main/java/com/wokgui/schedulewidget/AdvancedFeaturesUi.java')
+        def adv = advFile.getText('UTF-8')
+        adv = adv.replace('const l=lunch();if(l&&adv.showLunch&&list.some', 'const l=lunch();if(l&&(adv.showLunchToday!==false)&&list.some')
+        adv = adv.replace("if(ev.type==='gap'&&!adv.showBreaks)continue;", "if(ev.type==='gap'&&adv.showBreaksToday===false)continue;")
+        advFile.write(adv, 'UTF-8')
+
+        // Dynamic Today fallback also honours the two new application toggles and all nine periods.
+        def lunchFile = file('src/main/java/com/wokgui/schedulewidget/LunchBreakUi.java')
+        def lunch = lunchFile.getText('UTF-8')
+        lunch = lunch.replace("$('scaleEnd').textContent=list[list.length-1]?.end||slots[6].end;", "$('scaleEnd').textContent=list[list.length-1]?.end||slots[slots.length-1].end;")
+        lunchFile.write(lunch, 'UTF-8')
+
+        // Stability69 may still be called by older refresh hooks. Never let it rebuild the current-week label.
+        def s69File = file('src/main/java/com/wokgui/schedulewidget/Stability69Ui.java')
+        def s69 = s69File.getText('UTF-8')
+        s69 = s69.replace(
+                "cw.innerHTML=tr('Cette semaine : ','This week: ','Diese Woche: ')+'<b>'+cur+'</b>';",
+                "if(window.setCurrentWeekLabel70)window.setCurrentWeekLabel70(cur);else cw.textContent=tr('Cette semaine : ','This week: ','Diese Woche: ')+cur;")
+        s69 = s69.replace("const APP_VERSION='6.9';", "const APP_VERSION='6.10';")
+        s69File.write(s69, 'UTF-8')
+
+        // Keep every visible version label aligned with the APK.
+        def finalFile = file('src/main/java/com/wokgui/schedulewidget/FinalPolishUi.java')
+        def fin = finalFile.getText('UTF-8').replace("const APP_VERSION='6.9';", "const APP_VERSION='6.10';")
+        finalFile.write(fin, 'UTF-8')
+        def cycleFile = file('src/main/java/com/wokgui/schedulewidget/CycleLunchFixUi.java')
+        def cyc = cycleFile.getText('UTF-8').replace("const APP_VERSION='6.9';", "const APP_VERSION='6.10';")
+        cycleFile.write(cyc, 'UTF-8')
+        def stabilityFile = file('src/main/java/com/wokgui/schedulewidget/WeekViewStabilityUi.java')
+        def stability = stabilityFile.getText('UTF-8').replace("const APP_VERSION='6.9';", "const APP_VERSION='6.10';")
+        stabilityFile.write(stability, 'UTF-8')
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('patchStability70')
+}
