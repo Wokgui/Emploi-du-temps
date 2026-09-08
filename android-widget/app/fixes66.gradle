@@ -1,5 +1,6 @@
 tasks.register('patchCycleLunch66') {
     dependsOn tasks.named('patchTimetableCompatibility')
+    dependsOn tasks.named('patchLateFinalPolish')
     doLast {
         // Run the 6.6 UI fixer only after all older UI layers have finished their first refresh.
         def mainFile = file('src/main/java/com/wokgui/schedulewidget/MainActivity.java')
