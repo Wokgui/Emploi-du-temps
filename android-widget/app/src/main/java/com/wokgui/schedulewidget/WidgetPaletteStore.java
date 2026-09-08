@@ -2,10 +2,14 @@ package com.wokgui.schedulewidget;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+
+import org.json.JSONObject;
 
 final class WidgetPaletteStore {
     private static final String PREFS = "widget_palette_v1";
     private static final String KEY = "palette";
+    private static final String SPECIAL = "special_colors_v2";
     private static final String DEFAULT = "vivid";
 
     private WidgetPaletteStore() {}
@@ -32,6 +36,8 @@ final class WidgetPaletteStore {
     }
 
     static int courseColor(Context context, int slot, String label, String colorId) {
+        Integer literal = literalColor(colorId);
+        if (literal != null) return literal;
         int[] palette = palette(context);
         int custom = colorIndex(colorId);
         int index = custom >= 0 ? custom : (slot > 0 ? slot - 1 : Math.abs(String.valueOf(label).hashCode()));
@@ -46,25 +52,92 @@ final class WidgetPaletteStore {
         return isLight(courseColor(context, slot, label, colorId));
     }
 
-    /**
-     * Special rows deliberately do not borrow one of the course colours.
-     * Lunch uses the validated sand/champagne treatment and free periods stay white,
-     * so both remain immediately distinguishable from real courses in every palette.
-     */
+    private static JSONObject specialDefaults() {
+        JSONObject o = new JSONObject();
+        try {
+            o.put("sync", true);
+            o.put("appLunch", "#FFF9E8");
+            o.put("appGap", "#FFFFFF");
+            o.put("widgetLunch", "#FFF9E8");
+            o.put("widgetGap", "#FFFFFF");
+        } catch (Exception ignored) {}
+        return o;
+    }
+
+    static synchronized JSONObject special(Context context) {
+        JSONObject out = specialDefaults();
+        try {
+            String raw = prefs(context).getString(SPECIAL, null);
+            if (raw != null) {
+                JSONObject saved = new JSONObject(raw);
+                if (saved.has("sync")) out.put("sync", saved.optBoolean("sync", true));
+                for (String key : new String[]{"appLunch","appGap","widgetLunch","widgetGap"}) {
+                    String value = normalizeHex(saved.optString(key, out.optString(key)));
+                    out.put(key, value);
+                }
+            }
+        } catch (Exception ignored) {}
+        return out;
+    }
+
+    static synchronized String specialColorsJson(Context context) {
+        return special(context).toString();
+    }
+
+    static synchronized void saveSpecialColorsJson(Context context, String raw) {
+        try {
+            JSONObject incoming = new JSONObject(raw == null ? "{}" : raw);
+            JSONObject out = special(context);
+            boolean sync = incoming.optBoolean("sync", out.optBoolean("sync", true));
+            out.put("sync", sync);
+            for (String key : new String[]{"appLunch","appGap","widgetLunch","widgetGap"}) {
+                if (incoming.has(key)) out.put(key, normalizeHex(incoming.optString(key, out.optString(key))));
+            }
+            if (sync) {
+                out.put("widgetLunch", out.optString("appLunch", "#FFF9E8"));
+                out.put("widgetGap", out.optString("appGap", "#FFFFFF"));
+            }
+            prefs(context).edit().putString(SPECIAL, out.toString()).apply();
+        } catch (Exception ignored) {}
+    }
+
     static int lunchBackground(Context context) {
-        return 0xFFFFF9E8;
+        JSONObject o = special(context);
+        boolean sync = o.optBoolean("sync", true);
+        return parseOr(o.optString(sync ? "appLunch" : "widgetLunch", "#FFF9E8"), 0xFFFFF9E8);
     }
 
     static int lunchText(Context context) {
-        return 0xFF22283A;
+        return isLight(lunchBackground(context)) ? 0xFF22283A : 0xFFFFFFFF;
     }
 
     static int gapBackground(Context context) {
-        return 0xFFFFFFFF;
+        JSONObject o = special(context);
+        boolean sync = o.optBoolean("sync", true);
+        return parseOr(o.optString(sync ? "appGap" : "widgetGap", "#FFFFFF"), 0xFFFFFFFF);
     }
 
     static int gapText(Context context) {
-        return 0xFF22283A;
+        return isLight(gapBackground(context)) ? 0xFF22283A : 0xFFFFFFFF;
+    }
+
+    private static int parseOr(String value, int fallback) {
+        try { return Color.parseColor(normalizeHex(value)); }
+        catch (Exception ignored) { return fallback; }
+    }
+
+    private static Integer literalColor(String id) {
+        if (id == null) return null;
+        String s = id.trim();
+        if (!s.matches("#[0-9A-Fa-f]{6}")) return null;
+        try { return Color.parseColor(s); }
+        catch (Exception ignored) { return null; }
+    }
+
+    private static String normalizeHex(String value) {
+        String s = value == null ? "" : value.trim();
+        if (s.matches("#[0-9A-Fa-f]{6}")) return s.toUpperCase();
+        return "#FFFFFF";
     }
 
     private static boolean isLight(int color) {
