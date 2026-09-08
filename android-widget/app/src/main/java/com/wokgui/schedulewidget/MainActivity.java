@@ -9,6 +9,7 @@ import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
@@ -34,16 +35,20 @@ public class MainActivity extends Activity {
     private static final int PICK_BACKUP = 5202;
     private static final int NOTIFICATION_PERMISSION = 5203;
     private WebView webView;
+    private boolean forceWeekOpening = false;
     private final TextRecognizer textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        forceWeekOpening = isWidgetWeekIntent(getIntent());
         clearLegacySyncData();
         ScheduleStore.ensureInitialized(this);
         ProfileStore.ensure(this);
         setContentView(R.layout.activity_main);
         webView = findViewById(R.id.webView);
+        webView.setBackgroundColor(0xFFF6F8FB);
+        if (forceWeekOpening) hideWebViewUntilWeekIsReady();
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -54,7 +59,7 @@ public class MainActivity extends Activity {
             @Override public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 primeWeekBadge();
-                applyOpenMode();
+                if (!forceWeekOpening) applyOpenMode();
                 injectPersonalizationUi();
             }
         });
@@ -65,9 +70,15 @@ public class MainActivity extends Activity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        forceWeekOpening = isWidgetWeekIntent(intent);
+        if (forceWeekOpening) hideWebViewUntilWeekIsReady();
         primeWeekBadge();
-        applyOpenMode();
-        injectPersonalizationUi();
+        if (forceWeekOpening && webView != null) {
+            webView.evaluateJavascript("if(window.reloadSchedule){reloadSchedule();}", value -> injectPersonalizationUi());
+        } else {
+            applyOpenMode();
+            injectPersonalizationUi();
+        }
     }
 
     @Override
@@ -78,7 +89,7 @@ public class MainActivity extends Activity {
                     "if(window.reloadSchedule){reloadSchedule();}",
                     value -> {
                         primeWeekBadge();
-                        applyOpenMode();
+                        if (!forceWeekOpening) applyOpenMode();
                         injectPersonalizationUi();
                     }
             );
@@ -89,6 +100,51 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         textRecognizer.close();
         super.onDestroy();
+    }
+
+    private boolean isWidgetWeekIntent(Intent intent) {
+        return intent != null && "week".equals(intent.getStringExtra("open_mode"));
+    }
+
+    private void hideWebViewUntilWeekIsReady() {
+        if (webView == null) return;
+        webView.setAlpha(0f);
+        webView.setVisibility(View.INVISIBLE);
+    }
+
+    /**
+     * The widget always opens the week view.  The WebView stays invisible while all the
+     * injected UI layers finish their first render, so Today/Edit/Week can never flash
+     * successively on screen.  It is revealed only after the week view is the active DOM view.
+     */
+    private void settleWeekAndReveal() {
+        if (webView == null) return;
+        final String script = """
+                (function(){
+                  try{
+                    if(typeof setModeFromAndroid==='function')setModeFromAndroid('week');
+                    else{
+                      if(typeof mode!=='undefined')mode='week';
+                      document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});
+                      var w=document.getElementById('viewWeek');if(w)w.classList.add('active');
+                      document.querySelectorAll('.nav').forEach(function(n){n.classList.toggle('active',n.dataset.mode==='week')});
+                      if(typeof render==='function')render();
+                    }
+                    if(window.refreshWeekViewStability)window.refreshWeekViewStability();
+                    if(window.refreshFineTuneUi)window.refreshFineTuneUi();
+                    var week=document.getElementById('viewWeek');
+                    return !!(week&&week.classList.contains('active'));
+                  }catch(e){return false}
+                })();
+                """;
+        webView.evaluateJavascript(script, value -> webView.postDelayed(() ->
+                webView.evaluateJavascript(script, second -> {
+                    primeWeekBadge();
+                    if (getIntent() != null) getIntent().removeExtra("open_mode");
+                    webView.setAlpha(1f);
+                    webView.setVisibility(View.VISIBLE);
+                    forceWeekOpening = false;
+                }), 45));
     }
 
     @Override
@@ -209,7 +265,8 @@ public class MainActivity extends Activity {
     private void injectBulkUi() {
         if (webView == null) return;
         webView.evaluateJavascript(BulkCourseUi.script(), value ->
-                webView.evaluateJavascript(WeekViewStabilityUi.script(), null));
+                webView.evaluateJavascript(WeekViewStabilityUi.script(), value2 ->
+                        webView.evaluateJavascript(FineTuneUi.script(), null)));
     }
 
     private void injectPersonalizationUi() {
@@ -224,7 +281,11 @@ public class MainActivity extends Activity {
                                                         webView.evaluateJavascript(LunchBreakUi.script(), value6 ->
                                                                 webView.evaluateJavascript(DoubleLunchUi.script(), value7 ->
                                                                         webView.evaluateJavascript(BulkCourseUi.script(), value8 ->
-                                                                                webView.evaluateJavascript(WeekViewStabilityUi.script(), value9 -> primeWeekBadge()))))))))));
+                                                                                webView.evaluateJavascript(WeekViewStabilityUi.script(), value9 ->
+                                                                                        webView.evaluateJavascript(FineTuneUi.script(), value10 -> {
+                                                                                            primeWeekBadge();
+                                                                                            if (forceWeekOpening) settleWeekAndReveal();
+                                                                                        })))))))))));
     }
 
     private void maybeRequestNotificationPermission() {
@@ -278,6 +339,11 @@ public class MainActivity extends Activity {
         @JavascriptInterface public String loadWidgetPalette() { return WidgetPaletteStore.getPalette(MainActivity.this); }
         @JavascriptInterface public void saveWidgetPalette(String id) {
             WidgetPaletteStore.setPalette(MainActivity.this, id);
+            runOnUiThread(() -> ScheduleWidgetProvider.refreshAll(MainActivity.this));
+        }
+        @JavascriptInterface public String loadSpecialColors() { return WidgetPaletteStore.specialColorsJson(MainActivity.this); }
+        @JavascriptInterface public void saveSpecialColors(String json) {
+            WidgetPaletteStore.saveSpecialColorsJson(MainActivity.this, json);
             runOnUiThread(() -> ScheduleWidgetProvider.refreshAll(MainActivity.this));
         }
 
