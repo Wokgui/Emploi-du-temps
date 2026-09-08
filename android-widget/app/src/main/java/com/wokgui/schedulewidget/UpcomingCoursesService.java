@@ -106,8 +106,6 @@ public class UpcomingCoursesService extends RemoteViewsService {
             for (int i = target.firstCourse; i < courses.size(); i++) {
                 ScheduleData.Course c = courses.get(i);
                 int start = ScheduleData.toMinutes(c.start);
-                // Les interruptions font partie de la chronologie, même lorsque le widget est très bas.
-                // La ListView reste défilable : on ne les supprime donc plus en mode compact.
                 if (previousEnd >= 0) {
                     appendBreaks(previousEnd, start, lunchStart, lunchEnd);
                 }
@@ -312,7 +310,8 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 applyBreakRow(v, item, bg, WidgetPaletteStore.lunchText(context), darken(bg));
             } else if (item.type == Item.GAP) {
                 int bg = WidgetPaletteStore.gapBackground(context);
-                applyBreakRow(v, item, bg, WidgetPaletteStore.gapText(context), darken(bg));
+                int ink = WidgetPaletteStore.gapText(context);
+                applyBreakRow(v, item, bg, ink, ink);
             } else {
                 int bg = WidgetPaletteStore.courseColor(context, item.order, item.label, item.colorId);
                 boolean dark = WidgetPaletteStore.useDarkText(context, item.order, item.label, item.colorId);
