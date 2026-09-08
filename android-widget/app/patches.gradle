@@ -1,0 +1,240 @@
+/* Build-time compatibility patches for the mature timetable codebase.
+ * They are intentionally idempotent so CI and local builds behave the same way. */
+
+tasks.register('patchTimetableCompatibility') {
+    doLast {
+        // Inject optional-weekend support and the final UI polish layer as soon as the page is ready.
+        def mainFile = file('src/main/java/com/wokgui/schedulewidget/MainActivity.java')
+        def main = mainFile.getText('UTF-8')
+        def mainNeedle = '''    private void injectPersonalizationUi() {
+        if (webView == null) return;
+'''
+        if (!main.contains('WeekendUi.script()') || !main.contains('FinalPolishUi.script()')) {
+            if (!main.contains(mainNeedle)) throw new GradleException('Unable to locate injectPersonalizationUi')
+            def insertion = mainNeedle
+            if (!main.contains('WeekendUi.script()')) insertion += '        webView.evaluateJavascript(WeekendUi.script(), null);\n'
+            if (!main.contains('FinalPolishUi.script()')) insertion += '        webView.evaluateJavascript(FinalPolishUi.script(), null);\n'
+            main = main.replace(mainNeedle, insertion)
+            mainFile.write(main, 'UTF-8')
+        }
+
+        // Native schedule store: seven visible weekdays + optional weekend, and nine class periods.
+        def storeFile = file('src/main/java/com/wokgui/schedulewidget/ScheduleStore.java')
+        def store = storeFile.getText('UTF-8')
+        if (!store.contains('private static final int[] ALL_DAYS')) {
+            store = store.replace(
+                    '    private static final String[] LETTERS = {"A", "B", "C", "D"};\n',
+                    '    private static final String[] LETTERS = {"A", "B", "C", "D"};\n' +
+                    '    private static final int[] ALL_DAYS = {Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY, Calendar.THURSDAY, Calendar.FRIDAY, Calendar.SATURDAY, Calendar.SUNDAY};\n')
+        }
+        store = store.replace(
+                '''    private static final String[] DEFAULT_START = {
+            "08:00","09:00","10:00","11:00","13:00","14:00","16:00"
+    };''',
+                '''    private static final String[] DEFAULT_START = {
+            "08:00","09:00","10:00","11:00","13:00","14:00","16:00","17:00","18:00"
+    };''')
+        store = store.replace(
+                '''    private static final String[] DEFAULT_END = {
+            "09:00","10:00","11:00","12:00","14:00","15:00","17:00"
+    };''',
+                '''    private static final String[] DEFAULT_END = {
+            "09:00","10:00","11:00","12:00","14:00","15:00","17:00","18:00","19:00"
+    };''')
+        store = store.replace('        for (int i = 0; i < 7; i++) {', '        for (int i = 0; i < 9; i++) {')
+        store = store.replace('int i = Math.max(1, Math.min(7, slot)) - 1;', 'int i = Math.max(1, Math.min(9, slot)) - 1;')
+        store = store.replace('            for (int i = 1; i <= 7; i++) {', '            for (int i = 1; i <= 9; i++) {')
+        store = store.replace('for (int i = 0; i < Math.min(7, slots.length()); i++)', 'for (int i = 0; i < Math.min(9, slots.length()); i++)')
+        store = store.replace('                    for (int n = 0; n < 7; n++) {', '                    for (int n = 0; n < 9; n++) {')
+
+        store = store.replace(
+                '        for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) e.putBoolean("enabled_" + day, true);\n        e.apply();',
+                '        for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) e.putBoolean("enabled_" + day, true);\n' +
+                '        if (!p.contains("enabled_" + Calendar.SATURDAY)) e.putBoolean("enabled_" + Calendar.SATURDAY, false);\n' +
+                '        if (!p.contains("enabled_" + Calendar.SUNDAY)) e.putBoolean("enabled_" + Calendar.SUNDAY, false);\n' +
+                '        e.apply();')
+        store = store.replace(
+                '    static boolean isDayEnabled(Context context, int day) { ensureInitialized(context); return true; }',
+                '    static boolean isDayEnabled(Context context, int day) {\n' +
+                '        ensureInitialized(context);\n' +
+                '        if (day >= Calendar.MONDAY && day <= Calendar.FRIDAY) return true;\n' +
+                '        return prefs(context).getBoolean("enabled_" + day, false);\n' +
+                '    }')
+        store = store.replace(
+                '    static List<ScheduleData.Course> getCourses(Context context, Calendar date) {\n        if (AdvancedSettingsStore.isDayOff(context, date)) return new ArrayList<>();',
+                '    static List<ScheduleData.Course> getCourses(Context context, Calendar date) {\n' +
+                '        if (!isDayEnabled(context, date.get(Calendar.DAY_OF_WEEK))) return new ArrayList<>();\n' +
+                '        if (AdvancedSettingsStore.isDayOff(context, date)) return new ArrayList<>();')
+        store = store.replace(
+                '    static List<ScheduleData.Course> getCourses(Context context, int day) {\n        return getStoredCourses(context, day, getWeekLetter(context, Calendar.getInstance()));\n    }',
+                '    static List<ScheduleData.Course> getCourses(Context context, int day) {\n' +
+                '        if (!isDayEnabled(context, day)) return new ArrayList<>();\n' +
+                '        return getStoredCourses(context, day, getWeekLetter(context, Calendar.getInstance()));\n' +
+                '    }')
+
+        def exportAnchor = '''            root.put("_cycleLength", AdvancedSettingsStore.cycleLength(context));
+
+            JSONObject weeks = new JSONObject();
+            for (String week : LETTERS) {
+                JSONObject weekObject = new JSONObject();
+                for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
+                    JSONObject d = new JSONObject();
+                    d.put("enabled", true);
+                    d.put("courses", new JSONArray(encode(getStoredCourses(context, day, week))));
+                    weekObject.put(String.valueOf(day), d);
+                }
+                weeks.put(week, weekObject);
+            }
+            root.put("_weeks", weeks);
+
+            for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
+                JSONObject d = new JSONObject();
+                d.put("enabled", true);
+                d.put("courses", new JSONArray(encode(getStoredCourses(context, day, currentWeek))));
+                root.put(String.valueOf(day), d);
+            }
+'''
+        def exportReplacement = '''            root.put("_cycleLength", AdvancedSettingsStore.cycleLength(context));
+
+            JSONArray enabledDays = new JSONArray();
+            for (int day : ALL_DAYS) if (isDayEnabled(context, day)) enabledDays.put(day);
+            root.put("_enabledDays", enabledDays);
+
+            JSONObject weeks = new JSONObject();
+            for (String week : LETTERS) {
+                JSONObject weekObject = new JSONObject();
+                for (int day : ALL_DAYS) {
+                    JSONObject d = new JSONObject();
+                    d.put("enabled", isDayEnabled(context, day));
+                    d.put("courses", new JSONArray(encode(getStoredCourses(context, day, week))));
+                    weekObject.put(String.valueOf(day), d);
+                }
+                weeks.put(week, weekObject);
+            }
+            root.put("_weeks", weeks);
+
+            for (int day : ALL_DAYS) {
+                JSONObject d = new JSONObject();
+                d.put("enabled", isDayEnabled(context, day));
+                d.put("courses", new JSONArray(encode(getStoredCourses(context, day, currentWeek))));
+                root.put(String.valueOf(day), d);
+            }
+'''
+        if (store.contains(exportAnchor)) store = store.replace(exportAnchor, exportReplacement)
+
+        def importAnchor = '''            JSONObject weeks = root.optJSONObject("_weeks");
+            if (weeks != null) {
+                for (String week : LETTERS) {
+                    JSONObject weekObject = weeks.optJSONObject(week);
+                    if (weekObject == null) continue;
+                    for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
+                        JSONObject d = weekObject.optJSONObject(String.valueOf(day));
+                        if (d == null) continue;
+                        JSONArray arr = d.optJSONArray("courses");
+                        if (arr != null) editor.putString(weekKey(week, day), arr.toString());
+                    }
+                }
+            } else {
+                for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
+                    JSONObject d = root.optJSONObject(String.valueOf(day));
+                    if (d == null) continue;
+                    JSONArray arr = d.optJSONArray("courses");
+                    if (arr != null) {
+                        for (String week : LETTERS) editor.putString(weekKey(week, day), arr.toString());
+                    }
+                }
+            }
+'''
+        def importReplacement = '''            JSONArray enabledDays = root.optJSONArray("_enabledDays");
+            if (enabledDays != null) {
+                for (int day : ALL_DAYS) editor.putBoolean("enabled_" + day, day >= Calendar.MONDAY && day <= Calendar.FRIDAY);
+                for (int i = 0; i < enabledDays.length(); i++) {
+                    int day = enabledDays.optInt(i, -1);
+                    if (day == Calendar.SATURDAY || day == Calendar.SUNDAY || (day >= Calendar.MONDAY && day <= Calendar.FRIDAY)) editor.putBoolean("enabled_" + day, true);
+                }
+            }
+
+            JSONObject weeks = root.optJSONObject("_weeks");
+            if (weeks != null) {
+                for (String week : LETTERS) {
+                    JSONObject weekObject = weeks.optJSONObject(week);
+                    if (weekObject == null) continue;
+                    for (int day : ALL_DAYS) {
+                        JSONObject d = weekObject.optJSONObject(String.valueOf(day));
+                        if (d == null) continue;
+                        JSONArray arr = d.optJSONArray("courses");
+                        if (arr != null) editor.putString(weekKey(week, day), arr.toString());
+                    }
+                }
+            } else {
+                for (int day : ALL_DAYS) {
+                    JSONObject d = root.optJSONObject(String.valueOf(day));
+                    if (d == null) continue;
+                    JSONArray arr = d.optJSONArray("courses");
+                    if (arr != null) for (String week : LETTERS) editor.putString(weekKey(week, day), arr.toString());
+                }
+            }
+'''
+        if (store.contains(importAnchor)) store = store.replace(importAnchor, importReplacement)
+        storeFile.write(store, 'UTF-8')
+
+        // Weekends are day-off by default, but not after the user explicitly enables them.
+        def advFile = file('src/main/java/com/wokgui/schedulewidget/AdvancedSettingsStore.java')
+        def adv = advFile.getText('UTF-8')
+        adv = adv.replace(
+                '        if (dow == Calendar.SATURDAY || dow == Calendar.SUNDAY) return true;',
+                '        if ((dow == Calendar.SATURDAY || dow == Calendar.SUNDAY) && !ScheduleStore.isDayEnabled(context, dow)) return true;')
+        advFile.write(adv, 'UTF-8')
+
+        // Blank profiles never inherit weekend classes.
+        def profileFile = file('src/main/java/com/wokgui/schedulewidget/ProfileStore.java')
+        def profile = profileFile.getText('UTF-8')
+        profile = profile.replace('for (int day = 2; day <= 6; day++) {', 'for (int day : new int[]{2,3,4,5,6,7,1}) {')
+        if (!profile.contains('root.put("_enabledDays", enabled);')) {
+            profile = profile.replace(
+                    '            JSONObject weeks = root.optJSONObject("_weeks");',
+                    '            JSONArray enabled = new JSONArray(); for (int day = 2; day <= 6; day++) enabled.put(day); root.put("_enabledDays", enabled);\n' +
+                    '            JSONObject weeks = root.optJSONObject("_weeks");')
+        }
+        profileFile.write(profile, 'UTF-8')
+
+        // The base WebView must retain all nine periods instead of normalizing back to seven.
+        def assetFile = file('src/main/assets/index.html')
+        def html = assetFile.getText('UTF-8')
+        html = html.replace(
+                "const DEFAULT_SLOTS=[['08:00','09:00'],['09:00','10:00'],['10:00','11:00'],['11:00','12:00'],['13:00','14:00'],['14:00','15:00'],['16:00','17:00']].map((x,i)=>({n:i+1,start:x[0],end:x[1]}));",
+                "const DEFAULT_SLOTS=[['08:00','09:00'],['09:00','10:00'],['10:00','11:00'],['11:00','12:00'],['13:00','14:00'],['14:00','15:00'],['16:00','17:00'],['17:00','18:00'],['18:00','19:00']].map((x,i)=>({n:i+1,start:x[0],end:x[1]}));")
+        html = html.replace('slots.length!==7', 'slots.length!==9')
+        html = html.replace("slots[6].end", "slots[slots.length-1].end")
+        html = html.replace("for(const w of ['A','B'])for(const d of DAYS)", "for(const w of ['A','B','C','D'])for(const d of DAYS)")
+        html = html.replace('Horaires des 7 heures', 'Horaires des 9 heures')
+        assetFile.write(html, 'UTF-8')
+
+        // The legacy geometry is still used for lunch normalization; make it support optional weekend columns.
+        def geoFile = file('src/main/java/com/wokgui/schedulewidget/DoubleLunchUi.java')
+        def geo = geoFile.getText('UTF-8')
+        geo = geo.replace(
+                '                    const cells=[];\n                    let n=time.nextElementSibling;\n                    while(n&&cells.length<5){',
+                '                    const cells=[];\n                    const dayCount=(typeof DAYS!==\'undefined\'&&Array.isArray(DAYS))?DAYS.length:5;\n                    let n=time.nextElementSibling;\n                    while(n&&cells.length<dayCount){')
+        geo = geo.replace('                    if(cells.length===5)rows.push({time,start:toMin(found[0]),end:toMin(found[1]),cells});',
+                          '                    if(cells.length===dayCount)rows.push({time,start:toMin(found[0]),end:toMin(found[1]),cells});')
+        geo = geo.replace('                  if(day<1||day>5||!rows.length)return;', '                  if(!rows.length)return;')
+        geo = geo.replace(
+                '                  const dayIndex=day-1;\n\n                  for(let i=0;i<=currentIndex;i++){',
+                '                  const calendarDay=day===0?1:day+1;\n' +
+                '                  const dayIndex=(typeof DAYS!==\'undefined\'&&Array.isArray(DAYS))?DAYS.indexOf(calendarDay):(day-1);\n' +
+                '                  if(dayIndex<0)return;\n\n' +
+                '                  for(let i=0;i<=currentIndex;i++){')
+        geoFile.write(geo, 'UTF-8')
+
+        // Keep the version displayed by any older layer aligned with the APK.
+        def stabilityFile = file('src/main/java/com/wokgui/schedulewidget/WeekViewStabilityUi.java')
+        def stability = stabilityFile.getText('UTF-8')
+        ['6.2','6.3','6.4'].each { old -> stability = stability.replace("const APP_VERSION='${old}';", "const APP_VERSION='6.5';") }
+        stabilityFile.write(stability, 'UTF-8')
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('patchTimetableCompatibility')
+}
