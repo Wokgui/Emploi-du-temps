@@ -4,7 +4,7 @@ tasks.register('patchStability81') {
         def mainFile=file('src/main/java/com/wokgui/schedulewidget/MainActivity.java')
         def main=mainFile.getText('UTF-8')
 
-        // Native language switch: persist first, then reload the hidden WebView once.
+        // Persist the selected language natively before doing one hidden WebView reload.
         if(!main.contains('setLanguageAndReload81')) {
             def bridge='''        @JavascriptInterface public void reloadForLanguage() { runOnUiThread(MainActivity.this::reloadForLanguageUi); }
 '''
@@ -22,7 +22,7 @@ tasks.register('patchStability81') {
 ''')
         }
 
-        // Stability81 is the very last UI pass and is complete before the WebView is revealed.
+        // Final 6.21 pass runs after OCR and before the WebView is revealed.
         if(!main.contains('Stability81Ui.script()')) {
             def reveal='''                                                        if (!forceWeekOpening) revealWebViewStable();
 '''
@@ -34,64 +34,53 @@ tasks.register('patchStability81') {
         }
         mainFile.write(main,'UTF-8')
 
-        // Legacy settings used a zero-delay refresh after every tab render.  Make it synchronous
-        // so no French frame can be painted before the selected language.
+        // The old settings layer translated one event-loop turn after rendering, which exposed
+        // a French frame when switching tabs. Translate synchronously instead.
         def settingsFile=file('src/main/java/com/wokgui/schedulewidget/PersonalizationUi2.java')
         def settings=settingsFile.getText('UTF-8')
-        def oldSettingsWrap='''                function wrap(name){const original=window[name];if(typeof original!=='function'||original.__settingsWrapped)return;const wrapped=function(){const result=original.apply(this,arguments);setTimeout(refresh,0);return result};wrapped.__settingsWrapped=true;window[name]=wrapped}
-'''
-        def newSettingsWrap='''                function wrap(name){const original=window[name];if(typeof original!=='function'||original.__settingsWrapped)return;const wrapped=function(){const result=original.apply(this,arguments);refresh();return result};wrapped.__settingsWrapped=true;window[name]=wrapped}
-'''
-        if(!settings.contains(oldSettingsWrap)) throw new GradleException('6.21: Personalization async wrapper not found')
-        settings=settings.replace(oldSettingsWrap,newSettingsWrap)
+        settings=settings.replace(
+                'const wrapped=function(){const result=original.apply(this,arguments);setTimeout(refresh,0);return result}',
+                'const wrapped=function(){const result=original.apply(this,arguments);refresh();return result}')
         settingsFile.write(settings,'UTF-8')
 
-        // Remove the old localisation observer/rAF cascade.  Final render wrappers now translate
-        // synchronously once, after the DOM is finished.
+        // fixes76 changed Localization75 to a root-based rAF scheduler. Convert that scheduler to
+        // an immediate pass and remove its mutation-observer loop; final render wrappers cover the
+        // DOM without painting an untranslated intermediate frame.
         def locFile=file('src/main/java/com/wokgui/schedulewidget/Localization75Ui.java')
         def loc=locFile.getText('UTF-8')
         def cascade="""                    ['refreshSettingsV3','refreshAdvancedFeatures','refreshUiPolishSchool','refreshCoursePaletteV4','refreshFineTuneUi','refreshLunchBreakUi','refreshDoubleLunchUi','refreshWeekendUi','refreshStability70','refreshStability71','refreshStability72','refreshStability73','refreshStability74'].forEach(n=>{try{if(typeof window[n]==='function')window[n]()}catch(e){}});\n"""
-        if(!loc.contains(cascade)) throw new GradleException('6.21: Localization refresh cascade not found')
-        loc=loc.replace(cascade,"""                    try{if(typeof window.refreshSettingsV3==='function')window.refreshSettingsV3()}catch(e){}\n""")
-        def oldSchedule='''                function schedule(){if(queued||translating)return;queued=true;requestAnimationFrame(()=>{queued=false;fullRefresh()})}
+        if(loc.contains(cascade))loc=loc.replace(cascade,"""                    try{if(typeof window.refreshSettingsV3==='function')window.refreshSettingsV3()}catch(e){}\n""")
+        loc=loc.replace(
+                'if(queued||translating)return;queued=true;requestAnimationFrame(translateOnly);',
+                'if(translating)return;queued=false;translateOnly();')
+
+        def obsStart=loc.indexOf('                localizationObserver=new MutationObserver(')
+        if(obsStart>=0) {
+            def obsEnd=loc.indexOf('                fullRefresh();setTimeout(()=>schedule(document.body),120);',obsStart)
+            if(obsEnd>=0) {
+                def tail='''                localizationObserver=null;
+                fullRefresh();
 '''
-        def newSchedule='''                function schedule(){if(translating)return;queued=false;fullRefresh()}
-'''
-        if(!loc.contains(oldSchedule)) throw new GradleException('6.21: Localization rAF scheduler not found')
-        loc=loc.replace(oldSchedule,newSchedule)
-        def oldObserver='''                const obs=new MutationObserver(m=>{if(translating)return;let relevant=false;for(const x of m){if(x.type==='childList'||x.type==='characterData'){relevant=true;break}}if(relevant)schedule()});obs.observe(document.body,{childList:true,subtree:true,characterData:true});
-'''
-        if(!loc.contains(oldObserver)) throw new GradleException('6.21: Localization observer not found')
-        loc=loc.replace(oldObserver,'''                window.__loc75Observer=null;
-''')
-        def oldInitial='''                fullRefresh();requestAnimationFrame(fullRefresh);setTimeout(fullRefresh,120);
-'''
-        if(!loc.contains(oldInitial)) throw new GradleException('6.21: Localization delayed initial refreshes not found')
-        loc=loc.replace(oldInitial,'''                fullRefresh();
-''')
+                def oldEnd='                fullRefresh();setTimeout(()=>schedule(document.body),120);'.length()
+                loc=loc.substring(0,obsStart)+tail+loc.substring(obsEnd+oldEnd)
+            }
+        }
+        loc=loc.replace('fullRefresh();setTimeout(()=>schedule(document.body),120);','fullRefresh();')
         locFile.write(loc,'UTF-8')
 
-        // LayoutLanguage77 also added delayed passes.  Keep its centring work but make it immediate.
+        // LayoutLanguage77 had its own timeout/rAF passes. Keep the layout work, make it immediate.
         def layoutFile=file('src/main/java/com/wokgui/schedulewidget/LayoutLanguage77Ui.java')
         def layout=layoutFile.getText('UTF-8')
-        def oldChange="""                    setTimeout(()=>{try{if(window.refreshLocalization75)window.refreshLocalization75()}catch(e){};refresh()},0);\n"""
-        def newChange="""                    try{if(window.refreshLocalization75)window.refreshLocalization75()}catch(e){};refresh();\n"""
-        if(!layout.contains(oldChange)) throw new GradleException('6.21: LayoutLanguage delayed change handler not found')
-        layout=layout.replace(oldChange,newChange)
-        def oldLayoutWrap='''                function wrap(name){const old=window[name];if(typeof old!=='function'||old.__layout77)return;const w=function(){const r=old.apply(this,arguments);requestAnimationFrame(refresh);return r};w.__layout77=true;window[name]=w;try{eval(name+'=w')}catch(e){}}
-'''
-        def newLayoutWrap='''                function wrap(name){const old=window[name];if(typeof old!=='function'||old.__layout77)return;const w=function(){const r=old.apply(this,arguments);refresh();return r};w.__layout77=true;window[name]=w;try{eval(name+'=w')}catch(e){}}
-'''
-        if(!layout.contains(oldLayoutWrap)) throw new GradleException('6.21: LayoutLanguage rAF wrapper not found')
-        layout=layout.replace(oldLayoutWrap,newLayoutWrap)
-        def oldLayoutInitial='''                refresh();requestAnimationFrame(refresh);setTimeout(refresh,120);
-'''
-        if(!layout.contains(oldLayoutInitial)) throw new GradleException('6.21: LayoutLanguage delayed initial passes not found')
-        layout=layout.replace(oldLayoutInitial,'''                refresh();
-''')
+        layout=layout.replace(
+                "setTimeout(()=>{try{if(window.refreshLocalization75)window.refreshLocalization75()}catch(e){};refresh()},0);",
+                "try{if(window.refreshLocalization75)window.refreshLocalization75()}catch(e){};refresh();")
+        layout=layout.replace(
+                'const w=function(){const r=old.apply(this,arguments);requestAnimationFrame(refresh);return r}',
+                'const w=function(){const r=old.apply(this,arguments);refresh();return r}')
+        layout=layout.replace('refresh();requestAnimationFrame(refresh);setTimeout(refresh,120);','refresh();')
         layoutFile.write(layout,'UTF-8')
 
-        // Full, readable period labels under "Horaires des 9 heures".
+        // Full ordinal names under “Horaires des 9 heures”.
         def asset=file('src/main/assets/index.html')
         def html=asset.getText('UTF-8')
         html=html.replace('grid-template-columns:62px 1fr 1fr','grid-template-columns:92px 1fr 1fr')
@@ -100,7 +89,7 @@ tasks.register('patchStability81') {
         html=html.replace(''' · heure ${c.slot}''',''' · ${c.slot===1?'1ère heure':c.slot+'ème heure'}''')
         asset.write(html,'UTF-8')
 
-        // Any newly downloaded language also receives the period labels and recent small UI strings.
+        // New downloadable languages receive the recent labels too, not only the original catalog.
         def templateFile=file('src/main/assets/language_template_fr.json')
         if(templateFile.exists()) {
             def template=new groovy.json.JsonSlurper().parseText(templateFile.getText('UTF-8'))
@@ -115,7 +104,7 @@ tasks.register('patchStability81') {
             templateFile.setText(groovy.json.JsonOutput.toJson(template),'UTF-8')
         }
 
-        // Keep all visible version labels coherent.
+        // Keep every visible version label coherent with the APK.
         for(def path:[
                 'src/main/java/com/wokgui/schedulewidget/Stability81Ui.java','src/main/java/com/wokgui/schedulewidget/Stability80Ui.java',
                 'src/main/java/com/wokgui/schedulewidget/Stability79Ui.java','src/main/java/com/wokgui/schedulewidget/Stability78Ui.java',
