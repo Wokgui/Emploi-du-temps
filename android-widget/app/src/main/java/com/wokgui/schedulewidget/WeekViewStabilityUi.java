@@ -7,13 +7,13 @@ final class WeekViewStabilityUi {
         return """
             (function(){
               try{
-                if(window.__weekViewStabilityV4){
+                if(window.__weekViewStabilityV5){
                   if(window.refreshWeekViewStability)window.refreshWeekViewStability();
                   return;
                 }
-                window.__weekViewStabilityV4=true;
+                window.__weekViewStabilityV5=true;
 
-                const APP_VERSION='5.8';
+                const APP_VERSION='5.9';
                 let fixingCycle=false;
                 function clone(o){return JSON.parse(JSON.stringify(o))}
                 function loadAdv(){
@@ -26,6 +26,76 @@ final class WeekViewStabilityUi {
                 function oneWeek(){return loadAdv().singleWeek===true}
                 function uiLang(){
                   try{const raw=AndroidSchedule.loadUiSettings();const o=JSON.parse(raw||'{}');return o.language==='de'||o.language==='en'?o.language:'fr'}catch(e){return 'fr'}
+                }
+
+                /*
+                 * Final visual corrections for the week grid.
+                 * - Midi fills the whole cell edge-to-edge, with no rounded inner card.
+                 * - Trou keeps only the normal grid lines, with no extra rectangle.
+                 * - The current-time rail sits exactly on the LEFT border of today's column.
+                 */
+                const polish=document.createElement('style');
+                polish.textContent=`
+                  html body #weekGrid .wc.lunchCell{padding:0!important;border-radius:0!important}
+                  html body #weekGrid .wc.lunchCell:not(.dynamicLunchCell){
+                    background:var(--ft-midi)!important;
+                    color:var(--ft-midi-ink)!important;
+                    box-shadow:inset 0 0 0 1px var(--ft-midi-border)!important;
+                  }
+                  html body #weekGrid .dynamicLunchCell{
+                    padding:0!important;
+                    background:var(--ft-midi)!important;
+                    color:var(--ft-midi-ink)!important;
+                    border-radius:0!important;
+                    overflow:visible!important;
+                    box-shadow:none!important;
+                  }
+                  html body #weekGrid .dynamicLunchOverlay{
+                    left:0!important;right:0!important;top:0!important;bottom:0!important;
+                    width:auto!important;height:auto!important;margin:0!important;padding:0!important;
+                    background:var(--ft-midi)!important;color:var(--ft-midi-ink)!important;
+                    border:0!important;border-radius:0!important;
+                    box-shadow:inset 0 0 0 1px var(--ft-midi-border)!important;
+                  }
+                  html body #weekGrid .wc.gapCell{box-shadow:none!important;border-radius:0!important}
+                  #weekGrid .scheduleNowRail,#weekGrid .scheduleNowDot{transition:none!important}
+                `;
+                document.head.appendChild(polish);
+
+                function minuteOf(t){
+                  const p=String(t||'00:00').split(':').map(Number);
+                  return (p[0]||0)*60+(p[1]||0);
+                }
+
+                function fixCurrentDayMarker(){
+                  try{
+                    const grid=document.getElementById('weekGrid');
+                    const rail=document.getElementById('weekNowRail');
+                    const dot=document.getElementById('weekNowDot');
+                    if(!grid||!rail||!dot||typeof uniqueWeekTimes!=='function')return;
+                    const now=new Date(),day=now.getDay();
+                    if(day<1||day>5){rail.style.display=dot.style.display='none';return}
+                    const times=uniqueWeekTimes();
+                    const m=now.getHours()*60+now.getMinutes();
+                    let row=-1,frac=0;
+                    for(let i=0;i<times.length;i++){
+                      const s=minuteOf(times[i].start),e=minuteOf(times[i].end);
+                      if(m>=s&&m<=e){row=i;frac=(m-s)/Math.max(1,e-s);break}
+                    }
+                    const cells=Array.from(grid.querySelectorAll('.wc'));
+                    if(row<0||!cells.length){rail.style.display=dot.style.display='none';return}
+                    const dayIndex=day-1;
+                    const first=cells[dayIndex],target=cells[row*5+dayIndex],last=cells[(times.length-1)*5+dayIndex];
+                    if(!first||!target||!last)return;
+                    // Exact column border: no +4px inset, so the marker stays out of the course text.
+                    const left=target.offsetLeft;
+                    const top=first.offsetTop+2;
+                    const bottom=last.offsetTop+last.offsetHeight-2;
+                    rail.style.display=dot.style.display='block';
+                    rail.style.left=left+'px';rail.style.top=top+'px';rail.style.height=Math.max(2,bottom-top)+'px';
+                    dot.style.left=left+'px';
+                    dot.style.top=(target.offsetTop+Math.max(2,Math.min(target.offsetHeight-2,target.offsetHeight*frac)))+'px';
+                  }catch(e){}
                 }
 
                 function ensureTitleSpan(){
@@ -125,10 +195,11 @@ final class WeekViewStabilityUi {
                   applySingleUi();
                   if(window.refreshLunchBreakUi)window.refreshLunchBreakUi();
                   if(window.refreshDoubleLunchUi)window.refreshDoubleLunchUi();
+                  setTimeout(fixCurrentDayMarker,0);
                 }
 
                 function wrapRender(){
-                  if(typeof window.render!=='function'||window.render.__weekStableV4Wrapped)return;
+                  if(typeof window.render!=='function'||window.render.__weekStableV5Wrapped)return;
                   const old=window.render;
                   const wrapped=function(){
                     if(oneWeek()){
@@ -137,42 +208,44 @@ final class WeekViewStabilityUi {
                     }
                     const out=old.apply(this,arguments);
                     applySingleUi();
+                    setTimeout(fixCurrentDayMarker,0);
                     if(oneWeek()&&typeof mode!=='undefined'&&mode==='week'){
                       const grid=document.getElementById('weekGrid');
                       if(!grid||grid.children.length<6)setTimeout(repairWeek,0);
                     }
                     return out;
                   };
-                  wrapped.__weekStableV4Wrapped=true;
+                  wrapped.__weekStableV5Wrapped=true;
                   window.render=wrapped;
                 }
 
                 function wrapBulkRefresh(){
-                  if(typeof window.refreshBulkCourseUi!=='function'||window.refreshBulkCourseUi.__weekStableV4Wrapped)return;
+                  if(typeof window.refreshBulkCourseUi!=='function'||window.refreshBulkCourseUi.__weekStableV5Wrapped)return;
                   const old=window.refreshBulkCourseUi;
                   const wrapped=function(){
                     ensureTitleSpan();
                     const out=old.apply(this,arguments);
                     ensureTitleSpan();
                     applySingleUi();
+                    setTimeout(fixCurrentDayMarker,0);
                     if(oneWeek()&&document.getElementById('viewWeek')?.classList.contains('active'))setTimeout(repairWeek,0);
                     return out;
                   };
-                  wrapped.__weekStableV4Wrapped=true;
+                  wrapped.__weekStableV5Wrapped=true;
                   window.refreshBulkCourseUi=wrapped;
                 }
 
                 function bindWeekTab(){
                   const nav=document.querySelector('.nav[data-mode="week"]');
-                  if(!nav||nav.dataset.weekStableV4Bound)return;
-                  nav.dataset.weekStableV4Bound='1';
+                  if(!nav||nav.dataset.weekStableV5Bound)return;
+                  nav.dataset.weekStableV5Bound='1';
                   nav.addEventListener('click',()=>{
                     if(oneWeek()){
                       ensureSingleState();
                       ensureTitleSpan();
                     }
                   },true);
-                  nav.addEventListener('click',()=>setTimeout(repairWeek,0));
+                  nav.addEventListener('click',()=>setTimeout(()=>{repairWeek();fixCurrentDayMarker()},0));
                 }
 
                 function syncSingleSchedule(){
@@ -223,6 +296,7 @@ final class WeekViewStabilityUi {
                     if(window.refreshAdvancedFeatures)window.refreshAdvancedFeatures();
                     applySingleUi();
                     installCycleChoice();
+                    fixCurrentDayMarker();
                   },0);
                 }
 
@@ -253,8 +327,8 @@ final class WeekViewStabilityUi {
                     const a=loadAdv();
                     const desired=a.singleWeek===true?'1':String(Math.max(2,Math.min(4,Number(a.cycleLength)||2)));
                     if(sel.value!==desired)sel.value=desired;
-                    if(!sel.dataset.singleWeekChoiceBoundV4){
-                      sel.dataset.singleWeekChoiceBoundV4='1';
+                    if(!sel.dataset.singleWeekChoiceBoundV5){
+                      sel.dataset.singleWeekChoiceBoundV5='1';
                       sel.addEventListener('change',e=>{
                         e.stopImmediatePropagation();
                         applyCycleChoice(e.target.value);
@@ -285,7 +359,7 @@ final class WeekViewStabilityUi {
                 }
 
                 function wrapAdvancedRefresh(){
-                  if(typeof window.refreshAdvancedFeatures!=='function'||window.refreshAdvancedFeatures.__singleChoiceV4Wrapped)return;
+                  if(typeof window.refreshAdvancedFeatures!=='function'||window.refreshAdvancedFeatures.__singleChoiceV5Wrapped)return;
                   const old=window.refreshAdvancedFeatures;
                   const wrapped=function(){
                     const out=old.apply(this,arguments);
@@ -293,7 +367,7 @@ final class WeekViewStabilityUi {
                     installVersionInfo();
                     return out;
                   };
-                  wrapped.__singleChoiceV4Wrapped=true;
+                  wrapped.__singleChoiceV5Wrapped=true;
                   window.refreshAdvancedFeatures=wrapped;
                 }
 
@@ -309,9 +383,17 @@ final class WeekViewStabilityUi {
                   installVersionInfo();
                   applySingleUi();
                   if(oneWeek()&&document.getElementById('viewWeek')?.classList.contains('active'))repairWeek();
+                  setTimeout(fixCurrentDayMarker,0);
                 }
 
                 window.refreshWeekViewStability=refresh;
+                const grid=document.getElementById('weekGrid');
+                if(grid&&!grid.__markerPolishObserver){
+                  const obs=new MutationObserver(()=>setTimeout(fixCurrentDayMarker,0));
+                  obs.observe(grid,{childList:true,subtree:true});
+                  grid.__markerPolishObserver=obs;
+                }
+                if(!window.__weekMarkerPolishTimer)window.__weekMarkerPolishTimer=setInterval(fixCurrentDayMarker,15000);
                 refresh();
                 setTimeout(refresh,80);
                 setTimeout(refresh,400);
