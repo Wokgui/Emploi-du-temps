@@ -11,7 +11,7 @@ android {
         minSdk 26
         targetSdk 35
         versionCode project.hasProperty('versionCode') ? project.property('versionCode').toInteger() : 101
-        versionName '6.19'
+        versionName '6.20'
     }
 
     buildTypes {
@@ -63,7 +63,9 @@ apply from: 'fixes76.gradle'
 apply from: 'fixes77.gradle'
 apply from: 'fixes78.gradle'
 apply from: 'fixes79.gradle'
+apply from: 'fixes80.gradle'
 
 dependencies {
     implementation 'com.google.mlkit:text-recognition:16.0.1'
+    implementation 'com.google.mlkit:translate:17.0.3'
 }
