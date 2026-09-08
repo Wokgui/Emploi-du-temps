@@ -1,0 +1,121 @@
+tasks.register('patchStability69') {
+    dependsOn tasks.named('patchNoFlicker68')
+    doLast {
+        // Inject the final stability layer strictly after CycleLunchFix, so no older UI layer can overwrite it.
+        def mainFile = file('src/main/java/com/wokgui/schedulewidget/MainActivity.java')
+        def main = mainFile.getText('UTF-8')
+        if (!main.contains('Stability69Ui.script()')) {
+            def needle = 'webView.evaluateJavascript(CycleLunchFixUi.script(), null);'
+            if (!main.contains(needle)) throw new GradleException('6.9: CycleLunchFix injection target not found')
+            main = main.replace(needle, 'webView.evaluateJavascript(CycleLunchFixUi.script(), value69 -> webView.evaluateJavascript(Stability69Ui.script(), null));')
+            mainFile.write(main, 'UTF-8')
+        }
+
+        // DoubleLunch must no longer draw its own vertical current-time rail or alter grid-border geometry around Midi.
+        def geoFile = file('src/main/java/com/wokgui/schedulewidget/DoubleLunchUi.java')
+        def geo = geoFile.getText('UTF-8')
+
+        def lunchStart = geo.indexOf('                function paintLunch(grid,rows){')
+        def lunchEnd = lunchStart >= 0 ? geo.indexOf('                function removeLegacyNow(grid){', lunchStart) : -1
+        if (lunchStart < 0 || lunchEnd < 0) throw new GradleException('6.9: DoubleLunch paintLunch target not found')
+        def lunchReplacement = '''                function paintLunch(grid,rows){
+                  const label=lunchText();
+                  clearMidiEdges(grid);
+                  rows.forEach(row=>row.cells.forEach(cell=>{
+                    if(!(cell.classList.contains('lunchCell')||cell.classList.contains('dynamicLunchCell')||cell.classList.contains('nativeLunchCell')))return;
+                    normalizeLunch(cell,label);
+                    cell.style.removeProperty('border-right-color');
+                    cell.style.removeProperty('border-bottom-color');
+                    cell.style.setProperty('box-shadow','none','important');
+                    cell.style.setProperty('outline','0','important');
+                  }));
+                }
+
+'''
+        geo = geo.substring(0,lunchStart) + lunchReplacement + geo.substring(lunchEnd)
+
+        def nowStart = geo.indexOf('                function paintNow(grid,rows){')
+        def nowEnd = nowStart >= 0 ? geo.indexOf('                function observeGrid(grid){', nowStart) : -1
+        if (nowStart < 0 || nowEnd < 0) throw new GradleException('6.9: DoubleLunch paintNow target not found')
+        def nowReplacement = '''                function paintNow(grid,rows){
+                  // 6.9: the final layer owns the only current-time indicator.
+                  removeLegacyNow(grid);
+                }
+
+'''
+        geo = geo.substring(0,nowStart) + nowReplacement + geo.substring(nowEnd)
+        geo = geo.replace("setInterval(()=>{const g=document.getElementById('weekGrid');if(g)paintNow(g,rowsOf(g))},60000);",
+                          "setInterval(()=>{if(window.paintWeek69)window.paintWeek69()},30000);")
+        geoFile.write(geo, 'UTF-8')
+
+        // FinalPolish: keep all four cycle choices, route them to the stable handler, and use existing grid lines for Midi.
+        def finalFile = file('src/main/java/com/wokgui/schedulewidget/FinalPolishUi.java')
+        def fin = finalFile.getText('UTF-8')
+
+        fin = fin.replace('#weekGrid>.wh.timecol{border-right:2px solid #cbd5e1!important}', '#weekGrid>.wh.timecol{border-right:1.5px solid #cbd5e1!important}')
+        fin = fin.replace('#weekGrid>.wh.day{border-bottom:2px solid #cbd5e1!important}', '#weekGrid>.wh.day{border-bottom:1.5px solid #cbd5e1!important}')
+        fin = fin.replace('#weekGrid>.wh.timecol:first-child{border-bottom:2px solid #cbd5e1!important}', '#weekGrid>.wh.timecol:first-child{border-bottom:1.5px solid #cbd5e1!important}')
+
+        def cycleStart = fin.indexOf('                function installCycleBar(){')
+        def cycleEnd = cycleStart >= 0 ? fin.indexOf('                function chooseCycle(n){', cycleStart) : -1
+        if (cycleStart < 0 || cycleEnd < 0) throw new GradleException('6.9: FinalPolish installCycleBar target not found')
+        def cycleReplacement = '''                function installCycleBar(){
+                  const bar=document.getElementById('weekModeBar'),view=document.getElementById('viewEdit'),importBtn=document.getElementById('importPhoto');
+                  if(!bar||!view)return;
+                  if(importBtn&&bar.nextElementSibling!==importBtn)view.insertBefore(bar,importBtn);
+                  const choices=bar.querySelector('.weekModeChoices');if(!choices)return;
+                  const wanted=[['1','1 seule'],['2','A / B'],['3','A / B / C'],['4','A / B / C / D']];
+                  wanted.forEach(([v,label])=>{
+                    let b=choices.querySelector('.weekModeChoice[data-m="'+v+'"]');
+                    if(!b){b=document.createElement('button');b.type='button';b.className='weekModeChoice';b.dataset.m=v;choices.appendChild(b)}
+                    b.hidden=false;b.style.removeProperty('display');b.textContent=label;
+                    b.onclick=()=>{if(window.switchCycle69)window.switchCycle69(Number(v));else chooseCycle(Number(v))};
+                  });
+                  const order=new Map(wanted.map((x,i)=>[x[0],i]));
+                  [...choices.querySelectorAll('.weekModeChoice')].sort((a,b)=>(order.get(a.dataset.m)??99)-(order.get(b.dataset.m)??99)).forEach(b=>choices.appendChild(b));
+                  const a=adv(),m=a.singleWeek===true?1:Math.max(2,Math.min(4,Number(a.cycleLength)||2));
+                  choices.querySelectorAll('.weekModeChoice').forEach(b=>b.classList.toggle('active',Number(b.dataset.m)===m));
+                }
+'''
+        fin = fin.substring(0,cycleStart) + cycleReplacement + fin.substring(cycleEnd)
+
+        def lunchGroupStart = fin.indexOf('                function paintLunchGroups(grid,rows){')
+        def lunchGroupEnd = lunchGroupStart >= 0 ? fin.indexOf('                function paintWeek(){', lunchGroupStart) : -1
+        if (lunchGroupStart < 0 || lunchGroupEnd < 0) throw new GradleException('6.9: FinalPolish paintLunchGroups target not found')
+        def lunchGroupReplacement = '''                function paintLunchGroups(grid,rows){
+                  grid.querySelectorAll('.finalLunchCell,.finalLunchJoinedRight').forEach(c=>{
+                    c.classList.remove('finalLunchCell','finalLunchJoinedRight');
+                    c.style.removeProperty('box-shadow');c.style.removeProperty('border-right-color');
+                  });
+                  grid.querySelectorAll('.lunch69TopLine,.lunch69BottomLine').forEach(c=>c.classList.remove('lunch69TopLine','lunch69BottomLine'));
+                  rows.forEach((row,ri)=>row.cells.forEach((cell,di)=>{
+                    if(!shouldLunch(row,di)||!(cell.classList.contains('lunchCell')||cell.classList.contains('dynamicLunchCell')||cell.classList.contains('nativeLunchCell')))return;
+                    cell.classList.add('lunch69BottomLine');
+                    cell.style.setProperty('box-shadow','none','important');cell.style.removeProperty('border-right-color');
+                    const above=ri>0?rows[ri-1].cells[di]:grid.querySelectorAll(':scope > .wh.day')[di];
+                    if(above)above.classList.add('lunch69TopLine');
+                  }));
+                }
+
+'''
+        fin = fin.substring(0,lunchGroupStart) + lunchGroupReplacement + fin.substring(lunchGroupEnd)
+        ['6.5','6.6','6.7','6.8'].each { old -> fin = fin.replace("const APP_VERSION='${old}';", "const APP_VERSION='6.9';") }
+        finalFile.write(fin, 'UTF-8')
+
+        // CycleLunch's older Midi pseudo-outline must never reappear; keep version text aligned.
+        def cycleFile = file('src/main/java/com/wokgui/schedulewidget/CycleLunchFixUi.java')
+        def cyc = cycleFile.getText('UTF-8')
+        cyc = cyc.replace('html body #viewWeek #weekGrid#weekGrid .wc.lunchCell::before{', 'html body #viewWeek #weekGrid#weekGrid .wc.lunchCell::before{display:none!important;content:none!important;')
+        ['6.6','6.7','6.8'].each { old -> cyc = cyc.replace("const APP_VERSION='${old}';", "const APP_VERSION='6.9';") }
+        cycleFile.write(cyc, 'UTF-8')
+
+        def stabilityFile = file('src/main/java/com/wokgui/schedulewidget/WeekViewStabilityUi.java')
+        def stability = stabilityFile.getText('UTF-8')
+        ['6.5','6.6','6.7','6.8'].each { old -> stability = stability.replace("const APP_VERSION='${old}';", "const APP_VERSION='6.9';") }
+        stabilityFile.write(stability, 'UTF-8')
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('patchStability69')
+}
