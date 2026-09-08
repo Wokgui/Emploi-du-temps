@@ -1,0 +1,182 @@
+tasks.register('patchResponsiveness76') {
+    dependsOn tasks.named('patchLocalization75Escapes')
+    doLast {
+        // Localization 6.15 was doing a complete refresh of every UI layer after almost every
+        // DOM mutation. That made simple taps (navigation and week-cycle choices in particular)
+        // wait behind a cascade of refreshes. Keep the same translation coverage, but only do
+        // the expensive all-feature refresh when the language itself changes.
+        def locFile=file('src/main/java/com/wokgui/schedulewidget/Localization75Ui.java')
+        def loc=locFile.getText('UTF-8')
+
+        loc=loc.replace(
+                'let translating=false,queued=false;',
+                'let translating=false,queued=false;let langCache=null,installedCache=null,targetCacheLang=null,targetCache=null,reverseCache=null;const pendingRoots=new Set();let localizationObserver=null;')
+
+        loc=loc.replace(
+                "function currentLang(){const l=String(nativeUi().language||'fr');return l||'fr'}",
+                "function invalidateLocalizationCache(){langCache=null;installedCache=null;targetCacheLang=null;targetCache=null;reverseCache=null}\\n                function currentLang(){if(langCache)return langCache;const l=String(nativeUi().language||'fr');langCache=l||'fr';return langCache}")
+
+        loc=loc.replace(
+                "function installedList(){try{return JSON.parse(AndroidSchedule.loadLanguagePacks?AndroidSchedule.loadLanguagePacks():'[]')}catch(e){return []}}",
+                "function installedList(){if(installedCache)return installedCache;try{installedCache=JSON.parse(AndroidSchedule.loadLanguagePacks?AndroidSchedule.loadLanguagePacks():'[]');return installedCache}catch(e){installedCache=[];return installedCache}}")
+
+        def oldTarget='''                function targetStrings(){
+                  const l=currentLang();if(l==='fr')return {};
+                  if(BUILTIN[l])return BUILTIN[l];
+                  const p=loadPack(l);return p&&p.strings?p.strings:{};
+                }
+'''
+        def newTarget='''                function targetStrings(){
+                  const l=currentLang();if(targetCache&&targetCacheLang===l)return targetCache;
+                  targetCacheLang=l;
+                  if(l==='fr'){targetCache={};return targetCache}
+                  if(BUILTIN[l]){targetCache=BUILTIN[l];return targetCache}
+                  const p=loadPack(l);targetCache=p&&p.strings?p.strings:{};return targetCache;
+                }
+'''
+        if(loc.contains(oldTarget))loc=loc.replace(oldTarget,newTarget)
+
+        def oldReverse='''                function reverseMap(){
+                  const r={};
+                  const add=(canonical,value)=>{if(value!=null&&String(value).trim())r[String(value).trim()]=canonical};
+                  const keys=new Set();Object.values(BUILTIN).forEach(m=>Object.keys(m).forEach(k=>keys.add(k)));
+                  keys.forEach(k=>add(k,k));
+                  Object.values(BUILTIN).forEach(m=>Object.entries(m).forEach(([k,v])=>add(k,v)));
+                  installedList().forEach(x=>{const p=loadPack(x.code);if(p&&p.strings)Object.entries(p.strings).forEach(([k,v])=>{add(k,k);add(k,v)})});
+                  return r;
+                }
+'''
+        def newReverse='''                function reverseMap(){
+                  if(reverseCache)return reverseCache;
+                  const r={};
+                  const add=(canonical,value)=>{if(value!=null&&String(value).trim())r[String(value).trim()]=canonical};
+                  const keys=new Set();Object.values(BUILTIN).forEach(m=>Object.keys(m).forEach(k=>keys.add(k)));
+                  keys.forEach(k=>add(k,k));
+                  Object.values(BUILTIN).forEach(m=>Object.entries(m).forEach(([k,v])=>add(k,v)));
+                  installedList().forEach(x=>{const p=loadPack(x.code);if(p&&p.strings)Object.entries(p.strings).forEach(([k,v])=>{add(k,k);add(k,v)})});
+                  reverseCache=r;return reverseCache;
+                }
+'''
+        if(loc.contains(oldReverse))loc=loc.replace(oldReverse,newReverse)
+
+        def tailStart=loc.indexOf('                function fullRefresh(){')
+        def tailEnd=tailStart>=0?loc.indexOf("              }catch(e){console.log('Localization75Ui',e)}",tailStart):-1
+        if(tailStart<0 || tailEnd<0)throw new GradleException('6.16: Localization75 refresh block not found')
+        def newTail='''                function withTranslationLock(work){
+                  if(translating)return;translating=true;
+                  try{
+                    if(localizationObserver)localizationObserver.disconnect();
+                    work();
+                  }finally{
+                    if(localizationObserver)localizationObserver.observe(document.body,{childList:true,subtree:true,characterData:true});
+                    translating=false;
+                  }
+                }
+                function setVersion(){const v=document.getElementById('appVersionInfo');if(v&&v.textContent!=='Version '+APP_VERSION)v.textContent='Version '+APP_VERSION}
+                function translateOnly(){
+                  queued=false;if(translating)return;
+                  const roots=[...pendingRoots];pendingRoots.clear();if(!roots.length)return;
+                  withTranslationLock(()=>{
+                    document.documentElement.lang=currentLang().replace('_','-');
+                    const compact=[];
+                    roots.filter(Boolean).forEach(root=>{
+                      if(!root.isConnected)return;
+                      if(compact.some(x=>x===root||x.contains(root)))return;
+                      for(let i=compact.length-1;i>=0;i--)if(root.contains(compact[i]))compact.splice(i,1);
+                      compact.push(root);
+                    });
+                    compact.forEach(root=>translateTree(root));setVersion();
+                  });
+                }
+                function schedule(root){
+                  if(root)pendingRoots.add(root.nodeType===1?root:(root.parentElement||document.body));
+                  if(queued||translating)return;queued=true;requestAnimationFrame(translateOnly);
+                }
+                function fullRefresh(){
+                  invalidateLocalizationCache();pendingRoots.clear();queued=false;
+                  withTranslationLock(()=>{
+                    const l=currentLang();document.documentElement.lang=l.replace('_','-');
+                    ['refreshSettingsV3','refreshAdvancedFeatures','refreshUiPolishSchool','refreshCoursePaletteV4','refreshFineTuneUi','refreshLunchBreakUi','refreshDoubleLunchUi','refreshWeekendUi','refreshStability70','refreshStability71','refreshStability72','refreshStability73','refreshStability74'].forEach(n=>{try{if(typeof window[n]==='function')window[n]()}catch(e){}});
+                    ensureLanguageUi();translateTree(document.body);setVersion();
+                  });
+                }
+                window.refreshLocalization75=fullRefresh;
+                function rootFor(name){
+                  if(name==='renderToday')return document.getElementById('viewToday');
+                  if(name==='renderWeek')return document.getElementById('viewWeek');
+                  if(name==='renderEdit')return document.getElementById('viewEdit');
+                  if(name==='renderContext')return document.querySelector('.contextBar');
+                  if(name==='openEditor')return document.getElementById('modal');
+                  return document.getElementById('settingsSheet')||document.body;
+                }
+                ['renderToday','renderWeek','renderEdit','renderContext','openEditor','refreshSettingsV3','refreshAdvancedFeatures','refreshStability74'].forEach(name=>{
+                  const old=window[name];if(typeof old==='function'&&!old.__loc75){
+                    const w=function(){const r=old.apply(this,arguments);schedule(rootFor(name));return r};w.__loc75=true;window[name]=w;try{eval(name+'=w')}catch(e){}
+                  }
+                });
+                localizationObserver=new MutationObserver(mutations=>{
+                  if(translating)return;
+                  mutations.forEach(m=>{
+                    if(m.type==='characterData')schedule(m.target&&m.target.parentElement);
+                    else if(m.type==='childList')m.addedNodes.forEach(n=>schedule(n));
+                  });
+                });
+                localizationObserver.observe(document.body,{childList:true,subtree:true,characterData:true});
+                fullRefresh();setTimeout(()=>schedule(document.body),120);
+'''
+        loc=loc.substring(0,tailStart)+newTail+loc.substring(tailEnd)
+        locFile.write(loc,'UTF-8')
+
+        // Give bottom navigation immediate visual feedback, then perform the heavier render on
+        // the next animation frame. This keeps the tap feeling instantaneous even on large weeks.
+        def assetFile=file('src/main/assets/index.html')
+        def html=assetFile.getText('UTF-8')
+        html=html.replace('button,input,select{font:inherit}','button,input,select{font:inherit}button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}')
+        def oldNav="document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));"
+        def newNav="document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>{const target=b.dataset.mode;if(mode===target)return;document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));const id='view'+target[0].toUpperCase()+target.slice(1),view=document.getElementById(id);if(view)view.classList.add('active');requestAnimationFrame(()=>setMode(target))});"
+        if(!html.contains(oldNav))throw new GradleException('6.16: base navigation handler not found')
+        html=html.replace(oldNav,newNav)
+        assetFile.write(html,'UTF-8')
+
+        // Week-count choices also acknowledge the tap immediately. Persistence and full schedule
+        // synchronization happen one frame later, after the selected button is already highlighted.
+        for(def path:['src/main/java/com/wokgui/schedulewidget/Stability69Ui.java','src/main/java/com/wokgui/schedulewidget/Stability70Ui.java']) {
+            def f=file(path);def txt=f.getText('UTF-8')
+            txt=txt.replace(
+                    "b.onclick=e=>{e.preventDefault();e.stopPropagation();switchCycle(Number(v));return false};",
+                    "b.onclick=e=>{e.preventDefault();e.stopPropagation();const target=Number(v);box.querySelectorAll('.weekModeChoice').forEach(x=>x.classList.toggle('active',Number(x.dataset.m)===target));requestAnimationFrame(()=>switchCycle(target));return false};")
+            txt=txt.replace(
+                    "b.onclick=e=>{e.preventDefault();e.stopPropagation();if(window.switchCycle69)window.switchCycle69(Number(v));else if(window.switchCycleStable)window.switchCycleStable(Number(v));syncCycleUi();return false};",
+                    "b.onclick=e=>{e.preventDefault();e.stopPropagation();const target=Number(v);box.querySelectorAll('.weekModeChoice').forEach(x=>x.classList.toggle('active',Number(x.dataset.m)===target));requestAnimationFrame(()=>{if(window.switchCycle69)window.switchCycle69(target);else if(window.switchCycleStable)window.switchCycleStable(target);syncCycleUi()});return false};")
+            f.write(txt,'UTF-8')
+        }
+
+        def bulkFile=file('src/main/java/com/wokgui/schedulewidget/BulkCourseUi.java')
+        def bulk=bulkFile.getText('UTF-8')
+        bulk=bulk.replace(
+                "bar.querySelectorAll('button').forEach(b=>b.onclick=()=>setMode(Number(b.dataset.m)))",
+                "bar.querySelectorAll('button').forEach(b=>b.onclick=()=>{const target=Number(b.dataset.m);bar.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));requestAnimationFrame(()=>setMode(target))})")
+        bulkFile.write(bulk,'UTF-8')
+
+        // Keep every visible version label aligned with the APK.
+        for(def path:[
+                'src/main/java/com/wokgui/schedulewidget/Localization75Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability74Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability73Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability72Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability71Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability70Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability69Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/FinalPolishUi.java',
+                'src/main/java/com/wokgui/schedulewidget/CycleLunchFixUi.java',
+                'src/main/java/com/wokgui/schedulewidget/WeekViewStabilityUi.java']) {
+            def f=file(path);if(!f.exists())continue
+            def txt=f.getText('UTF-8').replace("const APP_VERSION='6.15';","const APP_VERSION='6.16';")
+            f.write(txt,'UTF-8')
+        }
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('patchResponsiveness76')
+}
