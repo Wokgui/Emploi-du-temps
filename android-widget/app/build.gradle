@@ -11,7 +11,7 @@ android {
         minSdk 26
         targetSdk 35
         versionCode project.hasProperty('versionCode') ? project.property('versionCode').toInteger() : 101
-        versionName '6.5'
+        versionName '6.6'
     }
 
     buildTypes {
@@ -47,6 +47,8 @@ tasks.register('patchLateFinalPolish') {
 tasks.named('preBuild').configure {
     dependsOn tasks.named('patchLateFinalPolish')
 }
+
+apply from: 'fixes66.gradle'
 
 dependencies {
     implementation 'com.google.mlkit:text-recognition:16.0.1'
