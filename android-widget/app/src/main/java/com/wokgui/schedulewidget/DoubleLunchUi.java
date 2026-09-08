@@ -23,16 +23,17 @@ final class DoubleLunchUi {
                     html body #viewWeek #weekGrid .wc{min-height:48px!important}
                   }
 
-                  /* Une seule géométrie : tous les anciens overlays et marqueurs sont neutralisés. */
-                  #weekGrid #weekNowRail,#weekGrid #weekNowDot,
-                  #weekGrid #weekNowRailV8,#weekGrid #weekNowDotV8,
-                  #weekGrid .scheduleNowRail,#weekGrid .scheduleNowDot,
-                  #weekGrid .geoLunchLabel,#weekGrid .dynamicLunchOverlay{display:none!important}
+                  /* Deux #weekGrid donnent volontairement une spécificité supérieure aux anciennes couches. */
+                  #weekGrid#weekGrid #weekNowRail,#weekGrid#weekGrid #weekNowDot,
+                  #weekGrid#weekGrid #weekNowRailV8,#weekGrid#weekGrid #weekNowDotV8,
+                  #weekGrid#weekGrid .scheduleNowRail,#weekGrid#weekGrid .scheduleNowDot,
+                  #weekGrid#weekGrid .geoLunchLabel,#weekGrid#weekGrid .dynamicLunchOverlay{display:none!important}
 
-                  /* Midi EST la cellule de grille : aucune boîte interne, aucun outline, aucune ombre. */
-                  html body #weekGrid .wc.lunchCell,
-                  html body #weekGrid .wc.dynamicLunchCell,
-                  html body #weekGrid .wc.nativeLunchCell{
+                  /* Midi EST la cellule de grille. Aucun cadre interne ne peut survivre aux anciens styles. */
+                  html body #weekGrid#weekGrid .wc.lunchCell,
+                  html body #weekGrid#weekGrid .wc.dynamicLunchCell,
+                  html body #weekGrid#weekGrid .wc.nativeLunchCell,
+                  html body #weekGrid#weekGrid .wc.lunchCell:not(.dynamicLunchCell){
                     box-sizing:border-box!important;
                     margin:0!important;
                     padding:2px!important;
@@ -45,8 +46,8 @@ final class DoubleLunchUi {
                     position:relative!important;
                     z-index:auto!important;
                   }
-                  html body #weekGrid .wc.nativeLunchCell>*{visibility:visible!important}
-                  html body #weekGrid .nativeLunchLabel{
+                  html body #weekGrid#weekGrid .wc.nativeLunchCell>*{visibility:visible!important}
+                  html body #weekGrid#weekGrid .nativeLunchLabel{
                     position:absolute!important;inset:0!important;
                     display:flex!important;align-items:center!important;justify-content:center!important;
                     gap:4px!important;margin:0!important;padding:2px 3px!important;
@@ -55,14 +56,13 @@ final class DoubleLunchUi {
                     color:var(--ft-midi-ink,#22283A)!important;font-weight:850!important;font-size:.60rem!important;line-height:1!important;
                     pointer-events:none!important;
                   }
-                  html body #weekGrid .nativeLunchLabel .nativeLunchIcon{font-size:.84em!important;line-height:1!important}
+                  html body #weekGrid#weekGrid .nativeLunchLabel .nativeLunchIcon{font-size:.84em!important;line-height:1!important}
 
-                  /* Marqueur temporel unique, positionné dans le même repère que les cellules. */
-                  #weekGrid #finalWeekNowRailV12{
+                  #weekGrid#weekGrid #finalWeekNowRailV12{
                     position:absolute!important;z-index:140!important;width:2px!important;background:#1688F4!important;
                     pointer-events:none!important;display:none;border-radius:0!important;transform:none!important;
                   }
-                  #weekGrid #finalWeekNowDotV12{
+                  #weekGrid#weekGrid #finalWeekNowDotV12{
                     position:absolute!important;z-index:141!important;width:16px!important;height:16px!important;border-radius:50%!important;
                     background:#1688F4!important;border:4px solid #D9ECFF!important;box-sizing:border-box!important;
                     box-shadow:0 1px 4px #0B6ACB38!important;pointer-events:none!important;display:none;transform:none!important;
@@ -101,6 +101,7 @@ final class DoubleLunchUi {
                 }
 
                 function rowsOf(grid){
+                  if(!grid)return [];
                   const rows=[];
                   const times=Array.from(grid.querySelectorAll(':scope > .wh.timecol'));
                   for(const time of times){
@@ -128,7 +129,6 @@ final class DoubleLunchUi {
 
                 function paintEdge(el,prop,color){
                   if(!el)return;
-                  /* L'épaisseur et le style restent ceux de la grille : seule la couleur change. */
                   el.style.setProperty(prop,color,'important');
                   el.setAttribute('data-native-midi-edge','1');
                 }
@@ -139,21 +139,13 @@ final class DoubleLunchUi {
                   cell.querySelectorAll('.dynamicLunchOverlay,.geoLunchLabel').forEach(x=>x.remove());
                   let holder=cell.querySelector(':scope > .nativeLunchLabel');
                   if(!holder){
-                    holder=document.createElement('div');
-                    holder.className='nativeLunchLabel';
-                    cell.replaceChildren(holder);
+                    holder=document.createElement('div');holder.className='nativeLunchLabel';cell.replaceChildren(holder);
                   }
                   holder.replaceChildren();
                   if(label){
-                    const icon=document.createElement('span');
-                    icon.className='nativeLunchIcon';
-                    icon.setAttribute('aria-hidden','true');
-                    icon.textContent='🍴';
-                    const text=document.createElement('span');
-                    text.textContent=label;
-                    holder.append(icon,text);
+                    const icon=document.createElement('span');icon.className='nativeLunchIcon';icon.setAttribute('aria-hidden','true');icon.textContent='🍴';
+                    const text=document.createElement('span');text.textContent=label;holder.append(icon,text);
                   }
-                  /* Aucune géométrie n'est ajoutée ici : fond seulement. */
                   cell.style.setProperty('background','var(--ft-midi)','important');
                   cell.style.setProperty('box-shadow','none','important');
                   cell.style.setProperty('outline','0','important');
@@ -172,15 +164,10 @@ final class DoubleLunchUi {
                       if(!isLunch)return;
                       normalizeLunchCell(cell,label);
 
-                      /* Bord droit et bas = bordures natives de CETTE cellule. */
+                      /* On recolore uniquement les traits de grille déjà existants. */
                       paintEdge(cell,'border-right-color',border);
                       paintEdge(cell,'border-bottom-color',border);
-
-                      /* Bord gauche = border-right de la cellule précédente, exactement sur la ligne de grille. */
-                      const leftNeighbor=cell.previousElementSibling;
-                      paintEdge(leftNeighbor,'border-right-color',border);
-
-                      /* Bord haut = border-bottom de la cellule située juste au-dessus. */
+                      paintEdge(cell.previousElementSibling,'border-right-color',border);
                       if(rowIndex>0)paintEdge(rows[rowIndex-1].cells[dayIndex],'border-bottom-color',border);
                       else paintEdge(grid.querySelectorAll(':scope > .wh.day')[dayIndex],'border-bottom-color',border);
                     });
@@ -196,6 +183,7 @@ final class DoubleLunchUi {
                 }
 
                 function paintNow(grid,rows){
+                  if(!grid)return;
                   const {rail,dot}=ensureNowLayers(grid);
                   rail.style.display='none';dot.style.display='none';
                   const now=new Date(),day=now.getDay();
@@ -213,18 +201,21 @@ final class DoubleLunchUi {
                   if(!first||!target)return;
                   const frac=Math.max(0,Math.min(1,(minute-row.start)/Math.max(1,row.end-row.start)));
 
-                  /* offsetLeft/offsetTop ont exactement le même repère que left/top d'un enfant absolute du grid.
-                     La ligne grise appartient au border-right de la cellule précédente : son centre est x - 0,5px. */
-                  const x=target.offsetLeft;
+                  /* getBoundingClientRect garde les fractions de pixel des colonnes.
+                     clientLeft/clientTop retirent exactement la bordure extérieure du grid,
+                     car left/top d'un enfant absolute sont référencés à l'intérieur de cette bordure. */
+                  const gr=grid.getBoundingClientRect();
+                  const fr=first.getBoundingClientRect();
+                  const tr=target.getBoundingClientRect();
+                  const x=tr.left-gr.left-grid.clientLeft;
                   const boundaryCenter=x-0.5;
-                  const top=first.offsetTop;
-                  const y=target.offsetTop+target.offsetHeight*frac;
+                  const top=fr.top-gr.top-grid.clientTop;
+                  const y=tr.top-gr.top-grid.clientTop+tr.height*frac;
 
                   rail.style.setProperty('left',(boundaryCenter-1)+'px','important');
                   rail.style.setProperty('top',top+'px','important');
                   rail.style.setProperty('height',Math.max(2,y-top)+'px','important');
                   rail.style.setProperty('display','block','important');
-
                   dot.style.setProperty('left',(boundaryCenter-8)+'px','important');
                   dot.style.setProperty('top',(y-8)+'px','important');
                   dot.style.setProperty('display','block','important');
@@ -233,19 +224,15 @@ final class DoubleLunchUi {
                 function observeGrid(grid){
                   if(gridObserver)gridObserver.disconnect();
                   gridObserver=new MutationObserver(()=>scheduleGrid());
-                  /* Le vrai render() remplace des enfants directs du grid. Nos changements internes ne rebouclent donc pas. */
                   gridObserver.observe(grid,{childList:true,subtree:false});
                 }
 
                 function syncGrid(){
-                  const grid=document.getElementById('weekGrid');
-                  if(!grid)return;
+                  const grid=document.getElementById('weekGrid');if(!grid)return;
                   keepStyleLast();
                   grid.style.setProperty('position','relative','important');
                   const rows=rowsOf(grid);
-                  if(!rows.length){observeGrid(grid);return}
-                  paintLunch(grid,rows);
-                  paintNow(grid,rows);
+                  if(rows.length){paintLunch(grid,rows);paintNow(grid,rows)}
                   observeGrid(grid);
                 }
 
@@ -253,26 +240,17 @@ final class DoubleLunchUi {
                   if(raf)cancelAnimationFrame(raf);
                   if(lateTimer)clearTimeout(lateTimer);
                   raf=requestAnimationFrame(()=>requestAnimationFrame(syncGrid));
-                  /* Un second passage après les autres couches injectées garantit la géométrie finale sans clignotement visible. */
                   lateTimer=setTimeout(syncGrid,90);
                 }
                 window.refreshDoubleLunchUi=scheduleGrid;
 
-                function loadAdv(){
-                  try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}
-                  catch(e){return {}}
-                }
-                function saveAdv(o){
-                  try{AndroidSchedule.saveAdvancedSettings(JSON.stringify(o))}catch(e){}
-                }
-                function keyFor(week,day,start,end){
-                  return String(week||'A')+'|'+String(day||2)+'|'+String(start||'')+'|'+String(end||'');
-                }
+                function loadAdv(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
+                function saveAdv(o){try{AndroidSchedule.saveAdvancedSettings(JSON.stringify(o))}catch(e){}}
+                function keyFor(week,day,start,end){return String(week||'A')+'|'+String(day||2)+'|'+String(start||'')+'|'+String(end||'')}
 
                 function ensureCourseWidgetField(){
                   const form=document.getElementById('courseForm');if(!form)return;
-                  let field=document.getElementById('courseWidgetLabelField');
-                  if(field)return;
+                  let field=document.getElementById('courseWidgetLabelField');if(field)return;
                   field=document.createElement('div');field.id='courseWidgetLabelField';field.className='field';
                   field.innerHTML='<label>Intitulé dans le widget (facultatif)</label><input id="fWidgetLabel" type="text" maxlength="80" placeholder="Vide = même intitulé que dans l\'application">';
                   const app=document.getElementById('fLabel'),appField=app?app.closest('.field'):null;
@@ -281,15 +259,11 @@ final class DoubleLunchUi {
                 }
 
                 function editedCourse(){
-                  try{
-                    if(typeof editing==='undefined'||editing==null)return null;
-                    return weeks[activeWeek][selected].courses[editing]||null;
-                  }catch(e){return null}
+                  try{if(typeof editing==='undefined'||editing==null)return null;return weeks[activeWeek][selected].courses[editing]||null}catch(e){return null}
                 }
 
                 function fillCourseWidgetField(){
-                  ensureCourseWidgetField();
-                  const input=document.getElementById('fWidgetLabel');if(!input)return;
+                  ensureCourseWidgetField();const input=document.getElementById('fWidgetLabel');if(!input)return;
                   const c=editedCourse();if(!c){input.value='';return}
                   const a=loadAdv(),map=(a.widgetCourseLabels&&typeof a.widgetCourseLabels==='object')?a.widgetCourseLabels:{};
                   input.value=String(map[keyFor(activeWeek,selected,c.start,c.end)]||'');
@@ -297,28 +271,20 @@ final class DoubleLunchUi {
 
                 function wrapCourseSubmit(){
                   ensureCourseWidgetField();
-                  const form=document.getElementById('courseForm');
-                  if(!form||!form.onsubmit||form.onsubmit.__widgetLabelsV12)return;
+                  const form=document.getElementById('courseForm');if(!form||!form.onsubmit||form.onsubmit.__widgetLabelsV12)return;
                   const old=form.onsubmit;
                   const wrapped=function(e){
-                    const c=editedCourse();
-                    const oldKey=c?keyFor(activeWeek,selected,c.start,c.end):null;
-                    const week=typeof activeWeek!=='undefined'?activeWeek:'A';
-                    const day=typeof selected!=='undefined'?selected:2;
-                    const slot=Number((document.getElementById('fSlot')||{}).value||0);
-                    let start='',end='';
+                    const c=editedCourse();const oldKey=c?keyFor(activeWeek,selected,c.start,c.end):null;
+                    const week=typeof activeWeek!=='undefined'?activeWeek:'A';const day=typeof selected!=='undefined'?selected:2;
+                    const slot=Number((document.getElementById('fSlot')||{}).value||0);let start='',end='';
                     if(slot>0&&typeof slots!=='undefined'&&slots[slot-1]){start=slots[slot-1].start;end=slots[slot-1].end}
-                    else if(c){start=c.start;end=c.end}
-                    else if(typeof newPrefill!=='undefined'&&newPrefill){start=newPrefill.start;end=newPrefill.end}
+                    else if(c){start=c.start;end=c.end}else if(typeof newPrefill!=='undefined'&&newPrefill){start=newPrefill.start;end=newPrefill.end}
                     const widgetLabel=String((document.getElementById('fWidgetLabel')||{}).value||'').trim();
                     const result=old.call(this,e);
                     try{
-                      const a=loadAdv();
-                      a.widgetCourseLabels=(a.widgetCourseLabels&&typeof a.widgetCourseLabels==='object')?a.widgetCourseLabels:{};
-                      if(oldKey)delete a.widgetCourseLabels[oldKey];
-                      const newKey=keyFor(week,day,start,end);
-                      if(widgetLabel)a.widgetCourseLabels[newKey]=widgetLabel;else delete a.widgetCourseLabels[newKey];
-                      saveAdv(a);
+                      const a=loadAdv();a.widgetCourseLabels=(a.widgetCourseLabels&&typeof a.widgetCourseLabels==='object')?a.widgetCourseLabels:{};
+                      if(oldKey)delete a.widgetCourseLabels[oldKey];const newKey=keyFor(week,day,start,end);
+                      if(widgetLabel)a.widgetCourseLabels[newKey]=widgetLabel;else delete a.widgetCourseLabels[newKey];saveAdv(a);
                     }catch(ex){}
                     return result;
                   };
@@ -326,25 +292,19 @@ final class DoubleLunchUi {
                 }
 
                 function installBreakWidgetInputs(){
-                  const defs=[['gapLabel','gapWidgetLabel'],['lunchLabel','lunchWidgetLabel']];
-                  const adv=loadAdv();
+                  const defs=[['gapLabel','gapWidgetLabel'],['lunchLabel','lunchWidgetLabel']];const adv=loadAdv();
                   for(const [appId,key] of defs){
                     const app=document.getElementById(appId);if(!app)continue;
-                    let host=app.closest('.dualBreakInputs');
-                    let widget=document.getElementById(appId+'Widget');
+                    let host=app.closest('.dualBreakInputs');let widget=document.getElementById(appId+'Widget');
                     if(!host){
-                      host=document.createElement('div');host.className='dualBreakInputs';
-                      const parent=app.parentElement;parent.insertBefore(host,app);
+                      host=document.createElement('div');host.className='dualBreakInputs';const parent=app.parentElement;parent.insertBefore(host,app);
                       const aLabel=document.createElement('div');aLabel.className='dualLabel';aLabel.textContent='Application';
-                      const wLabel=document.createElement('div');wLabel.className='dualLabel';wLabel.textContent='Widget';
-                      host.append(aLabel,app,wLabel);
-                      widget=document.createElement('input');widget.id=appId+'Widget';widget.type='text';widget.maxLength=35;widget.placeholder='Vide = même intitulé';
-                      host.appendChild(widget);
+                      const wLabel=document.createElement('div');wLabel.className='dualLabel';wLabel.textContent='Widget';host.append(aLabel,app,wLabel);
+                      widget=document.createElement('input');widget.id=appId+'Widget';widget.type='text';widget.maxLength=35;widget.placeholder='Vide = même intitulé';host.appendChild(widget);
                     }
                     if(widget&&document.activeElement!==widget)widget.value=String(adv[key]||'');
                     if(widget&&!widget.__labelV12){
-                      widget.__labelV12=true;
-                      const persist=()=>{const a=loadAdv();a[key]=String(widget.value||'').trim();saveAdv(a)};
+                      widget.__labelV12=true;const persist=()=>{const a=loadAdv();a[key]=String(widget.value||'').trim();saveAdv(a)};
                       widget.addEventListener('change',persist);widget.addEventListener('blur',persist);
                     }
                   }
@@ -355,26 +315,19 @@ final class DoubleLunchUi {
                   const modal=document.getElementById('modal');
                   if(modal&&!modal.__widgetLabelsV12){
                     modal.__widgetLabelsV12=true;
-                    new MutationObserver(()=>{
-                      if(modal.classList.contains('show'))setTimeout(()=>{fillCourseWidgetField();wrapCourseSubmit()},0);
-                    }).observe(modal,{attributes:true,attributeFilter:['class']});
+                    new MutationObserver(()=>{if(modal.classList.contains('show'))setTimeout(()=>{fillCourseWidgetField();wrapCourseSubmit()},0)}).observe(modal,{attributes:true,attributeFilter:['class']});
                   }
                 }
 
                 const grid=document.getElementById('weekGrid');
-                if(grid){
-                  observeGrid(grid);
-                  if(window.ResizeObserver)new ResizeObserver(scheduleGrid).observe(grid);
-                }
+                if(grid){observeGrid(grid);if(window.ResizeObserver)new ResizeObserver(scheduleGrid).observe(grid)}
                 window.addEventListener('resize',scheduleGrid);
                 document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleGrid()});
                 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(scheduleGrid);
-                setTimeout(scheduleGrid,35);
-                setTimeout(scheduleGrid,160);
-                setInterval(()=>{if(document.visibilityState!=='hidden')paintNow(document.getElementById('weekGrid'),rowsOf(document.getElementById('weekGrid')))},60000);
+                setTimeout(scheduleGrid,35);setTimeout(scheduleGrid,160);
+                setInterval(()=>{const g=document.getElementById('weekGrid');if(g)paintNow(g,rowsOf(g))},60000);
 
-                installLabelUi();
-                scheduleGrid();
+                installLabelUi();scheduleGrid();
               }catch(e){console.log('Week geometry V12',e)}
             })();
             """;
