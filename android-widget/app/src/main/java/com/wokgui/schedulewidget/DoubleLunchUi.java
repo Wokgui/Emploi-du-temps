@@ -7,173 +7,283 @@ final class DoubleLunchUi {
         return """
             (function(){
               try {
-                if(window.__doubleLunchUiV4){
-                  if(window.refreshDoubleLunchUi)window.refreshDoubleLunchUi();
+                if(window.__doubleLunchUiV5){
+                  if(window.refreshDoubleLunchUi)window.refreshDoubleLunchUi(true);
                   return;
                 }
-                window.__doubleLunchUiV4=true;
+                window.__doubleLunchUiV5=true;
 
                 const polish=document.createElement('style');
                 polish.textContent=`
-                  /* Un peu plus de hauteur pour mieux occuper l'écran en vue semaine. */
                   html body #viewWeek #weekGrid .wh,
-                  html body #viewWeek #weekGrid .wc{min-height:47px!important}
+                  html body #viewWeek #weekGrid .wc{min-height:48px!important}
                   @media(max-width:560px){
                     html body #viewWeek #weekGrid .wh,
-                    html body #viewWeek #weekGrid .wc{min-height:46px!important}
+                    html body #viewWeek #weekGrid .wc{min-height:47px!important}
                   }
 
-                  /* Midi utilise les vraies limites des cellules du tableau : plus de liseré
-                     dessiné un pixel à l'intérieur, donc les rectangles coïncident avec la grille. */
-                  html body #viewWeek #weekGrid .wc.lunchCell{
+                  /* Pendant un recalcul structurel, on masque seulement la grille quelques
+                     millisecondes : aucun état intermédiaire mal aligné ne peut être visible. */
+                  #weekGrid.geometryPending{visibility:hidden!important}
+
+                  /* Midi n'est plus dessiné comme un rectangle flottant. Les vraies cellules
+                     de la grille portent le fond ; l'overlay ne sert plus qu'à centrer le texte. */
+                  html body #viewWeek #weekGrid .wc.lunchCell,
+                  html body #viewWeek #weekGrid .wc.dynamicLunchContinuation{
                     position:relative!important;
                     padding:0!important;
                     border-radius:0!important;
                     box-shadow:none!important;
                     background:var(--ft-midi)!important;
-                    overflow:visible!important;
-                  }
-                  html body #viewWeek #weekGrid .wc.lunchCell:not(.dynamicLunchCell)::after{
-                    content:'';
-                    position:absolute;
-                    inset:-1px;
-                    border:1px solid var(--ft-midi-border)!important;
-                    border-radius:0!important;
-                    box-sizing:border-box!important;
-                    pointer-events:none;
-                    z-index:15;
+                    color:var(--ft-midi-ink)!important;
                   }
                   html body #viewWeek #weekGrid .dynamicLunchOverlay{
-                    box-sizing:border-box!important;
-                    border:1px solid var(--ft-midi-border)!important;
+                    position:absolute!important;
+                    z-index:25!important;
+                    display:flex!important;
+                    align-items:center!important;
+                    justify-content:center!important;
+                    margin:0!important;
+                    padding:0!important;
+                    background:transparent!important;
+                    border:0!important;
                     border-radius:0!important;
                     box-shadow:none!important;
-                    background:var(--ft-midi)!important;
+                    color:var(--ft-midi-ink)!important;
+                    pointer-events:none!important;
+                    box-sizing:border-box!important;
                   }
+                  html body #viewWeek #weekGrid .dynamicLunchContinuation>*{visibility:hidden!important}
+                  #weekGrid #weekNowRail,#weekGrid #weekNowDot{transition:none!important}
                 `;
                 document.head.appendChild(polish);
 
+                let frame=0,lateTimer=0,ignoreMutationsUntil=0;
+
                 function toMin(v){
-                  try{
-                    if(typeof min==='function')return min(v);
-                    const p=String(v||'').split(':').map(Number);
-                    return (p[0]||0)*60+(p[1]||0);
-                  }catch(e){return 0}
+                  const p=String(v||'').split(':').map(Number);
+                  return (p[0]||0)*60+(p[1]||0);
                 }
-
-                function alignCurrentRail(){
-                  try{
-                    const grid=document.getElementById('weekGrid');
-                    const rail=document.getElementById('weekNowRail');
-                    const dot=document.getElementById('weekNowDot');
-                    if(!grid||!rail||!dot)return;
-                    const day=new Date().getDay();
-                    if(day<1||day>5)return;
-                    const headers=Array.from(grid.querySelectorAll('.wh.day'));
-                    const header=headers[day-1];
-                    if(!header)return;
-                    const g=grid.getBoundingClientRect();
-                    const h=header.getBoundingClientRect();
-                    const boundary=h.left-g.left;
-                    /* Le rail fait 2 px : son bord gauche doit être 1 px avant la ligne
-                       pour que son axe soit exactement superposé à la ligne verticale. */
-                    rail.style.setProperty('left',(boundary-1)+'px','important');
-                    dot.style.setProperty('left',boundary+'px','important');
-                  }catch(e){}
+                function cssVar(name,fallback){
+                  const v=getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+                  return v||fallback;
                 }
-
-                function reset(grid){
+                function markEdge(el){if(el)el.setAttribute('data-midi-grid-edge','1')}
+                function resetEdges(grid){
+                  grid.querySelectorAll('[data-midi-grid-edge="1"]').forEach(el=>{
+                    el.style.removeProperty('border-right-color');
+                    el.style.removeProperty('border-bottom-color');
+                    el.removeAttribute('data-midi-grid-edge');
+                  });
+                  grid.querySelectorAll('.dynamicLunchContinuation').forEach(el=>{
+                    el.classList.remove('dynamicLunchContinuation');
+                    el.style.removeProperty('background');
+                  });
                   grid.querySelectorAll('.dynamicLunchCell').forEach(cell=>{
                     cell.removeAttribute('data-double-lunch');
-                    cell.style.removeProperty('overflow');
                     cell.style.removeProperty('z-index');
+                    cell.style.removeProperty('overflow');
                     const overlay=cell.querySelector('.dynamicLunchOverlay');
                     if(overlay){
-                      overlay.style.removeProperty('top');
-                      overlay.style.removeProperty('left');
-                      overlay.style.removeProperty('right');
-                      overlay.style.removeProperty('bottom');
-                      overlay.style.removeProperty('width');
-                      overlay.style.removeProperty('height');
-                      overlay.style.removeProperty('margin');
-                      overlay.style.removeProperty('padding');
-                      overlay.style.removeProperty('box-sizing');
-                      overlay.style.removeProperty('align-items');
+                      ['top','left','right','bottom','width','height'].forEach(p=>overlay.style.removeProperty(p));
                     }
                   });
                 }
 
-                function apply(){
-                  try{
-                    const grid=document.getElementById('weekGrid');
-                    if(!grid||typeof state==='undefined'||typeof DAYS==='undefined'||typeof slots==='undefined')return;
-                    reset(grid);
-                    const kids=Array.from(grid.children);
-                    const secondStart=slots[4]&&slots[4].start?toMin(slots[4].start):13*60;
-                    const secondEnd=slots[4]&&slots[4].end?toMin(slots[4].end):14*60;
-                    if(secondEnd<=secondStart){alignCurrentRail();return}
+                function paintLunchSegment(grid,kids,cells){
+                  if(!cells.length)return;
+                  const border=cssVar('--ft-midi-border','#D1B66A');
+                  const bg=cssVar('--ft-midi','#FFF9E8');
+                  cells.forEach(cell=>{
+                    cell.style.setProperty('background','var(--ft-midi)','important');
+                    cell.style.setProperty('box-shadow','none','important');
+                    cell.style.setProperty('border-radius','0','important');
+                  });
 
-                    let secondRow=-1;
-                    const startText=(typeof clock==='function')?clock(secondStart):String(slots[4]?.start||'13:00');
-                    const endText=(typeof clock==='function')?clock(secondEnd):String(slots[4]?.end||'14:00');
-                    for(let p=6;p+5<kids.length;p+=6){
-                      const times=(kids[p].textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[];
-                      if(times[0]===startText&&times[1]===endText){secondRow=p;break}
+                  const first=cells[0],last=cells[cells.length-1];
+                  const firstIdx=kids.indexOf(first);
+                  const above=firstIdx>=6?kids[firstIdx-6]:null;
+                  if(above){above.style.setProperty('border-bottom-color',border,'important');markEdge(above)}
+
+                  cells.forEach((cell,i)=>{
+                    const idx=kids.indexOf(cell);
+                    const leftNeighbor=idx>0?kids[idx-1]:null;
+                    if(leftNeighbor){leftNeighbor.style.setProperty('border-right-color',border,'important');markEdge(leftNeighbor)}
+                    cell.style.setProperty('border-right-color',border,'important');markEdge(cell);
+                    if(i<cells.length-1){
+                      cell.style.setProperty('border-bottom-color',bg,'important');
+                    }else{
+                      cell.style.setProperty('border-bottom-color',border,'important');
                     }
-                    if(secondRow<0){alignCurrentRail();return}
+                    markEdge(cell);
+                  });
 
-                    grid.querySelectorAll('.dynamicLunchCell').forEach(cell=>{
-                      const idx=kids.indexOf(cell),dayIndex=(idx%6)-1;
-                      if(dayIndex<0||dayIndex>=DAYS.length)return;
-                      const day=state[DAYS[dayIndex]],courses=day&&Array.isArray(day.courses)?day.courses:[];
-                      const occupied13=courses.some(c=>toMin(c.start)<secondEnd&&toMin(c.end)>secondStart);
-                      const hasCourseAfter=courses.some(c=>toMin(c.start)>=secondEnd);
-                      if(occupied13||!hasCourseAfter)return;
-
-                      const nextCell=kids[secondRow+1+dayIndex];
-                      const overlay=cell.querySelector('.dynamicLunchOverlay');
-                      if(!nextCell||!overlay)return;
-                      const totalHeight=(nextCell.offsetTop+nextCell.offsetHeight)-cell.offsetTop;
-                      if(totalHeight<=cell.offsetHeight+2)return;
-
-                      cell.setAttribute('data-double-lunch','1');
-                      cell.style.setProperty('overflow','visible','important');
-                      cell.style.setProperty('z-index','20','important');
-
-                      /* Un élément absolute est positionné depuis l'intérieur de la bordure
-                         de la cellule. -1 px le remet exactement sur les lignes de la grille. */
-                      overlay.style.setProperty('top','-1px','important');
-                      overlay.style.setProperty('left','-1px','important');
-                      overlay.style.setProperty('right','-1px','important');
-                      overlay.style.setProperty('bottom','auto','important');
-                      overlay.style.setProperty('width','auto','important');
-                      overlay.style.setProperty('height',Math.max(cell.offsetHeight,totalHeight)+'px','important');
-                      overlay.style.setProperty('margin','0','important');
-                      overlay.style.setProperty('padding','0','important');
-                      overlay.style.setProperty('box-sizing','border-box','important');
-                      overlay.style.setProperty('align-items','center','important');
-                    });
-                    alignCurrentRail();
-                  }catch(e){}
+                  const overlay=first.querySelector('.dynamicLunchOverlay');
+                  if(overlay){
+                    const firstRect=first.getBoundingClientRect();
+                    const lastRect=last.getBoundingClientRect();
+                    overlay.style.setProperty('top','0px','important');
+                    overlay.style.setProperty('left','0px','important');
+                    overlay.style.setProperty('right','0px','important');
+                    overlay.style.setProperty('bottom','auto','important');
+                    overlay.style.setProperty('width','100%','important');
+                    overlay.style.setProperty('height',Math.max(first.offsetHeight,lastRect.bottom-firstRect.top)+'px','important');
+                  }
                 }
 
-                function schedule(){
-                  if(window.__doubleLunchFrame)cancelAnimationFrame(window.__doubleLunchFrame);
-                  window.__doubleLunchFrame=requestAnimationFrame(()=>requestAnimationFrame(()=>{
-                    apply();
-                    alignCurrentRail();
-                    setTimeout(alignCurrentRail,40);
-                    setTimeout(alignCurrentRail,180);
+                function syncLunchGeometry(grid){
+                  if(typeof state==='undefined'||typeof DAYS==='undefined'||typeof slots==='undefined')return;
+                  const kids=Array.from(grid.children);
+                  if(kids.length<12)return;
+                  resetEdges(grid);
+
+                  const secondStart=slots[4]&&slots[4].start?toMin(slots[4].start):13*60;
+                  const secondEnd=slots[4]&&slots[4].end?toMin(slots[4].end):14*60;
+                  let secondRow=-1;
+                  for(let p=6;p+5<kids.length;p+=6){
+                    const times=(kids[p].textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[];
+                    if(times.length>=2&&toMin(times[0])===secondStart&&toMin(times[1])===secondEnd){secondRow=p;break}
+                  }
+
+                  const dynamic=Array.from(grid.querySelectorAll('.dynamicLunchCell'));
+                  dynamic.forEach(cell=>{
+                    const idx=kids.indexOf(cell),dayIndex=(idx%6)-1;
+                    if(dayIndex<0||dayIndex>=DAYS.length)return;
+                    const segment=[cell];
+                    if(secondRow>=0&&secondEnd>secondStart){
+                      const day=state[DAYS[dayIndex]],courses=day&&Array.isArray(day.courses)?day.courses:[];
+                      const occupied=courses.some(c=>toMin(c.start)<secondEnd&&toMin(c.end)>secondStart);
+                      const hasAfter=courses.some(c=>toMin(c.start)>=secondEnd);
+                      const next=kids[secondRow+1+dayIndex];
+                      if(!occupied&&hasAfter&&next&&next.classList&&next.classList.contains('wc')){
+                        next.classList.add('dynamicLunchContinuation');
+                        cell.setAttribute('data-double-lunch','1');
+                        cell.style.setProperty('overflow','visible','important');
+                        cell.style.setProperty('z-index','20','important');
+                        segment.push(next);
+                      }
+                    }
+                    paintLunchSegment(grid,kids,segment);
+                  });
+
+                  grid.querySelectorAll('.wc.lunchCell:not(.dynamicLunchCell)').forEach(cell=>paintLunchSegment(grid,kids,[cell]));
+                }
+
+                function syncCurrentMarker(grid){
+                  const rail=document.getElementById('weekNowRail');
+                  const dot=document.getElementById('weekNowDot');
+                  if(!rail||!dot)return;
+                  const now=new Date(),day=now.getDay();
+                  if(day<1||day>5){rail.style.display=dot.style.display='none';return}
+                  try{
+                    if(typeof activeWeek!=='undefined'&&typeof currentWeek!=='undefined'&&activeWeek!==currentWeek){rail.style.display=dot.style.display='none';return}
+                  }catch(e){}
+
+                  const kids=Array.from(grid.children);
+                  if(kids.length<12)return;
+                  const headers=Array.from(grid.querySelectorAll('.wh.day'));
+                  const header=headers[day-1];
+                  if(!header)return;
+                  const minute=now.getHours()*60+now.getMinutes();
+                  let rowStart=-1,rowEnd=-1,target=null,first=null,last=null;
+                  const dayOffset=day;
+                  for(let p=6;p+5<kids.length;p+=6){
+                    const timeCell=kids[p];
+                    const times=(timeCell.textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[];
+                    const dayCell=kids[p+dayOffset];
+                    if(!dayCell)continue;
+                    if(!first)first=dayCell;
+                    last=dayCell;
+                    if(times.length>=2){
+                      const s=toMin(times[0]),e=toMin(times[1]);
+                      if(minute>=s&&minute<=e){rowStart=s;rowEnd=e;target=dayCell}
+                    }
+                  }
+                  if(!first||!last||!target||rowEnd<=rowStart){rail.style.display=dot.style.display='none';return}
+
+                  const g=grid.getBoundingClientRect();
+                  const h=header.getBoundingClientRect();
+                  const f=first.getBoundingClientRect();
+                  const l=last.getBoundingClientRect();
+                  const t=target.getBoundingClientRect();
+                  const x=h.left-g.left;
+                  const frac=Math.max(0,Math.min(1,(minute-rowStart)/(rowEnd-rowStart)));
+                  const y=t.top-g.top+t.height*frac;
+                  const top=f.top-g.top;
+                  const bottom=l.bottom-g.top;
+
+                  rail.style.setProperty('position','absolute','important');
+                  rail.style.setProperty('width','2px','important');
+                  rail.style.setProperty('left',(x-1)+'px','important');
+                  rail.style.setProperty('top',top+'px','important');
+                  rail.style.setProperty('height',Math.max(2,bottom-top)+'px','important');
+                  rail.style.setProperty('transform','none','important');
+                  rail.style.setProperty('display','block','important');
+
+                  dot.style.setProperty('position','absolute','important');
+                  dot.style.setProperty('width','11px','important');
+                  dot.style.setProperty('height','11px','important');
+                  dot.style.setProperty('left',(x-5.5)+'px','important');
+                  dot.style.setProperty('top',(y-5.5)+'px','important');
+                  dot.style.setProperty('transform','none','important');
+                  dot.style.setProperty('display','block','important');
+                }
+
+                function synchronize(){
+                  const grid=document.getElementById('weekGrid');
+                  if(!grid)return;
+                  ignoreMutationsUntil=performance.now()+80;
+                  try{
+                    grid.style.setProperty('position','relative','important');
+                    syncLunchGeometry(grid);
+                    syncCurrentMarker(grid);
+                  }finally{
+                    grid.classList.remove('geometryPending');
+                  }
+                }
+
+                function schedule(structural){
+                  const grid=document.getElementById('weekGrid');
+                  if(!grid)return;
+                  if(structural)grid.classList.add('geometryPending');
+                  if(frame)cancelAnimationFrame(frame);
+                  if(lateTimer)clearTimeout(lateTimer);
+                  frame=requestAnimationFrame(()=>requestAnimationFrame(()=>{
+                    synchronize();
+                    lateTimer=setTimeout(synchronize,90);
                   }));
                 }
-                window.refreshDoubleLunchUi=schedule;
+                window.refreshDoubleLunchUi=function(){schedule(true)};
+
+                function wrap(name){
+                  const fn=window[name];
+                  if(typeof fn!=='function'||fn.__gridGeometryWrapped)return;
+                  const wrapped=function(){
+                    const grid=document.getElementById('weekGrid');
+                    if(grid)grid.classList.add('geometryPending');
+                    const out=fn.apply(this,arguments);
+                    schedule(true);
+                    return out;
+                  };
+                  wrapped.__gridGeometryWrapped=true;
+                  window[name]=wrapped;
+                }
+                wrap('render');wrap('renderWeek');
 
                 const grid=document.getElementById('weekGrid');
-                if(grid)new MutationObserver(schedule).observe(grid,{childList:true,subtree:true});
-                window.addEventListener('resize',schedule);
-                setInterval(()=>{apply();alignCurrentRail()},60000);
-                schedule();
-              }catch(e){console.log('Double lunch UI',e)}
+                if(grid){
+                  new MutationObserver(muts=>{
+                    if(performance.now()<ignoreMutationsUntil)return;
+                    const structural=muts.some(m=>m.type==='childList'&&m.target===grid);
+                    schedule(structural);
+                  }).observe(grid,{childList:true,subtree:true,attributes:true,attributeFilter:['style']});
+                  if(window.ResizeObserver)new ResizeObserver(()=>schedule(false)).observe(grid);
+                }
+                window.addEventListener('resize',()=>schedule(false));
+                document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule(false)});
+                setInterval(()=>schedule(false),60000);
+                schedule(true);
+              }catch(e){console.log('Grid geometry UI',e)}
             })();
             """;
     }
