@@ -1,0 +1,65 @@
+tasks.register('patchStability79') {
+    dependsOn tasks.named('patchStability78')
+    doLast {
+        def mainFile=file('src/main/java/com/wokgui/schedulewidget/MainActivity.java')
+        def main=mainFile.getText('UTF-8')
+
+        // Native downloads avoid WebView/CORS failures for downloadable language packs.
+        def languageBridge='''        @JavascriptInterface public boolean saveLanguagePack(String json) { return LanguagePackStore.save(MainActivity.this, json); }
+'''
+        if(!main.contains('downloadLanguageCatalog()')) {
+            if(!main.contains(languageBridge)) throw new GradleException('6.19: language pack bridge target not found')
+            main=main.replace(languageBridge,languageBridge+'''        @JavascriptInterface public String downloadLanguageCatalog() { return NativeLanguageDownloader.catalog(); }
+        @JavascriptInterface public String downloadLanguagePack(String url) { return NativeLanguageDownloader.downloadAndSave(MainActivity.this, url); }
+''')
+        }
+
+        // Stability79 must be the final visual/localisation pass before the WebView is revealed.
+        if(!main.contains('Stability79Ui.script()')) {
+            def oldFinal='''webView.evaluateJavascript(Stability78Ui.script(), value19 -> {
+                                            if (!forceWeekOpening) revealWebViewStable();
+                                        }))'''
+            def newFinal='''webView.evaluateJavascript(Stability78Ui.script(), value19 ->
+                                            webView.evaluateJavascript(Stability79Ui.script(), value20 -> {
+                                                if (!forceWeekOpening) revealWebViewStable();
+                                            })))'''
+            if(!main.contains(oldFinal)) throw new GradleException('6.19: Stability78 final callback not found')
+            main=main.replace(oldFinal,newFinal)
+        }
+        mainFile.write(main,'UTF-8')
+
+        // Today/Edit must render “Semaine” correctly on the very first paint, not lowercase first.
+        def asset=file('src/main/assets/index.html')
+        def html=asset.getText('UTF-8')
+        def todayOld="FULL[d]+' · semaine '+currentWeek"
+        def editOld="FULL[selected]+' · semaine '+activeWeek"
+        if(!html.contains(todayOld) || !html.contains(editOld)) throw new GradleException('6.19: initial week-label strings not found')
+        html=html.replace(todayOld,"FULL[d]+' · Semaine '+currentWeek")
+        html=html.replace(editOld,"FULL[selected]+' · Semaine '+activeWeek")
+        asset.write(html,'UTF-8')
+
+        // Keep every visible version label aligned with the APK.
+        for(def path:[
+                'src/main/java/com/wokgui/schedulewidget/Stability79Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability78Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/LayoutLanguage77Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Localization75Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability74Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability73Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability72Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability71Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability70Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability69Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/FinalPolishUi.java',
+                'src/main/java/com/wokgui/schedulewidget/CycleLunchFixUi.java',
+                'src/main/java/com/wokgui/schedulewidget/WeekViewStabilityUi.java']) {
+            def f=file(path);if(!f.exists())continue
+            def txt=f.getText('UTF-8').replaceAll(/const APP_VERSION='6\.[0-9]+';/,"const APP_VERSION='6.19';")
+            f.write(txt,'UTF-8')
+        }
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('patchStability79')
+}
