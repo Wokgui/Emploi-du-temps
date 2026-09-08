@@ -11,7 +11,7 @@ android {
         minSdk 26
         targetSdk 35
         versionCode project.hasProperty('versionCode') ? project.property('versionCode').toInteger() : 101
-        versionName '6.1'
+        versionName '6.3'
     }
 
     buildTypes {
@@ -25,76 +25,6 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
-}
-
-/*
- * The week-view marker used to be rendered as a vertical rail on the left edge
- * of today's column. Patch it before compilation so the rail is horizontal at
- * the current time and spans today's column. The patch is idempotent.
- */
-tasks.register('patchHorizontalWeekNowIndicator') {
-    doLast {
-        def f = file('src/main/java/com/wokgui/schedulewidget/WeekViewStabilityUi.java')
-        def src = f.getText('UTF-8')
-        def marker = '                function fixCurrentDayMarker(){'
-        def next = '\n\n                function ensureTitleSpan()'
-        def replacement = '''                function fixCurrentDayMarker(){
-                  try{
-                    const grid=document.getElementById('weekGrid');
-                    const rail=document.getElementById('weekNowRail');
-                    const dot=document.getElementById('weekNowDot');
-                    if(!grid||!rail||!dot||typeof uniqueWeekTimes!=='function')return;
-                    const now=new Date(),day=now.getDay();
-                    if(day<1||day>5){rail.style.display=dot.style.display='none';return}
-                    if(typeof activeWeek!=='undefined'&&typeof currentWeek!=='undefined'&&activeWeek!==currentWeek){rail.style.display=dot.style.display='none';return}
-                    const times=uniqueWeekTimes();
-                    const m=now.getHours()*60+now.getMinutes();
-                    let row=-1,frac=0;
-                    for(let i=0;i<times.length;i++){
-                      const s=minuteOf(times[i].start),e=minuteOf(times[i].end);
-                      if(m>=s&&m<=e){row=i;frac=(m-s)/Math.max(1,e-s);break}
-                    }
-                    const cells=Array.from(grid.querySelectorAll('.wc'));
-                    const headers=Array.from(grid.querySelectorAll('.wh.day'));
-                    if(row<0||!cells.length||headers.length<5){rail.style.display=dot.style.display='none';return}
-                    const dayIndex=day-1;
-                    const header=headers[dayIndex];
-                    const target=cells[row*5+dayIndex];
-                    if(!header||!target){rail.style.display=dot.style.display='none';return}
-
-                    // Horizontal current-time indicator: y = current time, x = today's column.
-                    const left=header.offsetLeft;
-                    const width=header.offsetWidth;
-                    const y=target.offsetTop+Math.max(2,Math.min(target.offsetHeight-2,target.offsetHeight*frac));
-                    rail.style.display=dot.style.display='block';
-                    rail.style.setProperty('left',left+'px','important');
-                    rail.style.setProperty('top',y+'px','important');
-                    rail.style.setProperty('width',Math.max(2,width)+'px','important');
-                    rail.style.setProperty('height','2px','important');
-                    rail.style.setProperty('transform','none','important');
-                    rail.style.setProperty('z-index','20','important');
-                    dot.style.setProperty('left',left+'px','important');
-                    dot.style.setProperty('top',y+'px','important');
-                    dot.style.setProperty('transform','translate(-5px,-5px)','important');
-                    dot.style.setProperty('z-index','21','important');
-                  }catch(e){}
-                }'''
-
-        if (!src.contains('Horizontal current-time indicator: y = current time')) {
-            def start = src.indexOf(marker)
-            def end = start >= 0 ? src.indexOf(next, start) : -1
-            if (start < 0 || end < 0) {
-                throw new GradleException('Unable to locate fixCurrentDayMarker in WeekViewStabilityUi.java')
-            }
-            src = src.substring(0, start) + replacement + src.substring(end)
-        }
-        src = src.replace("const APP_VERSION='6.0';", "const APP_VERSION='6.1';")
-        f.write(src, 'UTF-8')
-    }
-}
-
-tasks.named('preBuild').configure {
-    dependsOn tasks.named('patchHorizontalWeekNowIndicator')
 }
 
 dependencies {
