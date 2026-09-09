@@ -52,6 +52,25 @@ final class FastInteractionUi {
                   el.onclick=proxy;
                   return true;
                 }
+                function heavySubmit(form){
+                  if(!form||typeof form.onsubmit!=='function'||form.onsubmit.__edtFastProxy)return false;
+                  var old=form.onsubmit;
+                  var proxy=function(e){
+                    try{if(e&&e.preventDefault)e.preventDefault()}catch(ignore){}
+                    var submit=form.querySelector('button[type="submit"],input[type="submit"]');
+                    flash(submit||form);
+                    console.log('EDT_FAST_INPUT|'+(form.id||'form')+'-submit|visual');
+                    if(proxy.__running)return false;
+                    proxy.__running=true;
+                    afterPaint(function(){
+                      try{old.call(form,e)}finally{proxy.__running=false}
+                    });
+                    return false;
+                  };
+                  proxy.__edtFastProxy=true;
+                  form.onsubmit=proxy;
+                  return true;
+                }
                 function patch(){
                   try{
                     var settings=document.getElementById('settingsBtn');
@@ -76,6 +95,7 @@ final class FastInteractionUi {
                     // one-frame visual-first treatment. Already patched controls are skipped.
                     document.querySelectorAll('button').forEach(function(b){heavyClick(b)});
                     document.querySelectorAll('.todayCourse,.editCourse,.wc').forEach(function(el){heavyClick(el)});
+                    document.querySelectorAll('form').forEach(function(form){heavySubmit(form)});
                   }catch(e){console.log('FastInteractionUi patch',e)}
                 }
 
