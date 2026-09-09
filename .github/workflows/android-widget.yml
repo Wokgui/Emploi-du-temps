@@ -26,48 +26,38 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-
       - name: Install Android 35 SDK
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
-
       - name: Keep the same debug signing key
         uses: actions/cache@v4
         with:
           path: ~/.android/debug.keystore
           key: emploi-du-temps-debug-keystore-v1
-
       - name: Clean build
         run: gradle clean :app:assembleDebug --stacktrace
-
       - name: Verify install version and package
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/badging.txt
           grep -q "package: name='com.wokgui.schedulewidget' versionCode='631001' versionName='6.31'" app/build/outputs/apk/debug/badging.txt
-
       - name: Rename APK
         run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/emploi-du-temps-widget.apk
-
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: emploi-du-temps-widget-apk
           path: android-widget/app/build/outputs/apk/debug/emploi-du-temps-widget.apk
           if-no-files-found: error
-
       - name: Publish stable APK
         env:
           GH_TOKEN: ${{ github.token }}
@@ -80,28 +70,29 @@ jobs:
   smoke:
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 8
     continue-on-error: true
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-
+      - name: Enable KVM acceleration
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm
+          fi
       - name: Download validated APK
         uses: actions/download-artifact@v4
         with:
           name: emploi-du-temps-widget-apk
           path: smoke-apk
-
       - name: Exercise main views on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -109,8 +100,8 @@ jobs:
           arch: x86_64
           target: default
           profile: pixel_2
-          emulator-boot-timeout: 300
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-boot-timeout: 180
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           disable-animations: true
           script: |
             set -euo pipefail
@@ -138,7 +129,6 @@ jobs:
               echo "App crash detected"
               exit 1
             fi
-
       - name: Upload smoke-test captures
         if: always()
         uses: actions/upload-artifact@v4
