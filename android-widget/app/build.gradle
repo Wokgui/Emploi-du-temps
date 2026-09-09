@@ -11,7 +11,7 @@ android {
         minSdk 26
         targetSdk 35
         versionCode project.hasProperty('versionCode') ? project.property('versionCode').toInteger() : 101
-        versionName '6.25'
+        versionName '6.26'
     }
 
     buildTypes {
@@ -26,50 +26,6 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 }
-
-apply from: 'patches.gradle'
-
-tasks.register('patchLateFinalPolish') {
-    doLast {
-        def f = file('src/main/java/com/wokgui/schedulewidget/MainActivity.java')
-        def src = f.getText('UTF-8')
-        def needle = '''    private void injectPersonalizationUi() {
-        if (webView == null) return;
-'''
-        if (!src.contains('FinalPolishLateUi.script()')) {
-            if (!src.contains(needle)) throw new GradleException('Unable to locate injectPersonalizationUi for late polish')
-            src = src.replace(needle, needle + '        webView.evaluateJavascript(FinalPolishLateUi.script(), null);\n')
-            f.write(src, 'UTF-8')
-        }
-    }
-}
-
-tasks.named('preBuild').configure {
-    dependsOn tasks.named('patchLateFinalPolish')
-}
-
-apply from: 'fixes66.gradle'
-apply from: 'fixes67.gradle'
-apply from: 'fixes68.gradle'
-apply from: 'fixes69.gradle'
-apply from: 'fixes70.gradle'
-apply from: 'fixes71.gradle'
-apply from: 'fixes72.gradle'
-apply from: 'fixes73.gradle'
-apply from: 'fixes74.gradle'
-apply from: 'fixes75.gradle'
-apply from: 'fixes75b.gradle'
-apply from: 'fixes76.gradle'
-apply from: 'fixes77.gradle'
-apply from: 'fixes78.gradle'
-apply from: 'fixes79.gradle'
-apply from: 'fixes80.gradle'
-apply from: 'fixes80b.gradle'
-apply from: 'fixes81.gradle'
-apply from: 'fixes82.gradle'
-apply from: 'fixes83.gradle'
-apply from: 'fixes84.gradle'
-apply from: 'fixes85.gradle'
 
 dependencies {
     implementation 'com.google.mlkit:text-recognition:16.0.1'

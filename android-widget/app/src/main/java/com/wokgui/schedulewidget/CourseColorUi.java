@@ -38,6 +38,7 @@ final class CourseColorUi {
                 };
                 const PALETTE=['butter','apricot','peach','coral','terracotta','rose','berry','plum'];
                 let picked='';
+                let pickedTouched=false;
                 let scope='cell';
 
                 function language(){
@@ -83,7 +84,7 @@ final class CourseColorUi {
                     const palette=document.getElementById('courseColorPalette');
                     const none=document.createElement('button');none.type='button';none.className='courseColorChoice none';none.dataset.color='';none.setAttribute('aria-label','Aucune couleur');palette.appendChild(none);
                     PALETTE.forEach(id=>{const b=document.createElement('button');b.type='button';b.className='courseColorChoice';b.dataset.color=id;b.style.background=COLORS[id].bg;b.style.borderColor=COLORS[id].edge;b.setAttribute('aria-label',id);palette.appendChild(b)});
-                    palette.querySelectorAll('.courseColorChoice').forEach(b=>b.onclick=()=>selectColor(b.dataset.color||''));
+                    palette.querySelectorAll('.courseColorChoice').forEach(b=>b.onclick=()=>{pickedTouched=true;selectColor(b.dataset.color||'')});
                     document.getElementById('scopeCell').onclick=()=>selectScope('cell');
                     document.getElementById('scopeClass').onclick=()=>selectScope('class');
                   }
@@ -196,12 +197,12 @@ final class CourseColorUi {
                 }
 
                 function updateNowMarkers(){updateTodayNow();updateWeekNow()}
-                function decorateAll(){decorateWeek();decorateEdit();decorateToday();setTimeout(updateNowMarkers,0)}
+                function decorateAll(){decorateWeek();decorateEdit();decorateToday();updateNowMarkers()}
 
-                function syncPicker(){ensurePicker();const c=currentEditedCourse();selectColor(c&&c.color?c.color:'');selectScope('cell')}
+                function syncPicker(){ensurePicker();pickedTouched=false;const c=currentEditedCourse();selectColor(c&&c.color?c.color:'');selectScope('cell')}
 
                 const modal=document.getElementById('modal');
-                if(modal){new MutationObserver(()=>{if(modal.classList.contains('show'))setTimeout(syncPicker,0)}).observe(modal,{attributes:true,attributeFilter:['class']})}
+                if(modal){new MutationObserver(()=>{if(modal.classList.contains('show'))syncPicker()}).observe(modal,{attributes:true,attributeFilter:['class']})}
 
                 const form=document.getElementById('courseForm');
                 if(form&&form.onsubmit&&!form.onsubmit.__courseColorWrappedV2){
@@ -222,21 +223,23 @@ final class CourseColorUi {
                     try{
                       const arr=weeks[week]&&weeks[week][day]?weeks[week][day].courses:[];
                       let target=arr.find(c=>c.start===start&&c.end===end&&c.label===text);if(!target)target=arr.find(c=>c.start===start&&c.end===end);
-                      if(target)target.color=chosen;
-                      if(chosenScope==='class'){
+                      if(pickedTouched&&target)target.color=chosen;
+                      if(pickedTouched&&chosenScope==='class'){
                         const match=norm(oldClass||text);
                         Object.keys(weeks).forEach(w=>{const ws=weeks[w];if(!ws)return;Object.keys(ws).forEach(d=>{const dd=ws[d];if(!dd||!Array.isArray(dd.courses))return;dd.courses.forEach(c=>{if(norm(c.label)===match)c.color=chosen})})});
                         if(target)target.color=chosen;
                       }
                       if(typeof save==='function')save();
                     }catch(err){}
-                    setTimeout(decorateAll,0);
+                    scheduleDecorate84();
                     return result;
                   };
                   wrapped.__courseColorWrappedV2=true;form.onsubmit=wrapped;
                 }
 
-                ['weekGrid','editList','todayList'].forEach(id=>{const el=document.getElementById(id);if(el)new MutationObserver(()=>setTimeout(decorateAll,0)).observe(el,{childList:true})});
+                let decorateTimer84=0;
+                function scheduleDecorate84(){if(decorateTimer84)return;decorateTimer84=setTimeout(()=>{decorateTimer84=0;decorateAll()},18)}
+                ['weekGrid','editList','todayList'].forEach(id=>{const el=document.getElementById(id);if(el)new MutationObserver(scheduleDecorate84).observe(el,{childList:true})});
                 window.addEventListener('resize',()=>setTimeout(updateNowMarkers,20));
                 setInterval(updateNowMarkers,60000);
 

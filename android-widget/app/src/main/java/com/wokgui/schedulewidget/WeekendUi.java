@@ -219,7 +219,7 @@ final class WeekendUi {
                 function wrapSettingsRefresh(){
                   const name='refreshSettingsV3',old=window[name];
                   if(typeof old!=='function'||old.__weekendRefreshWrapped)return;
-                  const wrapped=function(){const out=old.apply(this,arguments);setTimeout(refresh,0);return out};wrapped.__weekendRefreshWrapped=true;window[name]=wrapped;
+                  const wrapped=function(){const out=old.apply(this,arguments);refresh();return out};wrapped.__weekendRefreshWrapped=true;window[name]=wrapped;
                 }
 
                 function refresh(){
@@ -229,12 +229,11 @@ final class WeekendUi {
                     syncDayNames();syncGlobalDays();mergeNativeWeekends(root);
                     wrapTodayKey();wrapExport();wrapDayTabs();wrapRenderEdit();wrapRenderWeek();wrapSettingsRefresh();
                     decorateDayTabs();updateRemoveButton();updateWeekGridGeometry();
-                    if(typeof mode!=='undefined'&&mode==='today'&&typeof renderToday==='function')renderToday();
                   }catch(e){}finally{refreshing=false}
                 }
                 window.refreshWeekendUi=refresh;
                 refresh();
-                setTimeout(refresh,80);setTimeout(refresh,350);setTimeout(refresh,900);
+
               }catch(e){console.log('WeekendUi',e)}
             })();
             """;

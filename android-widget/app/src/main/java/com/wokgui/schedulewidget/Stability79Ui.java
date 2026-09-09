@@ -9,7 +9,7 @@ final class Stability79Ui {
               try{
                 if(window.__stability79V1){if(window.refreshStability79)window.refreshStability79();return}
                 window.__stability79V1=true;
-                const APP_VERSION='6.19';
+                const APP_VERSION='6.26';
                 const PACK_PREFIX='edt-language-pack-v1-';
                 const CATALOG_URL='https://raw.githubusercontent.com/Wokgui/Emploi-du-temps/main/language-packs/catalog.json';
                 let refreshing=false,languageTimer=0,lastWeekPointer=0,lunchRaf=0;

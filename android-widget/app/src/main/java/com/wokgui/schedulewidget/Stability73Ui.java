@@ -9,7 +9,7 @@ final class Stability73Ui {
               try{
                 if(window.__stability73V1){if(window.refreshStability73)window.refreshStability73();return}
                 window.__stability73V1=true;
-                const APP_VERSION='6.13';
+                const APP_VERSION='6.26';
                 let applying=false;
                 let lastPointerAt=0;
                 let lastPointerMode=0;

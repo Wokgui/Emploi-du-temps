@@ -9,7 +9,7 @@ final class Stability78Ui {
               try{
                 if(window.__stability78V1){if(window.refreshStability78)window.refreshStability78();return}
                 window.__stability78V1=true;
-                const APP_VERSION='6.18';
+                const APP_VERSION='6.26';
                 let refreshing=false;
 
                 function loadAdv(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
@@ -128,8 +128,10 @@ final class Stability78Ui {
                 }
                 window.refreshStability78=refresh;
 
-                function wrap(name){const old=window[name];if(typeof old!=='function'||old.__stability78)return;const w=function(){const r=old.apply(this,arguments);requestAnimationFrame(refresh);return r};w.__stability78=true;window[name]=w;try{eval(name+'=w')}catch(e){}}
-                ['renderEdit','renderSlots','refreshAdvancedFeatures','refreshFineTuneUi','refreshStability70','refreshStability74','refreshLayoutLanguage77'].forEach(wrap);
+                let refreshTimer84=0;
+                function scheduleRefresh84(){if(refreshTimer84)return;refreshTimer84=setTimeout(()=>{refreshTimer84=0;refresh()},18)}
+                function wrap(name){const old=window[name];if(typeof old!=='function'||old.__stability78)return;const w=function(){const r=old.apply(this,arguments);scheduleRefresh84();return r};w.__stability78=true;window[name]=w;try{eval(name+'=w')}catch(e){}}
+                ['renderEdit','renderSlots','refreshStability74'].forEach(wrap);
 
                 document.body.classList.add('startup78');
                 refresh();requestAnimationFrame(()=>{refresh();requestAnimationFrame(()=>document.body.classList.remove('startup78'))});

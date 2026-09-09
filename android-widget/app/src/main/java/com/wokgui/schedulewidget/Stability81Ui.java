@@ -9,7 +9,7 @@ final class Stability81Ui {
               try{
                 if(window.__stability81V1){if(window.refreshStability81)window.refreshStability81();return}
                 window.__stability81V1=true;
-                const APP_VERSION='6.21';
+                const APP_VERSION='6.26';
                 let translating81=false,downloadBusy81=false;
 
                 const EXTRA81={
@@ -69,6 +69,27 @@ final class Stability81Ui {
                 function translateExtraText81(value){
                   const raw=String(value==null?'':value),trim=raw.trim();if(!trim)return raw;
                   const m=map81();if(m[trim])return raw.replace(trim,m[trim]);
+                  const lang=language81();
+                  let dyn=trim.match(/^(Lundi|Mardi|Mercredi|Jeudi|Vendredi|Samedi|Dimanche|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag) *· *(?:Semaine|Week|Woche) +([A-D])$/i);
+                  if(dyn){
+                    const canon={Lundi:'Lundi',Mardi:'Mardi',Mercredi:'Mercredi',Jeudi:'Jeudi',Vendredi:'Vendredi',Samedi:'Samedi',Dimanche:'Dimanche',Monday:'Lundi',Tuesday:'Mardi',Wednesday:'Mercredi',Thursday:'Jeudi',Friday:'Vendredi',Saturday:'Samedi',Sunday:'Dimanche',Montag:'Lundi',Dienstag:'Mardi',Mittwoch:'Mercredi',Donnerstag:'Jeudi',Freitag:'Vendredi',Samstag:'Samedi',Sonntag:'Dimanche'};
+                    const fr=canon[dyn[1]]||dyn[1];
+                    const daysEn={Lundi:'Monday',Mardi:'Tuesday',Mercredi:'Wednesday',Jeudi:'Thursday',Vendredi:'Friday',Samedi:'Saturday',Dimanche:'Sunday'};
+                    const daysDe={Lundi:'Montag',Mardi:'Dienstag',Mercredi:'Mittwoch',Jeudi:'Donnerstag',Vendredi:'Freitag',Samedi:'Samstag',Dimanche:'Sonntag'};
+                    const day=lang==='en'?daysEn[fr]:(lang==='de'?daysDe[fr]:(lang==='fr'?fr:(m[fr]||fr)));
+                    const week=lang==='en'?'Week':(lang==='de'?'Woche':(lang==='fr'?'Semaine':(m['Semaine']||'Semaine')));
+                    return raw.replace(trim,day+' · '+week+' '+dyn[2].toUpperCase());
+                  }
+                  dyn=trim.match(/^([0-9]+ *h(?: *[0-9]+)?|[0-9]+ *min) *sans cours$/i);
+                  if(dyn){
+                    const tail=lang==='en'?'with no class':(lang==='de'?'ohne Unterricht':(lang==='fr'?'sans cours':(m['sans cours']||'sans cours')));
+                    return raw.replace(trim,dyn[1]+' '+tail);
+                  }
+                  dyn=trim.match(/^Reprise à +(.*)$/i);
+                  if(dyn){
+                    const lead=lang==='en'?'Back at':(lang==='de'?'Weiter um':(lang==='fr'?'Reprise à':(m['Reprise à']||'Reprise à')));
+                    return raw.replace(trim,lead+' '+dyn[1]);
+                  }
                   for(let n=1;n<=9;n++){
                     const fr=periodFr81(n),legacy=n+'e h',legacy2=n+'e heure';
                     if(trim===fr||trim===legacy||trim===legacy2)return raw.replace(trim,period81(n));
@@ -105,11 +126,12 @@ final class Stability81Ui {
                   const sel=document.getElementById('fSlot');if(sel){[...sel.options].forEach(o=>{const n=Number(o.value);if(!(n>=1&&n<=9))return;let times='';try{const s=slots[n-1];if(s)times=' · '+s.start+'–'+s.end}catch(e){}o.textContent=period81(n)+times})}
                 }
 
-                function applyTranslation81(){
+                function applyTranslation81(root){
                   if(translating81)return;translating81=true;
                   try{
-                    try{if(window.refreshLocalization75)window.refreshLocalization75()}catch(e){}
-                    fixPeriodLabels81();translateExtras81(document.body);
+                    const scope=root&&root.nodeType===1?root:document.body;
+                    if(scope===document.body||scope.id==='viewEdit'||scope.id==='settingsSheet')fixPeriodLabels81();
+                    translateExtras81(scope);
                     const v=document.getElementById('appVersionInfo');if(v)v.textContent='Version '+APP_VERSION;
                     document.documentElement.lang=language81().replace('_','-');
                   }finally{translating81=false}
@@ -123,8 +145,11 @@ final class Stability81Ui {
                     select.addEventListener('change',e=>{
                       e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();
                       const code=String(e.target.value||'fr');
-                      try{if(AndroidSchedule.setLanguageAndReload81){AndroidSchedule.setLanguageAndReload81(code);return}}catch(ex){}
-                      try{const ui=loadUi81();ui.language=code;AndroidSchedule.saveUiSettings(JSON.stringify(ui));location.reload()}catch(ex){}
+                      try{
+                        const next=loadUi81();next.language=code;AndroidSchedule.saveUiSettings(JSON.stringify(next));
+                        try{if(window.refreshLocalization75)window.refreshLocalization75()}catch(ex){}
+                        applyTranslation81(document.body);
+                      }catch(ex){}
                     },true);
                   }
                   const choices=[['fr','Français'],['de','Deutsch'],['en','English']].concat(installed81().map(x=>[String(x.code||''),String(x.name||x.code||'')]));
@@ -167,13 +192,23 @@ final class Stability81Ui {
                   try{
                     const pack=typeof raw==='string'?JSON.parse(raw):raw;const panel=document.getElementById('languagePackPanel81'),status=panel&&panel.querySelector('.languagePackStatus');
                     if(status)status.textContent=text81('Langue téléchargée. Application en cours…');
-                    if(pack&&pack.code){try{AndroidSchedule.setLanguageAndReload81(String(pack.code));return}catch(e){}}
+                    if(pack&&pack.code){
+                      try{
+                        const next=loadUi81();next.language=String(pack.code);AndroidSchedule.saveUiSettings(JSON.stringify(next));
+                        try{if(window.refreshLocalization75)window.refreshLocalization75()}catch(e){}
+                        applyTranslation81(document.body);ensureLanguageSelect81();
+                        return;
+                      }catch(e){}
+                    }
                     if(status)status.textContent=text81('La langue a été téléchargée mais n’a pas pu être appliquée.');
                   }catch(e){const status=document.querySelector('#languagePackPanel81 .languagePackStatus');if(status)status.textContent=text81('La langue a été téléchargée mais n’a pas pu être appliquée.')}
                 };
                 window.onGeneratedLanguagePackError80=function(message){downloadBusy81=false;const b=document.getElementById('languageGenerate81');if(b)b.disabled=false;const s=document.querySelector('#languagePackPanel81 .languagePackStatus');if(s)s.textContent=String(message||text81('Téléchargement impossible'))};
 
                 const style=document.createElement('style');style.id='stability81Style';style.textContent=`
+                  button,.nav,.weekTab,.dayTab,select,input,label,[role="button"]{touch-action:manipulation!important;-webkit-tap-highlight-color:transparent!important}
+                  button,.nav,.weekTab,.dayTab{transition:none!important}
+                  button:active,.nav:active,.weekTab:active,.dayTab:active,.weekModeChoice:active,.advButton:active,.settingsAction:active{opacity:.72!important}
                   #slotSettings .slotRow{grid-template-columns:92px 1fr 1fr!important}
                   #slotSettings .slotNum{white-space:nowrap!important;text-align:left!important;font-size:.70rem!important}
                   #languageDownloadBtn{display:none!important}
@@ -188,12 +223,20 @@ final class Stability81Ui {
                   @media(max-width:390px){#slotSettings .slotRow{grid-template-columns:82px 1fr 1fr!important}#slotSettings .slotNum{font-size:.64rem!important}}
                 `;document.head.appendChild(style);
 
+                function root81(name){
+                  if(name==='renderToday')return document.getElementById('viewToday');
+                  if(name==='renderWeek'||name==='setActiveWeek')return document.getElementById('viewWeek');
+                  if(name==='renderEdit'||name==='renderSlots'||name==='fillSlotOptions')return document.getElementById('viewEdit');
+                  if(name==='renderContext')return document.querySelector('.contextBar');
+                  if(name==='openEditor')return document.getElementById('modal');
+                  return document.querySelector('.view.active')||document.body;
+                }
                 function wrap81(name){
                   const old=window[name];if(typeof old!=='function'||old.__language81)return;
-                  const w=function(){const r=old.apply(this,arguments);applyTranslation81();return r};w.__language81=true;window[name]=w;try{eval(name+'=w')}catch(e){}
+                  const w=function(){const r=old.apply(this,arguments);applyTranslation81(root81(name));return r};w.__language81=true;window[name]=w;try{eval(name+'=w')}catch(e){}
                 }
-                ['render','renderToday','renderWeek','renderEdit','renderContext','renderSlots','fillSlotOptions','openEditor','setActiveWeek'].forEach(wrap81);
-                const bottom=document.querySelector('.bottom');if(bottom&&!bottom.__language81){bottom.__language81=true;bottom.addEventListener('click',e=>{if(e.target.closest('.nav'))applyTranslation81()})}
+                ['renderToday','renderWeek','renderEdit','renderContext','renderSlots','fillSlotOptions','openEditor','setActiveWeek'].forEach(wrap81);
+                const bottom=document.querySelector('.bottom');if(bottom)bottom.__language81=true;
 
                 function refresh81(){ensureLanguageSelect81();ensureDownloadUi81();fixPeriodLabels81();applyTranslation81()}
                 window.refreshStability81=refresh81;

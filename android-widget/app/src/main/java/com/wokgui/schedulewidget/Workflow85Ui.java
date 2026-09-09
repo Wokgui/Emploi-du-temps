@@ -9,7 +9,7 @@ final class Workflow85Ui {
               try{
                 if(window.__workflow85V1){if(window.refreshWorkflow85)window.refreshWorkflow85();return}
                 window.__workflow85V1=true;
-                const APP_VERSION='6.25';
+                const APP_VERSION='6.26';
                 let arranging=false,arrangeTimer=0,undoSuppress=false,lastSaveAt=0;
                 const undoStack=[];
                 let lastSnapshot='',lastFingerprint='';

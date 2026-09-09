@@ -9,7 +9,7 @@ final class Stability69Ui {
               try{
                 if(window.__stability69V1){if(window.refreshStability69)window.refreshStability69();return}
                 window.__stability69V1=true;
-                const APP_VERSION='6.9';
+                const APP_VERSION='6.26';
                 const STRONG='1.5px';
                 let switching=false;
 
@@ -89,7 +89,7 @@ final class Stability69Ui {
                     let b=box.querySelector('.weekModeChoice[data-m="'+v+'"]');
                     if(!b){b=document.createElement('button');b.type='button';b.className='weekModeChoice';b.dataset.m=v;box.appendChild(b)}
                     b.hidden=false;b.style.removeProperty('display');b.textContent=label;
-                    b.onclick=e=>{e.preventDefault();e.stopPropagation();switchCycle(Number(v));return false};
+                    b.onclick=e=>{e.preventDefault();e.stopPropagation();const target=Number(v);box.querySelectorAll('.weekModeChoice').forEach(x=>x.classList.toggle('active',Number(x.dataset.m)===target));requestAnimationFrame(()=>switchCycle(target));return false};
                   }
                   const order=new Map(defs.map((x,i)=>[x[0],i]));
                   [...box.querySelectorAll('.weekModeChoice')].sort((a,b)=>(order.get(a.dataset.m)??99)-(order.get(b.dataset.m)??99)).forEach(b=>box.appendChild(b));
@@ -131,7 +131,7 @@ final class Stability69Ui {
                   if(cw){
                     if(n===1){cw.textContent=tr('Semaine unique','Single week','Einzelwoche');cw.onclick=null}
                     else{
-                      const cur=typeof currentWeek!=='undefined'?currentWeek:'A';cw.innerHTML=tr('Cette semaine : ','This week: ','Diese Woche: ')+'<b>'+cur+'</b>';
+                      const cur=typeof currentWeek!=='undefined'?currentWeek:'A';if(window.setCurrentWeekLabel70)window.setCurrentWeekLabel70(cur);else cw.textContent=tr('Cette semaine : ','This week: ','Diese Woche: ')+cur;
                       cw.onclick=()=>{
                         const ls=['A','B','C','D'].slice(0,n),old=typeof currentWeek!=='undefined'?currentWeek:'A',idx=Math.max(0,ls.indexOf(old)),next=ls[(idx+1)%ls.length];
                         if(typeof currentWeek!=='undefined')currentWeek=next;if(typeof activeWeek!=='undefined')activeWeek=next;

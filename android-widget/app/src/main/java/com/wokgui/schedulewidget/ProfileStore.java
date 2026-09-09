@@ -196,18 +196,19 @@ final class ProfileStore {
     private static String blankSchedule(Context context) {
         try {
             JSONObject root = new JSONObject(ScheduleStore.exportJson(context));
+            JSONArray enabled = new JSONArray(); for (int day = 2; day <= 6; day++) enabled.put(day); root.put("_enabledDays", enabled);
             JSONObject weeks = root.optJSONObject("_weeks");
             if (weeks != null) {
                 for (String w : new String[]{"A","B","C","D"}) {
                     JSONObject week = weeks.optJSONObject(w);
                     if (week == null) continue;
-                    for (int day = 2; day <= 6; day++) {
+                    for (int day : new int[]{2,3,4,5,6,7,1}) {
                         JSONObject d = week.optJSONObject(String.valueOf(day));
                         if (d != null) d.put("courses", new JSONArray());
                     }
                 }
             }
-            for (int day = 2; day <= 6; day++) {
+            for (int day : new int[]{2,3,4,5,6,7,1}) {
                 JSONObject d = root.optJSONObject(String.valueOf(day));
                 if (d != null) d.put("courses", new JSONArray());
             }

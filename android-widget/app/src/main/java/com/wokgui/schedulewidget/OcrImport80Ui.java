@@ -9,27 +9,27 @@ final class OcrImport80Ui {
               try{
                 if(window.__ocrImport80V1)return;window.__ocrImport80V1=true;
 
-                function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’']/g,'').replace(/\s+/g,' ').trim()}
+                function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’']/g,'').replace(/\\s+/g,' ').trim()}
                 function ocrDay80(text){
                   const s=' '+norm(text)+' ';
                   const tests=[
-                    [2,/\b(lun(?:di)?|mon(?:day)?|montag|lunes|lunedi|segunda(?:-feira)?|maandag)\b/],
-                    [3,/\b(mar(?:di)?|tue(?:sday)?|dienstag|martes|martedi|terca(?:-feira)?|dinsdag)\b/],
-                    [4,/\b(mer(?:credi)?|wed(?:nesday)?|mittwoch|miercoles|mercoledi|quarta(?:-feira)?|woensdag)\b/],
-                    [5,/\b(jeu(?:di)?|thu(?:rsday)?|donnerstag|jueves|giovedi|quinta(?:-feira)?|donderdag)\b/],
-                    [6,/\b(ven(?:dredi)?|fri(?:day)?|freitag|viernes|venerdi|sexta(?:-feira)?|vrijdag)\b/],
-                    [7,/\b(sam(?:edi)?|sat(?:urday)?|samstag|sabado|sabato|zaterdag)\b/],
-                    [1,/\b(dim(?:anche)?|sun(?:day)?|sonntag|domingo|domenica|zondag)\b/]
+                    [2,/\\b(lun(?:di)?|mon(?:day)?|montag|lunes|lunedi|segunda(?:-feira)?|maandag)\\b/],
+                    [3,/\\b(mar(?:di)?|tue(?:sday)?|dienstag|martes|martedi|terca(?:-feira)?|dinsdag)\\b/],
+                    [4,/\\b(mer(?:credi)?|wed(?:nesday)?|mittwoch|miercoles|mercoledi|quarta(?:-feira)?|woensdag)\\b/],
+                    [5,/\\b(jeu(?:di)?|thu(?:rsday)?|donnerstag|jueves|giovedi|quinta(?:-feira)?|donderdag)\\b/],
+                    [6,/\\b(ven(?:dredi)?|fri(?:day)?|freitag|viernes|venerdi|sexta(?:-feira)?|vrijdag)\\b/],
+                    [7,/\\b(sam(?:edi)?|sat(?:urday)?|samstag|sabado|sabato|zaterdag)\\b/],
+                    [1,/\\b(dim(?:anche)?|sun(?:day)?|sonntag|domingo|domenica|zondag)\\b/]
                   ];
                   for(const [d,re] of tests)if(re.test(s))return d;return null;
                 }
 
                 function ocrTimes80(text){
                   let s=String(text||'')
-                    .replace(/(\d{1,2})\s*[hH]\s*([0-5]\d)/g,'$1:$2')
-                    .replace(/(\d{1,2})\s*[hH](?!\d)/g,'$1:00')
-                    .replace(/\b(\d{1,2})[.](\d{2})\b/g,'$1:$2');
-                  const out=[],re=/\b([0-2]?\d):([0-5]\d)\b/g;let m;
+                    .replace(/(\\d{1,2})\\s*[hH]\\s*([0-5]\\d)/g,'$1:$2')
+                    .replace(/(\\d{1,2})\\s*[hH](?!\\d)/g,'$1:00')
+                    .replace(/\\b(\\d{1,2})[.](\\d{2})\\b/g,'$1:$2');
+                  const out=[],re=/\\b([0-2]?\\d):([0-5]\\d)\\b/g;let m;
                   while((m=re.exec(s))){const h=Number(m[1]);if(h<24){const v=String(h).padStart(2,'0')+':'+m[2];if(!out.includes(v))out.push(v)}}
                   return out;
                 }
@@ -68,7 +68,7 @@ final class OcrImport80Ui {
                     dayPos=days.map((d,i)=>({d,x:centers[i],y:0}));
                   }
                   const daySpacing=typicalSpacing(dayPos.map(x=>x.x));
-                  const headerY=headers.length?Math.max(...headers.map(h=>h.y)):Math.min(...lines.map(l=>l.cy));
+                  const headerY=headers.length?Math.max(...headers.map(h=>h.y)):Math.min(...lines.map(l=>l.cy))-4;
 
                   let raw=[];
                   for(const line of lines){
@@ -97,19 +97,19 @@ final class OcrImport80Ui {
 
                   const cells=new Map();
                   for(const line of contentLines){
-                    if(ocrTimes80(line.text).length)continue;let txt=line.text.replace(/\s+/g,' ').trim();if(!txt||genericHeader.test(txt)||/^[-–—|]+$/.test(txt))continue;
+                    if(ocrTimes80(line.text).length)continue;let txt=line.text.replace(/\\s+/g,' ').trim();if(!txt||genericHeader.test(txt)||/^[-–—|]+$/.test(txt))continue;
                     const dn=nearest80(dayPos,line.cx,x=>x.x),an=nearest80(anchors,line.cy,x=>x.y);if(!dn.item||!an.item)continue;
                     if(Number.isFinite(daySpacing)&&dn.dist>daySpacing*.72)continue;
                     if(Number.isFinite(rowSpacing)&&an.dist>rowSpacing*.62)continue;
                     const d=dn.item,a=an.item,key=d.d+'|'+a.start+'|'+a.end;if(!cells.has(key))cells.set(key,{day:d.d,start:a.start,end:a.end,parts:[],room:''});const cell=cells.get(key);
-                    const rm=txt.match(/(?:salle|room|raum|aula)?\s*([A-Za-z]?\d{2,4}[A-Za-z]?)\b/i);
+                    const rm=txt.match(/(?:salle|room|raum|aula)?\\s*([A-Za-z]?\\d{2,4}[A-Za-z]?)\\b/i);
                     if(rm&&(/salle|room|raum|aula/i.test(txt)||txt.trim()===rm[1])){cell.room=rm[1];txt=txt.replace(rm[0],'').trim()}
                     if(txt)cell.parts.push(txt);
                   }
 
                   const parsed={};days.forEach(d=>parsed[d]=[]);
                   for(const cell of cells.values()){
-                    let label=[...new Set(cell.parts)].join(' · ').replace(/\s*·\s*·+/g,' · ').trim();if(!label)continue;if(label.length>80)label=label.slice(0,80);
+                    let label=[...new Set(cell.parts)].join(' · ').replace(/\\s*·\\s*·+/g,' · ').trim();if(!label)continue;if(label.length>80)label=label.slice(0,80);
                     let slot=0;try{if(typeof slotForTimes==='function')slot=slotForTimes(cell.start,cell.end)}catch(e){}
                     parsed[cell.day].push({start:cell.start,end:cell.end,label,room:cell.room,slot});
                   }

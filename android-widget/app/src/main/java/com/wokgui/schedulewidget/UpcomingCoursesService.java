@@ -260,10 +260,10 @@ public class UpcomingCoursesService extends RemoteViewsService {
             Locale locale = "de".equals(lang) ? Locale.GERMANY : ("en".equals(lang) ? Locale.UK : Locale.FRANCE);
             if ("fr".equals(lang) || (!"de".equals(lang) && !"en".equals(lang))) {
                 String d = new SimpleDateFormat("EEEE d MMM.", locale).format(date.getTime());
-                return ", le " + d;
+                return ",\nle " + d;
             }
-            if ("de".equals(lang)) return ", am " + new SimpleDateFormat("EEEE, d. MMM.", locale).format(date.getTime());
-            return ", " + new SimpleDateFormat("EEE d MMM", locale).format(date.getTime());
+            if ("de".equals(lang)) return ",\nam " + new SimpleDateFormat("EEEE, d. MMM.", locale).format(date.getTime());
+            return ",\n" + new SimpleDateFormat("EEE d MMM", locale).format(date.getTime());
         }
 
         private boolean sameDay(Calendar a, Calendar b) {

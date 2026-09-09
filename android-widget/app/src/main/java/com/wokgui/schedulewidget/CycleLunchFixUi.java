@@ -12,7 +12,7 @@ final class CycleLunchFixUi {
                   return;
                 }
                 window.__cycleLunchFixV3=true;
-                const APP_VERSION='6.7';
+                const APP_VERSION='6.26';
                 let switching=false;
 
                 function loadAdv(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
@@ -43,8 +43,13 @@ final class CycleLunchFixUi {
                     transition:none!important;animation:none!important;-webkit-tap-highlight-color:transparent!important
                   }
                   body.cycleSwitchBusy #weekModeBar .weekModeChoice{pointer-events:none!important}
-                  body.singleWeekMode #currentWeekBtn{margin-left:auto!important;margin-right:auto!important}
-                  body.singleWeekMode #weekTabs{display:none!important}
+                  .contextBar{gap:5px!important;padding-left:7px!important;padding-right:7px!important;overflow:hidden!important}
+                  #currentWeekBtn,#currentWeekBtn.currentWeek{flex:0 0 132px!important;width:132px!important;height:30px!important;min-height:30px!important;max-height:30px!important;margin:0!important;padding:0 7px!important;box-sizing:border-box!important;font-size:.68rem!important;line-height:1!important;display:flex!important;align-items:center!important;justify-content:center!important;white-space:nowrap!important;overflow:hidden!important;transition:none!important;animation:none!important;transform:none!important}
+                  #weekTabs.weekTabs{flex:0 0 199px!important;width:199px!important;min-width:199px!important;max-width:199px!important;height:30px!important;display:grid!important;grid-template-columns:repeat(4,47.5px)!important;grid-template-rows:30px!important;gap:3px!important;align-items:stretch!important;overflow:hidden!important}
+                  #weekTabs .weekTab,#weekTabs .weekTab.active{width:47.5px!important;height:30px!important;min-width:47.5px!important;max-width:47.5px!important;min-height:30px!important;max-height:30px!important;margin:0!important;padding:0 1px!important;box-sizing:border-box!important;border-width:1px!important;border-style:solid!important;border-radius:999px!important;font-size:.575rem!important;font-weight:800!important;line-height:1!important;letter-spacing:-.01em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:clip!important;display:flex!important;align-items:center!important;justify-content:center!important;transform:none!important;scale:1!important;box-shadow:none!important;transition:none!important;animation:none!important;-webkit-tap-highlight-color:transparent!important}
+                  #weekTabs .weekTab[aria-hidden="true"]{visibility:hidden!important;pointer-events:none!important}
+                  body.singleWeekMode #currentWeekBtn{margin:0!important}
+                  body.singleWeekMode #weekTabs{visibility:hidden!important;display:grid!important}
 
                   /* Midi is painted by one stable pseudo-layer instead of alternating legacy borders/box-shadows.
                      Its outline is 2 px: exactly the same thickness as the hours-column and days-row separators. */
@@ -52,7 +57,7 @@ final class CycleLunchFixUi {
                     position:relative!important;overflow:visible!important;border-radius:0!important;outline:0!important;
                     background:var(--ft-midi,#FFF9E8)!important;box-shadow:none!important
                   }
-                  html body #viewWeek #weekGrid#weekGrid .wc.lunchCell::before{
+                  html body #viewWeek #weekGrid#weekGrid .wc.lunchCell::before{display:none!important;content:none!important;
                     content:""!important;position:absolute!important;left:0!important;right:0;top:0!important;bottom:0!important;
                     z-index:0!important;pointer-events:none!important;box-sizing:border-box!important;
                     background:var(--ft-midi,#FFF9E8)!important;
@@ -165,7 +170,7 @@ final class CycleLunchFixUi {
 
                 refresh();
                 /* One late pass is enough because this layer is injected after FineTuneUi. */
-                setTimeout(refresh,120);
+
               }catch(e){console.log('CycleLunchFixUi',e)}
             })();
             """;

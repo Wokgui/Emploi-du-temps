@@ -9,7 +9,7 @@ final class Stability80Ui {
               try{
                 if(window.__stability80V1){if(window.refreshStability80)window.refreshStability80();return}
                 window.__stability80V1=true;
-                const APP_VERSION='6.20';
+                const APP_VERSION='6.26';
                 let settingsRaf=0,lunchRaf=0,downloadBusy=false;
 
                 function loadUi(){try{return JSON.parse(AndroidSchedule.loadUiSettings()||'{}')}catch(e){return {language:'fr'}}}

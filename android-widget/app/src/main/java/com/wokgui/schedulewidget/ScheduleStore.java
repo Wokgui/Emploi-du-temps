@@ -26,12 +26,13 @@ final class ScheduleStore {
     private static final String SHOW_GAP_BADGE = "show_gap_badge";
     private static final String SHOW_LUNCH_BADGE = "show_lunch_badge";
     private static final String[] LETTERS = {"A", "B", "C", "D"};
+    private static final int[] ALL_DAYS = {Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY, Calendar.THURSDAY, Calendar.FRIDAY, Calendar.SATURDAY, Calendar.SUNDAY};
 
     private static final String[] DEFAULT_START = {
-            "08:00","09:00","10:00","11:00","13:00","14:00","16:00"
+            "08:00","09:00","10:00","11:00","13:00","14:00","16:00","17:00","18:00"
     };
     private static final String[] DEFAULT_END = {
-            "09:00","10:00","11:00","12:00","14:00","15:00","17:00"
+            "09:00","10:00","11:00","12:00","14:00","15:00","17:00","18:00","19:00"
     };
 
     private ScheduleStore() {}
@@ -52,7 +53,7 @@ final class ScheduleStore {
             e.putBoolean(INIT, true);
         }
 
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < 9; i++) {
             if (!p.contains("slot_" + (i + 1) + "_start")) e.putString("slot_" + (i + 1) + "_start", DEFAULT_START[i]);
             if (!p.contains("slot_" + (i + 1) + "_end")) e.putString("slot_" + (i + 1) + "_end", DEFAULT_END[i]);
         }
@@ -61,6 +62,8 @@ final class ScheduleStore {
         if (!p.contains(SHOW_GAP_BADGE)) e.putBoolean(SHOW_GAP_BADGE, false);
         if (!p.contains(SHOW_LUNCH_BADGE)) e.putBoolean(SHOW_LUNCH_BADGE, false);
         for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) e.putBoolean("enabled_" + day, true);
+        if (!p.contains("enabled_" + Calendar.SATURDAY)) e.putBoolean("enabled_" + Calendar.SATURDAY, false);
+        if (!p.contains("enabled_" + Calendar.SUNDAY)) e.putBoolean("enabled_" + Calendar.SUNDAY, false);
         e.apply();
 
         p = prefs(context);
@@ -93,17 +96,21 @@ final class ScheduleStore {
         cycle.apply();
     }
 
-    static boolean isDayEnabled(Context context, int day) { ensureInitialized(context); return true; }
+    static boolean isDayEnabled(Context context, int day) {
+        ensureInitialized(context);
+        if (day >= Calendar.MONDAY && day <= Calendar.FRIDAY) return true;
+        return prefs(context).getBoolean("enabled_" + day, false);
+    }
 
     static String getSlotStart(Context context, int slot) {
         ensureInitialized(context);
-        int i = Math.max(1, Math.min(7, slot)) - 1;
+        int i = Math.max(1, Math.min(9, slot)) - 1;
         return prefs(context).getString("slot_" + (i + 1) + "_start", DEFAULT_START[i]);
     }
 
     static String getSlotEnd(Context context, int slot) {
         ensureInitialized(context);
-        int i = Math.max(1, Math.min(7, slot)) - 1;
+        int i = Math.max(1, Math.min(9, slot)) - 1;
         return prefs(context).getString("slot_" + (i + 1) + "_end", DEFAULT_END[i]);
     }
 
@@ -124,6 +131,7 @@ final class ScheduleStore {
 
     static String getWeekLetter(Context context, Calendar date) {
         ensureInitialized(context);
+        if (AdvancedSettingsStore.json(context).optBoolean("singleWeek", false)) return "A";
         int length = AdvancedSettingsStore.cycleLength(context);
         int anchor = prefs(context).getInt(CYCLE_ANCHOR, weekIndex(Calendar.getInstance()));
         int index = Math.floorMod(weekIndex(date) - anchor, length);
@@ -132,6 +140,7 @@ final class ScheduleStore {
 
     static void setCurrentWeekLetter(Context context, String letter) {
         ensureInitialized(context);
+        if (AdvancedSettingsStore.json(context).optBoolean("singleWeek", false)) letter = "A";
         int length = AdvancedSettingsStore.cycleLength(context);
         int desired = letterIndex(letter);
         if (desired < 0 || desired >= length) desired = 0;
@@ -154,12 +163,14 @@ final class ScheduleStore {
     }
 
     static List<ScheduleData.Course> getCourses(Context context, Calendar date) {
+        if (!isDayEnabled(context, date.get(Calendar.DAY_OF_WEEK))) return new ArrayList<>();
         if (AdvancedSettingsStore.isDayOff(context, date)) return new ArrayList<>();
         List<ScheduleData.Course> base = getStoredCourses(context, date.get(Calendar.DAY_OF_WEEK), getWeekLetter(context, date));
         return AdvancedSettingsStore.applyExceptions(context, date, base);
     }
 
     static List<ScheduleData.Course> getCourses(Context context, int day) {
+        if (!isDayEnabled(context, day)) return new ArrayList<>();
         return getStoredCourses(context, day, getWeekLetter(context, Calendar.getInstance()));
     }
 
@@ -168,7 +179,7 @@ final class ScheduleStore {
         try {
             JSONObject root = new JSONObject();
             JSONArray slots = new JSONArray();
-            for (int i = 1; i <= 7; i++) {
+            for (int i = 1; i <= 9; i++) {
                 JSONObject slot = new JSONObject();
                 slot.put("start", getSlotStart(context, i));
                 slot.put("end", getSlotEnd(context, i));
@@ -189,12 +200,16 @@ final class ScheduleStore {
             root.put("_weekAnchor", prefs(context).getInt(CYCLE_ANCHOR, weekIndex(now)));
             root.put("_cycleLength", AdvancedSettingsStore.cycleLength(context));
 
+            JSONArray enabledDays = new JSONArray();
+            for (int day : ALL_DAYS) if (isDayEnabled(context, day)) enabledDays.put(day);
+            root.put("_enabledDays", enabledDays);
+
             JSONObject weeks = new JSONObject();
             for (String week : LETTERS) {
                 JSONObject weekObject = new JSONObject();
-                for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
+                for (int day : ALL_DAYS) {
                     JSONObject d = new JSONObject();
-                    d.put("enabled", true);
+                    d.put("enabled", isDayEnabled(context, day));
                     d.put("courses", new JSONArray(encode(getStoredCourses(context, day, week))));
                     weekObject.put(String.valueOf(day), d);
                 }
@@ -202,9 +217,9 @@ final class ScheduleStore {
             }
             root.put("_weeks", weeks);
 
-            for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
+            for (int day : ALL_DAYS) {
                 JSONObject d = new JSONObject();
-                d.put("enabled", true);
+                d.put("enabled", isDayEnabled(context, day));
                 d.put("courses", new JSONArray(encode(getStoredCourses(context, day, currentWeek))));
                 root.put(String.valueOf(day), d);
             }
@@ -222,7 +237,7 @@ final class ScheduleStore {
 
             JSONArray slots = root.optJSONArray("_slots");
             if (slots != null) {
-                for (int i = 0; i < Math.min(7, slots.length()); i++) {
+                for (int i = 0; i < Math.min(9, slots.length()); i++) {
                     JSONObject s = slots.optJSONObject(i);
                     if (s == null) continue;
                     editor.putString("slot_" + (i + 1) + "_start", s.optString("start", DEFAULT_START[i]));
@@ -247,12 +262,21 @@ final class ScheduleStore {
                 if (idx >= 0) editor.putInt(CYCLE_ANCHOR, weekIndex(now) - idx);
             }
 
+            JSONArray enabledDays = root.optJSONArray("_enabledDays");
+            if (enabledDays != null) {
+                for (int day : ALL_DAYS) editor.putBoolean("enabled_" + day, day >= Calendar.MONDAY && day <= Calendar.FRIDAY);
+                for (int i = 0; i < enabledDays.length(); i++) {
+                    int day = enabledDays.optInt(i, -1);
+                    if (day == Calendar.SATURDAY || day == Calendar.SUNDAY || (day >= Calendar.MONDAY && day <= Calendar.FRIDAY)) editor.putBoolean("enabled_" + day, true);
+                }
+            }
+
             JSONObject weeks = root.optJSONObject("_weeks");
             if (weeks != null) {
                 for (String week : LETTERS) {
                     JSONObject weekObject = weeks.optJSONObject(week);
                     if (weekObject == null) continue;
-                    for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
+                    for (int day : ALL_DAYS) {
                         JSONObject d = weekObject.optJSONObject(String.valueOf(day));
                         if (d == null) continue;
                         JSONArray arr = d.optJSONArray("courses");
@@ -260,13 +284,11 @@ final class ScheduleStore {
                     }
                 }
             } else {
-                for (int day = Calendar.MONDAY; day <= Calendar.FRIDAY; day++) {
+                for (int day : ALL_DAYS) {
                     JSONObject d = root.optJSONObject(String.valueOf(day));
                     if (d == null) continue;
                     JSONArray arr = d.optJSONArray("courses");
-                    if (arr != null) {
-                        for (String week : LETTERS) editor.putString(weekKey(week, day), arr.toString());
-                    }
+                    if (arr != null) for (String week : LETTERS) editor.putString(weekKey(week, day), arr.toString());
                 }
             }
 
@@ -324,7 +346,7 @@ final class ScheduleStore {
                 String color = o.optString("color", "");
                 String badge = o.optString("badge", "");
                 if (slot == 0) {
-                    for (int n = 0; n < 7; n++) {
+                    for (int n = 0; n < 9; n++) {
                         if (DEFAULT_START[n].equals(start) && DEFAULT_END[n].equals(end)) { slot = n + 1; break; }
                     }
                 }

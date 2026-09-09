@@ -282,7 +282,7 @@ final class LunchBreakUi {
                   if($('todayClock')){$('todayClock').textContent='';$('todayClock').style.display='none'}
                   $('todayProgress').style.width=progressPercent()+'%';
                   $('scaleStart').textContent=list[0]?.start||slots[0].start;
-                  $('scaleEnd').textContent=list[list.length-1]?.end||slots[6].end;
+                  $('scaleEnd').textContent=list[list.length-1]?.end||slots[slots.length-1].end;
                   const box=$('todayList');box.innerHTML='';
                   if(!list.length){box.innerHTML='<div class="empty">Aucun cours aujourd’hui.</div>';return}
                   const events=list.map(c=>({type:'course',start:min(c.start),end:min(c.end),course:c}));
@@ -306,7 +306,7 @@ final class LunchBreakUi {
                     }
                     box.appendChild(row);
                   }
-                  setTimeout(()=>{syncBreakCells();decorateCourseBadges();if(window.refreshCourseColors)window.refreshCourseColors()},0);
+                  syncBreakCells();decorateCourseBadges();if(window.refreshCourseColors)window.refreshCourseColors();
                 }
 
                 function appendRegularWeekRow(box,t){
@@ -346,7 +346,7 @@ final class LunchBreakUi {
                   const corner=document.createElement('div');corner.className='wh timecol';corner.textContent='H';box.appendChild(corner);
                   for(const d of DAYS){const h=document.createElement('div');h.className='wh day';h.textContent=NAMES[d];box.appendChild(h)}
                   for(const t of times){if(t.type==='lunchDynamic')appendLunchBandRow(box);else appendRegularWeekRow(box,t)}
-                  setTimeout(()=>{syncBreakCells();fitBreakLabels();polishWeekNowMarker();decorateCourseBadges();if(window.refreshCourseColors)window.refreshCourseColors()},0);
+                  syncBreakCells();fitBreakLabels();polishWeekNowMarker();decorateCourseBadges();if(window.refreshCourseColors)window.refreshCourseColors();
                 }
 
                 function bindOverrides(){
@@ -364,8 +364,7 @@ final class LunchBreakUi {
                 function refresh(){
                   try{
                     bindOverrides();wireBreakSettings();ensureCourseBadgeField();wrapCourseSubmit();
-                    if(typeof render==='function')render();
-                    setTimeout(()=>{bindOverrides();wireBreakSettings();syncBreakCells();fitBreakLabels();decorateCourseBadges();if(window.refreshCourseColors)window.refreshCourseColors();setTimeout(polishWeekNowMarker,35)},15);
+                    syncBreakCells();fitBreakLabels();decorateCourseBadges();if(window.refreshCourseColors)window.refreshCourseColors();polishWeekNowMarker();
                   }catch(e){}
                 }
                 window.refreshLunchBreakUi=refresh;

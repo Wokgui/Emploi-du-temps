@@ -53,7 +53,7 @@ final class UiSettingsStore {
 
     static String language(Context context) {
         String value = prefs(context).getString(LANGUAGE, "fr");
-        if ("de".equals(value) || "en".equals(value)) return value;
+        if ("fr".equals(value) || "de".equals(value) || "en".equals(value) || LanguagePackStore.has(context, value)) return value;
         return "fr";
     }
 
@@ -133,7 +133,7 @@ final class UiSettingsStore {
             float appScale = clampScale((float) o.optDouble("appFontScale", appFontScale(context)));
             float widgetScale = clampScale((float) o.optDouble("widgetFontScale", widgetFontScale(context)));
             String lang = o.optString("language", language(context));
-            if (!"de".equals(lang) && !"en".equals(lang)) lang = "fr";
+            if (!"fr".equals(lang) && !"de".equals(lang) && !"en".equals(lang) && !LanguagePackStore.has(context, lang)) lang = "fr";
             String theme = o.optString("theme", themeId(context));
             if (!supportedTheme(theme)) theme = "blue";
 
@@ -149,15 +149,18 @@ final class UiSettingsStore {
     }
 
     static Locale locale(Context context) {
-        switch (language(context)) {
-            case "de": return Locale.GERMANY;
-            case "en": return Locale.UK;
-            default: return Locale.FRANCE;
-        }
+        String lang = language(context);
+        if ("de".equals(lang)) return Locale.GERMANY;
+        if ("en".equals(lang)) return Locale.UK;
+        if ("fr".equals(lang)) return Locale.FRANCE;
+        Locale locale = Locale.forLanguageTag(lang.replace('_', '-'));
+        return locale.getLanguage().isEmpty() ? Locale.FRANCE : locale;
     }
 
     static String t(Context context, String key) {
-        return t(language(context), key);
+        String lang = language(context);
+        String downloaded = LanguagePackStore.widgetText(context, lang, key);
+        return downloaded != null ? downloaded : t(lang, key);
     }
 
     static String t(String lang, String key) {

@@ -37,6 +37,7 @@ final class AdvancedSettingsStore {
             o.put("colorByClass", false);
             o.put("accessibility", "normal");
             o.put("cycleLength", 2);
+            o.put("singleWeek", false);
             o.put("remindersEnabled", false);
             o.put("reminderMinutes", 10);
             o.put("holidayMode", "alsace_moselle");
@@ -167,7 +168,7 @@ final class AdvancedSettingsStore {
 
     static boolean isDayOff(Context context, Calendar date) {
         int dow = date.get(Calendar.DAY_OF_WEEK);
-        if (dow == Calendar.SATURDAY || dow == Calendar.SUNDAY) return true;
+        if ((dow == Calendar.SATURDAY || dow == Calendar.SUNDAY) && !ScheduleStore.isDayEnabled(context, dow)) return true;
         String mode = holidayMode(context);
         if (!"off".equals(mode) && HolidayUtils.isFrenchHoliday(date, "alsace_moselle".equals(mode))) return true;
         String key = dateKey(date);

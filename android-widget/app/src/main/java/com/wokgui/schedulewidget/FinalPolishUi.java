@@ -12,7 +12,7 @@ final class FinalPolishUi {
                   return;
                 }
                 window.__finalPolishV1=true;
-                const APP_VERSION='6.5';
+                const APP_VERSION='6.26';
                 let refreshing=false;
 
                 function ui(){try{return JSON.parse(AndroidSchedule.loadUiSettings()||'{}')}catch(e){return {}}}
@@ -45,9 +45,9 @@ final class FinalPolishUi {
                   #todayList #todayNowRail,#todayList #todayNowDot{left:51px!important}
 
                   /* Week table separators. */
-                  #weekGrid>.wh.timecol{border-right:2px solid #cbd5e1!important}
-                  #weekGrid>.wh.day{border-bottom:2px solid #cbd5e1!important}
-                  #weekGrid>.wh.timecol:first-child{border-bottom:2px solid #cbd5e1!important}
+                  #weekGrid>.wh.timecol{border-right:1.5px solid #cbd5e1!important}
+                  #weekGrid>.wh.day{border-bottom:1.5px solid #cbd5e1!important}
+                  #weekGrid>.wh.timecol:first-child{border-bottom:1.5px solid #cbd5e1!important}
 
                   /* Only the final horizontal marker is visible. All old vertical rails are hidden. */
                   #weekGrid #weekNowRail,#weekGrid #weekNowDot,
@@ -139,10 +139,14 @@ final class FinalPolishUi {
                   if(importBtn&&bar.nextElementSibling!==importBtn)view.insertBefore(bar,importBtn);
                   const choices=bar.querySelector('.weekModeChoices');if(!choices)return;
                   const wanted=[['1','1 seule'],['2','A / B'],['3','A / B / C'],['4','A / B / C / D']];
-                  if(choices.querySelectorAll('.weekModeChoice').length!==4){
-                    choices.innerHTML='';
-                    wanted.forEach(([v,label])=>{const b=document.createElement('button');b.type='button';b.className='weekModeChoice';b.dataset.m=v;b.textContent=label;b.onclick=()=>chooseCycle(Number(v));choices.appendChild(b)});
-                  }
+                  wanted.forEach(([v,label])=>{
+                    let b=choices.querySelector('.weekModeChoice[data-m="'+v+'"]');
+                    if(!b){b=document.createElement('button');b.type='button';b.className='weekModeChoice';b.dataset.m=v;choices.appendChild(b)}
+                    b.hidden=false;b.style.removeProperty('display');b.textContent=label;
+                    b.onclick=()=>{if(window.switchCycle69)window.switchCycle69(Number(v));else chooseCycle(Number(v))};
+                  });
+                  const order=new Map(wanted.map((x,i)=>[x[0],i]));
+                  [...choices.querySelectorAll('.weekModeChoice')].sort((a,b)=>(order.get(a.dataset.m)??99)-(order.get(b.dataset.m)??99)).forEach(b=>choices.appendChild(b));
                   const a=adv(),m=a.singleWeek===true?1:Math.max(2,Math.min(4,Number(a.cycleLength)||2));
                   choices.querySelectorAll('.weekModeChoice').forEach(b=>b.classList.toggle('active',Number(b.dataset.m)===m));
                 }
@@ -214,22 +218,18 @@ final class FinalPolishUi {
                   }catch(e){return false}
                 }
                 function paintLunchGroups(grid,rows){
-                  const border=(getComputedStyle(document.documentElement).getPropertyValue('--ft-midi-border')||'#C7AA62').trim();
-                  grid.querySelectorAll('.finalLunchCell').forEach(c=>{c.classList.remove('finalLunchCell','finalLunchJoinedRight');c.style.removeProperty('box-shadow');c.style.removeProperty('border-right-color')});
-                  for(const row of rows){
-                    const flags=row.cells.map((c,i)=>shouldLunch(row,i)&&(c.classList.contains('lunchCell')||c.classList.contains('dynamicLunchCell')||c.classList.contains('nativeLunchCell')));
-                    let i=0;
-                    while(i<flags.length){if(!flags[i]){i++;continue}let j=i;while(j+1<flags.length&&flags[j+1])j++;
-                      for(let k=i;k<=j;k++){
-                        const cell=row.cells[k];cell.classList.add('finalLunchCell');
-                        const shadows=['inset 0 2px 0 '+border,'inset 0 -2px 0 '+border];
-                        if(k===i)shadows.push('inset 2px 0 0 '+border);if(k===j)shadows.push('inset -2px 0 0 '+border);
-                        cell.style.setProperty('box-shadow',shadows.join(','),'important');
-                        if(k<j){cell.classList.add('finalLunchJoinedRight');cell.style.setProperty('border-right-color','transparent','important')}
-                      }
-                      i=j+1;
-                    }
-                  }
+                  grid.querySelectorAll('.finalLunchCell,.finalLunchJoinedRight').forEach(c=>{
+                    c.classList.remove('finalLunchCell','finalLunchJoinedRight');
+                    c.style.removeProperty('box-shadow');c.style.removeProperty('border-right-color');
+                  });
+                  grid.querySelectorAll('.lunch69TopLine,.lunch69BottomLine').forEach(c=>c.classList.remove('lunch69TopLine','lunch69BottomLine'));
+                  rows.forEach((row,ri)=>row.cells.forEach((cell,di)=>{
+                    if(!shouldLunch(row,di)||!(cell.classList.contains('lunchCell')||cell.classList.contains('dynamicLunchCell')||cell.classList.contains('nativeLunchCell')))return;
+                    cell.classList.add('lunch69BottomLine');
+                    cell.style.setProperty('box-shadow','none','important');cell.style.removeProperty('border-right-color');
+                    const above=ri>0?rows[ri-1].cells[di]:grid.querySelectorAll(':scope > .wh.day')[di];
+                    if(above)above.classList.add('lunch69TopLine');
+                  }));
                 }
 
                 function paintWeek(){
@@ -255,10 +255,10 @@ final class FinalPolishUi {
                 window.refreshFinalPolish=refresh;
 
                 document.addEventListener('input',e=>{if(e.target&&(['appFont','widgetFont'].includes(e.target.id)))setTimeout(updatePreviews,0)},true);
-                const grid=document.getElementById('weekGrid');if(grid){new MutationObserver(()=>requestAnimationFrame(paintWeek)).observe(grid,{childList:true,subtree:false})}
+                const grid=document.getElementById('weekGrid');if(grid){new MutationObserver(()=>paintWeek()).observe(grid,{childList:true,subtree:false})}
                 document.addEventListener('visibilitychange',()=>{if(!document.hidden)paintWeek()});
                 setInterval(paintWeek,15000);
-                refresh();[40,120,300,700,1400].forEach(ms=>setTimeout(refresh,ms));
+                refresh();
               }catch(e){console.log('FinalPolishUi',e)}
             })();
             """;

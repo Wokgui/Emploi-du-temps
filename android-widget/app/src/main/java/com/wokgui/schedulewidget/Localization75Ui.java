@@ -9,10 +9,10 @@ final class Localization75Ui {
               try{
                 if(window.__localization75V1){if(window.refreshLocalization75)window.refreshLocalization75();return}
                 window.__localization75V1=true;
-                const APP_VERSION='6.15';
+                const APP_VERSION='6.26';
                 const PACK_PREFIX='edt-language-pack-v1-';
                 const CATALOG_URL='https://raw.githubusercontent.com/Wokgui/Emploi-du-temps/main/language-packs/catalog.json';
-                let translating=false,queued=false;
+                let translating=false,queued=false;let langCache=null,installedCache=null,targetCacheLang=null,targetCache=null,reverseCache=null;const pendingRoots=new Set();let localizationObserver=null;
 
                 const BUILTIN={
                   en:{
@@ -29,26 +29,29 @@ final class Localization75Ui {
                 };
 
                 function nativeUi(){try{return JSON.parse(AndroidSchedule.loadUiSettings()||'{}')}catch(e){return {language:'fr'}}}
-                function currentLang(){const l=String(nativeUi().language||'fr');return l||'fr'}
-                function installedList(){try{return JSON.parse(AndroidSchedule.loadLanguagePacks?AndroidSchedule.loadLanguagePacks():'[]')}catch(e){return []}}
+                function invalidateLocalizationCache(){langCache=null;installedCache=null;targetCacheLang=null;targetCache=null;reverseCache=null}\n                function currentLang(){if(langCache)return langCache;const l=String(nativeUi().language||'fr');langCache=l||'fr';return langCache}
+                function installedList(){if(installedCache)return installedCache;try{installedCache=JSON.parse(AndroidSchedule.loadLanguagePacks?AndroidSchedule.loadLanguagePacks():'[]');return installedCache}catch(e){installedCache=[];return installedCache}}
                 function loadPack(code){
                   try{const cached=localStorage.getItem(PACK_PREFIX+code);if(cached)return JSON.parse(cached)}catch(e){}
                   try{if(AndroidSchedule.loadLanguagePack){const raw=AndroidSchedule.loadLanguagePack(code);if(raw){localStorage.setItem(PACK_PREFIX+code,raw);return JSON.parse(raw)}}}catch(e){}
                   return null;
                 }
                 function targetStrings(){
-                  const l=currentLang();if(l==='fr')return {};
-                  if(BUILTIN[l])return BUILTIN[l];
-                  const p=loadPack(l);return p&&p.strings?p.strings:{};
+                  const l=currentLang();if(targetCache&&targetCacheLang===l)return targetCache;
+                  targetCacheLang=l;
+                  if(l==='fr'){targetCache={};return targetCache}
+                  if(BUILTIN[l]){targetCache=BUILTIN[l];return targetCache}
+                  const p=loadPack(l);targetCache=p&&p.strings?p.strings:{};return targetCache;
                 }
                 function reverseMap(){
+                  if(reverseCache)return reverseCache;
                   const r={};
                   const add=(canonical,value)=>{if(value!=null&&String(value).trim())r[String(value).trim()]=canonical};
                   const keys=new Set();Object.values(BUILTIN).forEach(m=>Object.keys(m).forEach(k=>keys.add(k)));
                   keys.forEach(k=>add(k,k));
                   Object.values(BUILTIN).forEach(m=>Object.entries(m).forEach(([k,v])=>add(k,v)));
                   installedList().forEach(x=>{const p=loadPack(x.code);if(p&&p.strings)Object.entries(p.strings).forEach(([k,v])=>{add(k,k);add(k,v)})});
-                  return r;
+                  reverseCache=r;return reverseCache;
                 }
                 function tExact(text){
                   const s=String(text||'').trim();if(!s)return text;
@@ -61,13 +64,13 @@ final class Localization75Ui {
                 function translateDynamic(s){
                   let out=String(s||'');const trim=out.trim();if(!trim)return out;
                   const exact=tExact(trim);if(exact!==trim)return out.replace(trim,exact);
-                  let m=trim.match(/^Cette semaine\s*:\s*([A-D])$/i);if(m)return out.replace(trim,tExact('Cette semaine')+' : '+m[1].toUpperCase());
-                  m=trim.match(/^(?:Semaine|Week|Woche)\s+([A-D])$/i);if(m)return out.replace(trim,weekWord()+' '+m[1].toUpperCase());
-                  m=trim.match(/^Aperçu semaine\s*([A-D])?$/i);if(m)return out.replace(trim,tExact('Aperçu semaine')+(m[1]?' '+m[1].toUpperCase():''));
-                  m=trim.match(/^(Lundi|Mardi|Mercredi|Jeudi|Vendredi|Samedi|Dimanche|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag)\s*·\s*(?:Semaine|Week|Woche)\s+([A-D])$/i);
+                  let m=trim.match(/^Cette semaine *: *([A-D])$/i);if(m)return out.replace(trim,tExact('Cette semaine')+' : '+m[1].toUpperCase());
+                  m=trim.match(/^(?:Semaine|Week|Woche) +([A-D])$/i);if(m)return out.replace(trim,weekWord()+' '+m[1].toUpperCase());
+                  m=trim.match(/^Aperçu semaine *([A-D])?$/i);if(m)return out.replace(trim,tExact('Aperçu semaine')+(m[1]?' '+m[1].toUpperCase():''));
+                  m=trim.match(/^(Lundi|Mardi|Mercredi|Jeudi|Vendredi|Samedi|Dimanche|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag) *· *(?:Semaine|Week|Woche) +([A-D])$/i);
                   if(m){const d=tExact(m[1]);return out.replace(trim,d+' · '+weekWord()+' '+m[2].toUpperCase())}
-                  m=trim.match(/^(\d+)\s+cours$/i);if(m){const l=currentLang();const word=l==='de'?'Stunden':(l==='en'?'classes':(l==='fr'?'cours':((loadPack(l)?.strings||{})['cours']||'cours')));return out.replace(trim,m[1]+' '+word)}
-                  m=trim.match(/^(\d+)(?:ère|e) heure$/i);if(m){const n=m[1],l=currentLang();if(l==='en')return out.replace(trim,'Period '+n);if(l==='de')return out.replace(trim,n+'. Stunde');if(l==='fr')return out;if(l==='es')return out.replace(trim,n+'.ª hora')}
+                  m=trim.match(/^([0-9]+) +cours$/i);if(m){const l=currentLang();const word=l==='de'?'Stunden':(l==='en'?'classes':(l==='fr'?'cours':((loadPack(l)?.strings||{})['cours']||'cours')));return out.replace(trim,m[1]+' '+word)}
+                  m=trim.match(/^([0-9]+)(?:ère|e) heure$/i);if(m){const n=m[1],l=currentLang();if(l==='en')return out.replace(trim,'Period '+n);if(l==='de')return out.replace(trim,n+'. Stunde');if(l==='fr')return out;if(l==='es')return out.replace(trim,n+'.ª hora')}
                   return out;
                 }
                 function replaceCalendarWords(text){
@@ -130,20 +133,60 @@ final class Localization75Ui {
                   }catch(e){button.disabled=false;button.textContent=tExact('Télécharger');if(status)status.textContent=tExact('Téléchargement impossible')}
                 }
 
-                function fullRefresh(){
+                function withTranslationLock(work){
                   if(translating)return;translating=true;
                   try{
+                    if(localizationObserver)localizationObserver.disconnect();
+                    work();
+                  }finally{
+                    if(localizationObserver)localizationObserver.observe(document.body,{childList:true,subtree:true,characterData:true});
+                    translating=false;
+                  }
+                }
+                function setVersion(){const v=document.getElementById('appVersionInfo');if(v&&v.textContent!=='Version '+APP_VERSION)v.textContent='Version '+APP_VERSION}
+                function translateOnly(){
+                  queued=false;if(translating)return;
+                  const roots=[...pendingRoots];pendingRoots.clear();if(!roots.length)return;
+                  withTranslationLock(()=>{
+                    document.documentElement.lang=currentLang().replace('_','-');
+                    const compact=[];
+                    roots.filter(Boolean).forEach(root=>{
+                      if(!root.isConnected)return;
+                      if(compact.some(x=>x===root||x.contains(root)))return;
+                      for(let i=compact.length-1;i>=0;i--)if(root.contains(compact[i]))compact.splice(i,1);
+                      compact.push(root);
+                    });
+                    compact.forEach(root=>translateTree(root));setVersion();
+                  });
+                }
+                function schedule(root){
+                  if(root)pendingRoots.add(root.nodeType===1?root:(root.parentElement||document.body));
+                  if(translating)return;queued=false;translateOnly();
+                }
+                function fullRefresh(){
+                  invalidateLocalizationCache();pendingRoots.clear();queued=false;
+                  withTranslationLock(()=>{
                     const l=currentLang();document.documentElement.lang=l.replace('_','-');
-                    ['refreshSettingsV3','refreshAdvancedFeatures','refreshUiPolishSchool','refreshCoursePaletteV4','refreshFineTuneUi','refreshLunchBreakUi','refreshDoubleLunchUi','refreshWeekendUi','refreshStability70','refreshStability71','refreshStability72','refreshStability73','refreshStability74'].forEach(n=>{try{if(typeof window[n]==='function')window[n]()}catch(e){}});
-                    ensureLanguageUi();translateTree(document.body);
-                    const v=document.getElementById('appVersionInfo');if(v)v.textContent='Version '+APP_VERSION;
-                  }finally{translating=false}
+                    ensureLanguageUi();translateTree(document.body);setVersion();
+                  });
                 }
                 window.refreshLocalization75=fullRefresh;
-                function schedule(){if(queued||translating)return;queued=true;requestAnimationFrame(()=>{queued=false;fullRefresh()})}
-                ['render','renderToday','renderWeek','renderEdit','renderContext','openEditor','refreshSettingsV3','refreshAdvancedFeatures','refreshStability74'].forEach(name=>{const old=window[name];if(typeof old==='function'&&!old.__loc75){const w=function(){const r=old.apply(this,arguments);schedule();return r};w.__loc75=true;window[name]=w;try{eval(name+'=w')}catch(e){}}});
-                const obs=new MutationObserver(m=>{if(translating)return;let relevant=false;for(const x of m){if(x.type==='childList'||x.type==='characterData'){relevant=true;break}}if(relevant)schedule()});obs.observe(document.body,{childList:true,subtree:true,characterData:true});
-                fullRefresh();requestAnimationFrame(fullRefresh);setTimeout(fullRefresh,120);
+                function rootFor(name){
+                  if(name==='renderToday')return document.getElementById('viewToday');
+                  if(name==='renderWeek')return document.getElementById('viewWeek');
+                  if(name==='renderEdit')return document.getElementById('viewEdit');
+                  if(name==='renderContext')return document.querySelector('.contextBar');
+                  if(name==='openEditor')return document.getElementById('modal');
+                  return document.getElementById('settingsSheet')||document.body;
+                }
+                ['renderToday','renderWeek','renderEdit','renderContext','openEditor'].forEach(name=>{
+                  const old=window[name];if(typeof old==='function'&&!old.__loc75){
+                    const w=function(){const r=old.apply(this,arguments);const rr=rootFor(name);if(rr)pendingRoots.add(rr);translateOnly();return r};w.__loc75=true;window[name]=w;try{eval(name+'=w')}catch(e){}
+                  }
+                });
+                localizationObserver=null;
+                fullRefresh();
+
               }catch(e){console.log('Localization75Ui',e)}
             })();
             """;

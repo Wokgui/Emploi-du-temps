@@ -71,16 +71,32 @@ final class AdvancedFeaturesUi {
                 }
                 if(typeof window.reloadSchedule==='function'&&!window.reloadSchedule.__advanced){
                   const oldReload=window.reloadSchedule;
-                  const wrapped=function(){oldReload();restoreCycleFromNative();if(typeof render==='function')render();setTimeout(refreshAdvancedFeatures,0)};
+                  const wrapped=function(){oldReload();restoreCycleFromNative();if(typeof render==='function')render();setTimeout(refreshAdvancedFeatures,18)};
                   wrapped.__advanced=true;window.reloadSchedule=wrapped;
                 }
 
                 function letters(){return ['A','B','C','D'].slice(0,adv.cycleLength)}
                 function buildWeekTabs(){
                   const box=document.getElementById('weekTabs');if(!box||typeof activeWeek==='undefined')return;
-                  ensureExtraWeeks();const list=letters();if(list.indexOf(activeWeek)<0)activeWeek=currentWeek;if(list.indexOf(currentWeek)<0)currentWeek='A';box.innerHTML='';
-                  for(const w of list){const b=document.createElement('button');b.className='weekTab'+(w===activeWeek?' active':'');b.dataset.week=w;b.textContent=(uiLang()==='de'?'Woche ':(uiLang()==='en'?'Week ':'Semaine '))+w;b.onclick=()=>{activeWeek=w;if(typeof render==='function')render();setTimeout(refreshAdvancedFeatures,0)};box.appendChild(b)}
-                  const cw=document.getElementById('currentWeekBtn');if(cw){cw.onclick=()=>{const ls=letters();const idx=ls.indexOf(currentWeek);currentWeek=ls[(idx+1)%ls.length];activeWeek=currentWeek;if(typeof save==='function')save();if(window.AndroidSchedule&&AndroidSchedule.setCurrentWeek)AndroidSchedule.setCurrentWeek(currentWeek);buildWeekTabs();setTimeout(refreshAdvancedFeatures,0)}}
+                  ensureExtraWeeks();const list=letters();if(list.indexOf(activeWeek)<0)activeWeek=currentWeek;if(list.indexOf(currentWeek)<0)currentWeek='A';
+                  const prefix=(uiLang()==='de'?'Woche ':(uiLang()==='en'?'Week ':'Semaine '));
+                  for(const w of ['A','B','C','D']){
+                    let b=box.querySelector('.weekTab[data-week="'+w+'"]');
+                    if(!b){b=document.createElement('button');b.type='button';b.className='weekTab';b.dataset.week=w;box.appendChild(b)}
+                    const visible=list.indexOf(w)>=0;
+                    b.textContent=prefix+w;
+                    b.className='weekTab'+(w===(mode==='today'?currentWeek:activeWeek)?' active':'');
+                    b.style.visibility=visible?'visible':'hidden';
+                    b.style.pointerEvents=visible?'auto':'none';
+                    b.setAttribute('aria-hidden',visible?'false':'true');
+                    b.tabIndex=visible?0:-1;
+                    b.onclick=visible?(()=>{if(activeWeek===w)return;activeWeek=w;if(typeof render==='function')render()}):null;
+                  }
+                  const cw=document.getElementById('currentWeekBtn');
+                  if(cw){
+                    if(adv.singleWeek===true)cw.onclick=null;
+                    else cw.onclick=()=>{const ls=letters(),idx=ls.indexOf(currentWeek);currentWeek=ls[(idx+1)%ls.length];activeWeek=currentWeek;if(window.AndroidSchedule&&AndroidSchedule.setCurrentWeek)AndroidSchedule.setCurrentWeek(currentWeek);if(typeof save==='function')save();else if(typeof render==='function')render()};
+                  }
                 }
 
                 const st=document.createElement('style');
@@ -121,11 +137,11 @@ final class AdvancedFeaturesUi {
                   const now=new Date(),nowM=now.getHours()*60+now.getMinutes();
                   const events=list.map(c=>({type:'course',start:min(c.start),end:min(c.end),course:c}));
                   const gaps=gapSegments(list);for(const g of gaps)events.push({type:'gap',start:g.start,end:g.end});
-                  const l=lunch();if(l&&adv.showLunch&&list.some(c=>min(c.end)<=min(l.start))&&list.some(c=>min(c.start)>=min(l.end)))events.push({type:'lunch',start:min(l.start),end:min(l.end),l:l});
+                  const l=lunch();if(l&&(adv.showLunchToday!==false)&&list.some(c=>min(c.end)<=min(l.start))&&list.some(c=>min(c.start)>=min(l.end)))events.push({type:'lunch',start:min(l.start),end:min(l.end),l:l});
                   events.sort((a,b)=>a.start-b.start||a.end-b.end);box.innerHTML='';
                   let total=0,done=0;for(const c of list){const s=min(c.start),e=min(c.end),dur=Math.max(0,e-s);total+=dur;if(nowM>=e)done+=dur;else if(nowM>s)done+=Math.min(dur,nowM-s)}const pr=document.getElementById('todayProgress');if(pr)pr.style.width=(total?Math.max(0,Math.min(100,done*100/total)):0)+'%';
                   for(const ev of events){
-                    if(ev.type==='gap'&&!adv.showBreaks)continue;
+                    if(ev.type==='gap'&&adv.showBreaksToday===false)continue;
                     const row=document.createElement('div');
                     if(ev.type==='course'){
                       const c=ev.course,cur=nowM>=min(c.start)&&nowM<min(c.end);row.className='todayCourse'+(cur?' current':'')+(c.uncertain?' ocrUncertain':'');
@@ -153,7 +169,7 @@ final class AdvancedFeaturesUi {
                   const oldParse=window.parseOcrSchedule;const wrapped=function(payload){const r=oldParse(payload);if(r&&r.parsed){for(const d of [2,3,4,5,6])for(const c of r.parsed[d]||[]){const lab=String(c.label||'');c.uncertain=!c.room||lab.length<3||lab.length>55||lab.indexOf('�')>=0||lab.indexOf('?')>=0}}return r};wrapped.__advanced=true;window.parseOcrSchedule=wrapped;
                 }
 
-                function after(name,fn){const old=window[name];if(typeof old!=='function'||old.__advancedAfter)return;const wrapped=function(){const r=old.apply(this,arguments);setTimeout(fn,0);return r};wrapped.__advancedAfter=true;window[name]=wrapped}
+                function after(name,fn){const old=window[name];if(typeof old!=='function'||old.__advancedAfter)return;const wrapped=function(){const r=old.apply(this,arguments);try{fn()}catch(e){}return r};wrapped.__advancedAfter=true;window[name]=wrapped}
                 after('renderToday',()=>{renderEffectiveToday();applyAppAppearance()});
                 after('renderWeek',applyAppAppearance);
                 after('renderEdit',()=>{decorateUncertain();applyAppAppearance()});
@@ -201,7 +217,7 @@ final class AdvancedFeaturesUi {
 
                 function renderRanges(){const box=document.getElementById('advRangeList');if(!box)return;box.innerHTML='';adv.dayOffRanges.forEach((r,i)=>{const row=document.createElement('div');row.className='advItem';row.innerHTML='<div class="advItemText"><b>'+esc(r.label||T().dayOff)+'</b><br><span class="advSmall">'+esc(r.start||'')+' → '+esc(r.end||r.start||'')+'</span></div><button type="button" class="advButton danger">×</button>';row.querySelector('button').onclick=()=>{adv.dayOffRanges.splice(i,1);saveAdv();renderRanges();if(typeof render==='function')render()};box.appendChild(row)});}
                 function exceptionTypeName(type){const t=T();if(type==='cancel')return t.cancelCourse;if(type==='room')return t.roomChange;if(type==='move')return t.moveCourse;return t.extraCourse}
-                function renderExceptions(){const box=document.getElementById('advExceptionList');if(!box)return;box.innerHTML='';if(!adv.exceptions.length){box.innerHTML='<div class="advSmall" style="padding:7px 0">'+T().noException+'</div>';return}adv.exceptions.slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).forEach(e=>{const realIndex=adv.exceptions.indexOf(e);const row=document.createElement('div');row.className='advItem';const detail=e.type==='extra'?(e.start+' · '+(e.label||'')):((e.refStart||'')+' · '+(e.refLabel||''));row.innerHTML='<div class="advItemText"><b>'+esc(e.date||'')+' · '+esc(exceptionTypeName(e.type))+'</b><br><span class="advSmall">'+esc(detail)+'</span></div><button type="button" class="advButton danger">×</button>';row.querySelector('button').onclick=()=>{adv.exceptions.splice(realIndex,1);saveAdv();renderExceptions();if(typeof render==='function')render()};box.appendChild(row)});}
+                function renderExceptions(){const box=document.getElementById('advExceptionList');if(!box)return;box.innerHTML='';if(!adv.exceptions.length){box.innerHTML='<div class="advSmall" style="padding:7px 0;text-align:center;width:100%">'+T().noException+'</div>';return}adv.exceptions.slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).forEach(e=>{const realIndex=adv.exceptions.indexOf(e);const row=document.createElement('div');row.className='advItem';const detail=e.type==='extra'?(e.start+' · '+(e.label||'')):((e.refStart||'')+' · '+(e.refLabel||''));row.innerHTML='<div class="advItemText"><b>'+esc(e.date||'')+' · '+esc(exceptionTypeName(e.type))+'</b><br><span class="advSmall">'+esc(detail)+'</span></div><button type="button" class="advButton danger">×</button>';row.querySelector('button').onclick=()=>{adv.exceptions.splice(realIndex,1);saveAdv();renderExceptions();if(typeof render==='function')render()};box.appendChild(row)});}
 
                 function openExceptionForm(){const now=new Date();document.getElementById('advFDate').value=dateKey(now);document.getElementById('advFType').value='cancel';document.getElementById('advFRefStart').value='';document.getElementById('advFRefLabel').value='';document.getElementById('advFStart').value='';document.getElementById('advFEnd').value='';document.getElementById('advFLabel').value='';document.getElementById('advFRoom').value='';updateExceptionFields();advModal.classList.add('show')}
                 function updateExceptionFields(){const type=document.getElementById('advFType').value;document.getElementById('advReferenceFields').style.display=type==='extra'?'none':'block';document.getElementById('advNewFields').style.display=(type==='cancel'?'none':'block');const lab=document.getElementById('advFStartLabel');if(lab)lab.textContent=type==='room'?T().referenceStart:T().newStart}
@@ -211,7 +227,7 @@ final class AdvancedFeaturesUi {
                 function loadProfiles(){
                   const sel=document.getElementById('advProfileSelect');if(!sel)return;try{const root=JSON.parse(window.AndroidSchedule&&AndroidSchedule.listProfiles?AndroidSchedule.listProfiles():'{}');sel.innerHTML='';for(const p of root.profiles||[]){const o=document.createElement('option');o.value=p.id;o.textContent=p.name;sel.appendChild(o)}sel.value=root.current||''}catch(e){}
                 }
-                function activateProfile(id){if(!(window.AndroidSchedule&&AndroidSchedule.activateProfile))return;AndroidSchedule.activateProfile(id);if(window.reloadSchedule)window.reloadSchedule();loadProfiles();setTimeout(refreshAdvancedFeatures,0)}
+                function activateProfile(id){if(!(window.AndroidSchedule&&AndroidSchedule.activateProfile))return;AndroidSchedule.activateProfile(id);if(window.reloadSchedule)window.reloadSchedule();loadProfiles();setTimeout(refreshAdvancedFeatures,18)}
 
                 function bind(){
                   const selectMap={advDensity:'density',advFormat:'widgetFormat',advAccess:'accessibility',advHoliday:'holidayMode'};for(const id in selectMap){const el=document.getElementById(id);if(el)el.onchange=e=>{adv[selectMap[id]]=e.target.value;saveAdv();if(typeof render==='function')render()}}
@@ -237,7 +253,7 @@ final class AdvancedFeaturesUi {
                 window.refreshAdvancedFeatures=refreshAdvancedFeatures;
 
                 const oldSettingsClick=document.getElementById('settingsBtn')?document.getElementById('settingsBtn').onclick:null;
-                if(document.getElementById('settingsBtn'))document.getElementById('settingsBtn').onclick=function(e){if(oldSettingsClick)oldSettingsClick.call(this,e);setTimeout(refreshAdvancedFeatures,0)};
+                if(document.getElementById('settingsBtn'))document.getElementById('settingsBtn').onclick=function(e){if(oldSettingsClick)oldSettingsClick.call(this,e);setTimeout(refreshAdvancedFeatures,18)};
 
                 refreshAdvancedFeatures();
               } catch(e) { console.log('Advanced features',e); }

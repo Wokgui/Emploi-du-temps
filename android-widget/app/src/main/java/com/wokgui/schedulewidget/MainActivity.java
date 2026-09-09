@@ -14,6 +14,7 @@ import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebChromeClient;
 import android.webkit.WebViewClient;
 
 import com.google.mlkit.vision.common.InputImage;
@@ -36,6 +37,7 @@ public class MainActivity extends Activity {
     private static final int NOTIFICATION_PERMISSION = 5203;
     private WebView webView;
     private boolean forceWeekOpening = false;
+    private boolean pageLoaded = false;
     private final TextRecognizer textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
 
     @Override
@@ -48,16 +50,19 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         webView = findViewById(R.id.webView);
         webView.setBackgroundColor(0xFFF6F8FB);
-        if (forceWeekOpening) hideWebViewUntilWeekIsReady();
+        hideWebViewUntilWeekIsReady();
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        settings.setAllowUniversalAccessFromFileURLs(true);
+        webView.setWebChromeClient(new WebChromeClient());
 
         webView.addJavascriptInterface(new ScheduleBridge(), "AndroidSchedule");
         webView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
+                pageLoaded = true;
                 primeWeekBadge();
                 if (!forceWeekOpening) applyOpenMode();
                 injectPersonalizationUi();
@@ -71,7 +76,7 @@ public class MainActivity extends Activity {
         super.onNewIntent(intent);
         setIntent(intent);
         forceWeekOpening = isWidgetWeekIntent(intent);
-        if (forceWeekOpening) hideWebViewUntilWeekIsReady();
+        hideWebViewUntilWeekIsReady();
         primeWeekBadge();
         if (forceWeekOpening && webView != null) {
             webView.evaluateJavascript("if(window.reloadSchedule){reloadSchedule();}", value -> injectPersonalizationUi());
@@ -110,6 +115,22 @@ public class MainActivity extends Activity {
         if (webView == null) return;
         webView.setAlpha(0f);
         webView.setVisibility(View.INVISIBLE);
+    }
+
+    private void revealWebViewStable() {
+        if (webView == null || !pageLoaded) return;
+        webView.postDelayed(() -> {
+            if (webView == null || !pageLoaded) return;
+            webView.setAlpha(1f);
+            webView.setVisibility(View.VISIBLE);
+        }, 70);
+    }
+
+    private void reloadForLanguageUi() {
+        if (webView == null) return;
+        pageLoaded = false;
+        hideWebViewUntilWeekIsReady();
+        webView.post(webView::reload);
     }
 
     /**
@@ -244,7 +265,8 @@ public class MainActivity extends Activity {
     private void primeWeekBadge() {
         if (webView == null || !AdvancedSettingsStore.json(this).optBoolean("singleWeek", false)) return;
         String language = UiSettingsStore.language(this);
-        String label = "de".equals(language) ? "Einzelwoche" : ("en".equals(language) ? "Single week" : "Semaine unique");
+        String label = LanguagePackStore.widgetText(this, language, "singleWeek");
+        if (label == null) label = "de".equals(language) ? "Einzelwoche" : ("en".equals(language) ? "Single week" : "Semaine unique");
         String quoted = JSONObject.quote(label);
         webView.evaluateJavascript(
                 "(function(){try{if(typeof currentWeek!=='undefined')currentWeek='A';if(typeof activeWeek!=='undefined')activeWeek='A';var b=document.getElementById('currentWeekBtn');if(b){b.textContent=" + quoted + ";b.setAttribute('aria-label'," + quoted + ");}var s=document.getElementById('weekTitleLetter');if(s)s.textContent='A';}catch(e){}})();",
@@ -262,31 +284,17 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void injectBulkUi() {
-        if (webView == null) return;
-        webView.evaluateJavascript(BulkCourseUi.script(), value ->
-                webView.evaluateJavascript(WeekViewStabilityUi.script(), value2 ->
-                        webView.evaluateJavascript(FineTuneUi.script(), null)));
-    }
-
     private void injectPersonalizationUi() {
-        if (webView == null) return;
-        webView.evaluateJavascript(
-                "(function(){if(window.__settingsV3&&!document.getElementById('settingsBtn')){var m=document.getElementById('settingsModal');if(m)m.remove();window.__settingsV3=false;}})();",
-                prep -> webView.evaluateJavascript(PersonalizationUi2.script(), value ->
-                        webView.evaluateJavascript(AdvancedFeaturesUi.script(), value2 ->
-                                webView.evaluateJavascript(UiPolishAndSchoolCalendarUi.script(), value3 ->
-                                        webView.evaluateJavascript(CourseColorUi.script(), value4 ->
-                                                webView.evaluateJavascript(PaletteSelectorUi.script(), value5 ->
-                                                        webView.evaluateJavascript(LunchBreakUi.script(), value6 ->
-                                                                webView.evaluateJavascript(DoubleLunchUi.script(), value7 ->
-                                                                        webView.evaluateJavascript(BulkCourseUi.script(), value8 ->
-                                                                                webView.evaluateJavascript(WeekViewStabilityUi.script(), value9 ->
-                                                                                        webView.evaluateJavascript(FineTuneUi.script(), value10 -> {
-                                                                                            primeWeekBadge();
-                                                                                            if (forceWeekOpening) settleWeekAndReveal();
-                                                                                        })))))))))));
-    }
+    if (webView == null) return;
+    webView.evaluateJavascript(
+            "(function(){if(window.__settingsV3&&!document.getElementById('settingsBtn')){var m=document.getElementById('settingsModal');if(m)m.remove();window.__settingsV3=false;}})();",
+            ignored -> webView.evaluateJavascript(UiRuntimeBundle.script(), value -> {
+                    primeWeekBadge();
+                    if (forceWeekOpening) settleWeekAndReveal();
+                    else revealWebViewStable();
+            })
+    );
+}
 
     private void maybeRequestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -335,7 +343,35 @@ public class MainActivity extends Activity {
         @JavascriptInterface public void saveSchedule(String json) { ScheduleStore.importJson(MainActivity.this, json); ProfileStore.saveCurrent(MainActivity.this); }
         @JavascriptInterface public void pickTimetablePhoto() { runOnUiThread(MainActivity.this::pickTimetablePhoto); }
         @JavascriptInterface public String loadUiSettings() { return UiSettingsStore.exportJson(MainActivity.this); }
-        @JavascriptInterface public void saveUiSettings(String json) { UiSettingsStore.importJson(MainActivity.this, json); }
+        @JavascriptInterface public void saveUiSettings(String json) {
+            UiSettingsStore.importJson(MainActivity.this, json);
+            runOnUiThread(() -> ScheduleWidgetProvider.refreshAll(MainActivity.this));
+        }
+        @JavascriptInterface public String loadLanguagePacks() { return LanguagePackStore.listJson(MainActivity.this); }
+        @JavascriptInterface public String loadLanguagePack(String code) { return LanguagePackStore.get(MainActivity.this, code); }
+        @JavascriptInterface public boolean saveLanguagePack(String json) { return LanguagePackStore.save(MainActivity.this, json); }
+        @JavascriptInterface public String downloadLanguageCatalog() { return NativeLanguageDownloader.catalog(); }
+        @JavascriptInterface public String downloadLanguagePack(String url) { return NativeLanguageDownloader.downloadAndSave(MainActivity.this, url); }
+        @JavascriptInterface public String supportedTranslationLanguages() { return MlLanguagePackGenerator.supportedLanguagesJson(); }
+        @JavascriptInterface public void generateLanguagePack(String code, String name) {
+            runOnUiThread(() -> MlLanguagePackGenerator.generate(MainActivity.this, code, name, new MlLanguagePackGenerator.Callback() {
+                @Override public void onSuccess(String raw) {
+                    runOnUiThread(() -> {
+                        if (webView == null) return;
+                        String quoted = JSONObject.quote(raw);
+                        webView.evaluateJavascript("if(window.onGeneratedLanguagePack80){window.onGeneratedLanguagePack80(" + quoted + ");}", null);
+                    });
+                }
+                @Override public void onFailure(String message) {
+                    runOnUiThread(() -> {
+                        if (webView == null) return;
+                        String quoted = JSONObject.quote(message == null ? "Téléchargement impossible" : message);
+                        webView.evaluateJavascript("if(window.onGeneratedLanguagePackError80){window.onGeneratedLanguagePackError80(" + quoted + ");}", null);
+                    });
+                }
+            }));
+        }
+        @JavascriptInterface public void reloadForLanguage() { runOnUiThread(MainActivity.this::reloadForLanguageUi); }
         @JavascriptInterface public String loadWidgetPalette() { return WidgetPaletteStore.getPalette(MainActivity.this); }
         @JavascriptInterface public void saveWidgetPalette(String id) {
             WidgetPaletteStore.setPalette(MainActivity.this, id);

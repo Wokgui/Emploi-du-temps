@@ -47,6 +47,9 @@ final class FineTuneUi {
 
                   .fullColorBox{margin-top:9px;padding:9px;border:1px solid var(--line);border-radius:10px;background:#fbfcfe}
                   .fullColorHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+                  .fullColorEnable84{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 8px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:.68rem;font-weight:850;color:var(--ink)}
+                  .fullColorEnable84 input{width:18px;height:18px;accent-color:var(--blue)}
+                  #fullCourseColorBox:not(.fullColorEnabled84) .fullColorControls{opacity:.40}
                   .fullColorTitle{font-size:.70rem;font-weight:900;color:var(--ink)}
                   .fullColorValue{font-size:.62rem;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
                   .fullColorControls{display:grid;grid-template-columns:46px minmax(0,1fr);align-items:center;gap:9px}
@@ -154,8 +157,22 @@ final class FineTuneUi {
                     pick.addEventListener('input',()=>{tone.value='0';activate()});tone.addEventListener('input',activate);
                   }
                   const title=box.querySelector('.fullColorTitle');if(title)title.textContent=tr('Nuancier complet','Full colour picker','Vollständiger Farbwähler');
+                  let enable=document.getElementById('fullCourseEnable84');
+                  if(!enable){
+                    const label=document.createElement('label');label.className='fullColorEnable84';
+                    label.innerHTML='<span>'+tr('Activer le nuancier complet','Enable full colour picker','Vollständigen Farbwähler aktivieren')+'</span><input id="fullCourseEnable84" type="checkbox">';
+                    box.insertBefore(label,box.querySelector('.fullColorControls')||null);enable=label.querySelector('input');
+                    enable.addEventListener('change',()=>{
+                      const pick=document.getElementById('fullCourseColor'),tone=document.getElementById('fullCourseTone');
+                      if(pick)pick.disabled=!enable.checked;if(tone)tone.disabled=!enable.checked;
+                      box.classList.toggle('fullColorEnabled84',enable.checked);
+                      if(enable.checked&&pick){pick.dispatchEvent(new Event('input',{bubbles:true}))}else{customActive=false;updateCoursePickerPreview()}
+                    });
+                  }else{const s=enable.closest('label')?.querySelector('span');if(s)s.textContent=tr('Activer le nuancier complet','Enable full colour picker','Vollständigen Farbwähler aktivieren')}
+                  const pick84=document.getElementById('fullCourseColor'),tone84=document.getElementById('fullCourseTone');
+                  if(pick84)pick84.disabled=!enable.checked;if(tone84)tone84.disabled=!enable.checked;box.classList.toggle('fullColorEnabled84',enable.checked);
                   document.querySelectorAll('#courseColorPalette .courseColorChoice').forEach(b=>{
-                    if(!b.dataset.fullFineBound){b.dataset.fullFineBound='1';b.addEventListener('click',()=>{customActive=false;box.classList.remove('fullColorActive')})}
+                    if(!b.dataset.fullFineBound){b.dataset.fullFineBound='1';b.addEventListener('click',()=>{customActive=false;box.classList.remove('fullColorActive');const e=document.getElementById('fullCourseEnable84');if(e){e.checked=false;const p=document.getElementById('fullCourseColor'),t=document.getElementById('fullCourseTone');if(p)p.disabled=true;if(t)t.disabled=true;box.classList.remove('fullColorEnabled84')}})}
                   });
                   updateCoursePickerPreview();
                 }
@@ -168,7 +185,11 @@ final class FineTuneUi {
                 }
                 function syncCoursePicker(){
                   ensureFullCoursePicker();const c=editedCourse();
-                  if(c&&isHex(c.color)){customActive=true;customBase=c.color.toUpperCase();customTone=0}else{customActive=false;customBase='#2F83E8';customTone=0}
+                  customActive=false;
+                  if(c&&isHex(c.color)){customBase=c.color.toUpperCase();customTone=0}else{customBase='#2F83E8';customTone=0}
+                  const e=document.getElementById('fullCourseEnable84');if(e)e.checked=false;
+                  const p=document.getElementById('fullCourseColor'),t=document.getElementById('fullCourseTone');if(p)p.disabled=true;if(t)t.disabled=true;
+                  const box=document.getElementById('fullCourseColorBox');if(box)box.classList.remove('fullColorEnabled84');
                   updateCoursePickerPreview();
                 }
 
@@ -200,7 +221,7 @@ final class FineTuneUi {
                   const form=document.getElementById('courseForm');if(!form||!form.onsubmit||form.onsubmit.__fullColorWrapped)return;
                   const old=form.onsubmit;
                   const wrapped=function(e){
-                    const chosen=customActive?currentCustom():null;
+                    const chosen=(document.getElementById('fullCourseEnable84')?.checked===true&&customActive)?currentCustom():null;
                     const week=typeof activeWeek!=='undefined'?activeWeek:'A',day=typeof selected!=='undefined'?selected:2,idx=typeof editing!=='undefined'?editing:null;
                     const oldCourse=(idx!=null&&typeof weeks!=='undefined'&&weeks[week]&&weeks[week][day])?weeks[week][day].courses[idx]:null;
                     const oldClass=oldCourse?oldCourse.label:'';
@@ -212,7 +233,7 @@ final class FineTuneUi {
                       try{
                         const arr=weeks[week]&&weeks[week][day]?weeks[week][day].courses:[];let target=arr.find(c=>c.start===start&&c.end===end&&c.label===text);if(!target)target=arr.find(c=>c.start===start&&c.end===end);if(target)target.color=chosen;
                         if(classScope){const match=norm(oldClass||text);Object.keys(weeks).forEach(w=>{const ws=weeks[w];if(!ws)return;Object.keys(ws).forEach(d=>{const dd=ws[d];if(dd&&Array.isArray(dd.courses))dd.courses.forEach(c=>{if(norm(c.label)===match)c.color=chosen})})})}
-                        if(typeof save==='function')save();if(typeof render==='function')render();setTimeout(()=>{repaintLiteralCourses();try{if(window.AndroidSchedule&&AndroidSchedule.saveSchedule&&typeof exportState==='function')AndroidSchedule.saveSchedule(JSON.stringify(exportState()))}catch(ignore){}},0);
+                        if(typeof save==='function')save();if(typeof render==='function')render();setTimeout(()=>{repaintLiteralCourses();try{if(window.AndroidSchedule&&AndroidSchedule.saveSchedule&&typeof exportState==='function')AndroidSchedule.saveSchedule(JSON.stringify(exportState()))}catch(ignore){}},18);
                       }catch(ignore){}
                     }
                     return result;
@@ -222,7 +243,7 @@ final class FineTuneUi {
 
                 function bindSyncToggle(){
                   const t=document.getElementById('paletteSyncToggle');if(!t||t.dataset.fineSyncBound)return;t.dataset.fineSyncBound='1';
-                  t.addEventListener('change',()=>setTimeout(()=>{const o=loadSpecial();o.sync=t.checked;if(o.sync){o.widgetLunch=o.appLunch;o.widgetGap=o.appGap}saveSpecial(o);renderSpecialControls();applySpecialCss()},0));
+                  t.addEventListener('change',()=>setTimeout(()=>{const o=loadSpecial();o.sync=t.checked;if(o.sync){o.widgetLunch=o.appLunch;o.widgetGap=o.appGap}saveSpecial(o);renderSpecialControls();applySpecialCss()},18));
                 }
 
                 function refresh(){
@@ -230,10 +251,12 @@ final class FineTuneUi {
                 }
                 window.refreshFineTuneUi=refresh;
 
-                const modal=document.getElementById('modal');if(modal)new MutationObserver(()=>{if(modal.classList.contains('show'))setTimeout(syncCoursePicker,0)}).observe(modal,{attributes:true,attributeFilter:['class']});
-                ['weekGrid','todayList','editList'].forEach(id=>{const el=document.getElementById(id);if(el)new MutationObserver(()=>setTimeout(repaintLiteralCourses,0)).observe(el,{childList:true,subtree:true})});
-                const settings=document.getElementById('settingsModal');if(settings)new MutationObserver(()=>setTimeout(refresh,0)).observe(settings,{attributes:true,attributeFilter:['class']});
-                setTimeout(refresh,0);setTimeout(refresh,120);setTimeout(refresh,500);
+                let literalTimer84=0;
+                function scheduleLiteral84(){if(literalTimer84)return;literalTimer84=setTimeout(()=>{literalTimer84=0;repaintLiteralCourses()},18)}
+                const modal=document.getElementById('modal');if(modal)new MutationObserver(()=>{if(modal.classList.contains('show'))syncCoursePicker()}).observe(modal,{attributes:true,attributeFilter:['class']});
+                ['weekGrid','todayList','editList'].forEach(id=>{const el=document.getElementById(id);if(el)new MutationObserver(scheduleLiteral84).observe(el,{childList:true,subtree:true})});
+                const settings=document.getElementById('settingsModal');if(settings)new MutationObserver(()=>{if(settings.classList.contains('show'))setTimeout(refresh,18)}).observe(settings,{attributes:true,attributeFilter:['class']});
+                refresh();
               }catch(e){console.log('FineTuneUi',e)}
             })();
             """;

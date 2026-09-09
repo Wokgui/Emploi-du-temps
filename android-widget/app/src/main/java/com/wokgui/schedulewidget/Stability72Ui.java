@@ -9,7 +9,7 @@ final class Stability72Ui {
               try{
                 if(window.__stability72V1){if(window.refreshStability72)window.refreshStability72();return}
                 window.__stability72V1=true;
-                const APP_VERSION='6.12';
+                const APP_VERSION='6.26';
 
                 const style=document.createElement('style');
                 style.id='stability72Style';

@@ -9,7 +9,7 @@ final class LayoutLanguage77Ui {
               try{
                 if(window.__layoutLanguage77V1){if(window.refreshLayoutLanguage77)window.refreshLayoutLanguage77();return}
                 window.__layoutLanguage77V1=true;
-                const APP_VERSION='6.17';
+                const APP_VERSION='6.26';
 
                 const style=document.createElement('style');
                 style.id='layoutLanguage77Style';
@@ -43,10 +43,6 @@ final class LayoutLanguage77Ui {
                   const select=document.getElementById('languageSelect');
                   if(!select||select.__language77Bound)return;
                   select.__language77Bound=true;
-                  select.addEventListener('change',()=>{
-                    /* PersonalizationUi persists first; then force the complete translation pass. */
-                    setTimeout(()=>{try{if(window.refreshLocalization75)window.refreshLocalization75()}catch(e){};refresh()},0);
-                  });
                 }
 
                 function centreActionGroups(){
@@ -58,9 +54,9 @@ final class LayoutLanguage77Ui {
                 function refresh(){bindLanguage();centreActionGroups();setVersion()}
                 window.refreshLayoutLanguage77=refresh;
 
-                function wrap(name){const old=window[name];if(typeof old!=='function'||old.__layout77)return;const w=function(){const r=old.apply(this,arguments);requestAnimationFrame(refresh);return r};w.__layout77=true;window[name]=w;try{eval(name+'=w')}catch(e){}}
+                function wrap(name){const old=window[name];if(typeof old!=='function'||old.__layout77)return;const w=function(){const r=old.apply(this,arguments);refresh();return r};w.__layout77=true;window[name]=w;try{eval(name+'=w')}catch(e){}}
                 ['refreshSettingsV3','refreshAdvancedFeatures','refreshUiPolishSchool','refreshLocalization75'].forEach(wrap);
-                refresh();requestAnimationFrame(refresh);setTimeout(refresh,120);
+                refresh();
               }catch(e){console.log('LayoutLanguage77Ui',e)}
             })();
             """;

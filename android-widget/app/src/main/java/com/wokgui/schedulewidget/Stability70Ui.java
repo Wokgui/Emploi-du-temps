@@ -9,7 +9,7 @@ final class Stability70Ui {
               try{
                 if(window.__stability70V1){if(window.refreshStability70)window.refreshStability70();return}
                 window.__stability70V1=true;
-                const APP_VERSION='6.10';
+                const APP_VERSION='6.26';
                 const STRONG='1.5px';
                 let painting=false;
 
@@ -139,7 +139,7 @@ final class Stability70Ui {
                     let b=box.querySelector('.weekModeChoice[data-m="'+v+'"]');
                     if(!b){b=document.createElement('button');b.type='button';b.className='weekModeChoice';b.dataset.m=v;box.appendChild(b)}
                     b.hidden=false;b.removeAttribute('hidden');b.style.removeProperty('display');b.textContent=label;
-                    b.onclick=e=>{e.preventDefault();e.stopPropagation();if(window.switchCycle69)window.switchCycle69(Number(v));else if(window.switchCycleStable)window.switchCycleStable(Number(v));syncCycleUi();return false};
+                    b.onclick=e=>{e.preventDefault();e.stopPropagation();const target=Number(v);box.querySelectorAll('.weekModeChoice').forEach(x=>x.classList.toggle('active',Number(x.dataset.m)===target));requestAnimationFrame(()=>{if(window.switchCycle69)window.switchCycle69(target);else if(window.switchCycleStable)window.switchCycleStable(target);syncCycleUi()});return false};
                   }
                   const order=new Map(defs.map((x,i)=>[x[0],i]));
                   [...box.querySelectorAll('.weekModeChoice')].sort((a,b)=>(order.get(a.dataset.m)??99)-(order.get(b.dataset.m)??99)).forEach(b=>box.appendChild(b));
