@@ -1,0 +1,156 @@
+tasks.register('patchStability84') {
+    dependsOn tasks.named('patchStability83')
+    doLast {
+        // 6.24: the limited course palette is the normal/default colour picker.
+        // The full colour picker must be explicitly enabled for each edit before its colour can win.
+        def courseFile=file('src/main/java/com/wokgui/schedulewidget/CourseColorUi.java')
+        def course=courseFile.getText('UTF-8')
+        course=course.replace("""                let picked='';
+                let scope='cell';""","""                let picked='';
+                let pickedTouched=false;
+                let scope='cell';""")
+        course=course.replace("""palette.querySelectorAll('.courseColorChoice').forEach(b=>b.onclick=()=>selectColor(b.dataset.color||''));""","""palette.querySelectorAll('.courseColorChoice').forEach(b=>b.onclick=()=>{pickedTouched=true;selectColor(b.dataset.color||'')});""")
+        course=course.replace("""function syncPicker(){ensurePicker();const c=currentEditedCourse();selectColor(c&&c.color?c.color:'');selectScope('cell')}""","""function syncPicker(){ensurePicker();pickedTouched=false;const c=currentEditedCourse();selectColor(c&&c.color?c.color:'');selectScope('cell')}""")
+        course=course.replace("""                      if(target)target.color=chosen;
+                      if(chosenScope==='class'){""","""                      if(pickedTouched&&target)target.color=chosen;
+                      if(pickedTouched&&chosenScope==='class'){""")
+        course=course.replace('function decorateAll(){decorateWeek();decorateEdit();decorateToday();setTimeout(updateNowMarkers,0)}','function decorateAll(){decorateWeek();decorateEdit();decorateToday();updateNowMarkers()}')
+        course=course.replace("""if(modal){new MutationObserver(()=>{if(modal.classList.contains('show'))setTimeout(syncPicker,0)}).observe(modal,{attributes:true,attributeFilter:['class']})}""","""if(modal){new MutationObserver(()=>{if(modal.classList.contains('show'))syncPicker()}).observe(modal,{attributes:true,attributeFilter:['class']})}""")
+        course=course.replace('setTimeout(decorateAll,0);','scheduleDecorate84();')
+        def oldCourseObservers="""                ['weekGrid','editList','todayList'].forEach(id=>{const el=document.getElementById(id);if(el)new MutationObserver(()=>setTimeout(decorateAll,0)).observe(el,{childList:true})});
+                window.addEventListener('resize',()=>setTimeout(updateNowMarkers,20));"""
+        def newCourseObservers="""                let decorateTimer84=0;
+                function scheduleDecorate84(){if(decorateTimer84)return;decorateTimer84=setTimeout(()=>{decorateTimer84=0;decorateAll()},18)}
+                ['weekGrid','editList','todayList'].forEach(id=>{const el=document.getElementById(id);if(el)new MutationObserver(scheduleDecorate84).observe(el,{childList:true})});
+                window.addEventListener('resize',()=>setTimeout(updateNowMarkers,20));"""
+        if(!course.contains(oldCourseObservers)) throw new GradleException('6.24: CourseColor observer block not found')
+        course=course.replace(oldCourseObservers,newCourseObservers)
+        courseFile.write(course,'UTF-8')
+
+        def fineFile=file('src/main/java/com/wokgui/schedulewidget/FineTuneUi.java')
+        def fine=fineFile.getText('UTF-8')
+
+        // Add an explicit opt-in switch to the full picker. The limited palette stays primary.
+        def titleLine="""                  const title=box.querySelector('.fullColorTitle');if(title)title.textContent=tr('Nuancier complet','Full colour picker','Vollständiger Farbwähler');
+"""
+        def titleReplacement="""                  const title=box.querySelector('.fullColorTitle');if(title)title.textContent=tr('Nuancier complet','Full colour picker','Vollständiger Farbwähler');
+                  let enable=document.getElementById('fullCourseEnable84');
+                  if(!enable){
+                    const label=document.createElement('label');label.className='fullColorEnable84';
+                    label.innerHTML='<span>'+tr('Activer le nuancier complet','Enable full colour picker','Vollständigen Farbwähler aktivieren')+'</span><input id=\"fullCourseEnable84\" type=\"checkbox\">';
+                    box.insertBefore(label,box.querySelector('.fullColorControls')||null);enable=label.querySelector('input');
+                    enable.addEventListener('change',()=>{
+                      const pick=document.getElementById('fullCourseColor'),tone=document.getElementById('fullCourseTone');
+                      if(pick)pick.disabled=!enable.checked;if(tone)tone.disabled=!enable.checked;
+                      box.classList.toggle('fullColorEnabled84',enable.checked);
+                      if(enable.checked&&pick){pick.dispatchEvent(new Event('input',{bubbles:true}))}else{customActive=false;updateCoursePickerPreview()}
+                    });
+                  }else{const s=enable.closest('label')?.querySelector('span');if(s)s.textContent=tr('Activer le nuancier complet','Enable full colour picker','Vollständigen Farbwähler aktivieren')}
+                  const pick84=document.getElementById('fullCourseColor'),tone84=document.getElementById('fullCourseTone');
+                  if(pick84)pick84.disabled=!enable.checked;if(tone84)tone84.disabled=!enable.checked;box.classList.toggle('fullColorEnabled84',enable.checked);
+"""
+        if(!fine.contains(titleLine)) throw new GradleException('6.24: full picker title insertion point not found')
+        fine=fine.replace(titleLine,titleReplacement)
+
+        fine=fine.replace("""if(!b.dataset.fullFineBound){b.dataset.fullFineBound='1';b.addEventListener('click',()=>{customActive=false;box.classList.remove('fullColorActive')})}""","""if(!b.dataset.fullFineBound){b.dataset.fullFineBound='1';b.addEventListener('click',()=>{customActive=false;box.classList.remove('fullColorActive');const e=document.getElementById('fullCourseEnable84');if(e){e.checked=false;const p=document.getElementById('fullCourseColor'),t=document.getElementById('fullCourseTone');if(p)p.disabled=true;if(t)t.disabled=true;box.classList.remove('fullColorEnabled84')}})}""")
+
+        def oldSync="""                function syncCoursePicker(){
+                  ensureFullCoursePicker();const c=editedCourse();
+                  if(c&&isHex(c.color)){customActive=true;customBase=c.color.toUpperCase();customTone=0}else{customActive=false;customBase='#2F83E8';customTone=0}
+                  updateCoursePickerPreview();
+                }"""
+        def newSync="""                function syncCoursePicker(){
+                  ensureFullCoursePicker();const c=editedCourse();
+                  customActive=false;
+                  if(c&&isHex(c.color)){customBase=c.color.toUpperCase();customTone=0}else{customBase='#2F83E8';customTone=0}
+                  const e=document.getElementById('fullCourseEnable84');if(e)e.checked=false;
+                  const p=document.getElementById('fullCourseColor'),t=document.getElementById('fullCourseTone');if(p)p.disabled=true;if(t)t.disabled=true;
+                  const box=document.getElementById('fullCourseColorBox');if(box)box.classList.remove('fullColorEnabled84');
+                  updateCoursePickerPreview();
+                }"""
+        if(!fine.contains(oldSync)) throw new GradleException('6.24: full picker sync block not found')
+        fine=fine.replace(oldSync,newSync)
+        fine=fine.replace('const chosen=customActive?currentCustom():null;','const chosen=(document.getElementById(\'fullCourseEnable84\')?.checked===true&&customActive)?currentCustom():null;')
+
+        // The full picker is visually secondary until the user explicitly enables it.
+        fine=fine.replace("""                  .fullColorHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+""","""                  .fullColorHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+                  .fullColorEnable84{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 8px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:.68rem;font-weight:850;color:var(--ink)}
+                  .fullColorEnable84 input{width:18px;height:18px;accent-color:var(--blue)}
+                  #fullCourseColorBox:not(.fullColorEnabled84) .fullColorControls{opacity:.40}
+""")
+
+        // Coalesce repaint work and let the native pressed/toggled state paint before decorative work.
+        fine=fine.replace('setTimeout(()=>{repaintLiteralCourses();try{if(window.AndroidSchedule&&AndroidSchedule.saveSchedule&&typeof exportState===\'function\')AndroidSchedule.saveSchedule(JSON.stringify(exportState()))}catch(ignore){}},0);','setTimeout(()=>{repaintLiteralCourses();try{if(window.AndroidSchedule&&AndroidSchedule.saveSchedule&&typeof exportState===\'function\')AndroidSchedule.saveSchedule(JSON.stringify(exportState()))}catch(ignore){}},18);')
+        fine=fine.replace("""t.addEventListener('change',()=>setTimeout(()=>{const o=loadSpecial();o.sync=t.checked;if(o.sync){o.widgetLunch=o.appLunch;o.widgetGap=o.appGap}saveSpecial(o);renderSpecialControls();applySpecialCss()},0));""","""t.addEventListener('change',()=>setTimeout(()=>{const o=loadSpecial();o.sync=t.checked;if(o.sync){o.widgetLunch=o.appLunch;o.widgetGap=o.appGap}saveSpecial(o);renderSpecialControls();applySpecialCss()},18));""")
+        def oldFineTail="""                const modal=document.getElementById('modal');if(modal)new MutationObserver(()=>{if(modal.classList.contains('show'))setTimeout(syncCoursePicker,0)}).observe(modal,{attributes:true,attributeFilter:['class']});
+                ['weekGrid','todayList','editList'].forEach(id=>{const el=document.getElementById(id);if(el)new MutationObserver(()=>setTimeout(repaintLiteralCourses,0)).observe(el,{childList:true,subtree:true})});
+                const settings=document.getElementById('settingsModal');if(settings)new MutationObserver(()=>setTimeout(refresh,0)).observe(settings,{attributes:true,attributeFilter:['class']});
+                setTimeout(refresh,0);setTimeout(refresh,120);setTimeout(refresh,500);"""
+        def newFineTail="""                let literalTimer84=0;
+                function scheduleLiteral84(){if(literalTimer84)return;literalTimer84=setTimeout(()=>{literalTimer84=0;repaintLiteralCourses()},18)}
+                const modal=document.getElementById('modal');if(modal)new MutationObserver(()=>{if(modal.classList.contains('show'))syncCoursePicker()}).observe(modal,{attributes:true,attributeFilter:['class']});
+                ['weekGrid','todayList','editList'].forEach(id=>{const el=document.getElementById(id);if(el)new MutationObserver(scheduleLiteral84).observe(el,{childList:true,subtree:true})});
+                const settings=document.getElementById('settingsModal');if(settings)new MutationObserver(()=>{if(settings.classList.contains('show'))setTimeout(refresh,18)}).observe(settings,{attributes:true,attributeFilter:['class']});
+                refresh();"""
+        if(!fine.contains(oldFineTail)) throw new GradleException('6.24: FineTune tail not found')
+        fine=fine.replace(oldFineTail,newFineTail)
+        fineFile.write(fine,'UTF-8')
+
+        // Translation should follow actual screen renders, not every settings refresh cascade.
+        def locFile=file('src/main/java/com/wokgui/schedulewidget/Localization75Ui.java')
+        def loc=locFile.getText('UTF-8')
+        loc=loc.replace("['renderToday','renderWeek','renderEdit','renderContext','openEditor','refreshSettingsV3','refreshAdvancedFeatures','refreshStability74'].forEach(name=>{","['renderToday','renderWeek','renderEdit','renderContext','openEditor'].forEach(name=>{")
+        locFile.write(loc,'UTF-8')
+
+        // Do not translate twice when generic render() immediately calls renderToday/Week/Edit.
+        def langFile=file('src/main/java/com/wokgui/schedulewidget/Stability81Ui.java')
+        def lang=langFile.getText('UTF-8')
+        lang=lang.replace("['render','renderToday','renderWeek','renderEdit','renderContext','renderSlots','fillSlotOptions','openEditor','setActiveWeek'].forEach(wrap81);","['renderToday','renderWeek','renderEdit','renderContext','renderSlots','fillSlotOptions','openEditor','setActiveWeek'].forEach(wrap81);")
+        lang=lang.replace("""                  button,.nav,.weekTab,.dayTab{transition:none!important}
+""","""                  button,.nav,.weekTab,.dayTab{transition:none!important}
+                  button:active,.nav:active,.weekTab:active,.dayTab:active,.weekModeChoice:active,.advButton:active,.settingsAction:active{opacity:.72!important}
+""")
+        langFile.write(lang,'UTF-8')
+
+        // Stability78 was scheduling a fairly broad layout refresh before the next paint for many
+        // unrelated settings functions. Keep only the renders that can actually change its DOM.
+        def s78File=file('src/main/java/com/wokgui/schedulewidget/Stability78Ui.java')
+        def s78=s78File.getText('UTF-8')
+        def old78="""                function wrap(name){const old=window[name];if(typeof old!=='function'||old.__stability78)return;const w=function(){const r=old.apply(this,arguments);requestAnimationFrame(refresh);return r};w.__stability78=true;window[name]=w;try{eval(name+'=w')}catch(e){}}
+                ['renderEdit','renderSlots','refreshAdvancedFeatures','refreshFineTuneUi','refreshStability70','refreshStability74','refreshLayoutLanguage77'].forEach(wrap);"""
+        def new78="""                let refreshTimer84=0;
+                function scheduleRefresh84(){if(refreshTimer84)return;refreshTimer84=setTimeout(()=>{refreshTimer84=0;refresh()},18)}
+                function wrap(name){const old=window[name];if(typeof old!=='function'||old.__stability78)return;const w=function(){const r=old.apply(this,arguments);scheduleRefresh84();return r};w.__stability78=true;window[name]=w;try{eval(name+'=w')}catch(e){}}
+                ['renderEdit','renderSlots','refreshStability74'].forEach(wrap);"""
+        if(!s78.contains(old78)) throw new GradleException('6.24: Stability78 wrapper block not found')
+        s78=s78.replace(old78,new78)
+        s78File.write(s78,'UTF-8')
+
+        // Week controls show the selected state first, then do the secondary settings rebuild.
+        def advFile=file('src/main/java/com/wokgui/schedulewidget/AdvancedFeaturesUi.java')
+        def adv=advFile.getText('UTF-8')
+        adv=adv.replace("b.onclick=()=>{activeWeek=w;if(typeof render==='function')render();setTimeout(refreshAdvancedFeatures,0)};","b.onclick=()=>{activeWeek=w;box.querySelectorAll('.weekTab').forEach(x=>x.classList.toggle('active',x===b));if(typeof render==='function')render();setTimeout(refreshAdvancedFeatures,18)};")
+        adv=adv.replace("buildWeekTabs();setTimeout(refreshAdvancedFeatures,0)","buildWeekTabs();setTimeout(refreshAdvancedFeatures,18)")
+        advFile.write(adv,'UTF-8')
+
+        // Keep all visible versions coherent with the APK.
+        for(def path:[
+                'src/main/java/com/wokgui/schedulewidget/Stability81Ui.java','src/main/java/com/wokgui/schedulewidget/Stability80Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability79Ui.java','src/main/java/com/wokgui/schedulewidget/Stability78Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/LayoutLanguage77Ui.java','src/main/java/com/wokgui/schedulewidget/Localization75Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability74Ui.java','src/main/java/com/wokgui/schedulewidget/Stability73Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability72Ui.java','src/main/java/com/wokgui/schedulewidget/Stability71Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/Stability70Ui.java','src/main/java/com/wokgui/schedulewidget/Stability69Ui.java',
+                'src/main/java/com/wokgui/schedulewidget/FinalPolishUi.java','src/main/java/com/wokgui/schedulewidget/CycleLunchFixUi.java',
+                'src/main/java/com/wokgui/schedulewidget/WeekViewStabilityUi.java']) {
+            def f=file(path);if(!f.exists())continue
+            def txt=f.getText('UTF-8').replaceAll(/const APP_VERSION='6\.[0-9]+';/,"const APP_VERSION='6.24';")
+            f.write(txt,'UTF-8')
+        }
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('patchStability84')
+}
