@@ -6,6 +6,7 @@ final class UiRuntimeBundle {
 
     static String script() {
         StringBuilder out = new StringBuilder(460 * 1024);
+        out.append(domSafetyPrelude()).append('\n');
         out.append(BaseSettingsUi.script()).append('\n');
         out.append(TimetableCoreUi.script()).append('\n');
         out.append(WeekViewStabilityUi.script()).append('\n');
@@ -25,6 +26,28 @@ final class UiRuntimeBundle {
                        .replace("APP_VERSION='6.33'", "APP_VERSION='6.35'")
                        .replace("APP_VERSION='6.34'", "APP_VERSION='6.35'");
         return script;
+    }
+
+    /**
+     * Several generations of UI polish legitimately move the same controls. A
+     * stale reference node must not be allowed to abort a later refresh. Browser
+     * insertBefore normally throws NotFoundError in that situation; for this app,
+     * appending the node is the safe and visually neutral fallback.
+     */
+    private static String domSafetyPrelude() {
+        return """
+                (function(){
+                  try{
+                    if(window.__edtSafeInsertBefore)return;
+                    window.__edtSafeInsertBefore=true;
+                    var nativeInsert=Node.prototype.insertBefore;
+                    Node.prototype.insertBefore=function(newNode,referenceNode){
+                      if(referenceNode&&referenceNode.parentNode!==this)referenceNode=null;
+                      return nativeInsert.call(this,newNode,referenceNode);
+                    };
+                  }catch(e){}
+                })();
+                """;
     }
 
     /**
@@ -57,6 +80,15 @@ final class UiRuntimeBundle {
         script = script.replace(
                 "if(importBtn&&bar.nextElementSibling!==importBtn)view.insertBefore(bar,importBtn);",
                 "if(importBtn&&importBtn.parentNode===view&&bar.nextElementSibling!==importBtn)view.insertBefore(bar,importBtn);");
+
+        // Same protection for the two high-frequency settings reorderings. The
+        // generic prelude above remains the final safety net for legacy layers.
+        script = script.replace(
+                "if(theme&&preview&&preview.nextElementSibling!==theme)sheet.insertBefore(preview,theme);",
+                "if(theme&&preview&&theme.parentNode===sheet&&preview.parentNode===sheet&&preview.nextElementSibling!==theme)sheet.insertBefore(preview,theme);");
+        script = script.replace(
+                "if(languageBox&&appBox&&languageBox.nextElementSibling!==appBox)sheet.insertBefore(languageBox,appBox);",
+                "if(languageBox&&appBox&&languageBox.parentNode===sheet&&appBox.parentNode===sheet&&languageBox.nextElementSibling!==appBox)sheet.insertBefore(languageBox,appBox);");
 
         return script;
     }
