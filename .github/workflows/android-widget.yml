@@ -149,10 +149,10 @@ jobs:
             grep -Fq "com.wokgui.schedulewidget/.MainActivity" smoke/activity-week.txt
             adb exec-out screencap -p > smoke/04-week.png
 
-            # Render the actual RemoteViews through a debug AppWidgetHost. Wednesday has
-            # no default courses, so the compact widget must show Thursday's first two
-            # courses and omit Midi/Trou. Expanded height must expose both special bands.
-            adb shell appwidget grantbind --package com.wokgui.schedulewidget --user current
+            # Render the actual RemoteViews through a debug AppWidgetHost. The emulator
+            # uses user 0; use the explicit CTS-style user id instead of resolving "current".
+            adb shell am get-current-user | tee smoke/current-user.txt
+            adb shell appwidget grantbind --package com.wokgui.schedulewidget --user 0
             adb shell am force-stop com.wokgui.schedulewidget
             adb shell am start -W -n com.wokgui.schedulewidget/.WidgetPreviewActivity --ei height_dp 108 --ei width_dp 350 > smoke/launch-widget-small.txt
             sleep 6
