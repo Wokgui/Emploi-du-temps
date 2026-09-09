@@ -102,15 +102,33 @@ jobs:
             adb shell wm size 1080x1920
             adb shell input keyevent KEYCODE_WAKEUP || true
             adb shell wm dismiss-keyguard || true
-            adb logcat -c
 
+            wait_ui_ready() {
+              label="$1"
+              for i in $(seq 1 60); do
+                if adb logcat -d | grep -Eq "EDT_UI_CHUNK.*complete count=[0-9]+"; then
+                  sleep 1
+                  return 0
+                fi
+                sleep 1
+              done
+              adb logcat -d > "smoke/ui-ready-timeout-${label}.txt" || true
+              return 1
+            }
+
+            check_app_log() {
+              file="$1"
+              ! grep -E "AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)" "$file"
+            }
+
+            adb logcat -c
             adb shell am force-stop com.wokgui.schedulewidget
             adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode edit > smoke/launch-edit-cold.txt
-            sleep 5
+            wait_ui_ready edit-cold
             test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
             adb exec-out screencap -p > smoke/00-edit-cold.png
             adb logcat -d > smoke/logcat-edit-cold.txt || true
-            ! grep -E "AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)" smoke/logcat-edit-cold.txt
+            check_app_log smoke/logcat-edit-cold.txt
 
             adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode edit >/dev/null
             sleep 1
@@ -119,63 +137,80 @@ jobs:
             grep -Fq "com.wokgui.schedulewidget/.MainActivity" smoke/activity-edit.txt
             adb exec-out screencap -p > smoke/01-edit.png
             adb logcat -d > smoke/logcat-edit-full.txt || true
-            ! grep -E "AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)" smoke/logcat-edit-full.txt
+            check_app_log smoke/logcat-edit-full.txt
 
             adb shell input tap 1010 145
             sleep 2
             test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
             adb exec-out screencap -p > smoke/02-settings.png
 
+            adb logcat -c
             adb shell am force-stop com.wokgui.schedulewidget
             adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode week > smoke/launch-week.txt
-            sleep 4
+            wait_ui_ready week
             test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
             adb shell dumpsys activity activities > smoke/activity-week.txt || true
             grep -Fq "com.wokgui.schedulewidget/.MainActivity" smoke/activity-week.txt
             adb exec-out screencap -p > smoke/03-week.png
+            adb logcat -d > smoke/logcat-week.txt || true
+            check_app_log smoke/logcat-week.txt
 
+            adb logcat -c
             adb shell am force-stop com.wokgui.schedulewidget
             adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode today --es test_now 2026-09-10T07:45:00 > smoke/launch-before.txt
-            sleep 4
+            wait_ui_ready before
             test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
             adb shell dumpsys activity activities > smoke/activity-before.txt || true
             grep -Fq "com.wokgui.schedulewidget/.MainActivity" smoke/activity-before.txt
             adb exec-out screencap -p > smoke/04-before.png
+            adb logcat -d > smoke/logcat-before.txt || true
+            check_app_log smoke/logcat-before.txt
 
+            adb logcat -c
             adb shell am force-stop com.wokgui.schedulewidget
             adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode today --es test_now 2026-09-10T08:30:00 > smoke/launch-active.txt
-            sleep 4
+            wait_ui_ready active
             test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
             adb shell dumpsys activity activities > smoke/activity-active.txt || true
             grep -Fq "com.wokgui.schedulewidget/.MainActivity" smoke/activity-active.txt
             adb exec-out screencap -p > smoke/05-active.png
+            adb logcat -d > smoke/logcat-active.txt || true
+            check_app_log smoke/logcat-active.txt
 
+            adb logcat -c
             adb shell am force-stop com.wokgui.schedulewidget
             adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode today --es test_now 2026-09-10T12:30:00 > smoke/launch-lunch.txt
-            sleep 4
+            wait_ui_ready lunch
             test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
             adb shell dumpsys activity activities > smoke/activity-lunch.txt || true
             grep -Fq "com.wokgui.schedulewidget/.MainActivity" smoke/activity-lunch.txt
             adb exec-out screencap -p > smoke/06-lunch.png
+            adb logcat -d > smoke/logcat-lunch.txt || true
+            check_app_log smoke/logcat-lunch.txt
 
+            adb logcat -c
             adb shell am force-stop com.wokgui.schedulewidget
             adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode today --es test_now 2026-09-10T15:30:00 > smoke/launch-gap.txt
-            sleep 4
+            wait_ui_ready gap
             test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
             adb shell dumpsys activity activities > smoke/activity-gap.txt || true
             grep -Fq "com.wokgui.schedulewidget/.MainActivity" smoke/activity-gap.txt
             adb exec-out screencap -p > smoke/07-gap.png
+            adb logcat -d > smoke/logcat-gap.txt || true
+            check_app_log smoke/logcat-gap.txt
 
+            adb logcat -c
             adb shell am force-stop com.wokgui.schedulewidget
             adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode today --es test_now 2026-09-10T17:30:00 > smoke/launch-after.txt
-            sleep 4
+            wait_ui_ready after
             test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
             adb shell dumpsys activity activities > smoke/activity-after.txt || true
             grep -Fq "com.wokgui.schedulewidget/.MainActivity" smoke/activity-after.txt
             adb exec-out screencap -p > smoke/08-after.png
+            adb logcat -d > smoke/logcat-after.txt || true
+            check_app_log smoke/logcat-after.txt
 
-            adb logcat -d > smoke/logcat-timetable.txt || true
-            ! grep -E "AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)" smoke/logcat-timetable.txt
+            cat smoke/logcat-week.txt smoke/logcat-before.txt smoke/logcat-active.txt smoke/logcat-lunch.txt smoke/logcat-gap.txt smoke/logcat-after.txt > smoke/logcat-timetable.txt
             grep -F "EDT_STARTUP_STATE" smoke/logcat-timetable.txt > smoke/startup-state.txt || true
             python3 android-widget/ci/check_screenshots.py smoke
 
@@ -222,6 +257,7 @@ jobs:
           if-no-files-found: ignore
 
   publish:
+    if: ${{ false }}
     needs: smoke
     runs-on: ubuntu-latest
     timeout-minutes: 5
