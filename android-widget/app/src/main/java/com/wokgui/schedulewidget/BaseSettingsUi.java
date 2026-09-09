@@ -1,9 +1,17 @@
 package com.wokgui.schedulewidget;
 
-final class PersonalizationUi2 {
-    private PersonalizationUi2() {}
+/** Base settings UI and its persistent controls. */
+final class BaseSettingsUi {
+    private BaseSettingsUi() {}
 
     static String script() {
+        StringBuilder out = new StringBuilder(64 * 1024);
+        out.append(layer0()).append('\n'); // PersonalizationUi2
+        return out.toString();
+    }
+
+    // Former PersonalizationUi2; isolated to stay below JVM constant limits.
+    private static String layer0() {
         return """
             (function(){
               try {
@@ -161,4 +169,5 @@ final class PersonalizationUi2 {
             })();
             """;
     }
+
 }

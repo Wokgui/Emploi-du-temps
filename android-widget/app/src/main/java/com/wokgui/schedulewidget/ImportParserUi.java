@@ -1,9 +1,17 @@
 package com.wokgui.schedulewidget;
 
-final class OcrImport80Ui {
-    private OcrImport80Ui() {}
+/** Timetable-photo OCR parsing. */
+final class ImportParserUi {
+    private ImportParserUi() {}
 
     static String script() {
+        StringBuilder out = new StringBuilder(64 * 1024);
+        out.append(layer0()).append('\n'); // OcrImport80Ui
+        return out.toString();
+    }
+
+    // Former OcrImport80Ui; isolated to stay below JVM constant limits.
+    private static String layer0() {
         return """
             (function(){
               try{
@@ -134,4 +142,5 @@ final class OcrImport80Ui {
             })();
             """;
     }
+
 }

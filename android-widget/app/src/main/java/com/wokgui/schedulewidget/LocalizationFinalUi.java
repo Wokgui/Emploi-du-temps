@@ -1,15 +1,23 @@
 package com.wokgui.schedulewidget;
 
-final class Stability81Ui {
-    private Stability81Ui() {}
+/** Final dynamic localization and language-download bindings. */
+final class LocalizationFinalUi {
+    private LocalizationFinalUi() {}
 
     static String script() {
+        StringBuilder out = new StringBuilder(64 * 1024);
+        out.append(layer0()).append('\n'); // Stability81Ui
+        return out.toString();
+    }
+
+    // Former Stability81Ui; isolated to stay below JVM constant limits.
+    private static String layer0() {
         return """
             (function(){
               try{
                 if(window.__stability81V1){if(window.refreshStability81)window.refreshStability81();return}
                 window.__stability81V1=true;
-                const APP_VERSION='6.26';
+                const APP_VERSION='6.30';
                 let translating81=false,downloadBusy81=false;
 
                 const EXTRA81={
@@ -245,4 +253,5 @@ final class Stability81Ui {
             })();
             """;
     }
+
 }
