@@ -68,16 +68,17 @@ final class UiRuntimeBundle {
     /** Applies compatibility repairs and aligns version labels to every independent layer. */
     static String prepareChunk(String script) {
         script = repairGeneratedJavaScript(script);
-        return script.replace("APP_VERSION='6.31'", "APP_VERSION='6.41'")
-                     .replace("APP_VERSION='6.32'", "APP_VERSION='6.41'")
-                     .replace("APP_VERSION='6.33'", "APP_VERSION='6.41'")
-                     .replace("APP_VERSION='6.34'", "APP_VERSION='6.41'")
-                     .replace("APP_VERSION='6.35'", "APP_VERSION='6.41'")
-                     .replace("APP_VERSION='6.36'", "APP_VERSION='6.41'")
-                     .replace("APP_VERSION='6.37'", "APP_VERSION='6.41'")
-                     .replace("APP_VERSION='6.38'", "APP_VERSION='6.41'")
-                     .replace("APP_VERSION='6.39'", "APP_VERSION='6.41'")
-                     .replace("APP_VERSION='6.40'", "APP_VERSION='6.41'");
+        return script.replace("APP_VERSION='6.31'", "APP_VERSION='6.42'")
+                     .replace("APP_VERSION='6.32'", "APP_VERSION='6.42'")
+                     .replace("APP_VERSION='6.33'", "APP_VERSION='6.42'")
+                     .replace("APP_VERSION='6.34'", "APP_VERSION='6.42'")
+                     .replace("APP_VERSION='6.35'", "APP_VERSION='6.42'")
+                     .replace("APP_VERSION='6.36'", "APP_VERSION='6.42'")
+                     .replace("APP_VERSION='6.37'", "APP_VERSION='6.42'")
+                     .replace("APP_VERSION='6.38'", "APP_VERSION='6.42'")
+                     .replace("APP_VERSION='6.39'", "APP_VERSION='6.42'")
+                     .replace("APP_VERSION='6.40'", "APP_VERSION='6.42'")
+                     .replace("APP_VERSION='6.41'", "APP_VERSION='6.42'");
     }
 
     /**
