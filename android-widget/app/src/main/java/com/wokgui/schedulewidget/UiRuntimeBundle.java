@@ -2,40 +2,23 @@ package com.wokgui.schedulewidget;
 
 /** Single WebView injection entry point. Runtime behavior is grouped by responsibility. */
 final class UiRuntimeBundle {
+    static final String CHUNK_MARKER = "\n/*__EDT_UI_CHUNK__*/\n";
+
     private UiRuntimeBundle() {}
 
+    /**
+     * Returns the complete runtime while preserving explicit boundaries between the
+     * legacy UI layers. A normal WebView can still execute this as one script because
+     * the boundaries are comments. ResilientWebView recognizes them and evaluates one
+     * layer per animation frame, keeping the already-loaded timetable paintable during
+     * cold starts.
+     */
     static String script() {
-        StringBuilder out = new StringBuilder(460 * 1024);
-        out.append(domSafetyPrelude()).append('\n');
-        out.append(BaseSettingsUi.script()).append('\n');
-        out.append(TimetableCoreUi.script()).append('\n');
-        out.append(WeekViewStabilityUi.script()).append('\n');
-        out.append(ScheduleDisplayUi.script()).append('\n');
-        out.append(LocalizationUi.script()).append('\n');
-        out.append(ImportParserUi.script()).append('\n');
-        out.append(LocalizationFinalUi.script()).append('\n');
-        out.append(WorkflowUi.script()).append('\n');
-        out.append(TemporalStateUi.script()).append('\n');
-        out.append(StartupViewRecoveryUi.script()).append('\n');
-
-        String script = repairGeneratedJavaScript(out.toString());
-
-        // Keep all runtime version labels aligned without duplicating edits across
-        // the consolidated UI modules.
-        script = script.replace("APP_VERSION='6.31'", "APP_VERSION='6.35'")
-                       .replace("APP_VERSION='6.32'", "APP_VERSION='6.35'")
-                       .replace("APP_VERSION='6.33'", "APP_VERSION='6.35'")
-                       .replace("APP_VERSION='6.34'", "APP_VERSION='6.35'");
-        return script;
+        return String.join(CHUNK_MARKER, ChunkedUiScripts.all());
     }
 
-    /**
-     * Several generations of UI polish legitimately move the same controls. A
-     * stale reference node must not be allowed to abort a later refresh. Browser
-     * insertBefore normally throws NotFoundError in that situation; for this app,
-     * appending the node is the safe and visually neutral fallback.
-     */
-    private static String domSafetyPrelude() {
+    /** Several generations of UI polish legitimately move the same controls. */
+    static String domSafetyPrelude() {
         return """
                 (function(){
                   try{
@@ -49,6 +32,15 @@ final class UiRuntimeBundle {
                   }catch(e){}
                 })();
                 """;
+    }
+
+    /** Applies compatibility repairs and aligns version labels to every independent layer. */
+    static String prepareChunk(String script) {
+        script = repairGeneratedJavaScript(script);
+        return script.replace("APP_VERSION='6.31'", "APP_VERSION='6.35'")
+                     .replace("APP_VERSION='6.32'", "APP_VERSION='6.35'")
+                     .replace("APP_VERSION='6.33'", "APP_VERSION='6.35'")
+                     .replace("APP_VERSION='6.34'", "APP_VERSION='6.35'");
     }
 
     /**
