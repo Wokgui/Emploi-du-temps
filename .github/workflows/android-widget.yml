@@ -104,7 +104,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           disable-animations: true
           script: |
-            set -euo pipefail
+            set -eu
             mkdir -p smoke
             adb install -r smoke-apk/emploi-du-temps-widget.apk
             adb shell wm size 1080x1920
