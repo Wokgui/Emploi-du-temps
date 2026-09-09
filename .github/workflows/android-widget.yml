@@ -49,7 +49,7 @@ jobs:
       - name: Verify install version and package
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='633001' versionName='6.33'" app/build/outputs/apk/debug/badging.txt
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='634001' versionName='6.34'" app/build/outputs/apk/debug/badging.txt
       - name: Rename APK
         run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/emploi-du-temps-widget.apk
       - name: Upload APK artifact
@@ -62,7 +62,7 @@ jobs:
   smoke:
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 14
 
     steps:
       - name: Checkout
@@ -84,7 +84,7 @@ jobs:
         with:
           name: emploi-du-temps-widget-apk
           path: smoke-apk
-      - name: Exercise main views on Android emulator
+      - name: Exercise app and real widget on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -148,6 +148,30 @@ jobs:
             adb shell dumpsys activity activities > smoke/activity-week.txt || true
             grep -Fq "com.wokgui.schedulewidget/.MainActivity" smoke/activity-week.txt
             adb exec-out screencap -p > smoke/04-week.png
+
+            # Render the actual RemoteViews through a debug AppWidgetHost. Wednesday has
+            # no default courses, so the compact widget must show Thursday's first two
+            # courses and omit Midi/Trou. Expanded height must expose both special bands.
+            adb shell appwidget grantbind --package com.wokgui.schedulewidget --user current
+            adb shell am force-stop com.wokgui.schedulewidget
+            adb shell am start -W -n com.wokgui.schedulewidget/.WidgetPreviewActivity --ei height_dp 108 --ei width_dp 350 > smoke/launch-widget-small.txt
+            sleep 6
+            adb shell uiautomator dump /sdcard/widget-small.xml >/dev/null
+            adb pull /sdcard/widget-small.xml smoke/widget-small.xml >/dev/null
+            grep -Fq "3G1 ALL" smoke/widget-small.xml
+            grep -Fq "3G3 ALL" smoke/widget-small.xml
+            ! grep -Fq "Midi" smoke/widget-small.xml
+            ! grep -Fq "Trou" smoke/widget-small.xml
+            adb exec-out screencap -p > smoke/05-widget-small.png
+
+            adb shell am force-stop com.wokgui.schedulewidget
+            adb shell am start -W -n com.wokgui.schedulewidget/.WidgetPreviewActivity --ei height_dp 486 --ei width_dp 350 > smoke/launch-widget-expanded.txt
+            sleep 7
+            adb shell uiautomator dump /sdcard/widget-expanded.xml >/dev/null
+            adb pull /sdcard/widget-expanded.xml smoke/widget-expanded.xml >/dev/null
+            grep -Fq "Midi" smoke/widget-expanded.xml
+            grep -Fq "Trou" smoke/widget-expanded.xml
+            adb exec-out screencap -p > smoke/06-widget-expanded.png
 
             adb logcat -d > smoke/logcat-full.txt || true
             ! grep -E "FATAL EXCEPTION|AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError)" smoke/logcat-full.txt
