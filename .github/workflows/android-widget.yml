@@ -239,7 +239,7 @@ jobs:
           if-no-files-found: ignore
 
   publish:
-    if: ${{ false }}
+    if: ${{ needs.smoke.result == 'success' }}
     needs: smoke
     runs-on: ubuntu-latest
     timeout-minutes: 5
