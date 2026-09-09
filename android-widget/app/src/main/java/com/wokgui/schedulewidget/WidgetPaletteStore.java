@@ -56,10 +56,11 @@ final class WidgetPaletteStore {
         JSONObject o = new JSONObject();
         try {
             o.put("sync", true);
-            o.put("appLunch", "#FFF9E8");
-            o.put("appGap", "#FFFFFF");
-            o.put("widgetLunch", "#FFF9E8");
-            o.put("widgetGap", "#FFFFFF");
+            // Des bandes colorées mais plus douces que les cours : pas de gris ni de blanc brut.
+            o.put("appLunch", "#FFE4A8");
+            o.put("appGap", "#DDF2EC");
+            o.put("widgetLunch", "#FFE4A8");
+            o.put("widgetGap", "#DDF2EC");
         } catch (Exception ignored) {}
         return o;
     }
@@ -94,8 +95,8 @@ final class WidgetPaletteStore {
                 if (incoming.has(key)) out.put(key, normalizeHex(incoming.optString(key, out.optString(key))));
             }
             if (sync) {
-                out.put("widgetLunch", out.optString("appLunch", "#FFF9E8"));
-                out.put("widgetGap", out.optString("appGap", "#FFFFFF"));
+                out.put("widgetLunch", out.optString("appLunch", "#FFE4A8"));
+                out.put("widgetGap", out.optString("appGap", "#DDF2EC"));
             }
             prefs(context).edit().putString(SPECIAL, out.toString()).apply();
         } catch (Exception ignored) {}
@@ -104,7 +105,7 @@ final class WidgetPaletteStore {
     static int lunchBackground(Context context) {
         JSONObject o = special(context);
         boolean sync = o.optBoolean("sync", true);
-        return parseOr(o.optString(sync ? "appLunch" : "widgetLunch", "#FFF9E8"), 0xFFFFF9E8);
+        return parseOr(o.optString(sync ? "appLunch" : "widgetLunch", "#FFE4A8"), 0xFFFFE4A8);
     }
 
     static int lunchText(Context context) {
@@ -114,7 +115,7 @@ final class WidgetPaletteStore {
     static int gapBackground(Context context) {
         JSONObject o = special(context);
         boolean sync = o.optBoolean("sync", true);
-        return parseOr(o.optString(sync ? "appGap" : "widgetGap", "#FFFFFF"), 0xFFFFFFFF);
+        return parseOr(o.optString(sync ? "appGap" : "widgetGap", "#DDF2EC"), 0xFFDDF2EC);
     }
 
     static int gapText(Context context) {
