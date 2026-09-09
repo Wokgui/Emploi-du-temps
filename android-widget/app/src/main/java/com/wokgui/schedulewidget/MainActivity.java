@@ -80,29 +80,16 @@ public class MainActivity extends Activity {
         super.onNewIntent(intent);
         setIntent(intent);
         forceWeekOpening = isWidgetWeekIntent(intent);
+        if (webView == null || !pageLoaded) return;
         hideWebViewUntilWeekIsReady();
-        primeWeekBadge();
-        if (forceWeekOpening && webView != null) {
-            webView.evaluateJavascript("if(window.reloadSchedule){reloadSchedule();}", value -> ensureUiReady());
-        } else {
-            applyOpenMode();
-            ensureUiReady();
-        }
+        refreshScheduleAndUi();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (webView != null) {
-            webView.evaluateJavascript(
-                    "if(window.reloadSchedule){reloadSchedule();}",
-                    value -> {
-                        primeWeekBadge();
-                        if (!forceWeekOpening) applyOpenMode();
-                        ensureUiReady();
-                    }
-            );
-        }
+        if (webView == null || !pageLoaded) return;
+        refreshScheduleAndUi();
     }
 
     @Override
@@ -145,7 +132,7 @@ public class MainActivity extends Activity {
      * successively on screen.  It is revealed only after the week view is the active DOM view.
      */
     private void settleWeekAndReveal() {
-        if (webView == null) return;
+        if (webView == null || !pageLoaded) return;
         final String script = """
                 (function(){
                   try{
@@ -269,7 +256,7 @@ public class MainActivity extends Activity {
     }
 
     private void primeWeekBadge() {
-        if (webView == null || !AdvancedSettingsStore.json(this).optBoolean("singleWeek", false)) return;
+        if (webView == null || !pageLoaded || !AdvancedSettingsStore.json(this).optBoolean("singleWeek", false)) return;
         String language = UiSettingsStore.language(this);
         String label = LanguagePackStore.widgetText(this, language, "singleWeek");
         if (label == null) label = "de".equals(language) ? "Einzelwoche" : ("en".equals(language) ? "Single week" : "Semaine unique");
@@ -281,13 +268,26 @@ public class MainActivity extends Activity {
     }
 
     private void applyOpenMode() {
-        if (webView == null || getIntent() == null) return;
+        if (webView == null || !pageLoaded || getIntent() == null) return;
         String mode = getIntent().getStringExtra("open_mode");
         if ("today".equals(mode) || "week".equals(mode) || "edit".equals(mode)) {
             if ("week".equals(mode)) primeWeekBadge();
             webView.evaluateJavascript("if(window.setModeFromAndroid){setModeFromAndroid('" + mode + "');}", null);
             getIntent().removeExtra("open_mode");
         }
+    }
+
+    private void refreshScheduleAndUi() {
+        if (webView == null || !pageLoaded) return;
+        webView.evaluateJavascript(
+                "if(window.reloadSchedule){reloadSchedule();}",
+                value -> {
+                    if (webView == null || !pageLoaded) return;
+                    primeWeekBadge();
+                    if (!forceWeekOpening) applyOpenMode();
+                    ensureUiReady();
+                }
+        );
     }
 
     private void ensureUiReady() {
