@@ -1,23 +1,22 @@
 package com.wokgui.schedulewidget;
 
 import android.content.Context;
+import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
+import android.webkit.ValueCallback;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 /**
  * WebView that keeps the last complete frame visible while timetable UI layers settle.
- *
- * Earlier versions hid the whole WebView during cold starts and mode changes. On some
- * WebView/launcher timing paths the matching reveal callback could arrive too late or
- * never repaint, leaving a completely blank activity. Keeping the current WebView frame
- * visible is both safer and less flickery: JavaScript can switch the active timetable
- * view atomically while the user never sees the native empty background.
+ * Runtime UI layers are evaluated one at a time so a cold start never monopolizes the
+ * WebView renderer with a single ~500 KB JavaScript execution.
  */
 public final class ResilientWebView extends WebView {
     private static final String STARTUP_TAG = "EDT_STARTUP_STATE";
+    private static final String CHUNK_TAG = "EDT_UI_CHUNK";
 
     public ResilientWebView(Context context) {
         super(context);
@@ -33,8 +32,7 @@ public final class ResilientWebView extends WebView {
 
     @Override
     public void setVisibility(int visibility) {
-        // MainActivity may request INVISIBLE while a mode is settling. Never expose the
-        // empty native activity behind the WebView; retain its last rendered frame.
+        // Never expose the empty native activity behind the WebView while modes settle.
         super.setVisibility(View.VISIBLE);
         if (getAlpha() < 0.99f) super.setAlpha(1f);
         invalidate();
@@ -42,12 +40,45 @@ public final class ResilientWebView extends WebView {
 
     @Override
     public void setAlpha(float alpha) {
-        // A transparent WebView is indistinguishable from the historical blank-screen
-        // failure. Mode transitions are now handled by the DOM, so transparency is not
-        // needed and must never be allowed to persist.
         super.setAlpha(1f);
         if (getVisibility() != View.VISIBLE) super.setVisibility(View.VISIBLE);
         invalidate();
+    }
+
+    @Override
+    public void evaluateJavascript(String script, ValueCallback<String> resultCallback) {
+        if (script != null && script.contains(UiRuntimeBundle.CHUNK_MARKER)) {
+            String[] chunks = script.split(java.util.regex.Pattern.quote(UiRuntimeBundle.CHUNK_MARKER), -1);
+            long started = SystemClock.uptimeMillis();
+            Log.i(CHUNK_TAG, "start count=" + chunks.length + " chars=" + script.length());
+            evaluateChunk(chunks, 0, started, resultCallback);
+            return;
+        }
+        super.evaluateJavascript(script, resultCallback);
+    }
+
+    private void evaluateChunk(String[] chunks, int index, long started, ValueCallback<String> resultCallback) {
+        if (index >= chunks.length) {
+            Log.i(CHUNK_TAG, "complete count=" + chunks.length + " ms=" + (SystemClock.uptimeMillis() - started));
+            if (resultCallback != null) resultCallback.onReceiveValue("null");
+            return;
+        }
+
+        String chunk = chunks[index];
+        if (chunk == null || chunk.trim().isEmpty()) {
+            postOnAnimation(() -> evaluateChunk(chunks, index + 1, started, resultCallback));
+            return;
+        }
+
+        long layerStarted = SystemClock.uptimeMillis();
+        super.evaluateJavascript(chunk, value -> {
+            Log.i(CHUNK_TAG, "layer=" + (index + 1) + "/" + chunks.length
+                    + " chars=" + chunk.length() + " ms=" + (SystemClock.uptimeMillis() - layerStarted));
+            // Yield at least one compositor frame between legacy UI layers. Besides
+            // making startup visibly responsive, this lets delayed callbacks and the
+            // deterministic test clock run instead of being starved by one giant eval.
+            postOnAnimation(() -> evaluateChunk(chunks, index + 1, started, resultCallback));
+        });
     }
 
     @Override
@@ -57,7 +88,7 @@ public final class ResilientWebView extends WebView {
             return;
         }
         // MainActivity currently only overrides onPageFinished. Wrapping that callback
-        // lets CI inspect the real DOM even when the screen itself is visually blank.
+        // lets CI inspect the real DOM even when the system screenshot compositor flakes.
         super.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
