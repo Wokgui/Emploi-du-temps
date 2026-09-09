@@ -3,12 +3,15 @@ package com.wokgui.schedulewidget;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.webkit.WebView;
 
 /** Deterministic visual harness for the editable photo-import confirmation screen. */
 public class ImportReviewPreviewActivity extends MainActivity {
+    private static final String TAG = "EDT_IMPORT_REVIEW";
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private int attempts;
+    private int readinessAttempts;
+    private int openAttempts;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,11 +24,47 @@ public class ImportReviewPreviewActivity extends MainActivity {
         if (webView == null) return;
         webView.evaluateJavascript("typeof window.openTimetableImportReview==='function'", ready -> {
             if ("true".equals(ready)) {
-                webView.evaluateJavascript(sampleScript(), null);
-            } else if (++attempts < 80) {
+                openPreview(webView);
+            } else if (++readinessAttempts < 80) {
                 handler.postDelayed(this::tryOpenPreview, 250);
+            } else {
+                failPreview("review function never became ready");
             }
         });
+    }
+
+    private void openPreview(WebView webView) {
+        webView.evaluateJavascript(verifiedSampleScript(), result -> {
+            if ("\"visible\"".equals(result)) {
+                Log.i(TAG, "visible");
+                keepPreviewVisible(webView, 350);
+                keepPreviewVisible(webView, 900);
+                keepPreviewVisible(webView, 1600);
+            } else if (++openAttempts < 4) {
+                handler.postDelayed(() -> openPreview(webView), 250);
+            } else {
+                failPreview("review overlay did not become visible: " + result);
+            }
+        });
+    }
+
+    private void keepPreviewVisible(WebView webView, long delayMs) {
+        handler.postDelayed(() -> webView.evaluateJavascript(
+                "(function(){var e=document.getElementById('edtImportReview');if(e){e.classList.add('show');e.style.display='flex';e.style.zIndex='10000';}})();",
+                null), delayMs);
+    }
+
+    private void failPreview(String reason) {
+        Log.e(TAG, "failed: " + reason);
+        throw new IllegalStateException("Import review preview failed: " + reason);
+    }
+
+    private String verifiedSampleScript() {
+        return "(function(){try{" + sampleScript() +
+                "var e=document.getElementById('edtImportReview');" +
+                "if(!e||!e.classList.contains('show'))throw new Error('overlay not visible');" +
+                "e.style.display='flex';e.style.zIndex='10000';return 'visible';" +
+                "}catch(err){console.error('EDT_IMPORT_REVIEW_PREVIEW_ERROR|'+(err&&err.stack?err.stack:String(err)));return 'error';}})();";
     }
 
     private String sampleScript() {
