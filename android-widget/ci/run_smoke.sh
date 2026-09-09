@@ -82,23 +82,31 @@ sleep 1
 test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
 adb exec-out screencap -p > smoke/02-settings.png
 
+# Close Settings before exercising the real bottom navigation.
+adb shell input tap 862 210
+sleep 0.4
+assert_main_alive
+
 # Long-session regression: repeatedly switch views without restarting the app.
-# 6.39 could progressively slow down because every DOM mutation triggered a full rescan
-# and independent navigation renders could queue up. The final tap must remain prompt.
-adb shell input tap 995 240
-sleep 0.2
+# The important assertion is the response AFTER sustained use, not an internal counter.
 adb logcat -c
 for i in $(seq 1 12); do
-  adb shell input tap 180 1840
-  adb shell input tap 540 1840
-  adb shell input tap 870 1840
+  adb shell input tap 165 1810
+  sleep 0.06
+  adb shell input tap 465 1810
+  sleep 0.06
+  adb shell input tap 760 1810
+  sleep 0.06
 done
 sleep 1
 assert_main_alive
 adb logcat -d > smoke/interaction-stress-log.txt || true
-grep -Fq "EDT_FAST_STATS|" smoke/interaction-stress-log.txt
+stress_inputs=$(grep -c "EDT_FAST_INPUT|nav-" smoke/interaction-stress-log.txt || true)
+echo "navigation_inputs_seen=${stress_inputs}" | tee -a smoke/interaction-latency.txt
+test "$stress_inputs" -ge 24
 assert_clean_log smoke/interaction-stress-log.txt
 
+# The same control must still respond promptly after the prolonged interaction burst.
 adb logcat -c
 stress_start=$(date +%s%3N)
 adb shell input tap 1010 145
