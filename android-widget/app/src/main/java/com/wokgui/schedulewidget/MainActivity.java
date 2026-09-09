@@ -40,6 +40,7 @@ public class MainActivity extends Activity {
     private boolean pageLoaded = false;
     private boolean uiInjected = false;
     private boolean uiInjectionInFlight = false;
+    private boolean skipNextResumeRefresh = false;
     private final TextRecognizer textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
 
     @Override
@@ -67,8 +68,10 @@ public class MainActivity extends Activity {
                 pageLoaded = true;
                 uiInjected = false;
                 uiInjectionInFlight = false;
-                primeWeekBadge();
-                if (!forceWeekOpening) applyOpenMode();
+                if (!forceWeekOpening) {
+                    primeWeekBadge();
+                    applyOpenMode();
+                }
                 ensureUiReady();
             }
         });
@@ -79,15 +82,30 @@ public class MainActivity extends Activity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        skipNextResumeRefresh = true;
         forceWeekOpening = isWidgetWeekIntent(intent);
         if (webView == null || !pageLoaded) return;
-        hideWebViewUntilWeekIsReady();
-        refreshScheduleAndUi();
+
+        if (forceWeekOpening) {
+            webView.evaluateJavascript(
+                    "(function(){var w=document.getElementById('viewWeek');return !!(w&&w.classList.contains('active'));})()",
+                    active -> {
+                        if (!"true".equals(active)) hideWebViewUntilWeekIsReady();
+                        refreshScheduleAndUi();
+                    }
+            );
+        } else {
+            refreshScheduleAndUi();
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        if (skipNextResumeRefresh) {
+            skipNextResumeRefresh = false;
+            return;
+        }
         if (webView == null || !pageLoaded) return;
         refreshScheduleAndUi();
     }
@@ -127,26 +145,30 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * The widget always opens the week view.  The WebView stays invisible while all the
-     * injected UI layers finish their first render, so Today/Edit/Week can never flash
-     * successively on screen.  It is revealed only after the week view is the active DOM view.
+     * The widget always opens the week view. The WebView is hidden only when a real
+     * mode transition is necessary. Repeated taps while Week is already visible keep
+     * the existing frame on screen, avoiding the previous hide/re-render flash.
      */
     private void settleWeekAndReveal() {
         if (webView == null || !pageLoaded) return;
         final String script = """
                 (function(){
                   try{
-                    if(typeof setModeFromAndroid==='function')setModeFromAndroid('week');
-                    else{
-                      if(typeof mode!=='undefined')mode='week';
-                      document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});
-                      var w=document.getElementById('viewWeek');if(w)w.classList.add('active');
-                      document.querySelectorAll('.nav').forEach(function(n){n.classList.toggle('active',n.dataset.mode==='week')});
-                      if(typeof render==='function')render();
+                    var week=document.getElementById('viewWeek');
+                    var already=!!(week&&week.classList.contains('active'));
+                    if(!already){
+                      if(typeof setModeFromAndroid==='function')setModeFromAndroid('week');
+                      else{
+                        if(typeof mode!=='undefined')mode='week';
+                        document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});
+                        if(week)week.classList.add('active');
+                        document.querySelectorAll('.nav').forEach(function(n){n.classList.toggle('active',n.dataset.mode==='week')});
+                        if(typeof render==='function')render();
+                      }
                     }
                     if(window.refreshWeekViewStability)window.refreshWeekViewStability();
                     if(window.refreshFineTuneUi)window.refreshFineTuneUi();
-                    var week=document.getElementById('viewWeek');
+                    week=document.getElementById('viewWeek');
                     return !!(week&&week.classList.contains('active'));
                   }catch(e){return false}
                 })();
@@ -283,8 +305,10 @@ public class MainActivity extends Activity {
                 "if(window.reloadSchedule){reloadSchedule();}",
                 value -> {
                     if (webView == null || !pageLoaded) return;
-                    primeWeekBadge();
-                    if (!forceWeekOpening) applyOpenMode();
+                    if (!forceWeekOpening) {
+                        primeWeekBadge();
+                        applyOpenMode();
+                    }
                     ensureUiReady();
                 }
         );
@@ -310,9 +334,11 @@ public class MainActivity extends Activity {
 
     private void finishUiReady() {
         if (webView == null || !pageLoaded) return;
-        primeWeekBadge();
         if (forceWeekOpening) settleWeekAndReveal();
-        else revealWebViewStable();
+        else {
+            primeWeekBadge();
+            revealWebViewStable();
+        }
     }
 
     private void maybeRequestNotificationPermission() {
