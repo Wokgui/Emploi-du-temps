@@ -21,6 +21,7 @@ final class ChunkedUiScripts {
         addLayers(out, WorkflowUi.class, 5);
         add(out, TemporalStateUi.script());
         add(out, StartupViewRecoveryUi.script());
+        add(out, LunchIconCleanupUi.script());
         return out.toArray(new String[0]);
     }
 
