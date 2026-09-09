@@ -15,14 +15,38 @@ final class UiRuntimeBundle {
         out.append(LocalizationFinalUi.script()).append('\n');
         out.append(WorkflowUi.script()).append('\n');
 
-        // Java consumes \' inside text blocks. Restore the escape required by the
-        // single-quoted JavaScript HTML literal before evaluating the bundle.
-        String script = out.toString().replace("l'application", "l\\'application");
+        String script = repairGeneratedJavaScript(out.toString());
 
         // Keep all runtime version labels aligned without duplicating edits across
         // the consolidated UI modules.
         script = script.replace("APP_VERSION='6.31'", "APP_VERSION='6.33'")
                        .replace("APP_VERSION='6.32'", "APP_VERSION='6.33'");
+        return script;
+    }
+
+    /**
+     * Repairs escapes that Java text blocks consume before the scripts reach the
+     * WebView. Keeping these compatibility repairs in one place lets the old UI
+     * layers be progressively consolidated without shipping invalid JavaScript.
+     */
+    private static String repairGeneratedJavaScript(String script) {
+        // Apostrophe inside a single-quoted JavaScript/HTML literal.
+        script = script.replace("l'application", "l\\'application");
+
+        // Legacy Stability69 layer was missing the closing brace of lang().
+        script = script.replace(
+                "catch(e){return 'fr'}\n    function tr(fr,en,de)",
+                "catch(e){return 'fr'}}\n    function tr(fr,en,de)");
+
+        // OcrImport80 used Java \n escapes inside JavaScript single-quoted strings;
+        // text-block processing turned them into raw line breaks, which JS rejects.
+        script = script.replace(
+                ".length).join('\n');",
+                ".length).join('\\n');");
+        script = script.replace(
+                "activeWeek+'.\n\n'+summary+'\n\nRemplacer",
+                "activeWeek+'.\\n\\n'+summary+'\\n\\nRemplacer");
+
         return script;
     }
 }
