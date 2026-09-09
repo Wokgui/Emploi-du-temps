@@ -43,7 +43,7 @@ final class TemporalStateUi {
                         if(existing)existing.remove();
                         var time=row.querySelector('.time');
                         if(!time)return;
-                        var values=(time.textContent||'').match(/\d{1,2}:\d{2}/g)||[];
+                        var values=(time.textContent||'').match(/[0-9]{1,2}:[0-9]{2}/g)||[];
                         if(values.length<2)return;
                         var start=min(values[0]),end=min(values[1]);
                         if(nowM>=start&&nowM<end){
