@@ -19,18 +19,30 @@ final class FastInteractionUi {
                     if(v)v.classList.add('active');
                   }catch(e){}
                 }
+                function labelFor(el){
+                  if(!el)return 'unknown';
+                  if(el.id==='settingsBtn')return 'settings';
+                  if(el.id==='currentWeekBtn')return 'current-week';
+                  if(el.id==='addCourse')return 'add-course';
+                  if(el.classList.contains('nav'))return 'nav-'+(el.dataset.mode||'unknown');
+                  if(el.classList.contains('weekTab'))return 'week-'+(el.dataset.week||'unknown');
+                  if(el.classList.contains('dayTab'))return 'day-'+(el.dataset.day||el.textContent||'unknown');
+                  return el.id||'control';
+                }
                 function flash(el){
                   if(!el)return;
                   el.classList.add('edtFastPressed');
                   setTimeout(function(){try{el.classList.remove('edtFastPressed')}catch(e){}},140);
                 }
-                function heavyClick(el,event,visual){
+                function heavyClick(el,visual){
                   if(!el||typeof el.onclick!=='function'||el.onclick.__edtFastProxy)return false;
                   var old=el.onclick;
                   var proxy=function(e){
-                    if(proxy.__running)return old.call(el,e);
+                    flash(el);
+                    console.log('EDT_FAST_INPUT|'+labelFor(el)+'|visual');
+                    if(proxy.__running)return false;
                     proxy.__running=true;
-                    try{if(visual)visual(e);flash(el)}catch(ignore){}
+                    try{if(visual)visual(e)}catch(ignore){}
                     afterPaint(function(){
                       try{old.call(el,e)}finally{proxy.__running=false}
                     });
@@ -43,19 +55,19 @@ final class FastInteractionUi {
                 function patch(){
                   try{
                     var settings=document.getElementById('settingsBtn');
-                    heavyClick(settings,null,function(){var m=document.getElementById('settingsModal');if(m)m.classList.add('show')});
+                    heavyClick(settings,function(){var m=document.getElementById('settingsModal');if(m)m.classList.add('show')});
 
                     document.querySelectorAll('.nav[data-mode]').forEach(function(b){
-                      heavyClick(b,null,function(){activeView(b.dataset.mode)});
+                      heavyClick(b,function(){activeView(b.dataset.mode)});
                     });
                     document.querySelectorAll('.weekTab[data-week]').forEach(function(b){
-                      heavyClick(b,null,function(){
+                      heavyClick(b,function(){
                         document.querySelectorAll('.weekTab').forEach(function(x){x.classList.toggle('active',x===b)});
                         var l=document.getElementById('weekTitleLetter');if(l)l.textContent=b.dataset.week;
                       });
                     });
                     document.querySelectorAll('.dayTab:not(.weekendAdd)').forEach(function(b){
-                      heavyClick(b,null,function(){document.querySelectorAll('.dayTab:not(.weekendAdd)').forEach(function(x){x.classList.toggle('active',x===b)})});
+                      heavyClick(b,function(){document.querySelectorAll('.dayTab:not(.weekendAdd)').forEach(function(x){x.classList.toggle('active',x===b)})});
                     });
                     heavyClick(document.getElementById('currentWeekBtn'));
                     heavyClick(document.getElementById('addCourse'));
