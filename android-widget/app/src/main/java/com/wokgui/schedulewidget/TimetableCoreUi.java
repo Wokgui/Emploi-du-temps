@@ -266,7 +266,7 @@ final class TimetableCoreUi {
                   return;
                 }
                 window.__finalPolishV1=true;
-                const APP_VERSION='6.30';
+                const APP_VERSION='6.31';
                 let refreshing=false;
 
                 function ui(){try{return JSON.parse(AndroidSchedule.loadUiSettings()||'{}')}catch(e){return {}}}

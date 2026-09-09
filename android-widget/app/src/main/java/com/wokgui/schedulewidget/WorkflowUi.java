@@ -21,10 +21,8 @@ final class WorkflowUi {
               try{
                 if(window.__workflow85V1){if(window.refreshWorkflow85)window.refreshWorkflow85();return}
                 window.__workflow85V1=true;
-                const APP_VERSION='6.30';
-                let arranging=false,arrangeTimer=0,undoSuppress=false,lastSaveAt=0;
-                const undoStack=[];
-                let lastSnapshot='',lastFingerprint='';
+                const APP_VERSION='6.31';
+                let arranging=false,arrangeTimer=0;
 
                 function lang85(){
                   try{return String((JSON.parse(AndroidSchedule.loadUiSettings()||'{}').language||'fr'))}catch(e){return 'fr'}
@@ -62,52 +60,6 @@ final class WorkflowUi {
                   #languageExtra85 #languagePackPanel81{margin-top:8px!important}
                 `;
                 document.head.appendChild(style);
-
-                function currentFullSnapshot85(){
-                  try{if(typeof exportState==='function')return JSON.stringify(exportState())}catch(e){}
-                  try{return AndroidSchedule.loadSchedule()||''}catch(e){return ''}
-                }
-                function fingerprint85(raw){
-                  try{const o=JSON.parse(raw||'{}');delete o._currentWeek;return JSON.stringify(o)}catch(e){return String(raw||'')}
-                }
-                function refreshUndoButton85(){
-                  const b=document.getElementById('undoLast85');if(!b)return;
-                  b.disabled=undoStack.length===0;
-                  b.textContent=tr85('↶ Annuler la dernière modification','↶ Undo last change','↶ Letzte Änderung rückgängig');
-                }
-                function ensureUndo85(){
-                  const add=document.getElementById('addCourse');if(!add)return;
-                  let b=document.getElementById('undoLast85');
-                  if(!b){b=document.createElement('button');b.id='undoLast85';b.type='button';add.insertAdjacentElement('afterend',b);b.onclick=undo85}
-                  refreshUndoButton85();
-                }
-                function initUndo85(){
-                  lastSnapshot=currentFullSnapshot85();lastFingerprint=fingerprint85(lastSnapshot);refreshUndoButton85();
-                }
-                function wrapSave85(){
-                  const old=window.save;if(typeof old!=='function'||old.__undo85)return;
-                  const wrapped=function(){
-                    const now=Date.now(),current=currentFullSnapshot85(),fp=fingerprint85(current),changed=fp!==lastFingerprint;
-                    if(!undoSuppress&&changed){
-                      if(now-lastSaveAt>260&&lastSnapshot){undoStack.push(lastSnapshot);if(undoStack.length>12)undoStack.shift()}
-                      lastSaveAt=now;
-                    }
-                    const r=old.apply(this,arguments);
-                    lastSnapshot=currentFullSnapshot85();lastFingerprint=fingerprint85(lastSnapshot);refreshUndoButton85();
-                    return r;
-                  };
-                  wrapped.__undo85=true;window.save=wrapped;try{eval('save=wrapped')}catch(e){}
-                }
-                function undo85(){
-                  if(!undoStack.length)return;
-                  const snap=undoStack.pop();undoSuppress=true;
-                  try{
-                    AndroidSchedule.saveSchedule(snap);
-                    if(typeof reloadSchedule==='function')reloadSchedule();
-                    else if(typeof render==='function')render();
-                  }catch(e){}
-                  setTimeout(()=>{lastSnapshot=currentFullSnapshot85();lastFingerprint=fingerprint85(lastSnapshot);undoSuppress=false;refreshUndoButton85();},30);
-                }
 
                 function ensureDuplicate85(){
                   const actions=document.querySelector('#courseForm .sheetActions'),del=document.getElementById('deleteCourse'),right=actions&&actions.querySelector('.rightActions');if(!actions||!del||!right)return;
@@ -181,13 +133,13 @@ final class WorkflowUi {
                 }
 
                 function setVersion85(){const v=document.getElementById('appVersionInfo');if(v)v.textContent='Version '+APP_VERSION}
-                function refresh(){ensureUndo85();ensureDuplicate85();arrangeAdvanced85();refreshUndoButton85();setVersion85()}
+                function refresh(){ensureDuplicate85();arrangeAdvanced85();setVersion85()}
                 window.refreshWorkflow85=refresh;
 
-                wrapSave85();wrapOpenEditor85();ensureUndo85();ensureDuplicate85();installFastPress85();
+                wrapOpenEditor85();ensureDuplicate85();installFastPress85();
                 const sm=document.getElementById('settingsModal');if(sm)new MutationObserver(()=>{if(sm.classList.contains('show'))scheduleArrange85()}).observe(sm,{attributes:true,attributeFilter:['class']});
                 const sheet=document.getElementById('settingsSheet');if(sheet)new MutationObserver(scheduleArrange85).observe(sheet,{childList:true});
-                initUndo85();refresh();
+                refresh();
               }catch(e){console.log('Workflow85Ui',e)}
             })();
             """;
@@ -200,7 +152,7 @@ final class WorkflowUi {
               try{
                 if(window.__settingsLayoutV1){if(window.refreshSettingsLayout)window.refreshSettingsLayout();return}
                 window.__settingsLayoutV1=true;
-                const APP_VERSION='6.30';
+                const APP_VERSION='6.31';
                 let arranging=false,timer=0;
 
                 function language(){
@@ -308,7 +260,7 @@ final class WorkflowUi {
               try{
                 if(window.__editHistoryV1){if(window.refreshEditHistory)window.refreshEditHistory();return}
                 window.__editHistoryV1=true;
-                const APP_VERSION='6.30';
+                const APP_VERSION='6.31';
                 const undo=[],redo=[];
                 let applying=false,lastSnapshot='',lastSaveAt=0;
 
@@ -414,7 +366,7 @@ final class WorkflowUi {
               try{
                 if(window.__ocrPreviewV1){if(window.refreshOcrPreview)window.refreshOcrPreview();return}
                 window.__ocrPreviewV1=true;
-                const APP_VERSION='6.30';
+                const APP_VERSION='6.31';
                 let pending=null;
 
                 function language(){
@@ -562,7 +514,7 @@ final class WorkflowUi {
               try{
                 if(window.__settingsResetV1){if(window.refreshSettingsReset)window.refreshSettingsReset();return}
                 window.__settingsResetV1=true;
-                const APP_VERSION='6.30';
+                const APP_VERSION='6.31';
 
                 function language(){
                   try{return String((JSON.parse(AndroidSchedule.loadUiSettings()||'{}').language||'fr'))}catch(e){return 'fr'}

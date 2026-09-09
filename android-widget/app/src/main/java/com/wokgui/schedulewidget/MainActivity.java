@@ -38,6 +38,8 @@ public class MainActivity extends Activity {
     private WebView webView;
     private boolean forceWeekOpening = false;
     private boolean pageLoaded = false;
+    private boolean uiInjected = false;
+    private boolean uiInjectionInFlight = false;
     private final TextRecognizer textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
 
     @Override
@@ -63,9 +65,11 @@ public class MainActivity extends Activity {
             @Override public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 pageLoaded = true;
+                uiInjected = false;
+                uiInjectionInFlight = false;
                 primeWeekBadge();
                 if (!forceWeekOpening) applyOpenMode();
-                injectPersonalizationUi();
+                ensureUiReady();
             }
         });
         webView.loadUrl("file:///android_asset/index.html");
@@ -79,10 +83,10 @@ public class MainActivity extends Activity {
         hideWebViewUntilWeekIsReady();
         primeWeekBadge();
         if (forceWeekOpening && webView != null) {
-            webView.evaluateJavascript("if(window.reloadSchedule){reloadSchedule();}", value -> injectPersonalizationUi());
+            webView.evaluateJavascript("if(window.reloadSchedule){reloadSchedule();}", value -> ensureUiReady());
         } else {
             applyOpenMode();
-            injectPersonalizationUi();
+            ensureUiReady();
         }
     }
 
@@ -95,7 +99,7 @@ public class MainActivity extends Activity {
                     value -> {
                         primeWeekBadge();
                         if (!forceWeekOpening) applyOpenMode();
-                        injectPersonalizationUi();
+                        ensureUiReady();
                     }
             );
         }
@@ -129,6 +133,8 @@ public class MainActivity extends Activity {
     private void reloadForLanguageUi() {
         if (webView == null) return;
         pageLoaded = false;
+        uiInjected = false;
+        uiInjectionInFlight = false;
         hideWebViewUntilWeekIsReady();
         webView.post(webView::reload);
     }
@@ -284,17 +290,30 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void injectPersonalizationUi() {
-    if (webView == null) return;
-    webView.evaluateJavascript(
-            "(function(){if(window.__settingsV3&&!document.getElementById('settingsBtn')){var m=document.getElementById('settingsModal');if(m)m.remove();window.__settingsV3=false;}})();",
-            ignored -> webView.evaluateJavascript(UiRuntimeBundle.script(), value -> {
-                    primeWeekBadge();
-                    if (forceWeekOpening) settleWeekAndReveal();
-                    else revealWebViewStable();
-            })
-    );
-}
+    private void ensureUiReady() {
+        if (webView == null || !pageLoaded) return;
+        if (uiInjected) {
+            finishUiReady();
+            return;
+        }
+        if (uiInjectionInFlight) return;
+        uiInjectionInFlight = true;
+        webView.evaluateJavascript(
+                "(function(){if(window.__settingsV3&&!document.getElementById('settingsBtn')){var m=document.getElementById('settingsModal');if(m)m.remove();window.__settingsV3=false;}})();",
+                ignored -> webView.evaluateJavascript(UiRuntimeBundle.script(), value -> {
+                    uiInjectionInFlight = false;
+                    uiInjected = true;
+                    finishUiReady();
+                })
+        );
+    }
+
+    private void finishUiReady() {
+        if (webView == null || !pageLoaded) return;
+        primeWeekBadge();
+        if (forceWeekOpening) settleWeekAndReveal();
+        else revealWebViewStable();
+    }
 
     private void maybeRequestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {

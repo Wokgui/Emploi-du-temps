@@ -17,7 +17,7 @@ final class LocalizationFinalUi {
               try{
                 if(window.__stability81V1){if(window.refreshStability81)window.refreshStability81();return}
                 window.__stability81V1=true;
-                const APP_VERSION='6.30';
+                const APP_VERSION='6.31';
                 let translating81=false,downloadBusy81=false;
 
                 const EXTRA81={

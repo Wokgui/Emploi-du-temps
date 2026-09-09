@@ -287,7 +287,7 @@ final class ScheduleDisplayUi {
                   return;
                 }
                 window.__cycleLunchFixV3=true;
-                const APP_VERSION='6.30';
+                const APP_VERSION='6.31';
                 let switching=false;
 
                 function loadAdv(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
@@ -458,7 +458,7 @@ final class ScheduleDisplayUi {
               try{
                 if(window.__stability69V1){if(window.refreshStability69)window.refreshStability69();return}
                 window.__stability69V1=true;
-                const APP_VERSION='6.30';
+                const APP_VERSION='6.31';
                 const STRONG='1.5px';
                 let switching=false;
 
@@ -704,7 +704,7 @@ final class ScheduleDisplayUi {
               try{
                 if(window.__stability70V1){if(window.refreshStability70)window.refreshStability70();return}
                 window.__stability70V1=true;
-                const APP_VERSION='6.30';
+                const APP_VERSION='6.31';
                 const STRONG='1.5px';
                 let painting=false;
 
@@ -997,7 +997,7 @@ final class ScheduleDisplayUi {
               try{
                 if(window.__stability71V1){if(window.refreshStability71)window.refreshStability71();return}
                 window.__stability71V1=true;
-                const APP_VERSION='6.30';
+                const APP_VERSION='6.31';
                 let refreshQueued=false;
 
                 const style=document.createElement('style');
@@ -1176,7 +1176,7 @@ final class ScheduleDisplayUi {
               try{
                 if(window.__stability72V1){if(window.refreshStability72)window.refreshStability72();return}
                 window.__stability72V1=true;
-                const APP_VERSION='6.30';
+                const APP_VERSION='6.31';
 
                 const style=document.createElement('style');
                 style.id='stability72Style';
@@ -1341,7 +1341,7 @@ final class ScheduleDisplayUi {
               try{
                 if(window.__stability73V1){if(window.refreshStability73)window.refreshStability73();return}
                 window.__stability73V1=true;
-                const APP_VERSION='6.30';
+                const APP_VERSION='6.31';
                 let applying=false;
                 let lastPointerAt=0;
                 let lastPointerMode=0;
@@ -1513,7 +1513,7 @@ final class ScheduleDisplayUi {
               try{
                 if(window.__stability74V1){if(window.refreshStability74)window.refreshStability74();return}
                 window.__stability74V1=true;
-                const APP_VERSION='6.30';
+                const APP_VERSION='6.31';
                 let queued=false;
                 let arranging=false;
 

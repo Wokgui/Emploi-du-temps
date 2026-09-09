@@ -21,7 +21,7 @@ final class LocalizationUi {
               try{
                 if(window.__localization75V1){if(window.refreshLocalization75)window.refreshLocalization75();return}
                 window.__localization75V1=true;
-                const APP_VERSION='6.30';
+                const APP_VERSION='6.31';
                 const PACK_PREFIX='edt-language-pack-v1-';
                 const CATALOG_URL='https://raw.githubusercontent.com/Wokgui/Emploi-du-temps/main/language-packs/catalog.json';
                 let translating=false,queued=false;let langCache=null,installedCache=null,targetCacheLang=null,targetCache=null,reverseCache=null;const pendingRoots=new Set();let localizationObserver=null;
@@ -211,7 +211,7 @@ final class LocalizationUi {
               try{
                 if(window.__layoutLanguage77V1){if(window.refreshLayoutLanguage77)window.refreshLayoutLanguage77();return}
                 window.__layoutLanguage77V1=true;
-                const APP_VERSION='6.30';
+                const APP_VERSION='6.31';
 
                 const style=document.createElement('style');
                 style.id='layoutLanguage77Style';
@@ -271,7 +271,7 @@ final class LocalizationUi {
               try{
                 if(window.__stability78V1){if(window.refreshStability78)window.refreshStability78();return}
                 window.__stability78V1=true;
-                const APP_VERSION='6.30';
+                const APP_VERSION='6.31';
                 let refreshing=false;
 
                 function loadAdv(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
@@ -409,7 +409,7 @@ final class LocalizationUi {
               try{
                 if(window.__stability79V1){if(window.refreshStability79)window.refreshStability79();return}
                 window.__stability79V1=true;
-                const APP_VERSION='6.30';
+                const APP_VERSION='6.31';
                 const PACK_PREFIX='edt-language-pack-v1-';
                 const CATALOG_URL='https://raw.githubusercontent.com/Wokgui/Emploi-du-temps/main/language-packs/catalog.json';
                 let refreshing=false,languageTimer=0,lastWeekPointer=0,lunchRaf=0;
@@ -627,7 +627,7 @@ final class LocalizationUi {
               try{
                 if(window.__stability80V1){if(window.refreshStability80)window.refreshStability80();return}
                 window.__stability80V1=true;
-                const APP_VERSION='6.30';
+                const APP_VERSION='6.31';
                 let settingsRaf=0,lunchRaf=0,downloadBusy=false;
 
                 function loadUi(){try{return JSON.parse(AndroidSchedule.loadUiSettings()||'{}')}catch(e){return {language:'fr'}}}
