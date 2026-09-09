@@ -17,6 +17,37 @@ final class UiRuntimeBundle {
         return String.join(CHUNK_MARKER, ChunkedUiScripts.all());
     }
 
+    /**
+     * The OCR parser and editable import sheet are large and irrelevant to normal app
+     * navigation. Schedule them only once the main UI has finished loading and Chromium
+     * reports idle time. An OCR result arriving early is queued by LazyImportBootstrapUi.
+     */
+    static String idleImportScript() {
+        String body = prepareChunk(ImportParserUi.script()) + "\n" + prepareChunk(ImportReviewUi.script());
+        return """
+                (function(){
+                  try{
+                    if(window.__edtLazyImportScheduled)return;
+                    window.__edtLazyImportScheduled=true;
+                    var run=function(){
+                      try{
+                        var pending=window.__edtPendingOcrRaw;
+                        %s
+                        window.__edtLazyImportReady=(typeof window.parseOcrSchedule==='function'&&typeof window.openTimetableImportReview==='function');
+                        if(window.__edtLazyImportReady&&pending!=null){
+                          window.__edtPendingOcrRaw=null;
+                          window.applyOcrSchedule(pending);
+                        }
+                        console.log('EDT_LAZY_IMPORT|ready='+window.__edtLazyImportReady);
+                      }catch(e){console.error('EDT_LAZY_IMPORT|error='+e)}
+                    };
+                    if(typeof requestIdleCallback==='function')requestIdleCallback(run,{timeout:8000});
+                    else setTimeout(run,1800);
+                  }catch(e){console.log('EDT_LAZY_IMPORT',e)}
+                })();
+                """.formatted(body);
+    }
+
     /** Several generations of UI polish legitimately move the same controls. */
     static String domSafetyPrelude() {
         return """
