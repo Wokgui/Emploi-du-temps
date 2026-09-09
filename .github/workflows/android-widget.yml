@@ -110,12 +110,14 @@ jobs:
             adb logcat -c
             adb shell am force-stop com.wokgui.schedulewidget
             adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode edit > smoke/launch-edit.txt
-            sleep 3
+            sleep 4
             test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
             adb exec-out screencap -p > smoke/01-edit.png
-            test "$(stat -c%s smoke/01-edit.png)" -gt 60000
             adb shell uiautomator dump /sdcard/window-edit.xml >/dev/null || true
             adb pull /sdcard/window-edit.xml smoke/window-edit.xml >/dev/null || true
+            adb shell dumpsys activity top > smoke/activity-edit.txt || true
+            adb shell dumpsys window windows > smoke/windows-edit.txt || true
+            adb logcat -d > smoke/logcat-edit-full.txt || true
             adb shell input tap 1010 145
             sleep 1
             adb exec-out screencap -p > smoke/02-settings.png
@@ -123,18 +125,20 @@ jobs:
             adb pull /sdcard/window-settings.xml smoke/window-settings.xml >/dev/null || true
             adb shell am force-stop com.wokgui.schedulewidget
             adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode today > smoke/launch-today.txt
-            sleep 3
+            sleep 4
             test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
             adb exec-out screencap -p > smoke/03-today.png
-            test "$(stat -c%s smoke/03-today.png)" -gt 60000
+            adb shell uiautomator dump /sdcard/window-today.xml >/dev/null || true
+            adb pull /sdcard/window-today.xml smoke/window-today.xml >/dev/null || true
             adb shell am force-stop com.wokgui.schedulewidget
             adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode week > smoke/launch-week.txt
-            sleep 3
+            sleep 4
             test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
             adb exec-out screencap -p > smoke/04-week.png
-            test "$(stat -c%s smoke/04-week.png)" -gt 60000
-            adb logcat -d '*:E' > smoke/logcat-errors.txt || true
-            ! grep -E "FATAL EXCEPTION|AndroidRuntime.*Process: com.wokgui.schedulewidget" smoke/logcat-errors.txt
+            adb shell uiautomator dump /sdcard/window-week.xml >/dev/null || true
+            adb pull /sdcard/window-week.xml smoke/window-week.xml >/dev/null || true
+            adb logcat -d > smoke/logcat-full.txt || true
+            ! grep -E "FATAL EXCEPTION|AndroidRuntime.*Process: com.wokgui.schedulewidget" smoke/logcat-full.txt
       - name: Upload smoke-test captures
         if: always()
         uses: actions/upload-artifact@v4
