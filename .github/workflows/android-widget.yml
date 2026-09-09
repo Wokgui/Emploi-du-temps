@@ -79,6 +79,8 @@ jobs:
           if [ -e /dev/kvm ]; then
             sudo chmod 666 /dev/kvm
           fi
+      - name: Install screenshot validator
+        run: python3 -m pip install --quiet pillow
       - name: Download validated APK
         uses: actions/download-artifact@v4
         with:
@@ -114,7 +116,7 @@ jobs:
             grep -Fq "com.wokgui.schedulewidget/.MainActivity" smoke/activity-edit.txt
             adb exec-out screencap -p > smoke/01-edit.png
             adb logcat -d > smoke/logcat-edit-full.txt || true
-            ! grep -E "FATAL EXCEPTION|AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError)" smoke/logcat-edit-full.txt
+            ! grep -E "FATAL EXCEPTION|AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)" smoke/logcat-edit-full.txt
 
             adb shell input tap 1010 145
             sleep 2
@@ -174,6 +176,25 @@ jobs:
             grep -Fq "com.wokgui.schedulewidget/.MainActivity" smoke/activity-after.txt
             adb exec-out screencap -p > smoke/08-after.png
 
+            # A process can be alive while the WebView is still blank. Reject the
+            # nearly uniform screenshots that exposed the cold-start regression.
+            python3 - <<'PY'
+            from PIL import Image
+            from pathlib import Path
+            checks = [
+                '03-week.png','04-before.png','05-active.png',
+                '06-lunch.png','07-gap.png','08-after.png'
+            ]
+            for name in checks:
+                im = Image.open(Path('smoke') / name).convert('RGB').resize((270, 480))
+                px = list(im.getdata())
+                dark = sum(1 for r,g,b in px if r+g+b < 600) / len(px)
+                chroma = sum(1 for r,g,b in px if max(r,g,b)-min(r,g,b) > 20) / len(px)
+                print(name, 'dark=', round(dark,4), 'chroma=', round(chroma,4))
+                if dark < 0.01 and chroma < 0.01:
+                    raise SystemExit(f'Blank timetable screen detected: {name}')
+            PY
+
             # Exact production RemoteViews, deterministic compact/expanded scenarios.
             adb shell am force-stop com.wokgui.schedulewidget
             adb shell am start -W -n com.wokgui.schedulewidget/.WidgetPreviewActivity --ei height_dp 108 --ei width_dp 350 --es scenario active > smoke/launch-widget-active.txt
@@ -208,7 +229,7 @@ jobs:
             adb exec-out screencap -p > smoke/12-widget-after.png
 
             adb logcat -d > smoke/logcat-full.txt || true
-            ! grep -E "FATAL EXCEPTION|AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError)" smoke/logcat-full.txt
+            ! grep -E "FATAL EXCEPTION|AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)" smoke/logcat-full.txt
       - name: Upload smoke-test captures
         if: always()
         uses: actions/upload-artifact@v4
