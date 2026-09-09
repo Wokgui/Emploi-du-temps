@@ -49,7 +49,7 @@ jobs:
       - name: Verify install version and package
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='636001' versionName='6.36'" app/build/outputs/apk/debug/badging.txt
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='637001' versionName='6.37'" app/build/outputs/apk/debug/badging.txt
       - name: Rename APK
         run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/emploi-du-temps-widget.apk
       - name: Upload APK artifact
@@ -62,7 +62,7 @@ jobs:
   smoke:
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -86,7 +86,7 @@ jobs:
         with:
           name: emploi-du-temps-widget-apk
           path: smoke-apk
-      - name: Exercise app, temporal states and production widget rows
+      - name: Exercise app, temporal states, photo import review and production widget rows
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -192,7 +192,18 @@ jobs:
             adb logcat -d > smoke/logcat-after.txt || true
             ! grep -E "AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)" smoke/logcat-after.txt
 
-            cat smoke/logcat-week.txt smoke/logcat-before.txt smoke/logcat-active.txt smoke/logcat-lunch.txt smoke/logcat-gap.txt smoke/logcat-after.txt > smoke/logcat-timetable.txt
+            adb logcat -c
+            adb shell am force-stop com.wokgui.schedulewidget
+            adb shell am start -W -n com.wokgui.schedulewidget/.ImportReviewPreviewActivity > smoke/launch-import-review.txt
+            for i in $(seq 1 60); do if adb logcat -d | grep -Eq "EDT_UI_CHUNK.*complete count=[0-9]+"; then sleep 2; break; fi; if [ "$i" -eq 60 ]; then adb logcat -d > smoke/ui-ready-timeout-import-review.txt || true; exit 1; fi; sleep 1; done
+            test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
+            adb shell dumpsys activity activities > smoke/activity-import-review.txt || true
+            grep -Fq "com.wokgui.schedulewidget/.ImportReviewPreviewActivity" smoke/activity-import-review.txt
+            adb exec-out screencap -p > smoke/13-import-review.png
+            adb logcat -d > smoke/logcat-import-review.txt || true
+            ! grep -E "AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)" smoke/logcat-import-review.txt
+
+            cat smoke/logcat-week.txt smoke/logcat-before.txt smoke/logcat-active.txt smoke/logcat-lunch.txt smoke/logcat-gap.txt smoke/logcat-after.txt smoke/logcat-import-review.txt > smoke/logcat-timetable.txt
             grep -F "EDT_STARTUP_STATE" smoke/logcat-timetable.txt > smoke/startup-state.txt || true
             python3 android-widget/ci/check_screenshots.py smoke
 
@@ -239,7 +250,7 @@ jobs:
           if-no-files-found: ignore
 
   publish:
-    if: ${{ needs.smoke.result == 'success' }}
+    if: ${{ false }}
     needs: smoke
     runs-on: ubuntu-latest
     timeout-minutes: 5
