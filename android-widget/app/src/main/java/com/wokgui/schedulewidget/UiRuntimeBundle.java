@@ -16,6 +16,7 @@ final class UiRuntimeBundle {
         out.append(LocalizationFinalUi.script()).append('\n');
         out.append(WorkflowUi.script()).append('\n');
         out.append(TemporalStateUi.script()).append('\n');
+        out.append(StartupViewRecoveryUi.script()).append('\n');
 
         String script = repairGeneratedJavaScript(out.toString());
 
