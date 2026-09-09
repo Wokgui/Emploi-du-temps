@@ -1,6 +1,4 @@
 from pathlib import Path
-import base64
-import gzip
 import re
 
 VERSION = '6.30'
@@ -12,27 +10,10 @@ def extract_script(name: str) -> str:
     if not path.exists():
         raise SystemExit(f'Missing source layer: {name}')
     source = path.read_text(encoding='utf-8')
-
-    # Most UI layers return one Java text block directly.
     match = re.search(r'return\s+"""(.*?)"""\s*;', source, re.S)
-    if match:
-        body = match.group(1)
-    else:
-        # A few historically large layers (notably WeekViewStabilityUi) are stored as a
-        # Base64/GZIP Java string to stay below JVM constant limits. Decode them here so
-        # the semantic source contains the actual JavaScript rather than another legacy shell.
-        data_match = re.search(r'final\s+String\s+data\s*=\s*(.*?);\s*try\s*\{', source, re.S)
-        if not data_match or 'GZIPInputStream' not in source or 'Base64.getDecoder()' not in source:
-            raise SystemExit(f'Unable to extract script from {name}')
-        chunks = re.findall(r'"([^"\\]*(?:\\.[^"\\]*)*)"', data_match.group(1))
-        if not chunks:
-            raise SystemExit(f'Unable to extract compressed script from {name}')
-        encoded = ''.join(bytes(chunk, 'utf-8').decode('unicode_escape') for chunk in chunks)
-        try:
-            body = gzip.decompress(base64.b64decode(encoded)).decode('utf-8')
-        except Exception as exc:
-            raise SystemExit(f'Unable to decode compressed script from {name}: {exc}')
-
+    if not match:
+        raise SystemExit(f'Unable to extract direct text-block script from {name}')
+    body = match.group(1)
     body = re.sub(r"const APP_VERSION='6\.[0-9]+';", f"const APP_VERSION='{VERSION}';", body)
     body = re.sub(r"Version 6\.[0-9]+", f"Version {VERSION}", body)
     return body
@@ -56,7 +37,7 @@ def write_module(class_name: str, sources: list[str], description: str) -> None:
     lines += ['        return out.toString();', '    }', '']
     for i, (name, body) in enumerate(bodies):
         lines += [
-            f'    // Former {name}; kept as an isolated constant to avoid JVM string-size limits.',
+            f'    // Former {name}; isolated to stay below JVM constant limits.',
             f'    private static String layer{i}() {{',
             '        return """' + body + '""";',
             '    }',
@@ -67,22 +48,28 @@ def write_module(class_name: str, sources: list[str], description: str) -> None:
     (ROOT / f'{class_name}.java').write_text('\n'.join(lines), encoding='utf-8')
 
 
-# Preserve the exact verified runtime order. OcrImport80Ui intentionally stays between
-# Stability80Ui and Stability81Ui, as it was before the earlier wrapper cleanup.
+# WeekViewStabilityUi is already a compact semantic renderer and stores its very large
+# JavaScript in Base64/GZIP specifically to stay below JVM constant limits. Keep that one
+# class intact and position it explicitly between the two timetable modules.
 GROUPS = {
     'BaseSettingsUi': (
         ['PersonalizationUi2'],
         'Base settings UI and its persistent controls.'
     ),
-    'TimetableUi': (
+    'TimetableCoreUi': (
         [
             'WeekendUi', 'FinalPolishUi', 'FinalPolishLateUi', 'AdvancedFeaturesUi',
             'UiPolishAndSchoolCalendarUi', 'CourseColorUi', 'PaletteSelectorUi',
-            'LunchBreakUi', 'DoubleLunchUi', 'BulkCourseUi', 'WeekViewStabilityUi',
+            'LunchBreakUi', 'DoubleLunchUi', 'BulkCourseUi'
+        ],
+        'Core timetable features, settings, colors, breaks and bulk editing.'
+    ),
+    'ScheduleDisplayUi': (
+        [
             'FineTuneUi', 'CycleLunchFixUi', 'Stability69Ui', 'Stability70Ui',
             'Stability71Ui', 'Stability72Ui', 'Stability73Ui', 'Stability74Ui'
         ],
-        'Timetable rendering, week cycles, breaks, colors and interaction behavior.'
+        'Schedule display, cycle handling and interaction stability.'
     ),
     'LocalizationUi': (
         ['Localization75Ui', 'LayoutLanguage77Ui', 'Stability78Ui', 'Stability79Ui', 'Stability80Ui'],
@@ -102,7 +89,6 @@ GROUPS = {
     ),
 }
 
-# Extract everything before overwriting any existing semantic wrapper.
 for class_name, (sources, description) in GROUPS.items():
     write_module(class_name, sources, description)
 
@@ -115,7 +101,9 @@ final class UiRuntimeBundle {
     static String script() {
         StringBuilder out = new StringBuilder(460 * 1024);
         out.append(BaseSettingsUi.script()).append('\\n');
-        out.append(TimetableUi.script()).append('\\n');
+        out.append(TimetableCoreUi.script()).append('\\n');
+        out.append(WeekViewStabilityUi.script()).append('\\n');
+        out.append(ScheduleDisplayUi.script()).append('\\n');
         out.append(LocalizationUi.script()).append('\\n');
         out.append(ImportParserUi.script()).append('\\n');
         out.append(LocalizationFinalUi.script()).append('\\n');
@@ -129,21 +117,23 @@ final class UiRuntimeBundle {
 old_sources = set()
 for sources, _ in GROUPS.values():
     old_sources.update(sources)
-outputs = set(GROUPS) | {'UiRuntimeBundle'}
+outputs = set(GROUPS) | {'UiRuntimeBundle', 'WeekViewStabilityUi'}
 for name in sorted(old_sources - outputs):
     path = ROOT / f'{name}.java'
     if path.exists():
         path.unlink()
 
-# Remove temporary wrapper classes superseded by the semantic root modules.
 for name in ['TimetableRuntimeUi', 'FeatureRuntimeUi', 'LocalizationRuntimeUi']:
     if name not in outputs:
         path = ROOT / f'{name}.java'
         if path.exists():
             path.unlink()
 
-# Align any version label remaining in native/extension Java files.
+# Align version labels in remaining native/semantic Java files. The compressed week renderer
+# has no user-facing version constant, so it is left byte-for-byte intact.
 for path in ROOT.glob('*.java'):
+    if path.name == 'WeekViewStabilityUi.java':
+        continue
     source = path.read_text(encoding='utf-8')
     source = re.sub(r"const APP_VERSION='6\.[0-9]+';", f"const APP_VERSION='{VERSION}';", source)
     source = re.sub(r"Version 6\.[0-9]+", f"Version {VERSION}", source)
@@ -155,4 +145,5 @@ source = re.sub(r"versionName '6\.[0-9]+'", f"versionName '{VERSION}'", source)
 gradle.write_text(source, encoding='utf-8')
 
 print('Generated semantic modules:', ', '.join(GROUPS))
+print('Preserved compressed semantic module: WeekViewStabilityUi')
 print('Removed legacy/versioned UI classes:', len(old_sources - outputs))
