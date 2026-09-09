@@ -95,15 +95,46 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot -no-metrics
           disable-animations: true
           script: |
+            set -eu
             mkdir -p smoke
             adb install -r smoke-apk/emploi-du-temps-widget.apk
             adb shell wm size 1080x1920
+            adb shell input keyevent KEYCODE_WAKEUP || true
+            adb shell wm dismiss-keyguard || true
             adb logcat -c
 
-            adb shell am force-stop com.wokgui.schedulewidget
-            adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode edit > smoke/launch-edit.txt
-            sleep 4
-            test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
+            dismiss_emulator_anr() {
+              i=0
+              while [ "$i" -lt 4 ]; do
+                i=$((i+1))
+                adb shell uiautomator dump /sdcard/anr-guard.xml >/dev/null 2>&1 || true
+                guard="$(adb shell cat /sdcard/anr-guard.xml 2>/dev/null || true)"
+                if printf '%s' "$guard" | grep -Fq "isn't responding"; then
+                  # The API-35 Pixel launcher can briefly ANR after cold boot.
+                  # Resolution is fixed above, so this is the centre of its Wait action.
+                  adb shell input tap 540 1085 || true
+                  sleep 2
+                else
+                  break
+                fi
+              done
+            }
+
+            launch_mode() {
+              mode="$1"
+              adb shell am force-stop com.wokgui.schedulewidget
+              adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode "$mode" > "smoke/launch-${mode}.txt"
+              sleep 4
+              dismiss_emulator_anr
+              # Bring our activity back to the foreground if a launcher system dialog had covered it.
+              adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode "$mode" >/dev/null
+              sleep 1
+              test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
+            }
+
+            dismiss_emulator_anr
+
+            launch_mode edit
             adb exec-out screencap -p > smoke/01-edit.png
             adb shell uiautomator dump /sdcard/window-edit.xml >/dev/null
             adb pull /sdcard/window-edit.xml smoke/window-edit.xml >/dev/null
@@ -112,27 +143,23 @@ jobs:
             adb shell dumpsys activity top > smoke/activity-edit.txt || true
             adb shell dumpsys window windows > smoke/windows-edit.txt || true
             adb logcat -d > smoke/logcat-edit-full.txt || true
+            ! grep -E "Uncaught (SyntaxError|ReferenceError)" smoke/logcat-edit-full.txt
 
             adb shell input tap 1010 145
             sleep 1
+            dismiss_emulator_anr
             adb exec-out screencap -p > smoke/02-settings.png
             adb shell uiautomator dump /sdcard/window-settings.xml >/dev/null
             adb pull /sdcard/window-settings.xml smoke/window-settings.xml >/dev/null
             grep -Fq "Réglages" smoke/window-settings.xml
 
-            adb shell am force-stop com.wokgui.schedulewidget
-            adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode today > smoke/launch-today.txt
-            sleep 4
-            test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
+            launch_mode today
             adb exec-out screencap -p > smoke/03-today.png
             adb shell uiautomator dump /sdcard/window-today.xml >/dev/null
             adb pull /sdcard/window-today.xml smoke/window-today.xml >/dev/null
             grep -Fq "Aujourd" smoke/window-today.xml
 
-            adb shell am force-stop com.wokgui.schedulewidget
-            adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode week > smoke/launch-week.txt
-            sleep 4
-            test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
+            launch_mode week
             adb exec-out screencap -p > smoke/04-week.png
             adb shell uiautomator dump /sdcard/window-week.xml >/dev/null
             adb pull /sdcard/window-week.xml smoke/window-week.xml >/dev/null
