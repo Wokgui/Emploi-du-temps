@@ -1,4 +1,4 @@
-name: Build Android timetable widget
+name: Build and validate Android timetable
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: android-widget-main-v2
+  group: android-widget-main-v3
   cancel-in-progress: true
 
 permissions:
@@ -18,6 +18,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: android-widget
@@ -49,20 +50,25 @@ jobs:
           path: ~/.android/debug.keystore
           key: emploi-du-temps-debug-keystore-v1
 
-      - name: Build debug APK
-        run: gradle :app:assembleDebug -PversionCode=${{ github.run_number }} --stacktrace
+      - name: Clean build
+        run: gradle clean :app:assembleDebug --stacktrace
+
+      - name: Verify install version and package
+        run: |
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/badging.txt
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='631001' versionName='6.31'" app/build/outputs/apk/debug/badging.txt
 
       - name: Rename APK
         run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/emploi-du-temps-widget.apk
 
-      - name: Upload workflow artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: emploi-du-temps-widget-apk
           path: android-widget/app/build/outputs/apk/debug/emploi-du-temps-widget.apk
           if-no-files-found: error
 
-      - name: Publish stable APK download
+      - name: Publish stable APK
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -70,3 +76,73 @@ jobs:
             gh release create widget-latest --title "Emploi du temps widget" --notes "APK Android installable du widget d’emploi du temps."
           fi
           gh release upload widget-latest app/build/outputs/apk/debug/emploi-du-temps-widget.apk --clobber
+
+  smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Download validated APK
+        uses: actions/download-artifact@v4
+        with:
+          name: emploi-du-temps-widget-apk
+          path: smoke-apk
+
+      - name: Exercise main views on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          target: default
+          profile: pixel_2
+          emulator-boot-timeout: 300
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            set -euo pipefail
+            mkdir -p smoke
+            adb install -r smoke-apk/emploi-du-temps-widget.apk
+            adb shell wm size 1080x1920
+            adb logcat -c
+            adb shell am force-stop com.wokgui.schedulewidget
+            adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity | tee smoke/launch.txt
+            sleep 2
+            test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
+            adb exec-out screencap -p > smoke/01-edit.png
+            adb shell input tap 180 1850; sleep 0.6; adb exec-out screencap -p > smoke/02-today.png
+            adb shell input tap 540 1850; sleep 0.6; adb exec-out screencap -p > smoke/03-week.png
+            adb shell input tap 900 1850; sleep 0.6; adb exec-out screencap -p > smoke/04-edit-return.png
+            adb shell input tap 1010 145; sleep 0.6; adb exec-out screencap -p > smoke/05-settings.png
+            test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
+            adb shell am force-stop com.wokgui.schedulewidget
+            adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode week | tee smoke/widget-week-launch.txt
+            sleep 2
+            test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
+            adb exec-out screencap -p > smoke/06-widget-week-open.png
+            adb logcat -d '*:E' > smoke/logcat-errors.txt || true
+            if grep -E "FATAL EXCEPTION|AndroidRuntime.*Process: com.wokgui.schedulewidget" smoke/logcat-errors.txt; then
+              echo "App crash detected"
+              exit 1
+            fi
+
+      - name: Upload smoke-test captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-smoke-screenshots
+          path: smoke/
+          if-no-files-found: ignore
