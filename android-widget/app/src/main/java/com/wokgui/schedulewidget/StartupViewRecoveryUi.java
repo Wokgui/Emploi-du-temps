@@ -19,9 +19,25 @@ final class StartupViewRecoveryUi {
                       if(active&&validMode(active.dataset.mode))return active.dataset.mode;
                       return 'edit';
                     }
-                    function restore(){
+                    function state(tag){
+                      try{
+                        var active=[].map.call(document.querySelectorAll('.view.active'),function(v){return v.id}).join(',');
+                        var body=document.body;
+                        console.log('EDT_STARTUP_STATE|'+tag+
+                          '|ready='+document.readyState+
+                          '|mode='+currentMode()+
+                          '|active='+active+
+                          '|text='+(body?(body.innerText||'').length:-1)+
+                          '|children='+(body?body.children.length:-1)+
+                          '|size='+(body?body.clientWidth+'x'+body.clientHeight:'none')+
+                          '|render='+(typeof window.render)+
+                          '|reload='+(typeof window.reloadSchedule));
+                      }catch(e){console.log('EDT_STARTUP_STATE|'+tag+'|error='+e)}
+                    }
+                    function restore(tag,reload){
                       try{
                         var wanted=currentMode();
+                        if(reload&&typeof window.reloadSchedule==='function')window.reloadSchedule();
                         if(typeof window.setModeFromAndroid==='function'){
                           window.setModeFromAndroid(wanted);
                         }else{
@@ -33,19 +49,26 @@ final class StartupViewRecoveryUi {
                           document.querySelectorAll('.nav[data-mode]').forEach(function(nav){
                             nav.classList.toggle('active',nav.dataset.mode===wanted);
                           });
-                          if(typeof window.render==='function')window.render();
                         }
+                        if(typeof window.render==='function')window.render();
                         var target=document.getElementById('view'+wanted.charAt(0).toUpperCase()+wanted.slice(1));
                         if(target&&!target.classList.contains('active'))target.classList.add('active');
+                        document.documentElement.style.visibility='visible';
+                        if(document.body){document.body.style.visibility='visible';document.body.style.opacity='1';}
+                        state(tag);
                         return !!(target&&target.classList.contains('active'));
                       }catch(e){
                         console.log('StartupViewRecoveryUi',e);
+                        state(tag+'-failed');
                         return false;
                       }
                     }
-                    window.refreshStartupViewRecovery=restore;
-                    restore();
-                    setTimeout(restore,20);
+                    window.refreshStartupViewRecovery=function(){return restore('manual',true)};
+                    restore('inject',false);
+                    requestAnimationFrame(function(){restore('raf',false)});
+                    setTimeout(function(){restore('reload-120',true)},120);
+                    setTimeout(function(){restore('reload-650',true)},650);
+                    setTimeout(function(){restore('reload-1600',true)},1600);
                   }catch(e){console.log('StartupViewRecoveryUi',e)}
                 })();
                 """;
