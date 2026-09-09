@@ -155,6 +155,7 @@ grep -Fq "com.wokgui.schedulewidget/.ImportReviewPreviewActivity" smoke/activity
 adb logcat -d > smoke/logcat-import-review.txt || true
 grep -Eq "EDT_IMPORT_REVIEW.*visible" smoke/logcat-import-review.txt
 grep -Eq "EDT_LAZY_IMPORT.*ready=true" smoke/logcat-import-review.txt
+grep -Eq "EDT_IMPORT_PARSE\|count=6\|quality=(high|medium|low)\|headers=4" smoke/logcat-import-review.txt
 assert_clean_log smoke/logcat-import-review.txt
 adb exec-out screencap -p > smoke/13-import-review.png
 
