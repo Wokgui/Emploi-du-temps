@@ -82,4 +82,4 @@ jobs:
           fi
           gh release upload widget-latest android-widget/app/build/outputs/apk/debug/emploi-du-temps-widget.apk --clobber
 
-# one-shot migration script revision 2
+# one-shot migration script revision 3
