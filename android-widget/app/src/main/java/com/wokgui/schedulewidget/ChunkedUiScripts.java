@@ -22,6 +22,7 @@ final class ChunkedUiScripts {
         add(out, TemporalStateUi.script());
         add(out, StartupViewRecoveryUi.script());
         add(out, LunchIconCleanupUi.script());
+        add(out, ImportReviewUi.script());
         return out.toArray(new String[0]);
     }
 
