@@ -68,15 +68,16 @@ final class UiRuntimeBundle {
     /** Applies compatibility repairs and aligns version labels to every independent layer. */
     static String prepareChunk(String script) {
         script = repairGeneratedJavaScript(script);
-        return script.replace("APP_VERSION='6.31'", "APP_VERSION='6.40'")
-                     .replace("APP_VERSION='6.32'", "APP_VERSION='6.40'")
-                     .replace("APP_VERSION='6.33'", "APP_VERSION='6.40'")
-                     .replace("APP_VERSION='6.34'", "APP_VERSION='6.40'")
-                     .replace("APP_VERSION='6.35'", "APP_VERSION='6.40'")
-                     .replace("APP_VERSION='6.36'", "APP_VERSION='6.40'")
-                     .replace("APP_VERSION='6.37'", "APP_VERSION='6.40'")
-                     .replace("APP_VERSION='6.38'", "APP_VERSION='6.40'")
-                     .replace("APP_VERSION='6.39'", "APP_VERSION='6.40'");
+        return script.replace("APP_VERSION='6.31'", "APP_VERSION='6.41'")
+                     .replace("APP_VERSION='6.32'", "APP_VERSION='6.41'")
+                     .replace("APP_VERSION='6.33'", "APP_VERSION='6.41'")
+                     .replace("APP_VERSION='6.34'", "APP_VERSION='6.41'")
+                     .replace("APP_VERSION='6.35'", "APP_VERSION='6.41'")
+                     .replace("APP_VERSION='6.36'", "APP_VERSION='6.41'")
+                     .replace("APP_VERSION='6.37'", "APP_VERSION='6.41'")
+                     .replace("APP_VERSION='6.38'", "APP_VERSION='6.41'")
+                     .replace("APP_VERSION='6.39'", "APP_VERSION='6.41'")
+                     .replace("APP_VERSION='6.40'", "APP_VERSION='6.41'");
     }
 
     /**
@@ -85,40 +86,25 @@ final class UiRuntimeBundle {
      * be progressively consolidated without shipping invalid JavaScript.
      */
     private static String repairGeneratedJavaScript(String script) {
-        // Apostrophe inside a single-quoted JavaScript/HTML literal.
         script = script.replace("l'application", "l\\'application");
-
-        // Legacy Stability69 layer was missing the closing brace of lang().
         script = script.replace(
                 "catch(e){return 'fr'}\n    function tr(fr,en,de)",
                 "catch(e){return 'fr'}}\n    function tr(fr,en,de)");
-
-        // OcrImport80 used Java \n escapes inside JavaScript single-quoted strings;
-        // text-block processing turned them into raw line breaks, which JS rejects.
         script = script.replace(
                 ".length).join('\n');",
                 ".length).join('\\n');");
         script = script.replace(
                 "activeWeek+'.\n\n'+summary+'\n\nRemplacer",
                 "activeWeek+'.\\n\\n'+summary+'\\n\\nRemplacer");
-
-        // Some older layers assume #importPhoto is still a direct child of
-        // #viewEdit. Later layers can wrap or move it, making insertBefore throw
-        // NotFoundError on cold starts. Only reorder when the reference node
-        // really belongs to the intended parent.
         script = script.replace(
                 "if(importBtn&&bar.nextElementSibling!==importBtn)view.insertBefore(bar,importBtn);",
                 "if(importBtn&&importBtn.parentNode===view&&bar.nextElementSibling!==importBtn)view.insertBefore(bar,importBtn);");
-
-        // Same protection for the two high-frequency settings reorderings. The
-        // generic prelude above remains the final safety net for legacy layers.
         script = script.replace(
                 "if(theme&&preview&&preview.nextElementSibling!==theme)sheet.insertBefore(preview,theme);",
                 "if(theme&&preview&&theme.parentNode===sheet&&preview.parentNode===sheet&&preview.nextElementSibling!==theme)sheet.insertBefore(preview,theme);");
         script = script.replace(
                 "if(languageBox&&appBox&&languageBox.nextElementSibling!==appBox)sheet.insertBefore(languageBox,appBox);",
                 "if(languageBox&&appBox&&languageBox.parentNode===sheet&&appBox.parentNode===sheet&&languageBox.nextElementSibling!==appBox)sheet.insertBefore(languageBox,appBox);");
-
         return script;
     }
 }
