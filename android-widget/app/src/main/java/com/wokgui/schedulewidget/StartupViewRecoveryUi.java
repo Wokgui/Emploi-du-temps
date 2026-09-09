@@ -1,6 +1,6 @@
 package com.wokgui.schedulewidget;
 
-/** Restores the requested timetable view once after the runtime UI has been injected. */
+/** Restores the requested timetable view only when the injected UI is actually inconsistent. */
 final class StartupViewRecoveryUi {
     private StartupViewRecoveryUi() {}
 
@@ -19,40 +19,44 @@ final class StartupViewRecoveryUi {
                       if(active&&validMode(active.dataset.mode))return active.dataset.mode;
                       return 'edit';
                     }
-                    function state(tag){
+                    function state(tag,wanted){
                       try{
                         var active=[].map.call(document.querySelectorAll('.view.active'),function(v){return v.id}).join(',');
-                        var body=document.body;
-                        console.log('EDT_STARTUP_STATE|'+tag+
-                          '|ready='+document.readyState+
-                          '|mode='+currentMode()+
-                          '|active='+active+
-                          '|text='+(body?(body.innerText||'').length:-1)+
-                          '|children='+(body?body.children.length:-1)+
-                          '|size='+(body?body.clientWidth+'x'+body.clientHeight:'none'));
+                        console.log('EDT_STARTUP_STATE|'+tag+'|ready='+document.readyState+'|mode='+(wanted||currentMode())+'|active='+active);
                       }catch(e){console.log('EDT_STARTUP_STATE|'+tag+'|error='+e)}
                     }
                     function restore(tag){
                       try{
                         var wanted=currentMode();
-                        if(typeof window.setModeFromAndroid==='function'){
-                          window.setModeFromAndroid(wanted);
+                        var targetId='view'+wanted.charAt(0).toUpperCase()+wanted.slice(1);
+                        var target=document.getElementById(targetId);
+                        var activeViews=document.querySelectorAll('.view.active');
+                        var alreadyCorrect=!!(target&&activeViews.length===1&&activeViews[0]===target);
+
+                        if(!alreadyCorrect){
+                          if(typeof window.setModeFromAndroid==='function'){
+                            window.setModeFromAndroid(wanted);
+                          }else{
+                            try{if(typeof mode!=='undefined')mode=wanted}catch(e){}
+                            document.querySelectorAll('.view').forEach(function(view){
+                              view.classList.toggle('active',view.id===targetId);
+                            });
+                            document.querySelectorAll('.nav[data-mode]').forEach(function(nav){
+                              nav.classList.toggle('active',nav.dataset.mode===wanted);
+                            });
+                            if(typeof window.render==='function')window.render();
+                          }
                         }else{
-                          try{if(typeof mode!=='undefined')mode=wanted}catch(e){}
-                          var targetId='view'+wanted.charAt(0).toUpperCase()+wanted.slice(1);
-                          document.querySelectorAll('.view').forEach(function(view){
-                            view.classList.toggle('active',view.id===targetId);
-                          });
                           document.querySelectorAll('.nav[data-mode]').forEach(function(nav){
                             nav.classList.toggle('active',nav.dataset.mode===wanted);
                           });
-                          if(typeof window.render==='function')window.render();
                         }
-                        var target=document.getElementById('view'+wanted.charAt(0).toUpperCase()+wanted.slice(1));
+
+                        target=document.getElementById(targetId);
                         if(target&&!target.classList.contains('active'))target.classList.add('active');
                         document.documentElement.style.visibility='visible';
                         if(document.body){document.body.style.visibility='visible';document.body.style.opacity='1';}
-                        state(tag);
+                        state(tag+(alreadyCorrect?'-noop':'-repair'),wanted);
                         return !!(target&&target.classList.contains('active'));
                       }catch(e){
                         console.log('StartupViewRecoveryUi',e);
