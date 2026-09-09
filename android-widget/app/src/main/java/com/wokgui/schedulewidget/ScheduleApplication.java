@@ -9,17 +9,7 @@ import android.webkit.WebView;
 import java.lang.ref.WeakReference;
 import java.util.WeakHashMap;
 
-/**
- * Native safety net for cold starts.
- *
- * MainActivity intentionally hides its WebView while the requested timetable mode
- * is being settled, which prevents a visible Edit -> Week flash when the widget is
- * tapped. If an injected UI layer throws before the final reveal, however, Android
- * can be left showing only the activity background. This application-level guard
- * never changes a normally visible screen; it only reveals a WebView that is still
- * hidden after the normal settling window and reapplies the originally requested
- * mode first.
- */
+/** Native safety net for timetable cold starts. */
 public final class ScheduleApplication extends Application {
     private final WeakHashMap<Activity, String> requestedModes = new WeakHashMap<>();
 
@@ -37,8 +27,6 @@ public final class ScheduleApplication extends Application {
             @Override
             public void onActivityResumed(Activity activity) {
                 if (!(activity instanceof MainActivity)) return;
-                // First recovery catches the usual cold-start race. A second pass
-                // covers unusually slow emulator/device WebView initialization.
                 scheduleRecovery(activity, 1200L);
                 scheduleRecovery(activity, 3200L);
             }
@@ -63,21 +51,21 @@ public final class ScheduleApplication extends Application {
             if (current == null || current.isFinishing() || current.isDestroyed()) return;
             if (webView.getVisibility() == View.VISIBLE && webView.getAlpha() >= 0.95f) return;
 
-            String mode = normalizeMode(requestedMode);
-            if (mode != null) {
-                String script = "(function(){try{"
-                        + "if(typeof setModeFromAndroid==='function'){setModeFromAndroid('" + mode + "');}"
-                        + "else{var id='view" + capitalize(mode) + "';"
-                        + "document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});"
-                        + "var target=document.getElementById(id);if(target)target.classList.add('active');"
-                        + "document.querySelectorAll('.nav').forEach(function(n){n.classList.toggle('active',n.dataset.mode==='" + mode + "')});"
-                        + "if(typeof render==='function')render();}"
-                        + "}catch(e){}})();";
+            String requested = normalizeMode(requestedMode);
+            if (requested != null) {
+                String id = "view" + capitalize(requested);
+                String renderer = "today".equals(requested) ? "renderToday" : ("week".equals(requested) ? "renderWeek" : "renderEdit");
+                String script = "(function(){"
+                        + "try{if(typeof mode!=='undefined')mode='" + requested + "';}catch(e){}"
+                        + "try{document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});"
+                        + "var target=document.getElementById('" + id + "');if(target)target.classList.add('active');"
+                        + "document.querySelectorAll('.nav').forEach(function(n){n.classList.toggle('active',n.dataset.mode==='" + requested + "')});}catch(e){}"
+                        + "try{if(typeof " + renderer + "==='function')" + renderer + "();else if(typeof render==='function')render();}catch(e){}"
+                        + "try{if(window.refreshWeekViewStability)window.refreshWeekViewStability();if(window.refreshFineTuneUi)window.refreshFineTuneUi();}catch(e){}"
+                        + "})();";
                 try { webView.evaluateJavascript(script, null); } catch (Exception ignored) {}
             }
 
-            // Reveal independently from the JavaScript callback: even if the page
-            // is still finishing its load, it must never remain permanently hidden.
             webView.setAlpha(1f);
             webView.setVisibility(View.VISIBLE);
         }, delayMs);
