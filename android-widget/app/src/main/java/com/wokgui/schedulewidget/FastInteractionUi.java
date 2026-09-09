@@ -27,7 +27,7 @@ final class FastInteractionUi {
                   if(el.classList.contains('nav'))return 'nav-'+(el.dataset.mode||'unknown');
                   if(el.classList.contains('weekTab'))return 'week-'+(el.dataset.week||'unknown');
                   if(el.classList.contains('dayTab'))return 'day-'+(el.dataset.day||el.textContent||'unknown');
-                  return el.id||'control';
+                  return el.id||el.className||'control';
                 }
                 function flash(el){
                   if(!el)return;
@@ -39,10 +39,10 @@ final class FastInteractionUi {
                   var old=el.onclick;
                   var proxy=function(e){
                     flash(el);
-                    console.log('EDT_FAST_INPUT|'+labelFor(el)+'|visual');
                     if(proxy.__running)return false;
                     proxy.__running=true;
                     try{if(visual)visual(e)}catch(ignore){}
+                    console.log('EDT_FAST_INPUT|'+labelFor(el)+'|visual');
                     afterPaint(function(){
                       try{old.call(el,e)}finally{proxy.__running=false}
                     });
@@ -71,6 +71,11 @@ final class FastInteractionUi {
                     });
                     heavyClick(document.getElementById('currentWeekBtn'));
                     heavyClick(document.getElementById('addCourse'));
+
+                    // Everything else with a direct click action gets the same
+                    // one-frame visual-first treatment. Already patched controls are skipped.
+                    document.querySelectorAll('button').forEach(function(b){heavyClick(b)});
+                    document.querySelectorAll('.todayCourse,.editCourse,.wc').forEach(function(el){heavyClick(el)});
                   }catch(e){console.log('FastInteractionUi patch',e)}
                 }
 
