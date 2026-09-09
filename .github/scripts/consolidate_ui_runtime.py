@@ -21,6 +21,7 @@ def extract_script(name: str) -> str:
 
 def write_module(class_name: str, sources: list[str], description: str) -> None:
     bodies = [(name, extract_script(name)) for name in sources]
+    capacity_kb = max(64, sum(len(body) for _, body in bodies) // 1024 + 32)
     lines = [
         'package com.wokgui.schedulewidget;',
         '',
@@ -29,7 +30,7 @@ def write_module(class_name: str, sources: list[str], description: str) -> None:
         f'    private {class_name}() {{}}',
         '',
         '    static String script() {',
-        f'        StringBuilder out = new StringBuilder({max(64, sum(len(b) for _, b) // 1024 + 32)} * 1024);',
+        f'        StringBuilder out = new StringBuilder({capacity_kb} * 1024);',
     ]
     for i, (name, _) in enumerate(bodies):
         lines.append(f"        out.append(layer{i}()).append('\\n'); // {name}")
@@ -115,7 +116,7 @@ for name in sorted(old_sources - outputs):
     if path.exists():
         path.unlink()
 
-# Remove the temporary wrapper classes superseded by the semantic root modules.
+# Remove temporary wrapper classes superseded by the semantic root modules.
 for name in ['TimetableRuntimeUi', 'FeatureRuntimeUi', 'LocalizationRuntimeUi']:
     if name not in outputs:
         path = ROOT / f'{name}.java'
