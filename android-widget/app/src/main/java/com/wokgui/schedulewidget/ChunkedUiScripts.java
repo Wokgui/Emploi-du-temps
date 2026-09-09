@@ -14,19 +14,21 @@ final class ChunkedUiScripts {
         addLayers(out, BaseSettingsUi.class, 1);
         // Install paint-first tap handling before the expensive compatibility layers.
         add(out, FastInteractionUi.script());
+        // Prevent the old inline OCR handler from applying data before review UI is ready.
+        add(out, LazyImportBootstrapUi.script());
         addLayers(out, TimetableCoreUi.class, 10);
         add(out, WeekViewStabilityUi.script());
         addLayers(out, ScheduleDisplayUi.class, 8);
         addLayers(out, LocalizationUi.class, 5);
-        add(out, ImportParserUi.script());
         addLayers(out, LocalizationFinalUi.class, 1);
         addLayers(out, WorkflowUi.class, 5);
         add(out, TemporalStateUi.script());
         add(out, StartupViewRecoveryUi.script());
         add(out, LunchIconCleanupUi.script());
-        add(out, ImportReviewUi.script());
         // Later layers rebuild controls; refresh the fast handlers once at the end.
         add(out, FastInteractionUi.script());
+        // OCR parsing/review no longer blocks normal startup or navigation.
+        add(out, UiRuntimeBundle.idleImportScript());
         return out.toArray(new String[0]);
     }
 
