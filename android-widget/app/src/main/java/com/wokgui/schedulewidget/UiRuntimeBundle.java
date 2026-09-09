@@ -35,6 +35,7 @@ final class UiRuntimeBundle {
         out.append(Stability81Ui.script()).append('\n');
         out.append(Workflow85Ui.script()).append('\n');
         out.append(SettingsLayoutUi.script()).append('\n');
+        out.append(EditHistoryUi.script()).append('\n');
         return out.toString();
     }
 }
