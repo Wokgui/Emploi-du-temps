@@ -6,21 +6,15 @@ import android.view.View;
 import android.webkit.WebView;
 
 /**
- * WebView with a last-resort visibility guard.
+ * WebView that keeps the last complete frame visible while timetable UI layers settle.
  *
- * MainActivity deliberately hides the WebView while the injected timetable UI is settling,
- * to avoid flashing intermediate views. If an old/slow WebView never reaches an injection
- * callback, that safety mechanism must not leave the application permanently blank.
+ * Earlier versions hid the whole WebView during cold starts and mode changes. On some
+ * WebView/launcher timing paths the matching reveal callback could arrive too late or
+ * never repaint, leaving a completely blank activity. Keeping the current WebView frame
+ * visible is both safer and less flickery: JavaScript can switch the active timetable
+ * view atomically while the user never sees the native empty background.
  */
 public final class ResilientWebView extends WebView {
-    private static final long FAILSAFE_DELAY_MS = 1800L;
-
-    private final Runnable failSafeReveal = () -> {
-        if (getVisibility() != View.VISIBLE || getAlpha() < 0.99f) {
-            super.setAlpha(1f);
-            super.setVisibility(View.VISIBLE);
-        }
-    };
 
     public ResilientWebView(Context context) {
         super(context);
@@ -36,23 +30,20 @@ public final class ResilientWebView extends WebView {
 
     @Override
     public void setVisibility(int visibility) {
-        super.setVisibility(visibility);
-        if (visibility == View.VISIBLE) {
-            removeCallbacks(failSafeReveal);
-        } else {
-            removeCallbacks(failSafeReveal);
-            postDelayed(failSafeReveal, FAILSAFE_DELAY_MS);
-        }
+        // MainActivity may request INVISIBLE while a mode is settling. Never expose the
+        // empty native activity behind the WebView; retain its last rendered frame.
+        super.setVisibility(View.VISIBLE);
+        if (getAlpha() < 0.99f) super.setAlpha(1f);
+        invalidate();
     }
 
     @Override
     public void setAlpha(float alpha) {
-        super.setAlpha(alpha);
-        if (alpha >= 0.99f) {
-            if (getVisibility() == View.VISIBLE) removeCallbacks(failSafeReveal);
-        } else {
-            removeCallbacks(failSafeReveal);
-            postDelayed(failSafeReveal, FAILSAFE_DELAY_MS);
-        }
+        // A transparent WebView is indistinguishable from the historical blank-screen
+        // failure. Mode transitions are now handled by the DOM, so transparency is not
+        // needed and must never be allowed to persist.
+        super.setAlpha(1f);
+        if (getVisibility() != View.VISIBLE) super.setVisibility(View.VISIBLE);
+        invalidate();
     }
 }
