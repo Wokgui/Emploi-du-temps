@@ -53,6 +53,8 @@ capture_main() {
 }
 
 capture_main edit-cold edit "" 00-edit-cold.png
+grep -Eq "EDT_STARTUP_STATE\|inject-noop" smoke/logcat-edit-cold.txt
+grep -E "EDT_UI_CHUNK.*complete count=[0-9]+ ms=[0-9]+" smoke/logcat-edit-cold.txt | tail -1 | tee smoke/ui-chunk-cold.txt
 
 adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode edit >/dev/null
 sleep 1
