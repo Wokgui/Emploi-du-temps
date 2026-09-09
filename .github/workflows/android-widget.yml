@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: android-widget-main-v4
+  group: android-widget-main-v5
   cancel-in-progress: true
 
 permissions:
