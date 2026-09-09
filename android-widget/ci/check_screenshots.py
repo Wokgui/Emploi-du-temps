@@ -5,6 +5,7 @@ from PIL import Image
 
 ROOT = Path(sys.argv[1] if len(sys.argv) > 1 else "smoke")
 CHECKS = [
+    "00-edit-cold.png",
     "03-week.png",
     "04-before.png",
     "05-active.png",
