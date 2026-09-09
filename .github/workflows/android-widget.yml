@@ -84,7 +84,7 @@ jobs:
         with:
           name: emploi-du-temps-widget-apk
           path: smoke-apk
-      - name: Exercise app and real widget on Android emulator
+      - name: Exercise app and production widget rows on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -149,28 +149,28 @@ jobs:
             grep -Fq "com.wokgui.schedulewidget/.MainActivity" smoke/activity-week.txt
             adb exec-out screencap -p > smoke/04-week.png
 
-            # Render the actual RemoteViews through a debug AppWidgetHost. The emulator
-            # uses user 0; use the explicit CTS-style user id instead of resolving "current".
-            adb shell am get-current-user | tee smoke/current-user.txt
-            adb shell appwidget grantbind --package com.wokgui.schedulewidget --user 0
+            # Render the exact production row RemoteViews through the debug preview.
+            # Compact = two course rows only. Expanded = all course/break rows, scrollable.
             adb shell am force-stop com.wokgui.schedulewidget
             adb shell am start -W -n com.wokgui.schedulewidget/.WidgetPreviewActivity --ei height_dp 108 --ei width_dp 350 > smoke/launch-widget-small.txt
-            sleep 6
+            sleep 5
             adb shell uiautomator dump /sdcard/widget-small.xml >/dev/null
             adb pull /sdcard/widget-small.xml smoke/widget-small.xml >/dev/null
             grep -Fq "3G1 ALL" smoke/widget-small.xml
             grep -Fq "3G3 ALL" smoke/widget-small.xml
             ! grep -Fq "Midi" smoke/widget-small.xml
             ! grep -Fq "Trou" smoke/widget-small.xml
+            ! grep -Fq "Widget preview error" smoke/widget-small.xml
             adb exec-out screencap -p > smoke/05-widget-small.png
 
             adb shell am force-stop com.wokgui.schedulewidget
             adb shell am start -W -n com.wokgui.schedulewidget/.WidgetPreviewActivity --ei height_dp 486 --ei width_dp 350 > smoke/launch-widget-expanded.txt
-            sleep 7
+            sleep 5
             adb shell uiautomator dump /sdcard/widget-expanded.xml >/dev/null
             adb pull /sdcard/widget-expanded.xml smoke/widget-expanded.xml >/dev/null
             grep -Fq "Midi" smoke/widget-expanded.xml
             grep -Fq "Trou" smoke/widget-expanded.xml
+            ! grep -Fq "Widget preview error" smoke/widget-expanded.xml
             adb exec-out screencap -p > smoke/06-widget-expanded.png
 
             adb logcat -d > smoke/logcat-full.txt || true
