@@ -14,13 +14,16 @@ final class UiRuntimeBundle {
         out.append(ImportParserUi.script()).append('\n');
         out.append(LocalizationFinalUi.script()).append('\n');
         out.append(WorkflowUi.script()).append('\n');
+        out.append(TemporalStateUi.script()).append('\n');
 
         String script = repairGeneratedJavaScript(out.toString());
 
         // Keep all runtime version labels aligned without duplicating edits across
         // the consolidated UI modules.
-        script = script.replace("APP_VERSION='6.31'", "APP_VERSION='6.33'")
-                       .replace("APP_VERSION='6.32'", "APP_VERSION='6.33'");
+        script = script.replace("APP_VERSION='6.31'", "APP_VERSION='6.35'")
+                       .replace("APP_VERSION='6.32'", "APP_VERSION='6.35'")
+                       .replace("APP_VERSION='6.33'", "APP_VERSION='6.35'")
+                       .replace("APP_VERSION='6.34'", "APP_VERSION='6.35'");
         return script;
     }
 
