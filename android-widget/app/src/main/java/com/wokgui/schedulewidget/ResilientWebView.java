@@ -17,6 +17,7 @@ import android.webkit.WebViewClient;
 public final class ResilientWebView extends WebView {
     private static final String STARTUP_TAG = "EDT_STARTUP_STATE";
     private static final String CHUNK_TAG = "EDT_UI_CHUNK";
+    private static final long INITIAL_CHUNK_DELAY_MS = 120L;
     private static final long CHUNK_YIELD_MS = 16L;
 
     public ResilientWebView(Context context) {
@@ -52,7 +53,13 @@ public final class ResilientWebView extends WebView {
             String[] chunks = script.split(java.util.regex.Pattern.quote(UiRuntimeBundle.CHUNK_MARKER), -1);
             long started = SystemClock.uptimeMillis();
             Log.i(CHUNK_TAG, "start count=" + chunks.length + " chars=" + script.length());
-            evaluateChunk(chunks, 0, started, resultCallback);
+            /*
+             * Give the lightweight HTML/base timetable a short compositor window before
+             * the first heavy runtime layer starts. This prevents a cold launch from
+             * showing the native blank background while the first 20–40 KB JS layer is
+             * still being evaluated.
+             */
+            postDelayed(() -> evaluateChunk(chunks, 0, started, resultCallback), INITIAL_CHUNK_DELAY_MS);
             return;
         }
         super.evaluateJavascript(script, resultCallback);
