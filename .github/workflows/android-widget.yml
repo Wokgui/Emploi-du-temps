@@ -107,7 +107,7 @@ jobs:
 
   publish:
     needs: smoke
-    if: ${{ needs.smoke.result == 'success' && github.ref == 'refs/heads/main' }}
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
