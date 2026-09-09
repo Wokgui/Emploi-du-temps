@@ -66,12 +66,21 @@ public class UpcomingCoursesService extends RemoteViewsService {
     private static final class Factory implements RemoteViewsFactory {
         private final Context context;
         private final int widgetId;
+        private final Integer forcedHeightDp;
+        private final Calendar forcedNow;
         private final List<Item> items = new ArrayList<>();
         private boolean compactHeight;
 
         Factory(Context context, int widgetId) {
+            this(context, widgetId, null, null);
+        }
+
+        /** Debug preview uses this overload through reflection; production always uses the constructor above. */
+        Factory(Context context, int widgetId, Integer forcedHeightDp, Calendar forcedNow) {
             this.context = context;
             this.widgetId = widgetId;
+            this.forcedHeightDp = forcedHeightDp;
+            this.forcedNow = forcedNow == null ? null : (Calendar) forcedNow.clone();
         }
 
         @Override public void onCreate() { reload(); }
@@ -85,6 +94,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
          * is always the current/next course pair rather than a gap taking the second row.
          */
         private boolean isCompactHeight() {
+            if (forcedHeightDp != null) return forcedHeightDp > 0 && forcedHeightDp <= 145;
             if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return false;
             Bundle options = AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId);
             int h = options == null ? 120 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 120);
@@ -96,7 +106,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             ScheduleStore.ensureInitialized(context);
             compactHeight = isCompactHeight();
 
-            Calendar now = Calendar.getInstance();
+            Calendar now = forcedNow == null ? Calendar.getInstance() : (Calendar) forcedNow.clone();
             int nowMin = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
             Target target = resolveTarget(now, nowMin);
             if (target == null) return;
