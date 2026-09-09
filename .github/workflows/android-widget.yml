@@ -133,9 +133,6 @@ jobs:
             grep -Fq "com.wokgui.schedulewidget/.MainActivity" smoke/activity-week.txt
             adb exec-out screencap -p > smoke/03-week.png
 
-            # Temporal scenarios are intentionally validated without UIAutomator.
-            # Repeated UIAutomator dumps are unstable on the hosted Android 35 emulator
-            # and can be killed with exit 137 even while the app remains healthy.
             adb shell am force-stop com.wokgui.schedulewidget
             adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode today --es test_now 2026-09-10T07:45:00 > smoke/launch-before.txt
             sleep 4
@@ -176,26 +173,10 @@ jobs:
             grep -Fq "com.wokgui.schedulewidget/.MainActivity" smoke/activity-after.txt
             adb exec-out screencap -p > smoke/08-after.png
 
-            # A process can be alive while the WebView is still blank. Reject the
-            # nearly uniform screenshots that exposed the cold-start regression.
-            python3 - <<'PY'
-            from PIL import Image
-            from pathlib import Path
-            checks = [
-                '03-week.png','04-before.png','05-active.png',
-                '06-lunch.png','07-gap.png','08-after.png'
-            ]
-            for name in checks:
-                im = Image.open(Path('smoke') / name).convert('RGB').resize((270, 480))
-                px = list(im.getdata())
-                dark = sum(1 for r,g,b in px if r+g+b < 600) / len(px)
-                chroma = sum(1 for r,g,b in px if max(r,g,b)-min(r,g,b) > 20) / len(px)
-                print(name, 'dark=', round(dark,4), 'chroma=', round(chroma,4))
-                if dark < 0.01 and chroma < 0.01:
-                    raise SystemExit(f'Blank timetable screen detected: {name}')
-            PY
+            adb logcat -d > smoke/logcat-timetable.txt || true
+            ! grep -E "FATAL EXCEPTION|AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)" smoke/logcat-timetable.txt
+            python3 android-widget/ci/check_screenshots.py smoke
 
-            # Exact production RemoteViews, deterministic compact/expanded scenarios.
             adb shell am force-stop com.wokgui.schedulewidget
             adb shell am start -W -n com.wokgui.schedulewidget/.WidgetPreviewActivity --ei height_dp 108 --ei width_dp 350 --es scenario active > smoke/launch-widget-active.txt
             sleep 4
