@@ -1,4 +1,6 @@
 from pathlib import Path
+import base64
+import gzip
 import re
 
 VERSION = '6.30'
@@ -10,10 +12,27 @@ def extract_script(name: str) -> str:
     if not path.exists():
         raise SystemExit(f'Missing source layer: {name}')
     source = path.read_text(encoding='utf-8')
+
+    # Most UI layers return one Java text block directly.
     match = re.search(r'return\s+"""(.*?)"""\s*;', source, re.S)
-    if not match:
-        raise SystemExit(f'Unable to extract script from {name}')
-    body = match.group(1)
+    if match:
+        body = match.group(1)
+    else:
+        # A few historically large layers (notably WeekViewStabilityUi) are stored as a
+        # Base64/GZIP Java string to stay below JVM constant limits. Decode them here so
+        # the semantic source contains the actual JavaScript rather than another legacy shell.
+        data_match = re.search(r'final\s+String\s+data\s*=\s*(.*?);\s*try\s*\{', source, re.S)
+        if not data_match or 'GZIPInputStream' not in source or 'Base64.getDecoder()' not in source:
+            raise SystemExit(f'Unable to extract script from {name}')
+        chunks = re.findall(r'"([^"\\]*(?:\\.[^"\\]*)*)"', data_match.group(1))
+        if not chunks:
+            raise SystemExit(f'Unable to extract compressed script from {name}')
+        encoded = ''.join(bytes(chunk, 'utf-8').decode('unicode_escape') for chunk in chunks)
+        try:
+            body = gzip.decompress(base64.b64decode(encoded)).decode('utf-8')
+        except Exception as exc:
+            raise SystemExit(f'Unable to decode compressed script from {name}: {exc}')
+
     body = re.sub(r"const APP_VERSION='6\.[0-9]+';", f"const APP_VERSION='{VERSION}';", body)
     body = re.sub(r"Version 6\.[0-9]+", f"Version {VERSION}", body)
     return body
