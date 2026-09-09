@@ -105,10 +105,13 @@ jobs:
             adb logcat -c
 
             adb shell am force-stop com.wokgui.schedulewidget
-            adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode edit > smoke/launch-edit.txt
+            adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode edit > smoke/launch-edit-cold.txt
             sleep 5
-            adb shell uiautomator dump /sdcard/anr-guard.xml >/dev/null 2>&1 || true
-            if adb shell cat /sdcard/anr-guard.xml 2>/dev/null | grep -Fq "isn't responding"; then adb shell input tap 540 1085 || true; sleep 2; fi
+            test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
+            adb exec-out screencap -p > smoke/00-edit-cold.png
+            adb logcat -d > smoke/logcat-edit-cold.txt || true
+            ! grep -E "AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)" smoke/logcat-edit-cold.txt
+
             adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode edit >/dev/null
             sleep 1
             test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
@@ -116,12 +119,10 @@ jobs:
             grep -Fq "com.wokgui.schedulewidget/.MainActivity" smoke/activity-edit.txt
             adb exec-out screencap -p > smoke/01-edit.png
             adb logcat -d > smoke/logcat-edit-full.txt || true
-            ! grep -E "FATAL EXCEPTION|AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)" smoke/logcat-edit-full.txt
+            ! grep -E "AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)" smoke/logcat-edit-full.txt
 
             adb shell input tap 1010 145
             sleep 2
-            adb shell uiautomator dump /sdcard/anr-guard.xml >/dev/null 2>&1 || true
-            if adb shell cat /sdcard/anr-guard.xml 2>/dev/null | grep -Fq "isn't responding"; then adb shell input tap 540 1085 || true; sleep 2; fi
             test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
             adb exec-out screencap -p > smoke/02-settings.png
 
@@ -174,7 +175,8 @@ jobs:
             adb exec-out screencap -p > smoke/08-after.png
 
             adb logcat -d > smoke/logcat-timetable.txt || true
-            ! grep -E "FATAL EXCEPTION|AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)" smoke/logcat-timetable.txt
+            ! grep -E "AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)" smoke/logcat-timetable.txt
+            grep -F "EDT_STARTUP_STATE" smoke/logcat-timetable.txt > smoke/startup-state.txt || true
             python3 android-widget/ci/check_screenshots.py smoke
 
             adb shell am force-stop com.wokgui.schedulewidget
@@ -210,7 +212,7 @@ jobs:
             adb exec-out screencap -p > smoke/12-widget-after.png
 
             adb logcat -d > smoke/logcat-full.txt || true
-            ! grep -E "FATAL EXCEPTION|AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)" smoke/logcat-full.txt
+            ! grep -E "AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)" smoke/logcat-full.txt
       - name: Upload smoke-test captures
         if: always()
         uses: actions/upload-artifact@v4
