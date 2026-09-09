@@ -1,6 +1,6 @@
 package com.wokgui.schedulewidget;
 
-/** Restores the requested timetable view after every runtime UI layer has been injected. */
+/** Restores the requested timetable view once after the runtime UI has been injected. */
 final class StartupViewRecoveryUi {
     private StartupViewRecoveryUi() {}
 
@@ -29,15 +29,12 @@ final class StartupViewRecoveryUi {
                           '|active='+active+
                           '|text='+(body?(body.innerText||'').length:-1)+
                           '|children='+(body?body.children.length:-1)+
-                          '|size='+(body?body.clientWidth+'x'+body.clientHeight:'none')+
-                          '|render='+(typeof window.render)+
-                          '|reload='+(typeof window.reloadSchedule));
+                          '|size='+(body?body.clientWidth+'x'+body.clientHeight:'none'));
                       }catch(e){console.log('EDT_STARTUP_STATE|'+tag+'|error='+e)}
                     }
-                    function restore(tag,reload){
+                    function restore(tag){
                       try{
                         var wanted=currentMode();
-                        if(reload&&typeof window.reloadSchedule==='function')window.reloadSchedule();
                         if(typeof window.setModeFromAndroid==='function'){
                           window.setModeFromAndroid(wanted);
                         }else{
@@ -49,8 +46,8 @@ final class StartupViewRecoveryUi {
                           document.querySelectorAll('.nav[data-mode]').forEach(function(nav){
                             nav.classList.toggle('active',nav.dataset.mode===wanted);
                           });
+                          if(typeof window.render==='function')window.render();
                         }
-                        if(typeof window.render==='function')window.render();
                         var target=document.getElementById('view'+wanted.charAt(0).toUpperCase()+wanted.slice(1));
                         if(target&&!target.classList.contains('active'))target.classList.add('active');
                         document.documentElement.style.visibility='visible';
@@ -63,12 +60,8 @@ final class StartupViewRecoveryUi {
                         return false;
                       }
                     }
-                    window.refreshStartupViewRecovery=function(){return restore('manual',true)};
-                    restore('inject',false);
-                    requestAnimationFrame(function(){restore('raf',false)});
-                    setTimeout(function(){restore('reload-120',true)},120);
-                    setTimeout(function(){restore('reload-650',true)},650);
-                    setTimeout(function(){restore('reload-1600',true)},1600);
+                    window.refreshStartupViewRecovery=function(){return restore('manual')};
+                    restore('inject');
                   }catch(e){console.log('StartupViewRecoveryUi',e)}
                 })();
                 """;
