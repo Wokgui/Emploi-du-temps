@@ -81,3 +81,5 @@ jobs:
             gh release create widget-latest --title "Emploi du temps widget" --notes "APK Android installable du widget d’emploi du temps."
           fi
           gh release upload widget-latest android-widget/app/build/outputs/apk/debug/emploi-du-temps-widget.apk --clobber
+
+# one-shot migration script revision 2
