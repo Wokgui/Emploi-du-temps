@@ -12,6 +12,7 @@ CHECKS = [
     "06-lunch.png",
     "07-gap.png",
     "08-after.png",
+    "13-import-review.png",
 ]
 
 failed = []
