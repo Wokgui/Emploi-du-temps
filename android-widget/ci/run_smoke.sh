@@ -82,6 +82,43 @@ sleep 1
 test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
 adb exec-out screencap -p > smoke/02-settings.png
 
+# Long-session regression: repeatedly switch views without restarting the app.
+# 6.39 could progressively slow down because every DOM mutation triggered a full rescan
+# and independent navigation renders could queue up. The final tap must remain prompt.
+adb shell input tap 995 240
+sleep 0.2
+adb logcat -c
+for i in $(seq 1 12); do
+  adb shell input tap 180 1840
+  adb shell input tap 540 1840
+  adb shell input tap 870 1840
+done
+sleep 1
+assert_main_alive
+adb logcat -d > smoke/interaction-stress-log.txt || true
+grep -Fq "EDT_FAST_STATS|" smoke/interaction-stress-log.txt
+assert_clean_log smoke/interaction-stress-log.txt
+
+adb logcat -c
+stress_start=$(date +%s%3N)
+adb shell input tap 1010 145
+stress_seen=0
+for i in $(seq 1 30); do
+  if adb logcat -d | grep -Fq "EDT_FAST_INPUT|settings|visual"; then
+    stress_seen=1
+    break
+  fi
+  sleep 0.05
+done
+stress_end=$(date +%s%3N)
+stress_ms=$((stress_end-stress_start))
+echo "settings_after_36_nav_taps_ms=${stress_ms}" | tee -a smoke/interaction-latency.txt
+test "$stress_seen" -eq 1
+test "$stress_ms" -le 900
+sleep 0.5
+assert_main_alive
+adb exec-out screencap -p > smoke/02b-settings-after-stress.png
+
 capture_main week week "" 03-week.png
 capture_main before today 2026-09-10T07:45:00 04-before.png
 capture_main active today 2026-09-10T08:30:00 05-active.png
