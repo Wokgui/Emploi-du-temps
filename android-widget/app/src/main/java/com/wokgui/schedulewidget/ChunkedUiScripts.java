@@ -9,9 +9,11 @@ final class ChunkedUiScripts {
     private ChunkedUiScripts() {}
 
     static String[] all() {
-        List<String> out = new ArrayList<>(40);
+        List<String> out = new ArrayList<>(42);
         add(out, UiRuntimeBundle.domSafetyPrelude());
         addLayers(out, BaseSettingsUi.class, 1);
+        // Install paint-first tap handling before the expensive compatibility layers.
+        add(out, FastInteractionUi.script());
         addLayers(out, TimetableCoreUi.class, 10);
         add(out, WeekViewStabilityUi.script());
         addLayers(out, ScheduleDisplayUi.class, 8);
@@ -23,6 +25,8 @@ final class ChunkedUiScripts {
         add(out, StartupViewRecoveryUi.script());
         add(out, LunchIconCleanupUi.script());
         add(out, ImportReviewUi.script());
+        // Later layers rebuild controls; refresh the fast handlers once at the end.
+        add(out, FastInteractionUi.script());
         return out.toArray(new String[0]);
     }
 
