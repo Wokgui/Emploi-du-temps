@@ -33,6 +33,26 @@ assert_clean_log() {
   ! grep -E "AndroidRuntime.*Process: com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)" "$file"
 }
 
+measure_settings_latency() {
+  local label="$1"
+  adb logcat -c
+  local started=$(date +%s%3N)
+  adb shell input tap 1010 145
+  local seen=0
+  for i in $(seq 1 30); do
+    if adb logcat -d | grep -Fq "EDT_FAST_INPUT|settings|visual"; then
+      seen=1
+      break
+    fi
+    sleep 0.05
+  done
+  local ended=$(date +%s%3N)
+  local elapsed=$((ended-started))
+  echo "${label}_ms=${elapsed}" | tee -a smoke/interaction-latency.txt
+  test "$seen" -eq 1
+  test "$elapsed" -le 900
+}
+
 capture_main() {
   local label="$1"
   local mode="$2"
@@ -64,22 +84,8 @@ adb logcat -d > smoke/logcat-edit-full.txt || true
 assert_clean_log smoke/logcat-edit-full.txt
 
 # A tap must reach the paint-first handler promptly, before the heavy settings setup.
-adb logcat -c
-fast_start=$(date +%s%3N)
-adb shell input tap 1010 145
-fast_seen=0
-for i in $(seq 1 30); do
-  if adb logcat -d | grep -Fq "EDT_FAST_INPUT|settings|visual"; then
-    fast_seen=1
-    break
-  fi
-  sleep 0.05
-done
-fast_end=$(date +%s%3N)
-fast_ms=$((fast_end-fast_start))
-echo "settings_visual_ms=${fast_ms}" | tee smoke/interaction-latency.txt
-test "$fast_seen" -eq 1
-test "$fast_ms" -le 900
+: > smoke/interaction-latency.txt
+measure_settings_latency settings_visual
 sleep 1
 test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
 adb exec-out screencap -p > smoke/02-settings.png
@@ -89,8 +95,7 @@ adb shell input tap 862 210
 sleep 0.4
 assert_main_alive
 
-# Long-session regression: repeatedly switch views without restarting the app.
-# The important assertion is the response AFTER sustained use, not an internal counter.
+# Short regression burst retained for quick diagnosis.
 adb logcat -c
 for i in $(seq 1 12); do
   adb shell input tap 165 1810
@@ -107,27 +112,40 @@ stress_inputs=$(grep -c "EDT_FAST_INPUT|nav-" smoke/interaction-stress-log.txt |
 echo "navigation_inputs_seen=${stress_inputs}" | tee -a smoke/interaction-latency.txt
 test "$stress_inputs" -ge 24
 assert_clean_log smoke/interaction-stress-log.txt
-
-# The same control must still respond promptly after the prolonged interaction burst.
-adb logcat -c
-stress_start=$(date +%s%3N)
-adb shell input tap 1010 145
-stress_seen=0
-for i in $(seq 1 30); do
-  if adb logcat -d | grep -Fq "EDT_FAST_INPUT|settings|visual"; then
-    stress_seen=1
-    break
-  fi
-  sleep 0.05
-done
-stress_end=$(date +%s%3N)
-stress_ms=$((stress_end-stress_start))
-echo "settings_after_36_nav_taps_ms=${stress_ms}" | tee -a smoke/interaction-latency.txt
-test "$stress_seen" -eq 1
-test "$stress_ms" -le 900
+measure_settings_latency settings_after_36_nav_taps
 sleep 0.5
 assert_main_alive
 adb exec-out screencap -p > smoke/02b-settings-after-stress.png
+
+# 6.43 long-session regression. The previous test stopped after 36 navigation taps and
+# did not exercise the cumulative observer/render workload reported on a real phone.
+# Keep one WebView alive, close Settings, then perform 240 additional real navigation taps.
+adb shell input tap 862 210
+sleep 0.4
+adb logcat -c
+for i in $(seq 1 80); do
+  adb shell input tap 165 1810
+  sleep 0.08
+  adb shell input tap 465 1810
+  sleep 0.08
+  adb shell input tap 760 1810
+  sleep 0.08
+  if [ $((i % 10)) -eq 0 ]; then
+    assert_main_alive
+    sleep 0.4
+  fi
+done
+sleep 2
+assert_main_alive
+adb logcat -d > smoke/interaction-long-session-log.txt || true
+long_inputs=$(grep -c "EDT_FAST_INPUT|nav-" smoke/interaction-long-session-log.txt || true)
+echo "long_session_navigation_inputs_seen=${long_inputs}" | tee -a smoke/interaction-latency.txt
+test "$long_inputs" -ge 160
+assert_clean_log smoke/interaction-long-session-log.txt
+measure_settings_latency settings_after_276_nav_taps
+sleep 0.5
+assert_main_alive
+adb exec-out screencap -p > smoke/02c-settings-after-long-session.png
 
 capture_main week week "" 03-week.png
 capture_main before today 2026-09-10T07:45:00 04-before.png
