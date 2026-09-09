@@ -49,7 +49,7 @@ jobs:
       - name: Verify install version and package
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='631001' versionName='6.31'" app/build/outputs/apk/debug/badging.txt
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='632001' versionName='6.32'" app/build/outputs/apk/debug/badging.txt
       - name: Rename APK
         run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/emploi-du-temps-widget.apk
       - name: Upload APK artifact
@@ -70,7 +70,7 @@ jobs:
   smoke:
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     continue-on-error: true
 
     steps:
@@ -96,39 +96,45 @@ jobs:
       - name: Exercise main views on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 29
+          api-level: 35
           arch: x86_64
-          target: default
+          target: google_apis
           profile: pixel_2
-          emulator-boot-timeout: 180
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          emulator-boot-timeout: 240
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot -no-metrics
           disable-animations: true
           script: |
-            set -eu
             mkdir -p smoke
             adb install -r smoke-apk/emploi-du-temps-widget.apk
             adb shell wm size 1080x1920
             adb logcat -c
             adb shell am force-stop com.wokgui.schedulewidget
-            adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity | tee smoke/launch.txt
-            sleep 2
+            adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode edit > smoke/launch-edit.txt
+            sleep 3
             test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
             adb exec-out screencap -p > smoke/01-edit.png
-            adb shell input tap 180 1850; sleep 0.6; adb exec-out screencap -p > smoke/02-today.png
-            adb shell input tap 540 1850; sleep 0.6; adb exec-out screencap -p > smoke/03-week.png
-            adb shell input tap 900 1850; sleep 0.6; adb exec-out screencap -p > smoke/04-edit-return.png
-            adb shell input tap 1010 145; sleep 0.6; adb exec-out screencap -p > smoke/05-settings.png
-            test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
+            test "$(stat -c%s smoke/01-edit.png)" -gt 60000
+            adb shell uiautomator dump /sdcard/window-edit.xml >/dev/null || true
+            adb pull /sdcard/window-edit.xml smoke/window-edit.xml >/dev/null || true
+            adb shell input tap 1010 145
+            sleep 1
+            adb exec-out screencap -p > smoke/02-settings.png
+            adb shell uiautomator dump /sdcard/window-settings.xml >/dev/null || true
+            adb pull /sdcard/window-settings.xml smoke/window-settings.xml >/dev/null || true
             adb shell am force-stop com.wokgui.schedulewidget
-            adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode week | tee smoke/widget-week-launch.txt
-            sleep 2
+            adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode today > smoke/launch-today.txt
+            sleep 3
             test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
-            adb exec-out screencap -p > smoke/06-widget-week-open.png
+            adb exec-out screencap -p > smoke/03-today.png
+            test "$(stat -c%s smoke/03-today.png)" -gt 60000
+            adb shell am force-stop com.wokgui.schedulewidget
+            adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode week > smoke/launch-week.txt
+            sleep 3
+            test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
+            adb exec-out screencap -p > smoke/04-week.png
+            test "$(stat -c%s smoke/04-week.png)" -gt 60000
             adb logcat -d '*:E' > smoke/logcat-errors.txt || true
-            if grep -E "FATAL EXCEPTION|AndroidRuntime.*Process: com.wokgui.schedulewidget" smoke/logcat-errors.txt; then
-              echo "App crash detected"
-              exit 1
-            fi
+            ! grep -E "FATAL EXCEPTION|AndroidRuntime.*Process: com.wokgui.schedulewidget" smoke/logcat-errors.txt
       - name: Upload smoke-test captures
         if: always()
         uses: actions/upload-artifact@v4
