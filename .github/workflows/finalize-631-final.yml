@@ -47,7 +47,7 @@ jobs:
       - name: Verify fixed Android version code
         working-directory: android-widget
         run: |
-          aapt dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
           grep -q "package: name='com.wokgui.schedulewidget' versionCode='631001' versionName='6.31'" /tmp/badging.txt
       - name: Remove one-shot finalizer
         run: rm -f .github/workflows/finalize-631-final.yml .github/scripts/finalize_631_final.py
