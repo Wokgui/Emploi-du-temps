@@ -1,11 +1,13 @@
 package com.wokgui.schedulewidget;
 
-/** Ordered timetable and interaction runtime. Legacy layers stay encapsulated here while they are migrated semantically. */
+/** Ordered timetable and interaction runtime. The base settings UI is initialized first because
+ * later modules extend its controls and refresh hooks. */
 final class TimetableRuntimeUi {
     private TimetableRuntimeUi() {}
 
     static String script() {
-        StringBuilder out = new StringBuilder(260 * 1024);
+        StringBuilder out = new StringBuilder(285 * 1024);
+        out.append(PersonalizationUi2.script()).append('\n');
         out.append(WeekendUi.script()).append('\n');
         out.append(FinalPolishUi.script()).append('\n');
         out.append(FinalPolishLateUi.script()).append('\n');
