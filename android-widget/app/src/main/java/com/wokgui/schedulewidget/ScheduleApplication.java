@@ -27,7 +27,12 @@ public final class ScheduleApplication extends Application {
             @Override
             public void onActivityResumed(Activity activity) {
                 if (!(activity instanceof MainActivity)) return;
-                scheduleRecovery(activity, 1200L);
+                // The first pass handles fast devices. The later passes run after
+                // MainActivity's WebView runtime injection and deliberately reapply
+                // the requested view even when the WebView itself is already visible.
+                // A visible WebView can still contain no active timetable view.
+                scheduleRecovery(activity, 350L);
+                scheduleRecovery(activity, 1300L);
                 scheduleRecovery(activity, 3200L);
             }
 
@@ -49,7 +54,6 @@ public final class ScheduleApplication extends Application {
         webView.postDelayed(() -> {
             Activity current = activityRef.get();
             if (current == null || current.isFinishing() || current.isDestroyed()) return;
-            if (webView.getVisibility() == View.VISIBLE && webView.getAlpha() >= 0.95f) return;
 
             String requested = normalizeMode(requestedMode);
             if (requested != null) {
@@ -57,15 +61,22 @@ public final class ScheduleApplication extends Application {
                 String renderer = "today".equals(requested) ? "renderToday" : ("week".equals(requested) ? "renderWeek" : "renderEdit");
                 String script = "(function(){"
                         + "try{if(typeof mode!=='undefined')mode='" + requested + "';}catch(e){}"
-                        + "try{document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});"
-                        + "var target=document.getElementById('" + id + "');if(target)target.classList.add('active');"
-                        + "document.querySelectorAll('.nav').forEach(function(n){n.classList.toggle('active',n.dataset.mode==='" + requested + "')});}catch(e){}"
+                        + "try{"
+                        + "document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');v.removeAttribute('data-native-open');});"
+                        + "var target=document.getElementById('" + id + "');"
+                        + "if(target){target.classList.add('active');target.setAttribute('data-native-open','1');target.style.removeProperty('display');}"
+                        + "document.querySelectorAll('.nav').forEach(function(n){n.classList.toggle('active',n.dataset.mode==='" + requested + "')});"
+                        + "}catch(e){}"
                         + "try{if(typeof " + renderer + "==='function')" + renderer + "();else if(typeof render==='function')render();}catch(e){}"
                         + "try{if(window.refreshWeekViewStability)window.refreshWeekViewStability();if(window.refreshFineTuneUi)window.refreshFineTuneUi();}catch(e){}"
+                        + "try{var target=document.getElementById('" + id + "');if(target&&!target.classList.contains('active'))target.classList.add('active');}catch(e){}"
                         + "})();";
                 try { webView.evaluateJavascript(script, null); } catch (Exception ignored) {}
             }
 
+            // Visibility and selected content are independent. Always reveal after
+            // the requested mode has been re-applied; never use visibility as proof
+            // that the timetable itself has rendered.
             webView.setAlpha(1f);
             webView.setVisibility(View.VISIBLE);
         }, delayMs);
