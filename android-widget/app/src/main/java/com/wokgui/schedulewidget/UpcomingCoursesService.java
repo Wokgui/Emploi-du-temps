@@ -68,7 +68,6 @@ public class UpcomingCoursesService extends RemoteViewsService {
         private final int widgetId;
         private final List<Item> items = new ArrayList<>();
         private boolean compactHeight;
-        private Calendar currentTargetDate;
 
         Factory(Context context, int widgetId) {
             this.context = context;
@@ -80,6 +79,11 @@ public class UpcomingCoursesService extends RemoteViewsService {
         @Override public void onDestroy() { items.clear(); }
         @Override public int getCount() { return items.size(); }
 
+        /**
+         * At the minimum widget height (108 dp) two 54 dp course rows fit exactly.
+         * In that configuration breaks are intentionally omitted so the visible pair
+         * is always the current/next course pair rather than a gap taking the second row.
+         */
         private boolean isCompactHeight() {
             if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return false;
             Bundle options = AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId);
@@ -96,7 +100,6 @@ public class UpcomingCoursesService extends RemoteViewsService {
             int nowMin = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
             Target target = resolveTarget(now, nowMin);
             if (target == null) return;
-            currentTargetDate = (Calendar) target.date.clone();
 
             List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, target.date);
             if (courses == null || courses.isEmpty() || target.firstCourse >= courses.size()) return;
@@ -106,6 +109,16 @@ public class UpcomingCoursesService extends RemoteViewsService {
             boolean futureDay = !sameDay(now, target.date);
             int previousEnd = -1;
             boolean firstVisibleCourse = true;
+
+            // In an expanded widget, keep the break that is actually in progress at the
+            // top of the list. Previously the target jumped straight to the next course.
+            if (!compactHeight && !futureDay && target.firstCourse > 0) {
+                ScheduleData.Course previous = courses.get(target.firstCourse - 1);
+                ScheduleData.Course next = courses.get(target.firstCourse);
+                int from = ScheduleData.toMinutes(previous.end);
+                int to = ScheduleData.toMinutes(next.start);
+                if (nowMin >= from && nowMin < to) appendBreaks(from, to, lunchStart, lunchEnd, nowMin);
+            }
 
             for (int i = target.firstCourse; i < courses.size(); i++) {
                 ScheduleData.Course c = courses.get(i);
@@ -151,14 +164,20 @@ public class UpcomingCoursesService extends RemoteViewsService {
         }
 
         private void appendBreaks(int from, int to, int lunchStart, int lunchEnd) {
-            if (to <= from) return;
+            appendBreaks(from, to, lunchStart, lunchEnd, -1);
+        }
+
+        private void appendBreaks(int from, int to, int lunchStart, int lunchEnd, int cutoffMinute) {
+            if (compactHeight || to <= from) return;
             boolean lunchValid = lunchEnd > lunchStart;
             if (!lunchValid || to <= lunchStart || from >= lunchEnd) {
-                addGap(from, to);
+                addGap(from, to, cutoffMinute);
                 return;
             }
-            if (from < lunchStart) addGap(from, Math.min(to, lunchStart));
-            if (from <= lunchStart && to >= lunchEnd && AdvancedSettingsStore.showLunch(context)) {
+            if (from < lunchStart) addGap(from, Math.min(to, lunchStart), cutoffMinute);
+            if (from <= lunchStart && to >= lunchEnd
+                    && AdvancedSettingsStore.showLunch(context)
+                    && (cutoffMinute < 0 || lunchEnd > cutoffMinute)) {
                 String appLabel = localizedAppBreakLabel(true);
                 String label = AdvancedSettingsStore.widgetLunchLabel(context, appLabel);
                 items.add(new Item(
@@ -173,11 +192,12 @@ public class UpcomingCoursesService extends RemoteViewsService {
                         ""
                 ));
             }
-            if (to > lunchEnd) addGap(Math.max(from, lunchEnd), to);
+            if (to > lunchEnd) addGap(Math.max(from, lunchEnd), to, cutoffMinute);
         }
 
-        private void addGap(int start, int end) {
+        private void addGap(int start, int end, int cutoffMinute) {
             if (!AdvancedSettingsStore.showBreaks(context) || end <= start) return;
+            if (cutoffMinute >= 0 && end <= cutoffMinute) return;
             String appLabel = localizedAppBreakLabel(false);
             String label = AdvancedSettingsStore.widgetGapLabel(context, appLabel);
             items.add(new Item(
@@ -260,10 +280,10 @@ public class UpcomingCoursesService extends RemoteViewsService {
             Locale locale = "de".equals(lang) ? Locale.GERMANY : ("en".equals(lang) ? Locale.UK : Locale.FRANCE);
             if ("fr".equals(lang) || (!"de".equals(lang) && !"en".equals(lang))) {
                 String d = new SimpleDateFormat("EEEE d MMM.", locale).format(date.getTime());
-                return ",\nle " + d;
+                return ", le " + d;
             }
-            if ("de".equals(lang)) return ",\nam " + new SimpleDateFormat("EEEE, d. MMM.", locale).format(date.getTime());
-            return ",\n" + new SimpleDateFormat("EEE d MMM", locale).format(date.getTime());
+            if ("de".equals(lang)) return ", am " + new SimpleDateFormat("EEEE, d. MMM.", locale).format(date.getTime());
+            return ", " + new SimpleDateFormat("EEE d MMM", locale).format(date.getTime());
         }
 
         private boolean sameDay(Calendar a, Calendar b) {
@@ -301,20 +321,20 @@ public class UpcomingCoursesService extends RemoteViewsService {
             v.setViewVisibility(R.id.rowLineBottom, View.GONE);
 
             String title = item.label;
-            if (item.type == Item.LUNCH) title = "🍴 " + title;
             if (item.type == Item.COURSE && item.uncertain) title = "⚠ " + title;
             v.setTextViewText(R.id.rowTitle, title);
-            v.setTextViewText(R.id.rowRelative, item.relative);
-            v.setViewVisibility(R.id.rowRelative, item.relative.isEmpty() ? View.GONE : View.VISIBLE);
+            String relative = AdvancedSettingsStore.showRemaining(context) ? item.relative : "";
+            v.setTextViewText(R.id.rowRelative, relative);
+            v.setViewVisibility(R.id.rowRelative, relative.isEmpty() ? View.GONE : View.VISIBLE);
             v.setInt(R.id.rowRelative, "setGravity", Gravity.CENTER);
 
             if (item.type == Item.LUNCH) {
                 int bg = WidgetPaletteStore.lunchBackground(context);
-                applyBreakRow(v, item, bg, WidgetPaletteStore.lunchText(context), darken(bg));
+                applyBreakRow(v, item, bg, WidgetPaletteStore.lunchText(context), darken(bg), relative);
             } else if (item.type == Item.GAP) {
                 int bg = WidgetPaletteStore.gapBackground(context);
                 int ink = WidgetPaletteStore.gapText(context);
-                applyBreakRow(v, item, bg, ink, ink);
+                applyBreakRow(v, item, bg, ink, ink, relative);
             } else {
                 int bg = WidgetPaletteStore.courseColor(context, item.order, item.sourceLabel, item.colorId);
                 boolean dark = WidgetPaletteStore.useDarkText(context, item.order, item.sourceLabel, item.colorId);
@@ -339,15 +359,15 @@ public class UpcomingCoursesService extends RemoteViewsService {
             return v;
         }
 
-        private void applyBreakRow(RemoteViews v, Item item, int background, int ink, int pillInk) {
+        private void applyBreakRow(RemoteViews v, Item item, int background, int ink, int pillInk, String relative) {
             v.setInt(R.id.rowContent, "setBackgroundColor", background);
             String meta = AdvancedSettingsStore.showTimes(context) ? item.time : "";
             v.setTextViewText(R.id.rowMeta, meta);
             v.setViewVisibility(R.id.rowMeta, meta.isEmpty() ? View.GONE : View.VISIBLE);
             v.setTextColor(R.id.rowTitle, ink);
             v.setTextColor(R.id.rowMeta, ink);
-            v.setTextViewText(R.id.rowRelative, item.relative);
-            v.setViewVisibility(R.id.rowRelative, item.relative.isEmpty() ? View.GONE : View.VISIBLE);
+            v.setTextViewText(R.id.rowRelative, relative);
+            v.setViewVisibility(R.id.rowRelative, relative.isEmpty() ? View.GONE : View.VISIBLE);
             v.setTextColor(R.id.rowRelative, pillInk);
         }
 
