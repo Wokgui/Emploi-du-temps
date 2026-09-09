@@ -17,6 +17,7 @@ concurrency:
 jobs:
   consolidate:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,145 +45,15 @@ jobs:
           path: ~/.android/debug.keystore
           key: emploi-du-temps-debug-keystore-v1
 
-      - name: Consolidate versioned UI layers into semantic modules
-        shell: bash
-        run: |
-          python3 <<'PY'
-          from pathlib import Path
-          import re
-
-          VERSION='6.30'
-          root=Path('android-widget/app/src/main/java/com/wokgui/schedulewidget')
-
-          def extract(name):
-              p=root/(name+'.java')
-              if not p.exists():
-                  raise SystemExit(f'Missing source layer: {name}')
-              s=p.read_text(encoding='utf-8')
-              m=re.search(r'return\s+"""(.*?)"""\s*;',s,re.S)
-              if not m:
-                  raise SystemExit(f'Unable to extract script from {name}')
-              body=m.group(1)
-              body=re.sub(r"const APP_VERSION='6\.[0-9]+';",f"const APP_VERSION='{VERSION}';",body)
-              return body
-
-          def write_module(class_name, sources, description):
-              parts=[]
-              for src in sources:
-                  parts.append(f'\n            /* ===== {src} ===== */')
-                  parts.append(extract(src))
-              body=''.join(parts)
-              text=f'''package com.wokgui.schedulewidget;
-
-/** {description} */
-final class {class_name} {{
-    private {class_name}() {{}}
-
-    static String script() {{
-        return """{body}""";
-    }}
-}}
-'''
-              (root/(class_name+'.java')).write_text(text,encoding='utf-8')
-
-          groups={
-            'BaseSettingsUi':(
-              ['PersonalizationUi2'],
-              'Base settings UI. This is initialized before every module that extends settings.'
-            ),
-            'EarlyVisualUi':(
-              ['WeekendUi','FinalPolishUi','FinalPolishLateUi'],
-              'Early visual and optional-day behavior, preserved in its verified runtime order.'
-            ),
-            'FeatureSettingsUi':(
-              ['AdvancedFeaturesUi','UiPolishAndSchoolCalendarUi','CourseColorUi','PaletteSelectorUi','LunchBreakUi','DoubleLunchUi','BulkCourseUi'],
-              'Timetable features and their settings controls, consolidated from the former patch layers.'
-            ),
-            'ScheduleDisplayUi':(
-              ['WeekViewStabilityUi','FineTuneUi','CycleLunchFixUi','Stability69Ui','Stability70Ui','Stability71Ui','Stability72Ui','Stability73Ui','Stability74Ui'],
-              'Week/day rendering, cycle handling and interaction stability in one semantic module.'
-            ),
-            'LocalizationRuntimeUi':(
-              ['Localization75Ui','LayoutLanguage77Ui','Stability78Ui','Stability79Ui','Stability80Ui','Stability81Ui'],
-              'Complete application localization runtime, including downloaded-language support.'
-            ),
-            'OcrParserUi':(
-              ['OcrImport80Ui'],
-              'Timetable photo OCR parser. Preview and confirmation remain a separate UI module.'
-            ),
-            'WorkflowUi':(
-              ['Workflow85Ui','SettingsLayoutUi','EditHistoryUi'],
-              'Editing workflow, compact settings layout, duplicate and undo/redo behavior.'
-            ),
-          }
-          for name,(sources,desc) in groups.items():
-              write_module(name,sources,desc)
-
-          # Semantic module order exactly matches the previously verified runtime order.
-          (root/'TimetableRuntimeUi.java').write_text('''package com.wokgui.schedulewidget;
-
-/** Ordered timetable runtime with semantic modules only. */
-final class TimetableRuntimeUi {
-    private TimetableRuntimeUi() {}
-
-    static String script() {
-        StringBuilder out = new StringBuilder(360 * 1024);
-        out.append(BaseSettingsUi.script()).append('\\n');
-        out.append(EarlyVisualUi.script()).append('\\n');
-        out.append(FeatureSettingsUi.script()).append('\\n');
-        out.append(ScheduleDisplayUi.script()).append('\\n');
-        return out.toString();
-    }
-}
-''',encoding='utf-8')
-
-          (root/'FeatureRuntimeUi.java').write_text('''package com.wokgui.schedulewidget;
-
-/** OCR and editing workflow extensions. */
-final class FeatureRuntimeUi {
-    private FeatureRuntimeUi() {}
-
-    static String script() {
-        StringBuilder out = new StringBuilder(175 * 1024);
-        out.append(OcrParserUi.script()).append('\\n');
-        out.append(WorkflowUi.script()).append('\\n');
-        out.append(OcrPreviewUi.script()).append('\\n');
-        out.append(SettingsResetUi.script()).append('\\n');
-        return out.toString();
-    }
-}
-''',encoding='utf-8')
-
-          old=set()
-          for sources,_ in groups.values(): old.update(sources)
-          # Do not delete semantic files that are output targets of the consolidation.
-          outputs=set(groups.keys())|{'TimetableRuntimeUi','FeatureRuntimeUi'}
-          for name in sorted(old-outputs):
-              p=root/(name+'.java')
-              if p.exists(): p.unlink()
-
-          # Align version constants in the remaining semantic extensions.
-          for p in root.glob('*.java'):
-              s=p.read_text(encoding='utf-8')
-              s=re.sub(r"const APP_VERSION='6\.[0-9]+';",f"const APP_VERSION='{VERSION}';",s)
-              s=re.sub(r"Version 6\.[0-9]+",f"Version {VERSION}",s)
-              p.write_text(s,encoding='utf-8')
-
-          gradle=Path('android-widget/app/build.gradle')
-          s=gradle.read_text(encoding='utf-8')
-          s=re.sub(r"versionName '6\.[0-9]+'",f"versionName '{VERSION}'",s)
-          gradle.write_text(s,encoding='utf-8')
-
-          one_shot=Path('.github/workflows/consolidate-ui-runtime.yml')
-          if one_shot.exists(): one_shot.unlink()
-
-          print('Generated semantic modules:', ', '.join(groups))
-          print('Removed old versioned UI source files:', len(old-outputs))
-          PY
+      - name: Consolidate UI source
+        run: python3 .github/scripts/consolidate_ui_runtime.py
 
       - name: Validate clean semantic source
         working-directory: android-widget
         run: gradle clean :app:assembleDebug -PversionCode=${{ github.run_number }} --stacktrace
+
+      - name: Remove one-shot migration files
+        run: rm -f .github/workflows/consolidate-ui-runtime.yml .github/scripts/consolidate_ui_runtime.py
 
       - name: Commit semantic runtime consolidation
         run: |
