@@ -2,14 +2,14 @@ name: Build and validate Android timetable
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/long-session-performance-643]
     paths:
       - 'android-widget/**'
       - '.github/workflows/android-widget.yml'
   workflow_dispatch:
 
 concurrency:
-  group: android-widget-main-v5
+  group: android-widget-${{ github.ref_name }}-v6
   cancel-in-progress: true
 
 permissions:
@@ -49,7 +49,7 @@ jobs:
       - name: Verify install version and package
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='642001' versionName='6.42'" app/build/outputs/apk/debug/badging.txt
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='643001' versionName='6.43'" app/build/outputs/apk/debug/badging.txt
       - name: Rename APK
         run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/emploi-du-temps-widget.apk
       - name: Upload APK artifact
@@ -86,7 +86,7 @@ jobs:
         with:
           name: emploi-du-temps-widget-apk
           path: smoke-apk
-      - name: Exercise app, temporal states, photo import review and production widget rows
+      - name: Exercise app, sustained responsiveness, temporal states, photo import review and production widget rows
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
