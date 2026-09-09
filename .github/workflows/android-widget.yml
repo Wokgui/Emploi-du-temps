@@ -2,14 +2,14 @@ name: Build and validate Android timetable
 
 on:
   push:
-    branches: [main, fix/long-session-performance-643]
+    branches: [main]
     paths:
       - 'android-widget/**'
       - '.github/workflows/android-widget.yml'
   workflow_dispatch:
 
 concurrency:
-  group: android-widget-${{ github.ref_name }}-v6
+  group: android-widget-main-v6
   cancel-in-progress: true
 
 permissions:
