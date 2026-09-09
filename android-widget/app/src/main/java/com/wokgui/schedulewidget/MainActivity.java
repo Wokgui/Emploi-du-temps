@@ -334,11 +334,90 @@ public class MainActivity extends Activity {
 
     private void finishUiReady() {
         if (webView == null || !pageLoaded) return;
-        if (forceWeekOpening) settleWeekAndReveal();
-        else {
-            primeWeekBadge();
-            revealWebViewStable();
-        }
+        applyTemporalStateFixes(() -> {
+            if (webView == null || !pageLoaded) return;
+            if (forceWeekOpening) settleWeekAndReveal();
+            else {
+                primeWeekBadge();
+                revealWebViewStable();
+            }
+        });
+    }
+
+    /**
+     * Keeps the Today view tied to clock time rather than to accumulated teaching minutes.
+     * It also marks an active lunch/gap as the current state. A debug-only frozen clock
+     * makes the five temporal states reproducible in the Android emulator.
+     */
+    private void applyTemporalStateFixes(Runnable done) {
+        if (webView == null || !pageLoaded) return;
+        String fixedNow = null;
+        if (BuildConfig.DEBUG && getIntent() != null) fixedNow = getIntent().getStringExtra("test_now");
+        String fixedArg = fixedNow == null || fixedNow.trim().isEmpty() ? "null" : JSONObject.quote(fixedNow.trim());
+        String currentLabel = UiSettingsStore.t(this, "current").replace("●", "").trim();
+        String script = """
+                (function(){
+                  try{
+                    var fixedNow=%s;
+                    if(fixedNow){
+                      if(!window.__edtRealDate)window.__edtRealDate=Date;
+                      var RealDate=window.__edtRealDate;
+                      var fixedStamp=new RealDate(fixedNow).getTime();
+                      window.Date=class extends RealDate{
+                        constructor(...args){super(...(args.length?args:[fixedStamp]));}
+                        static now(){return fixedStamp;}
+                        static parse(v){return RealDate.parse(v);}
+                        static UTC(...args){return RealDate.UTC(...args);}
+                      };
+                    }else if(window.__edtRealDate){
+                      window.Date=window.__edtRealDate;
+                      window.__edtRealDate=null;
+                    }
+
+                    window.progressPercent=function(){
+                      var jsDay=new Date().getDay();
+                      var d=jsDay>=1&&jsDay<=5?jsDay+1:null;
+                      if(d===null||typeof weeks==='undefined'||!weeks[currentWeek]||!weeks[currentWeek][d])return 0;
+                      var list=weeks[currentWeek][d].courses||[];
+                      if(!list.length)return 0;
+                      var now=new Date(),nowM=now.getHours()*60+now.getMinutes();
+                      var first=min(list[0].start),last=min(list[list.length-1].end);
+                      if(last<=first||nowM<=first)return 0;
+                      if(nowM>=last)return 100;
+                      return Math.max(0,Math.min(100,(nowM-first)*100/(last-first)));
+                    };
+
+                    if(!window.__edtTemporalWrapped&&typeof renderToday==='function'){
+                      window.__edtTemporalWrapped=true;
+                      window.__edtBaseRenderToday=renderToday;
+                      renderToday=function(){
+                        window.__edtBaseRenderToday();
+                        var p=Math.round(progressPercent());
+                        var bar=document.getElementById('todayProgress');
+                        if(bar)bar.setAttribute('aria-label','Avancement '+p+' %%');
+                        var now=new Date(),nowM=now.getHours()*60+now.getMinutes();
+                        document.querySelectorAll('#todayList .todayCourse.gap,#todayList .todayCourse.lunch').forEach(function(row){
+                          var time=row.querySelector('.time');
+                          if(!time)return;
+                          var values=(time.textContent||'').match(/\\d{1,2}:\\d{2}/g)||[];
+                          if(values.length<2)return;
+                          var start=min(values[0]),end=min(values[1]);
+                          if(nowM>=start&&nowM<end){
+                            row.classList.add('current');
+                            var badge=row.querySelector('.badge');
+                            if(!badge){badge=document.createElement('div');badge.className='badge';row.appendChild(badge);}
+                            badge.textContent=%s;
+                          }
+                        });
+                      };
+                    }
+                    if(typeof mode!=='undefined'&&mode==='today'&&typeof renderToday==='function')renderToday();
+                  }catch(e){}
+                })();
+                """.formatted(fixedArg, JSONObject.quote(currentLabel));
+        webView.evaluateJavascript(script, ignored -> {
+            if (done != null) done.run();
+        });
     }
 
     private void maybeRequestNotificationPermission() {
