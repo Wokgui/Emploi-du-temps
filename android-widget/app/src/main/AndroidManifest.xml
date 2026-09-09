@@ -23,6 +23,10 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ImportReviewPreviewActivity"
+            android:exported="false" />
+
         <service
             android:name=".UpcomingCoursesService"
             android:permission="android.permission.BIND_REMOTEVIEWS"
