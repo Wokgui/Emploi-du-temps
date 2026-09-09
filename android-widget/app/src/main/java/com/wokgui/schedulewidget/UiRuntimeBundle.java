@@ -34,6 +34,7 @@ final class UiRuntimeBundle {
         out.append(OcrImport80Ui.script()).append('\n');
         out.append(Stability81Ui.script()).append('\n');
         out.append(Workflow85Ui.script()).append('\n');
+        out.append(SettingsLayoutUi.script()).append('\n');
         return out.toString();
     }
 }
