@@ -17,6 +17,7 @@ import android.webkit.WebViewClient;
 public final class ResilientWebView extends WebView {
     private static final String STARTUP_TAG = "EDT_STARTUP_STATE";
     private static final String CHUNK_TAG = "EDT_UI_CHUNK";
+    private static final long CHUNK_YIELD_MS = 16L;
 
     public ResilientWebView(Context context) {
         super(context);
@@ -66,7 +67,7 @@ public final class ResilientWebView extends WebView {
 
         String chunk = chunks[index];
         if (chunk == null || chunk.trim().isEmpty()) {
-            postOnAnimation(() -> evaluateChunk(chunks, index + 1, started, resultCallback));
+            postDelayed(() -> evaluateChunk(chunks, index + 1, started, resultCallback), CHUNK_YIELD_MS);
             return;
         }
 
@@ -74,10 +75,15 @@ public final class ResilientWebView extends WebView {
         super.evaluateJavascript(chunk, value -> {
             Log.i(CHUNK_TAG, "layer=" + (index + 1) + "/" + chunks.length
                     + " chars=" + chunk.length() + " ms=" + (SystemClock.uptimeMillis() - layerStarted));
-            // Yield at least one compositor frame between legacy UI layers. Besides
-            // making startup visibly responsive, this lets delayed callbacks and the
-            // deterministic test clock run instead of being starved by one giant eval.
-            postOnAnimation(() -> evaluateChunk(chunks, index + 1, started, resultCallback));
+            /*
+             * Do not use postOnAnimation here. Immediately after an Android process
+             * restart a WebView may not have produced its first compositor frame yet;
+             * waiting for that frame creates a deadlock: the remaining UI layers never
+             * run, so the page never becomes ready enough to draw. A tiny ordinary UI
+             * delay still yields the main thread, but progresses independently of the
+             * WebView compositor.
+             */
+            postDelayed(() -> evaluateChunk(chunks, index + 1, started, resultCallback), CHUNK_YIELD_MS);
         });
     }
 
