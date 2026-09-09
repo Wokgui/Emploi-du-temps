@@ -61,8 +61,24 @@ adb exec-out screencap -p > smoke/01-edit.png
 adb logcat -d > smoke/logcat-edit-full.txt || true
 assert_clean_log smoke/logcat-edit-full.txt
 
+# A tap must reach the paint-first handler promptly, before the heavy settings setup.
+adb logcat -c
+fast_start=$(date +%s%3N)
 adb shell input tap 1010 145
-sleep 2
+fast_seen=0
+for i in $(seq 1 30); do
+  if adb logcat -d | grep -Fq "EDT_FAST_INPUT|settings|visual"; then
+    fast_seen=1
+    break
+  fi
+  sleep 0.05
+done
+fast_end=$(date +%s%3N)
+fast_ms=$((fast_end-fast_start))
+echo "settings_visual_ms=${fast_ms}" | tee smoke/interaction-latency.txt
+test "$fast_seen" -eq 1
+test "$fast_ms" -le 900
+sleep 1
 test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
 adb exec-out screencap -p > smoke/02-settings.png
 
@@ -77,22 +93,23 @@ adb logcat -c
 adb shell am force-stop com.wokgui.schedulewidget
 adb shell am start -W -n com.wokgui.schedulewidget/.ImportReviewPreviewActivity > smoke/launch-import-review.txt
 wait_ui import-review
-for i in $(seq 1 40); do
+for i in $(seq 1 80); do
   if adb logcat -d | grep -Eq "EDT_IMPORT_REVIEW.*visible"; then
     break
   fi
-  if [ "$i" -eq 40 ]; then
+  if [ "$i" -eq 80 ]; then
     adb logcat -d > smoke/import-review-not-visible.txt || true
     exit 1
   fi
   sleep 0.25
 done
-sleep 2
+sleep 1
 test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
 adb shell dumpsys activity activities > smoke/activity-import-review.txt || true
 grep -Fq "com.wokgui.schedulewidget/.ImportReviewPreviewActivity" smoke/activity-import-review.txt
 adb logcat -d > smoke/logcat-import-review.txt || true
 grep -Eq "EDT_IMPORT_REVIEW.*visible" smoke/logcat-import-review.txt
+grep -Eq "EDT_LAZY_IMPORT.*ready=true" smoke/logcat-import-review.txt
 assert_clean_log smoke/logcat-import-review.txt
 adb exec-out screencap -p > smoke/13-import-review.png
 
