@@ -97,7 +97,7 @@ final class FastInteractionUi {
                   if(typeof fn!=='function')return;
                   try{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()}catch(ignore){}
                   const n=++state.clicks,started=performance.now(),label=labelFor(el);
-                  console.log('EDT_FAST_INPUT|'+label+'|delegated');
+                  console.log('EDT_FAST_INPUT|'+label+'|visual|delegated');
                   const group=groupFor(el);
                   afterPaint(group,function(){fn.call(el,e);logSettle('click',label,n,started)});
                 },true);
@@ -108,7 +108,7 @@ final class FastInteractionUi {
                   const fn=form.onsubmit;
                   try{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()}catch(ignore){}
                   const n=++state.submits,started=performance.now(),label=(form.id||'form')+'-submit';
-                  console.log('EDT_FAST_INPUT|'+label+'|delegated');
+                  console.log('EDT_FAST_INPUT|'+label+'|visual|delegated');
                   afterPaint('',function(){fn.call(form,e);logSettle('submit',label,n,started)});
                 },true);
 
