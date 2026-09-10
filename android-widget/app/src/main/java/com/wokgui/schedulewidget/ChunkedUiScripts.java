@@ -9,7 +9,7 @@ final class ChunkedUiScripts {
     private ChunkedUiScripts() {}
 
     static String[] all() {
-        List<String> out = new ArrayList<>(42);
+        List<String> out = new ArrayList<>(44);
         add(out, UiRuntimeBundle.domSafetyPrelude());
         addLayers(out, BaseSettingsUi.class, 1);
         // Install paint-first tap handling before the expensive compatibility layers.
@@ -25,6 +25,8 @@ final class ChunkedUiScripts {
         add(out, TemporalStateUi.script());
         add(out, StartupViewRecoveryUi.script());
         add(out, LunchIconCleanupUi.script());
+        // Pure-CSS final polish: deliberately no observers, timers or function wrappers.
+        add(out, Polish644Ui.script());
         // Later layers rebuild controls; refresh the fast handlers once at the end.
         add(out, FastInteractionUi.script());
         // OCR parsing/review no longer blocks normal startup or navigation.
