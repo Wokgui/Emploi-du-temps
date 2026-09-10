@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# First keep every regression that validated 6.45, including the 450-tab stress.
-bash android-widget/ci/run_smoke_645.sh
+# Keep every 6.45 regression, but 6.46 emits EDT_NAV_STATS once every 50 navigations.
+# The inherited 6.45 test expected >=12 samples from 450 taps; with the 6.46 sampler the
+# mathematically correct count is 9. Adapt only that harness threshold, not app behavior.
+sed 's/test "$nav_stats" -ge 12/test "$nav_stats" -ge 9/' android-widget/ci/run_smoke_645.sh > /tmp/run_smoke_645_for_646.sh
+chmod +x /tmp/run_smoke_645_for_646.sh
+bash /tmp/run_smoke_645_for_646.sh
 
 mkdir -p smoke
 
@@ -96,7 +100,6 @@ for i in $(seq 1 100); do
     tap_xy "$add_course"; sleep 0.08
     tap_xy "$cancel_edit"; sleep 0.08
   fi
-
 done
 sleep 4
 
