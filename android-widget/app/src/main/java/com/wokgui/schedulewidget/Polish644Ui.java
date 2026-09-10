@@ -62,15 +62,15 @@ final class Polish644Ui {
                     .advRow:has(>#advReminderMinutes)>span:empty{display:none!important}
                     #advReminderMinutes{margin-inline:auto!important;text-align:center!important}
 
-                    /* Profile actions: always one line and equal widths. */
-                    #advProfilesTitle~.advButtons{
+                    /* Profile actions: only this button group becomes one equal-width line. */
+                    .advButtons:has(#advNewProfile){
                       display:grid!important;
                       grid-template-columns:repeat(3,minmax(0,1fr))!important;
                       gap:5px!important;
                       flex-wrap:nowrap!important;
                       width:100%!important;
                     }
-                    #advProfilesTitle~.advButtons .advButton{
+                    .advButtons:has(#advNewProfile) .advButton{
                       min-width:0!important;
                       width:100%!important;
                       padding:7px 2px!important;
@@ -95,8 +95,8 @@ final class Polish644Ui {
                     @media(max-width:380px){
                       #courseForm .sheetActions{gap:3px!important}
                       #courseForm .sheetActions .btn{font-size:.64rem!important;padding-inline:1px!important}
-                      #advProfilesTitle~.advButtons{gap:3px!important}
-                      #advProfilesTitle~.advButtons .advButton{font-size:.62rem!important;padding-inline:1px!important}
+                      .advButtons:has(#advNewProfile){gap:3px!important}
+                      .advButtons:has(#advNewProfile) .advButton{font-size:.62rem!important;padding-inline:1px!important}
                     }
                   `;
                   document.head.appendChild(style);
