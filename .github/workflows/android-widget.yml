@@ -2,7 +2,7 @@ name: Build and validate Android timetable
 
 on:
   push:
-    branches: [main, fix/tab-switch-performance-645]
+    branches: [main]
     paths:
       - 'android-widget/**'
       - '.github/workflows/android-widget.yml'
