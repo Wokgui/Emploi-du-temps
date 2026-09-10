@@ -51,7 +51,7 @@ final class NavigationPerformanceUi {
                 }
                 function invalidate(targets){
                   if(!targets){cache.dirty.today=cache.dirty.week=cache.dirty.edit=true;return}
-                  (Array.isArray(targets)?targets:[targets]).forEach(function(t){if(cache.dirty.hasOwnProperty(t))cache.dirty[t]=true});
+                  (Array.isArray(targets)?targets:[targets]).forEach(function(t){if(Object.prototype.hasOwnProperty.call(cache.dirty,t))cache.dirty[t]=true});
                 }
                 function renderTarget(target){
                   syncContext(target);
@@ -68,7 +68,7 @@ final class NavigationPerformanceUi {
                 }
                 function stats(n,settle){
                   if(n%50!==0)return;
-                  console.log('EDT_NAV_STATS|navs='+cache.navs+'|hits='+cache.hits+'|renderToday='+cache.renders.today+'|renderWeek='+cache.renders.week+'|renderEdit='+cache.renders.edit+'|cancelled='+cache.cancelled+'|external='+cache.externalRenders+'|dirtyToday='+(cache.dirty.today?1:0)+'|dirtyWeek='+(cache.dirty.week?1:0)+'|dirtyEdit='+(cache.dirty.edit?1:0)+'|settleMs='+Math.round(settle||0));
+                  console.log('EDT_NAV_STATS|navs='+cache.navs+'|hits='+cache.hits+'|renderToday='+cache.renders.today+'|renderWeek='+cache.renders.week+'|renderEdit='+cache.renders.edit+'|cancelled='+cache.cancelled+'|external='+cache.externalRenders+'|fastWrapped=0|dirtyToday='+(cache.dirty.today?1:0)+'|dirtyWeek='+(cache.dirty.week?1:0)+'|dirtyEdit='+(cache.dirty.edit?1:0)+'|settleMs='+Math.round(settle||0));
                 }
                 function own(button){
                   if(!button||!button.dataset||!['today','week','edit'].includes(button.dataset.mode))return;
@@ -93,8 +93,6 @@ final class NavigationPerformanceUi {
                 }
                 function rebind(){document.querySelectorAll('.nav').forEach(own)}
 
-                // Any legacy full render means some state may have changed. Invalidate all
-                // cached views, let that render rebuild the current one, then mark it clean.
                 const oldRender=window.render;
                 if(typeof oldRender==='function'&&!oldRender.__edtZeroRenderWrapped){
                   const wrapped=function(){
@@ -114,7 +112,6 @@ final class NavigationPerformanceUi {
                   if(button&&button.dataset&&['today','week','edit'].includes(button.dataset.mode))activate(button.dataset.mode,button);
                 },{capture:true,passive:true});
 
-                // The initially visible view has already been rendered before this final layer.
                 try{cache.dirty[currentMode()]=false}catch(e){}
                 window.__edtNavigationCacheV2={cache:cache,rebind:rebind,invalidate:invalidate};
                 window.invalidateTimetableViews=invalidate;
