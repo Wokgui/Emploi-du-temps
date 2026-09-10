@@ -26,10 +26,37 @@ chmod +x /tmp/run_smoke_645_base.sh
 bash /tmp/run_smoke_645_base.sh
 
 # Dedicated 6.45 regression for the actual reported failure: keep the same WebView alive
-# and change Today / Week / Edit hundreds of times. This must not rebuild all three views,
-# grow the FastInteraction wrapper count, leak memory, or become slower near the end.
+# and change Today / Week / Edit hundreds of times. The 6.44 suite deliberately finishes
+# with the Add-course modal open, so dismiss that modal before trying to hit the bottom
+# navigation. Without this, the modal backdrop consumes all 450 taps and the stress test
+# measures nothing.
+adb shell input keyevent KEYCODE_BACK
+sleep 0.35
 adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode edit >/dev/null
-sleep 1.2
+sleep 0.5
+
+# Preflight the exact three coordinates before starting the long run. This turns a stale
+# overlay or layout-coordinate regression into an immediate diagnostic failure rather than
+# wasting a full 450-tap run and reporting zero samples at the end.
+adb logcat -c
+adb shell input tap 165 1810
+sleep 0.15
+adb shell input tap 540 1810
+sleep 0.15
+adb shell input tap 880 1810
+sleep 0.25
+adb logcat -d > smoke/tab-stress-preflight-log.txt || true
+preflight_nav=$(grep -c "EDT_NAV_INPUT|" smoke/tab-stress-preflight-log.txt || true)
+echo "tab_stress_preflight_navigation_inputs=${preflight_nav}" | tee -a smoke/interaction-latency.txt
+if [ "$preflight_nav" -lt 3 ]; then
+  adb exec-out screencap -p > smoke/20-tab-stress-preflight-failure.png || true
+  echo "6.45 tab-stress preflight did not reach all three bottom navigation buttons" >&2
+  exit 1
+fi
+
+# Restore Edit, then measure only the dedicated stress phase.
+adb shell input tap 880 1810
+sleep 0.15
 adb logcat -c
 adb shell dumpsys meminfo com.wokgui.schedulewidget > smoke/meminfo-before-tab-stress.txt || true
 
