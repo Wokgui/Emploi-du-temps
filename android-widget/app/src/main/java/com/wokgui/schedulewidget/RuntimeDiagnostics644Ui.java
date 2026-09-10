@@ -20,7 +20,8 @@ final class RuntimeDiagnostics644Ui {
                 ];
                 const baseline=Object.create(null);
                 names.forEach(n=>{if(typeof window[n]==='function')baseline[n]=window[n]});
-                let lastSubmit=null,submitTransitions=0,submitAssignments=0,clicks=0,editorOpens=0,editorCloses=0;
+                let lastSubmit=null,submitTransitions=0,submitAssignments=0,clicks=0;
+                let editorOpens=0,editorCloses=0,settingsOpens=0,settingsCloses=0;
                 const ids=new WeakMap();let nextId=1;
 
                 function fnId(fn){
@@ -59,10 +60,10 @@ final class RuntimeDiagnostics644Ui {
                   let changedSubmit=false;
                   if(lastSubmit&&submit&&submit!==lastSubmit){submitTransitions++;changedSubmit=true}
                   if(submit)lastSubmit=submit;
-                  console.log('EDT_RUNTIME_644|reason='+reason+'|nodes='+nodes+'|dupIds='+duplicateIds()+'|renderChanged='+changed.length+'|submitId='+submitId+'|submitChangedLast='+(changedSubmit?1:0)+'|submitTransitions='+submitTransitions+'|submitAssignments='+submitAssignments+'|submitMarkers='+markerFlags(submit)+'|fastWrapped='+wrapped+'|formWrapped='+formWrapped+'|editorOpens='+editorOpens+'|editorCloses='+editorCloses);
+                  console.log('EDT_RUNTIME_644|reason='+reason+'|nodes='+nodes+'|dupIds='+duplicateIds()+'|renderChanged='+changed.length+'|submitId='+submitId+'|submitChangedLast='+(changedSubmit?1:0)+'|submitTransitions='+submitTransitions+'|submitAssignments='+submitAssignments+'|submitMarkers='+markerFlags(submit)+'|fastWrapped='+wrapped+'|formWrapped='+formWrapped+'|editorOpens='+editorOpens+'|editorCloses='+editorCloses+'|settingsOpens='+settingsOpens+'|settingsCloses='+settingsCloses);
                   if(changed.length)console.log('EDT_RUNTIME_RENDER_MUTATION|'+changed.join(','));
                   if(changedSubmit)console.log('EDT_RUNTIME_SUBMIT_TRANSITION|id='+submitId+'|markers='+markerFlags(submit));
-                  return {nodes:nodes,duplicates:duplicateIds(),renderChanged:changed,submitId:submitId,submitTransitions:submitTransitions,submitAssignments:submitAssignments,fastWrapped:wrapped,formWrapped:formWrapped,editorOpens:editorOpens,editorCloses:editorCloses};
+                  return {nodes:nodes,duplicates:duplicateIds(),renderChanged:changed,submitId:submitId,submitTransitions:submitTransitions,submitAssignments:submitAssignments,fastWrapped:wrapped,formWrapped:formWrapped,editorOpens:editorOpens,editorCloses:editorCloses,settingsOpens:settingsOpens,settingsCloses:settingsCloses};
                 }
 
                 // Trace every future assignment to the native DOM onsubmit property while
@@ -95,16 +96,23 @@ final class RuntimeDiagnostics644Ui {
                   }
                 }
 
-                const modal=document.getElementById('modal');
-                if(modal){
-                  let shown=modal.classList.contains('show');
+                function watchModal(el,kind){
+                  if(!el)return;
+                  let shown=el.classList.contains('show');
                   new MutationObserver(function(){
-                    const next=modal.classList.contains('show');
-                    if(next&&!shown){editorOpens++;console.log('EDT_EDITOR_OPEN|count='+editorOpens);snapshot('editor-open-'+editorOpens)}
-                    else if(!next&&shown){editorCloses++;console.log('EDT_EDITOR_CLOSE|count='+editorCloses)}
+                    const next=el.classList.contains('show');
+                    if(next&&!shown){
+                      if(kind==='editor'){editorOpens++;console.log('EDT_EDITOR_OPEN|count='+editorOpens);snapshot('editor-open-'+editorOpens)}
+                      else{settingsOpens++;console.log('EDT_SETTINGS_OPEN|count='+settingsOpens);snapshot('settings-open-'+settingsOpens)}
+                    }else if(!next&&shown){
+                      if(kind==='editor'){editorCloses++;console.log('EDT_EDITOR_CLOSE|count='+editorCloses)}
+                      else{settingsCloses++;console.log('EDT_SETTINGS_CLOSE|count='+settingsCloses)}
+                    }
                     shown=next;
-                  }).observe(modal,{attributes:true,attributeFilter:['class']});
+                  }).observe(el,{attributes:true,attributeFilter:['class']});
                 }
+                watchModal(document.getElementById('modal'),'editor');
+                watchModal(document.getElementById('settingsModal'),'settings');
 
                 document.addEventListener('click',function(){
                   clicks++;
