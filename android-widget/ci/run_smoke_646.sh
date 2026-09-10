@@ -40,21 +40,32 @@ tap_and_wait_nav() {
       return 0
     fi
   done
-  echo "6.46 preflight navigation acknowledgement timed out: ${target}" >&2
+  echo "6.46 navigation acknowledgement timed out: ${target}" >&2
   return 1
 }
 
-# After a very long WebView session UIAutomator can collapse the WebView to one accessibility
-# node even though every control is still visible and tappable. Run #605 proved exactly that:
-# the screenshot showed Semaine A, but uiautomator returned only the root WebView. The Pixel 2
-# CI profile is fixed at 1080x1920, so the final physical stress deliberately uses the stable
-# screen coordinates already exercised by the inherited suite instead of accessibility lookup.
-week_a="278 369"
-week_b="803 369"
-current_week="540 281"
-day_lun="131 834"
-day_jeu="493 834"
-current_week_choice_a="540 345"
+tap_and_wait_nav_retry() {
+  local target="$1"
+  local x="$2"
+  for attempt in 1 2 3; do
+    if tap_and_wait_nav "$target" "$x"; then return 0; fi
+    # Re-anchor on Edit between attempts. This does not hide a failure: the preflight
+    # still requires an acknowledgement from every target before the stress can start.
+    adb shell input tap 880 1810 || true
+    sleep 0.20
+  done
+  adb logcat -d > smoke/all-controls-preflight-failure-log.txt || true
+  adb exec-out screencap -p > smoke/21-all-controls-preflight-failure.png || true
+  return 1
+}
+
+# Coordinates measured on the actual 1080x1920 Edit view captured after the 450-tab soak
+# in run #609. The prior values came from an older, taller layout and landed in blank areas.
+week_a="240 314"
+week_b="692 314"
+current_week="540 241"
+day_lun="112 728"
+day_jeu="424 728"
 
 # Restore Edit and its top scroll position after the 450-tab stress.
 adb shell input tap 880 1810
@@ -65,20 +76,19 @@ for _ in $(seq 1 3); do
 done
 assert_alive
 
-# Physical preflight: prove the exact coordinates respond before measuring the long phase.
-# Navigation uses acknowledgement instead of fixed sleeps: run #606 showed that the final
-# Edit event could arrive just after logcat was sampled even though the tap was executed.
+# Physical preflight: prove every coordinate family responds before measuring the long phase.
 adb logcat -c
 tap_xy "$week_a"; sleep 0.10
 tap_xy "$week_b"; sleep 0.10
 tap_xy "$day_lun"; sleep 0.10
 tap_xy "$day_jeu"; sleep 0.10
-tap_and_wait_nav today 165
-tap_and_wait_nav week 540
-tap_and_wait_nav edit 880
+tap_xy "$current_week"; sleep 0.12
+tap_and_wait_nav_retry today 165
+tap_and_wait_nav_retry week 540
+tap_and_wait_nav_retry edit 880
 assert_alive
 adb logcat -d > smoke/all-controls-preflight-log.txt || true
-for needle in "EDT_FAST_INPUT|week-" "EDT_FAST_INPUT|day-" "EDT_NAV_INPUT|today" "EDT_NAV_INPUT|week" "EDT_NAV_INPUT|edit"; do
+for needle in "EDT_FAST_INPUT|week-" "EDT_FAST_INPUT|day-" "EDT_FAST_INPUT|current-week|visual|delegated" "EDT_NAV_INPUT|today" "EDT_NAV_INPUT|week" "EDT_NAV_INPUT|edit"; do
   grep -Fq "$needle" smoke/all-controls-preflight-log.txt
  done
 
@@ -107,12 +117,10 @@ for i in $(seq 1 120); do
     adb shell input tap 1000 245; sleep 0.10
   fi
 
-  # This action intentionally changes persisted state and is allowed to invalidate views.
-  # Always select A immediately so the week chooser cannot remain over the app and intercept
-  # the following cycles.
+  # Current 6.46 behavior is deterministic: each tap on "Cette semaine" advances the
+  # current cycle directly (A -> B -> ...). There is no chooser to dismiss.
   if [ $((i % 10)) -eq 0 ]; then
-    tap_xy "$current_week"; sleep 0.10
-    tap_xy "$current_week_choice_a"; sleep 0.12
+    tap_xy "$current_week"; sleep 0.12
   fi
 done
 sleep 4
@@ -121,7 +129,7 @@ echo "all_controls_phase=stress_complete" | tee -a smoke/interaction-latency.txt
 assert_alive
 adb shell dumpsys meminfo com.wokgui.schedulewidget > smoke/meminfo-after-all-controls.txt || true
 adb logcat -d > smoke/all-controls-stress-log.txt || true
-adb exec-out screencap -p > smoke/21-after-all-controls-stress.png || true
+adb exec-out screencap -p > smoke/22-after-all-controls-stress.png || true
 
 if grep -E "AndroidRuntime.*Process: com.wokgui.schedulewidget|ANR in com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)" smoke/all-controls-stress-log.txt; then
   echo "App crash, ANR or JavaScript failure during all-controls stress" >&2
