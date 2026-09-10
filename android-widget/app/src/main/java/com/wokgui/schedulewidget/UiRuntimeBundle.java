@@ -68,28 +68,27 @@ final class UiRuntimeBundle {
     /** Applies compatibility repairs and aligns version labels to every independent layer. */
     static String prepareChunk(String script) {
         script = repairGeneratedJavaScript(script);
-        return script.replace("APP_VERSION='6.31'", "APP_VERSION='6.44'")
-                     .replace("APP_VERSION='6.32'", "APP_VERSION='6.44'")
-                     .replace("APP_VERSION='6.33'", "APP_VERSION='6.44'")
-                     .replace("APP_VERSION='6.34'", "APP_VERSION='6.44'")
-                     .replace("APP_VERSION='6.35'", "APP_VERSION='6.44'")
-                     .replace("APP_VERSION='6.36'", "APP_VERSION='6.44'")
-                     .replace("APP_VERSION='6.37'", "APP_VERSION='6.44'")
-                     .replace("APP_VERSION='6.38'", "APP_VERSION='6.44'")
-                     .replace("APP_VERSION='6.39'", "APP_VERSION='6.44'")
-                     .replace("APP_VERSION='6.40'", "APP_VERSION='6.44'")
-                     .replace("APP_VERSION='6.41'", "APP_VERSION='6.44'")
-                     .replace("APP_VERSION='6.42'", "APP_VERSION='6.44'")
-                     .replace("APP_VERSION='6.43'", "APP_VERSION='6.44'");
+        return script.replace("APP_VERSION='6.31'", "APP_VERSION='6.45'")
+                     .replace("APP_VERSION='6.32'", "APP_VERSION='6.45'")
+                     .replace("APP_VERSION='6.33'", "APP_VERSION='6.45'")
+                     .replace("APP_VERSION='6.34'", "APP_VERSION='6.45'")
+                     .replace("APP_VERSION='6.35'", "APP_VERSION='6.45'")
+                     .replace("APP_VERSION='6.36'", "APP_VERSION='6.45'")
+                     .replace("APP_VERSION='6.37'", "APP_VERSION='6.45'")
+                     .replace("APP_VERSION='6.38'", "APP_VERSION='6.45'")
+                     .replace("APP_VERSION='6.39'", "APP_VERSION='6.45'")
+                     .replace("APP_VERSION='6.40'", "APP_VERSION='6.45'")
+                     .replace("APP_VERSION='6.41'", "APP_VERSION='6.45'")
+                     .replace("APP_VERSION='6.42'", "APP_VERSION='6.45'")
+                     .replace("APP_VERSION='6.43'", "APP_VERSION='6.45'")
+                     .replace("APP_VERSION='6.44'", "APP_VERSION='6.45'");
     }
 
     /**
      * Repairs escapes and legacy DOM assumptions before the scripts reach the WebView.
-     * 6.44 also fixes the real long-session failure mode: older compatibility layers
-     * repeatedly wrapped the same render/submit functions from their refresh methods.
-     * Once another layer became the outer wrapper, the older marker was no longer
-     * visible and another wrapper was added. Real settings/editor use therefore grew
-     * call chains even though simple navigation stress stayed fast.
+     * 6.44 stopped refresh-time wrapper accumulation. 6.45 additionally coalesces the
+     * remaining whole-view mutation work so repeated tab changes cannot build a queue of
+     * palette and break-decoration passes behind the user's taps.
      */
     private static String repairGeneratedJavaScript(String script) {
         script = script.replace("l'application", "l\\'application");
@@ -177,9 +176,19 @@ final class UiRuntimeBundle {
         script = script.replace(
                 "['weekGrid','todayList','editList'].forEach(id=>{const el=document.getElementById(id);if(el)new MutationObserver(scheduleLiteral84).observe(el,{childList:true,subtree:true})});",
                 "['weekGrid','todayList','editList'].forEach(id=>{const el=document.getElementById(id);if(el)new MutationObserver(scheduleLiteral84).observe(el,{childList:true,subtree:false})});");
+
+        // 6.45: one render can add dozens of children. Coalesce all break/badge work into
+        // a single pass rather than queueing a new zero-delay timeout for each mutation.
         script = script.replace(
                 "for(const id of ['todayList','weekGrid','editList']){const el=document.getElementById(id);if(el)new MutationObserver(()=>setTimeout(()=>{syncBreakCells();decorateCourseBadges();fitBreakLabels()},0)).observe(el,{childList:true,subtree:true})}",
-                "for(const id of ['todayList','weekGrid','editList']){const el=document.getElementById(id);if(el)new MutationObserver(()=>setTimeout(()=>{syncBreakCells();decorateCourseBadges();fitBreakLabels()},0)).observe(el,{childList:true,subtree:false})}");
+                "let __edtBreakDecorTimer=0;function __edtQueueBreakDecor(){if(__edtBreakDecorTimer)return;__edtBreakDecorTimer=setTimeout(()=>{__edtBreakDecorTimer=0;syncBreakCells();decorateCourseBadges();fitBreakLabels()},20)}for(const id of ['todayList','weekGrid','editList']){const el=document.getElementById(id);if(el)new MutationObserver(__edtQueueBreakDecor).observe(el,{childList:true,subtree:false})}");
+
+        // 6.45: PaletteSelector used to schedule a full app/settings repaint for every
+        // subtree mutation. Rebuilding a timetable could therefore create a long tail of
+        // redundant full-tree scans. Keep at most one pending repaint.
+        script = script.replace(
+                "['weekGrid','todayList','editList','courseColorPalette'].forEach(id=>{const el=document.getElementById(id);if(el)new MutationObserver(()=>setTimeout(repaint,0)).observe(el,{childList:true,subtree:true})});",
+                "let __edtPaletteRepaintTimer=0;function __edtQueuePaletteRepaint(){if(__edtPaletteRepaintTimer)return;__edtPaletteRepaintTimer=setTimeout(()=>{__edtPaletteRepaintTimer=0;repaint()},24)}['weekGrid','todayList','editList','courseColorPalette'].forEach(id=>{const el=document.getElementById(id);if(el)new MutationObserver(__edtQueuePaletteRepaint).observe(el,{childList:true,subtree:false})});");
 
         // Stability71 already wraps render/refresh entry points; descendant mutations do
         // not need recursively to schedule the same work.
