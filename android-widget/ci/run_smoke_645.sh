@@ -10,6 +10,12 @@ old='nav_inputs=$(grep -c "EDT_FAST_INPUT|nav-" smoke/interaction-real-session-l
 new='nav_inputs=$(grep -c "EDT_NAV_INPUT|" smoke/interaction-real-session-log.txt || true)'
 if old not in src: raise SystemExit('6.44 nav counter anchor not found')
 src=src.replace(old,new,1)
+# run_smoke_644.sh generates a second script from run_smoke.sh. Convert every legacy
+# navigation-log assertion in that generated script, including the early 36-tap burst.
+anchor="Path('/tmp/run_smoke_644_generated.sh').write_text(src)"
+replacement="src=src.replace('EDT_FAST_INPUT|nav-','EDT_NAV_INPUT|')\n"+anchor
+if anchor not in src: raise SystemExit('generated-script write anchor not found')
+src=src.replace(anchor,replacement,1)
 old='exec bash /tmp/run_smoke_644_generated.sh'
 new='bash /tmp/run_smoke_644_generated.sh'
 if old not in src: raise SystemExit('6.44 exec anchor not found')
