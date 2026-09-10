@@ -9,7 +9,7 @@ final class ChunkedUiScripts {
     private ChunkedUiScripts() {}
 
     static String[] all() {
-        List<String> out = new ArrayList<>(44);
+        List<String> out = new ArrayList<>(45);
         add(out, UiRuntimeBundle.domSafetyPrelude());
         addLayers(out, BaseSettingsUi.class, 1);
         // Install paint-first tap handling before the expensive compatibility layers.
@@ -25,10 +25,12 @@ final class ChunkedUiScripts {
         add(out, TemporalStateUi.script());
         add(out, StartupViewRecoveryUi.script());
         add(out, LunchIconCleanupUi.script());
-        // Pure-CSS final polish: deliberately no observers, timers or function wrappers.
+        // Pure-CSS final polish plus the final one-time weekend hook installation.
         add(out, Polish644Ui.script());
         // Later layers rebuild controls; refresh the fast handlers once at the end.
         add(out, FastInteractionUi.script());
+        // Record function identity/DOM size during real sessions. No wrappers or timers.
+        add(out, RuntimeDiagnostics644Ui.script());
         // OCR parsing/review no longer blocks normal startup or navigation.
         add(out, UiRuntimeBundle.idleImportScript());
         return out.toArray(new String[0]);
