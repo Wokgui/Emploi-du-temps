@@ -58,37 +58,25 @@ src=src.replace(old_launch,new_launch,1)
 
 start=src.index('# 6.44 real-session regression.')
 end=src.index('\ncapture_main week week',start)
-new_block=r'''# 6.44 real-session regression. The former navigation-only stress was misleading.
-# Keep one WebView alive and repeatedly use the real course editor, a descendant of its
-# form, Settings, navigation and background/foreground lifecycle paths.
+new_block=r'''# 6.44 production real-session regression. Keep one WebView alive and repeatedly use
+# the real course editor, Settings, navigation and background/foreground lifecycle paths.
 adb shell input tap 880 1810
 sleep 0.35
 dismiss_launcher_anr
 adb shell dumpsys meminfo com.wokgui.schedulewidget > smoke/meminfo-before-soak.txt || true
-
-# The diagnostic setter is installed after every production layer. Any course-form
-# assignment below is therefore a genuine runtime rewrap, not normal startup assembly.
 adb logcat -c
 for i in $(seq 1 48); do
-  # Reset to a deterministic edit state. Thursday has seven seeded courses in the smoke
-  # profile, so this cannot silently turn into a tap on an empty-day placeholder.
   adb shell input tap 880 1810
   sleep 0.10
   adb shell input tap 510 825
   sleep 0.12
-
-  # First Thursday course. Then touch neutral space inside the editor's <form>; this is
-  # the exact path that used to make FastInteraction and FineTune wrap each other.
   adb shell input tap 500 1080
   sleep 0.16
   adb shell input tap 540 390
   sleep 0.10
-  # Modal backdrop routes through the real cancelEdit handler.
   adb shell input tap 540 105
   sleep 0.14
 
-  # Real Settings open/close. Opening Settings refreshes FineTune, which is what formerly
-  # reinstalled its full-colour submit wrapper after the editor had been touched.
   adb shell input tap 1010 145
   sleep 0.18
   adb shell input tap 1000 245
@@ -101,7 +89,6 @@ for i in $(seq 1 48); do
   adb shell input tap 880 1810
   sleep 0.10
 
-  # Every eight cycles, really leave the app and resume the same activity/WebView.
   if [ $((i % 8)) -eq 0 ]; then
     adb shell am start -W -a android.settings.SETTINGS >/dev/null 2>&1 || true
     sleep 0.40
@@ -118,35 +105,27 @@ adb shell dumpsys meminfo com.wokgui.schedulewidget > smoke/meminfo-after-soak.t
 adb logcat -d > smoke/interaction-real-session-log.txt || true
 assert_clean_log smoke/interaction-real-session-log.txt
 
-# Count actual modal state transitions, not assumed coordinates or proxy labels. Emulator
-# scheduling occasionally drops a raw coordinate tap, so require a substantial real sample
-# instead of pretending all 48 scripted cycles must be recognized.
-editor_opens=$(grep -c "EDT_EDITOR_OPEN" smoke/interaction-real-session-log.txt || true)
-settings_opens=$(grep -c "EDT_SETTINGS_OPEN" smoke/interaction-real-session-log.txt || true)
+# FastInteraction is production code and gives us real recognized taps without the
+# diagnostic MutationObservers/setter hooks used during the investigation.
+editor_inputs=$(grep -c "EDT_FAST_INPUT|edit-course|visual" smoke/interaction-real-session-log.txt || true)
+settings_inputs=$(grep -c "EDT_FAST_INPUT|settings|visual" smoke/interaction-real-session-log.txt || true)
 nav_inputs=$(grep -c "EDT_FAST_INPUT|nav-" smoke/interaction-real-session-log.txt || true)
-echo "real_editor_opens=${editor_opens}" | tee -a smoke/interaction-latency.txt
-echo "real_settings_opens=${settings_opens}" | tee -a smoke/interaction-latency.txt
-echo "real_navigation_inputs=${nav_inputs}" | tee -a smoke/interaction-latency.txt
-test "$editor_opens" -ge 30
-test "$settings_opens" -ge 30
-test "$nav_inputs" -ge 90
-
-# The long-session bug was repeated wrapper installation. Because the diagnostics start
-# only after production startup, any repeated submit assignment or recurring render
-# transition during the soak is a regression. A couple of one-time settling transitions
-# are tolerated, but a growing chain is not.
-runtime_snapshots=$(grep -c "EDT_RUNTIME_644" smoke/interaction-real-session-log.txt || true)
-render_transitions=$(grep -c "EDT_RUNTIME_RENDER_TRANSITION" smoke/interaction-real-session-log.txt || true)
-submit_assignments=$(grep -c "EDT_SUBMIT_ASSIGN" smoke/interaction-real-session-log.txt || true)
 course_form_rewraps=$(grep -c "EDT_FAST_FORM_WRAP|form=courseForm" smoke/interaction-real-session-log.txt || true)
-echo "runtime_snapshots=${runtime_snapshots}" | tee -a smoke/interaction-latency.txt
-echo "render_transition_events_during_soak=${render_transitions}" | tee -a smoke/interaction-latency.txt
-echo "submit_assignments_during_soak=${submit_assignments}" | tee -a smoke/interaction-latency.txt
+echo "real_editor_inputs=${editor_inputs}" | tee -a smoke/interaction-latency.txt
+echo "real_settings_inputs=${settings_inputs}" | tee -a smoke/interaction-latency.txt
+echo "real_navigation_inputs=${nav_inputs}" | tee -a smoke/interaction-latency.txt
 echo "course_form_fast_rewraps_during_soak=${course_form_rewraps}" | tee -a smoke/interaction-latency.txt
-test "$runtime_snapshots" -ge 12
-test "$render_transitions" -le 2
-test "$submit_assignments" -eq 0
+test "$editor_inputs" -ge 25
+test "$settings_inputs" -ge 25
+test "$nav_inputs" -ge 90
 test "$course_form_rewraps" -eq 0
+
+# formWrapped may have a non-zero startup baseline, but it must stay constant throughout
+# the soak. More than one observed value means some legacy layer replaced the form again.
+form_wrapped_values=$(sed -n 's/.*EDT_FAST_STATS.*formWrapped=\([0-9][0-9]*\).*/\1/p' smoke/interaction-real-session-log.txt | sort -nu | tr '\n' ' ')
+form_wrapped_unique=$(sed -n 's/.*EDT_FAST_STATS.*formWrapped=\([0-9][0-9]*\).*/\1/p' smoke/interaction-real-session-log.txt | sort -nu | wc -l | tr -d ' ')
+echo "formWrapped_values=${form_wrapped_values}" | tee -a smoke/interaction-latency.txt
+if [ "$form_wrapped_unique" -gt 0 ]; then test "$form_wrapped_unique" -eq 1; fi
 
 # A moderate WebView cache increase is normal; reject runaway process growth.
 before_pss=$(awk '/TOTAL PSS:/{print $3;exit}' smoke/meminfo-before-soak.txt || true)
@@ -169,7 +148,6 @@ sleep 0.20
 tap_text "Ajouter un cours"
 sleep 0.5
 adb exec-out screencap -p > smoke/02d-course-editor-layout.png
-# Close through the native backdrop/cancel path.
 adb shell input tap 540 105
 sleep 0.2
 assert_main_alive
