@@ -34,18 +34,35 @@ chmod +x /tmp/run_smoke_645_base.sh
 bash /tmp/run_smoke_645_base.sh
 
 # Dedicated 6.45 regression for the actual reported failure: keep the same WebView alive
-# and change Today / Week / Edit hundreds of times. The 6.44 suite deliberately finishes
-# with the Add-course modal open, so dismiss that modal before trying to hit the bottom
-# navigation. Without this, the modal backdrop consumes all 450 taps and the stress test
-# measures nothing.
+# and change Today / Week / Edit hundreds of times. The inherited suite can finish while
+# the WebView is reinjecting its UI, so wait for a real navigation tap to be recognized
+# before starting the preflight and the measured 450-switch stress phase.
 adb shell input keyevent KEYCODE_BACK
 sleep 0.35
+adb logcat -c
 adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode edit >/dev/null
-sleep 0.5
 
-# Preflight the exact three coordinates before starting the long run. This turns a stale
-# overlay or layout-coordinate regression into an immediate diagnostic failure rather than
-# wasting a full 450-tap run and reporting zero samples at the end.
+nav_ready=0
+for i in $(seq 1 60); do
+  adb shell input tap 880 1810
+  sleep 0.20
+  if adb logcat -d | grep -q "EDT_NAV_INPUT|"; then
+    nav_ready=1
+    break
+  fi
+  sleep 0.20
+done
+if [ "$nav_ready" -ne 1 ]; then
+  adb logcat -d > smoke/tab-stress-readiness-log.txt || true
+  adb exec-out screencap -p > smoke/20-tab-stress-readiness-failure.png || true
+  echo "6.45 navigation did not become interactive after relaunch" >&2
+  exit 1
+fi
+sleep 0.35
+
+# Preflight the exact three coordinates only after the UI is demonstrably interactive.
+# This turns a stale overlay/layout regression into an immediate diagnostic failure while
+# preventing WebView reinjection time from being mistaken for a navigation failure.
 adb logcat -c
 adb shell input tap 165 1810
 sleep 0.15
