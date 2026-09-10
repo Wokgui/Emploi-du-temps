@@ -68,29 +68,28 @@ final class UiRuntimeBundle {
     /** Applies compatibility repairs and aligns version labels to every independent layer. */
     static String prepareChunk(String script) {
         script = repairGeneratedJavaScript(script);
-        return script.replace("APP_VERSION='6.31'", "APP_VERSION='6.43'")
-                     .replace("APP_VERSION='6.32'", "APP_VERSION='6.43'")
-                     .replace("APP_VERSION='6.33'", "APP_VERSION='6.43'")
-                     .replace("APP_VERSION='6.34'", "APP_VERSION='6.43'")
-                     .replace("APP_VERSION='6.35'", "APP_VERSION='6.43'")
-                     .replace("APP_VERSION='6.36'", "APP_VERSION='6.43'")
-                     .replace("APP_VERSION='6.37'", "APP_VERSION='6.43'")
-                     .replace("APP_VERSION='6.38'", "APP_VERSION='6.43'")
-                     .replace("APP_VERSION='6.39'", "APP_VERSION='6.43'")
-                     .replace("APP_VERSION='6.40'", "APP_VERSION='6.43'")
-                     .replace("APP_VERSION='6.41'", "APP_VERSION='6.43'")
-                     .replace("APP_VERSION='6.42'", "APP_VERSION='6.43'");
+        return script.replace("APP_VERSION='6.31'", "APP_VERSION='6.44'")
+                     .replace("APP_VERSION='6.32'", "APP_VERSION='6.44'")
+                     .replace("APP_VERSION='6.33'", "APP_VERSION='6.44'")
+                     .replace("APP_VERSION='6.34'", "APP_VERSION='6.44'")
+                     .replace("APP_VERSION='6.35'", "APP_VERSION='6.44'")
+                     .replace("APP_VERSION='6.36'", "APP_VERSION='6.44'")
+                     .replace("APP_VERSION='6.37'", "APP_VERSION='6.44'")
+                     .replace("APP_VERSION='6.38'", "APP_VERSION='6.44'")
+                     .replace("APP_VERSION='6.39'", "APP_VERSION='6.44'")
+                     .replace("APP_VERSION='6.40'", "APP_VERSION='6.44'")
+                     .replace("APP_VERSION='6.41'", "APP_VERSION='6.44'")
+                     .replace("APP_VERSION='6.42'", "APP_VERSION='6.44'")
+                     .replace("APP_VERSION='6.43'", "APP_VERSION='6.44'");
     }
 
     /**
-     * Repairs escapes and legacy DOM assumptions before the scripts reach the
-     * WebView. Keeping compatibility repairs in one place lets the old UI layers
-     * be progressively consolidated without shipping invalid JavaScript.
-     *
-     * 6.43 also removes redundant long-session background work. Three generations
-     * of the week painter used to keep independent timers alive, while several
-     * observers watched whole subtrees even though the render functions already
-     * request the same refreshes. The newest week painter remains authoritative.
+     * Repairs escapes and legacy DOM assumptions before the scripts reach the WebView.
+     * 6.44 also fixes the real long-session failure mode: older compatibility layers
+     * repeatedly wrapped the same render/submit functions from their refresh methods.
+     * Once another layer became the outer wrapper, the older marker was no longer
+     * visible and another wrapper was added. Real settings/editor use therefore grew
+     * call chains even though simple navigation stress stayed fast.
      */
     private static String repairGeneratedJavaScript(String script) {
         script = script.replace("l'application", "l\\'application");
@@ -113,27 +112,77 @@ final class UiRuntimeBundle {
                 "if(languageBox&&appBox&&languageBox.nextElementSibling!==appBox)sheet.insertBefore(languageBox,appBox);",
                 "if(languageBox&&appBox&&languageBox.parentNode===sheet&&appBox.parentNode===sheet&&languageBox.nextElementSibling!==appBox)sheet.insertBefore(languageBox,appBox);");
 
-        // FinalPolish and Stability69 are older week painters. Keeping their timers
-        // alive alongside Stability70 causes needless DOM scans for the whole session.
+        // Keep one authoritative minute clock instead of four independent legacy timers.
         script = script.replace(
                 "setInterval(paintWeek,15000);",
-                "/* EDT 6.43: Stability70 owns periodic week repainting. */");
+                "/* EDT 6.44: legacy FinalPolish clock removed. */");
         script = script.replace(
                 "setInterval(()=>{if(typeof mode!=='undefined'&&mode==='week')paintWeek69()},30000);",
-                "/* EDT 6.43: legacy Stability69 periodic repaint removed. */");
+                "/* EDT 6.44: legacy Stability69 clock removed. */");
         script = script.replace(
                 "setInterval(()=>{if(typeof mode!=='undefined'&&mode==='week')paintWeek70()},30000);",
                 "if(!window.__edtWeekClockTimer){window.__edtWeekClockTimer=setInterval(()=>{if(!document.hidden&&typeof mode!=='undefined'&&mode==='week')paintWeek70()},60000)}");
+        script = script.replace(
+                "setInterval(updateNowMarkers,60000);",
+                "/* EDT 6.44: Stability70 owns the minute clock. */");
+        script = script.replace(
+                "setInterval(()=>setTimeout(polishWeekNowMarker,45),60000);",
+                "/* EDT 6.44: Stability70 owns the minute clock. */");
+        script = script.replace(
+                "setInterval(()=>{if(window.paintWeek69)window.paintWeek69()},30000);",
+                "/* EDT 6.44: legacy WeekGeometry clock removed. */");
 
-        // These roots are rebuilt at their first level. Watching every descendant
-        // multiplies callbacks when a render adds several nested labels and controls.
+        // FineTune: install its form submit wrapper once. Calling refreshFineTuneUi no
+        // longer adds the same wrapper again after later form wrappers become outermost.
+        script = script.replace(
+                "function refresh(){\n                  applySpecialCss();renderSpecialControls();ensureFullCoursePicker();wrapCourseSubmit();bindSyncToggle();repaintLiteralCourses();\n                }\n                window.refreshFineTuneUi=refresh;",
+                "function refresh(){\n                  applySpecialCss();renderSpecialControls();ensureFullCoursePicker();bindSyncToggle();repaintLiteralCourses();\n                }\n                wrapCourseSubmit();window.refreshFineTuneUi=refresh;");
+
+        // Stability69: its renderWeek hook is structural and must be installed once,
+        // not every time another stability layer asks it to refresh.
+        script = script.replace(
+                "function refresh(){ensureCycleChoices();syncCycleDom(currentMode());wrapWeekRender();paintWeek69();setVersion()}\n                window.refreshStability69=refresh;",
+                "function refresh(){ensureCycleChoices();syncCycleDom(currentMode());paintWeek69();setVersion()}\n                wrapWeekRender();window.refreshStability69=refresh;");
+
+        // Stability70 was the largest multiplier: refresh() used to revisit five hooks.
+        script = script.replace(
+                "function refresh(){installWrappers();syncCycleUi();polishSettings();applyBreakVisibility();paintWeek70()}\n                window.refreshStability70=refresh;",
+                "function refresh(){syncCycleUi();polishSettings();applyBreakVisibility();paintWeek70()}\n                installWrappers();window.refreshStability70=refresh;");
+
+        // Lunch/badge renderer: initial override is required, but doing it from every
+        // refresh discards later wrappers and starts a new wrapping cycle.
+        script = script.replace(
+                "try{\n                    bindOverrides();wireBreakSettings();ensureCourseBadgeField();wrapCourseSubmit();\n                    syncBreakCells();fitBreakLabels();decorateCourseBadges();if(window.refreshCourseColors)window.refreshCourseColors();polishWeekNowMarker();",
+                "try{\n                    wireBreakSettings();ensureCourseBadgeField();\n                    syncBreakCells();fitBreakLabels();decorateCourseBadges();if(window.refreshCourseColors)window.refreshCourseColors();polishWeekNowMarker();");
+        script = script.replace(
+                "if(modal)new MutationObserver(()=>{if(modal.classList.contains('show'))setTimeout(()=>{syncCourseBadgeField();wrapCourseSubmit()},0)}).observe(modal,{attributes:true,attributeFilter:['class']});",
+                "if(modal)new MutationObserver(()=>{if(modal.classList.contains('show'))setTimeout(()=>{syncCourseBadgeField()},0)}).observe(modal,{attributes:true,attributeFilter:['class']});");
+
+        // Widget-label submit hook is also permanent once installed. Modal openings only
+        // need to refill the field, not wrap onsubmit again.
+        script = script.replace(
+                "new MutationObserver(()=>{if(modal.classList.contains('show'))setTimeout(()=>{fillCourseWidgetField();wrapCourseSubmit()},0)}).observe(modal,{attributes:true,attributeFilter:['class']});",
+                "new MutationObserver(()=>{if(modal.classList.contains('show'))setTimeout(()=>{fillCourseWidgetField()},0)}).observe(modal,{attributes:true,attributeFilter:['class']});");
+
+        // Weekend wrappers execute after all legacy render overrides have been loaded.
+        // refreshWeekendUi itself becomes data/DOM-only, so it cannot grow call chains.
+        script = script.replace(
+                "wrapTodayKey();wrapExport();wrapDayTabs();wrapRenderEdit();wrapRenderWeek();wrapSettingsRefresh();\n                    decorateDayTabs();updateRemoveButton();updateWeekGridGeometry();",
+                "decorateDayTabs();updateRemoveButton();updateWeekGridGeometry();");
+        script = script.replace(
+                "window.refreshWeekendUi=refresh;\n                refresh();",
+                "window.refreshWeekendUi=refresh;\n                refresh();\n                window.__edtInstallWeekendWrappers=function(){if(window.__edtWeekendWrappersInstalled)return;window.__edtWeekendWrappersInstalled=true;wrapTodayKey();wrapExport();wrapDayTabs();wrapRenderEdit();wrapRenderWeek();wrapSettingsRefresh()};");
+
+        // Root-level mutation is enough for lists that are recreated by render functions.
         script = script.replace(
                 "['weekGrid','todayList','editList'].forEach(id=>{const el=document.getElementById(id);if(el)new MutationObserver(scheduleLiteral84).observe(el,{childList:true,subtree:true})});",
                 "['weekGrid','todayList','editList'].forEach(id=>{const el=document.getElementById(id);if(el)new MutationObserver(scheduleLiteral84).observe(el,{childList:true,subtree:false})});");
+        script = script.replace(
+                "for(const id of ['todayList','weekGrid','editList']){const el=document.getElementById(id);if(el)new MutationObserver(()=>setTimeout(()=>{syncBreakCells();decorateCourseBadges();fitBreakLabels()},0)).observe(el,{childList:true,subtree:true})}",
+                "for(const id of ['todayList','weekGrid','editList']){const el=document.getElementById(id);if(el)new MutationObserver(()=>setTimeout(()=>{syncBreakCells();decorateCourseBadges();fitBreakLabels()},0)).observe(el,{childList:true,subtree:false})}");
 
-        // Stability71 already wraps the render/refresh entry points, so descendant
-        // mutations do not need to recursively schedule another refresh. Context is
-        // included explicitly so narrowing the observers does not lose that update.
+        // Stability71 already wraps render/refresh entry points; descendant mutations do
+        // not need recursively to schedule the same work.
         script = script.replace(
                 "['renderEdit','refreshSettingsV3','refreshAdvancedFeatures','refreshFineTuneUi','refreshStability70','refreshWeekendUi'].forEach(wrap);",
                 "['renderContext','renderEdit','refreshSettingsV3','refreshAdvancedFeatures','refreshFineTuneUi','refreshStability70','refreshWeekendUi'].forEach(wrap);");
@@ -141,11 +190,16 @@ final class UiRuntimeBundle {
                 "new MutationObserver(()=>scheduleRefresh()).observe(root,{childList:true,subtree:true});",
                 "new MutationObserver(()=>scheduleRefresh()).observe(root,{childList:true,subtree:false});");
 
-        // SettingsLayout only needs to notice top-level setting sections being added.
-        // Nested changes are already handled by explicit settings refresh functions.
+        // SettingsLayout only needs top-level setting sections being added.
         script = script.replace(
                 "new MutationObserver(schedule).observe(sheet,{childList:true,subtree:true});",
                 "new MutationObserver(schedule).observe(sheet,{childList:true,subtree:false});");
+
+        // When school-holiday integration is disabled, do not show the explanatory
+        // sentence requested for removal. The enabled state keeps its useful count.
+        script = script.replace(
+                "):tx('Active cette option pour que l’application et le widget ignorent automatiquement les vacances scolaires.','Enable this so the app and widget automatically skip school holidays.','Aktivieren, damit App und Widget Schulferien automatisch überspringen.')}\n",
+                "):''}\n");
         return script;
     }
 }
