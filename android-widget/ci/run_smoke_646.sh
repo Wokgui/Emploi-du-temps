@@ -19,6 +19,23 @@ tap_xy() {
   adb shell input tap "$1" "$2"
 }
 
+tap_and_wait_nav() {
+  local target="$1"
+  local x="$2"
+  local before after
+  before=$(adb logcat -d | grep -c "EDT_NAV_INPUT|${target}|" || true)
+  adb shell input tap "$x" 1810
+  for _ in $(seq 1 30); do
+    sleep 0.10
+    after=$(adb logcat -d | grep -c "EDT_NAV_INPUT|${target}|" || true)
+    if [ "$after" -gt "$before" ]; then
+      return 0
+    fi
+  done
+  echo "6.46 preflight navigation acknowledgement timed out: ${target}" >&2
+  return 1
+}
+
 # After a very long WebView session UIAutomator can collapse the WebView to one accessibility
 # node even though every control is still visible and tappable. Run #605 proved exactly that:
 # the screenshot showed Semaine A, but uiautomator returned only the root WebView. The Pixel 2
@@ -40,14 +57,16 @@ done
 assert_alive
 
 # Physical preflight: prove the exact coordinates respond before measuring the long phase.
+# Navigation uses acknowledgement instead of fixed sleeps: run #606 showed that the final
+# Edit event could arrive just after logcat was sampled even though the tap was executed.
 adb logcat -c
 tap_xy "$week_a"; sleep 0.10
 tap_xy "$week_b"; sleep 0.10
 tap_xy "$day_lun"; sleep 0.10
 tap_xy "$day_jeu"; sleep 0.10
-adb shell input tap 165 1810; sleep 0.08
-adb shell input tap 540 1810; sleep 0.08
-adb shell input tap 880 1810; sleep 0.10
+tap_and_wait_nav today 165
+tap_and_wait_nav week 540
+tap_and_wait_nav edit 880
 assert_alive
 adb logcat -d > smoke/all-controls-preflight-log.txt || true
 for needle in "EDT_FAST_INPUT|week-" "EDT_FAST_INPUT|day-" "EDT_NAV_INPUT|today" "EDT_NAV_INPUT|week" "EDT_NAV_INPUT|edit"; do
