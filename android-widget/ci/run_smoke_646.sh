@@ -46,6 +46,7 @@ week_b="803 369"
 current_week="540 281"
 day_lun="131 834"
 day_jeu="493 834"
+current_week_choice_a="540 345"
 
 # Restore Edit and its top scroll position after the 450-tab stress.
 adb shell input tap 880 1810
@@ -92,14 +93,19 @@ for i in $(seq 1 120); do
   adb shell input tap 540 1810; sleep 0.025
   adb shell input tap 880 1810; sleep 0.035
 
+  # Open and close Settings with the same proven close coordinate as the inherited soak.
+  # Run #607 used 862,210, which could leave the modal open and divert later taps.
   if [ $((i % 2)) -eq 0 ]; then
-    adb shell input tap 1010 145; sleep 0.08
-    adb shell input tap 862 210; sleep 0.08
+    adb shell input tap 1010 145; sleep 0.10
+    adb shell input tap 1000 245; sleep 0.10
   fi
 
   # This action intentionally changes persisted state and is allowed to invalidate views.
+  # Always select A immediately so the week chooser cannot remain over the app and intercept
+  # the following cycles. Run #607 ended with this chooser visibly open.
   if [ $((i % 10)) -eq 0 ]; then
-    tap_xy "$current_week"; sleep 0.12
+    tap_xy "$current_week"; sleep 0.10
+    tap_xy "$current_week_choice_a"; sleep 0.12
   fi
 done
 sleep 4
@@ -123,7 +129,9 @@ echo "all_controls_nav_inputs=${nav_inputs}" | tee -a smoke/interaction-latency.
 echo "all_controls_fast_stats=${fast_stats}" | tee -a smoke/interaction-latency.txt
 test "$fast_inputs" -ge 500
 test "$nav_inputs" -ge 330
-test "$fast_stats" -ge 10
+# FastInteraction emits one runtime invariant sample every 100 delegated clicks. With at
+# least 500 non-navigation inputs in this phase, five samples are the strict mathematical floor.
+test "$fast_stats" -ge 5
 
 # Every major family exercised in this post-soak phase must still use the single delegated router.
 for needle in \
