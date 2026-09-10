@@ -103,9 +103,24 @@ final class Polish644Ui {
                 }
 
                 // Freeze the final wrapper order once all legacy layers have loaded.
-                // Weekend is installed first; FinalPolish then becomes outermost. Later
-                // refreshes therefore see their own markers and cannot grow the chain.
+                // FinalPolish already exists inside the chain from its startup pass. Mark
+                // the current outer functions before every later refresh so its legacy
+                // refresh() cannot wrap renderWeek/renderSlots again when another wrapper
+                // hides the original __finalPolish marker.
+                const markFinalPolishTargets=function(){
+                  ['render','renderWeek','renderSlots','fillSlotOptions'].forEach(function(name){
+                    try{if(typeof window[name]==='function')window[name].__finalPolish=true}catch(ignore){}
+                  });
+                };
+                if(typeof window.refreshFinalPolish==='function'&&!window.refreshFinalPolish.__stable644){
+                  const oldFinalRefresh=window.refreshFinalPolish;
+                  const stableFinalRefresh=function(){markFinalPolishTargets();return oldFinalRefresh.apply(this,arguments)};
+                  stableFinalRefresh.__stable644=true;
+                  window.refreshFinalPolish=stableFinalRefresh;
+                }
+
                 if(window.__edtInstallWeekendWrappers)window.__edtInstallWeekendWrappers();
+                markFinalPolishTargets();
                 if(window.refreshFinalPolish)window.refreshFinalPolish();
               }catch(e){console.log('Polish644Ui',e)}
             })();
