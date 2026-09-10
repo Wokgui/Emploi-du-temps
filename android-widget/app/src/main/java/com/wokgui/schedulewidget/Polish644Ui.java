@@ -102,9 +102,11 @@ final class Polish644Ui {
                   document.head.appendChild(style);
                 }
 
-                // Weekend hooks are deliberately installed only now, after all legacy
-                // layers that replace render functions have finished loading.
+                // Freeze the final wrapper order once all legacy layers have loaded.
+                // Weekend is installed first; FinalPolish then becomes outermost. Later
+                // refreshes therefore see their own markers and cannot grow the chain.
                 if(window.__edtInstallWeekendWrappers)window.__edtInstallWeekendWrappers();
+                if(window.refreshFinalPolish)window.refreshFinalPolish();
               }catch(e){console.log('Polish644Ui',e)}
             })();
             """;
