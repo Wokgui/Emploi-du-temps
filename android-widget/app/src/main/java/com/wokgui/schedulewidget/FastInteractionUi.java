@@ -13,7 +13,7 @@ final class FastInteractionUi {
                   return;
                 }
 
-                const state={tokens:Object.create(null),scheduled:0,executed:0,cancelled:0,wrapped:0,formWrapped:0,patchTrees:0,pointerPatches:0};
+                const state={tokens:Object.create(null),scheduled:0,executed:0,cancelled:0,wrapped:0,formWrapped:0,patchTrees:0,pointerPatches:0,rewrapSkipped:0};
 
                 function afterPaint(key,fn){
                   const token=key?((state.tokens[key]||0)+1):0;
@@ -51,7 +51,6 @@ final class FastInteractionUi {
 
                 function groupFor(el){
                   if(!el||!el.classList)return '';
-                  if(el.classList.contains('nav'))return 'navigation';
                   if(el.classList.contains('weekTab')||el.id==='currentWeekBtn')return 'week-selection';
                   if(el.classList.contains('dayTab'))return 'day-selection';
                   return '';
@@ -66,7 +65,6 @@ final class FastInteractionUi {
                 function visualFor(el){
                   if(!el)return null;
                   if(el.id==='settingsBtn')return function(){var m=document.getElementById('settingsModal');if(m)m.classList.add('show')};
-                  if(el.classList&&el.classList.contains('nav')&&el.dataset.mode)return function(){activeView(el.dataset.mode)};
                   if(el.classList&&el.classList.contains('weekTab')&&el.dataset.week)return function(){
                     document.querySelectorAll('.weekTab').forEach(function(x){x.classList.toggle('active',x===el)});
                     var l=document.getElementById('weekTitleLetter');if(l)l.textContent=el.dataset.week;
@@ -78,7 +76,15 @@ final class FastInteractionUi {
                 }
 
                 function heavyClick(el){
-                  if(!el||typeof el.onclick!=='function'||el.onclick.__edtFastProxy)return false;
+                  if(!el||typeof el.onclick!=='function')return false;
+                  // Bottom navigation is owned by NavigationPerformanceUi. Never put a
+                  // second deferred wrapper around it.
+                  if(el.classList&&el.classList.contains('nav'))return false;
+                  if(el.onclick.__edtFastProxy){el.__edtFastWrappedOnce=true;return false}
+                  // Several legacy layers replace onclick on persistent controls while
+                  // rendering. Re-wrapping the same DOM node each time recreates the
+                  // long-session slowdown. A control gets at most one FastInteraction proxy.
+                  if(el.__edtFastWrappedOnce){state.rewrapSkipped++;return false}
                   const old=el.onclick,group=groupFor(el),visual=visualFor(el);
                   const proxy=function(e){
                     flash(el);
@@ -95,6 +101,7 @@ final class FastInteractionUi {
                   proxy.__edtFastProxy=true;
                   proxy.__edtFastOriginal=old;
                   el.onclick=proxy;
+                  el.__edtFastWrappedOnce=true;
                   state.wrapped++;
                   return true;
                 }
@@ -150,7 +157,7 @@ final class FastInteractionUi {
 
                 function maybeStats(){
                   if(state.scheduled>0&&state.scheduled%12===0){
-                    console.log('EDT_FAST_STATS|scheduled='+state.scheduled+'|executed='+state.executed+'|cancelled='+state.cancelled+'|wrapped='+state.wrapped+'|formWrapped='+state.formWrapped+'|patchTrees='+state.patchTrees+'|pointerPatches='+state.pointerPatches);
+                    console.log('EDT_FAST_STATS|scheduled='+state.scheduled+'|executed='+state.executed+'|cancelled='+state.cancelled+'|wrapped='+state.wrapped+'|formWrapped='+state.formWrapped+'|patchTrees='+state.patchTrees+'|pointerPatches='+state.pointerPatches+'|rewrapSkipped='+state.rewrapSkipped);
                   }
                 }
 

@@ -9,7 +9,7 @@ final class ChunkedUiScripts {
     private ChunkedUiScripts() {}
 
     static String[] all() {
-        List<String> out = new ArrayList<>(45);
+        List<String> out = new ArrayList<>(46);
         add(out, UiRuntimeBundle.domSafetyPrelude());
         addLayers(out, BaseSettingsUi.class, 1);
         // Install paint-first tap handling before the expensive compatibility layers.
@@ -29,6 +29,9 @@ final class ChunkedUiScripts {
         add(out, Polish644Ui.script());
         // Later layers rebuild controls; refresh the fast handlers once at the end.
         add(out, FastInteractionUi.script());
+        // Bottom navigation must be installed last: it reuses already-rendered views and
+        // prevents repeated Today/Week/Edit switches from rebuilding the whole DOM.
+        add(out, NavigationPerformanceUi.script());
         // OCR parsing/review no longer blocks normal startup or navigation.
         add(out, UiRuntimeBundle.idleImportScript());
         return out.toArray(new String[0]);
