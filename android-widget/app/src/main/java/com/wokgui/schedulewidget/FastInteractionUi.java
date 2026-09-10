@@ -72,6 +72,9 @@ final class FastInteractionUi {
                 function logSettle(kind,label,n,started){
                   const elapsed=Math.round(performance.now()-started);
                   if(n<=6||n%20===0)console.log('EDT_FAST_SETTLE|kind='+kind+'|label='+label+'|n='+n+'|ms='+elapsed);
+                  if(kind==='click'&&n%100===0){
+                    console.log('EDT_FAST_STATS|clicks='+state.clicks+'|submits='+state.submits+'|scheduled='+state.scheduled+'|executed='+state.executed+'|cancelled='+state.cancelled+'|routers=1|wrappers=0');
+                  }
                 }
 
                 if(!document.getElementById('edtFastInteractionStyle')){
