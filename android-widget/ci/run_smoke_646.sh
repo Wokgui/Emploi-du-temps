@@ -14,7 +14,7 @@ assert_alive() {
   test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
 }
 
-# Resolve a visible WebView control once, then reuse its physical location during the stress.
+# Resolve a WebView control from the current accessibility tree.
 coord_for() {
   local needle="$1"
   adb shell uiautomator dump /sdcard/edt-646.xml >/dev/null 2>&1 || true
@@ -40,32 +40,88 @@ tap_xy() {
   adb shell input tap "$1" "$2"
 }
 
+require_coord() {
+  local needle="$1"
+  local out
+  out="$(coord_for "$needle")"
+  if [ -z "$out" ]; then
+    echo "6.46 harness could not resolve control: $needle" >&2
+    adb exec-out screencap -p > "smoke/646-missing-${needle// /-}.png" || true
+    return 1
+  fi
+  printf '%s\n' "$out"
+}
+
+# The fixed bottom navigation covers roughly the last 130 px of the WebView. UIAutomator can
+# still report a DOM node behind it, so only treat a control as physically tappable above y=1700.
+scroll_until_tappable() {
+  local needle="$1"
+  local coord y
+  for _ in $(seq 1 5); do
+    coord="$(coord_for "$needle")"
+    if [ -n "$coord" ]; then
+      set -- $coord
+      y="$2"
+      if [ "$y" -lt 1700 ] && [ "$y" -gt 170 ]; then
+        printf '%s\n' "$coord"
+        return 0
+      fi
+    fi
+    adb shell input swipe 540 1650 540 900 220
+    sleep 0.12
+  done
+  echo "6.46 harness could not expose control above fixed navigation: $needle" >&2
+  adb exec-out screencap -p > "smoke/646-obscured-${needle// /-}.png" || true
+  return 1
+}
+
+scroll_edit_to_top() {
+  for _ in $(seq 1 3); do
+    adb shell input swipe 540 900 540 1650 180
+    sleep 0.08
+  done
+}
+
+resolve_top_controls() {
+  week_a="$(require_coord 'Semaine A')"
+  week_b="$(require_coord 'Semaine B')"
+  day_lun="$(require_coord 'Lun')"
+  day_jeu="$(require_coord 'Jeu')"
+  current_week="$(require_coord 'Cette semaine')"
+}
+
+exercise_add_cancel() {
+  local add cancel
+  adb shell input tap 880 1810
+  sleep 0.05
+  add="$(scroll_until_tappable 'Ajouter un cours')"
+  tap_xy "$add"
+  sleep 0.12
+  cancel="$(require_coord 'Annuler')"
+  tap_xy "$cancel"
+  sleep 0.10
+  scroll_edit_to_top
+  sleep 0.10
+  # Rendering and scrolling can recreate/move the edit controls; never reuse stale coordinates.
+  resolve_top_controls
+}
+
 # Return to Edit in the same activity/WebView left alive by the 6.45 stress.
 adb shell input tap 880 1810
 sleep 0.4
 assert_alive
+scroll_edit_to_top
+resolve_top_controls
 
-week_a="$(coord_for 'Semaine A')"
-week_b="$(coord_for 'Semaine B')"
-day_lun="$(coord_for 'Lun')"
-day_jeu="$(coord_for 'Jeu')"
-current_week="$(coord_for 'Cette semaine')"
-add_course="$(coord_for 'Ajouter un cours')"
-for v in week_a week_b day_lun day_jeu current_week add_course; do
-  test -n "${!v}"
-done
-
-# Resolve Cancel once while the add-course sheet is open.
-tap_xy "$add_course"
-sleep 0.25
-cancel_edit="$(coord_for 'Annuler')"
-test -n "$cancel_edit"
-tap_xy "$cancel_edit"
-sleep 0.25
+# Physical preflight for the modal path that run #604 exposed as being hidden by bottom nav.
+echo "all_controls_phase=add_cancel_preflight" | tee -a smoke/interaction-latency.txt
+exercise_add_cancel
+assert_alive
 
 adb logcat -c
 adb shell dumpsys meminfo com.wokgui.schedulewidget > smoke/meminfo-before-all-controls.txt || true
 
+echo "all_controls_phase=stress_start" | tee -a smoke/interaction-latency.txt
 # Repeatedly exercise the major persistent and recreated control families. The purpose is
 # not just functional coverage: it proves dynamic DOM replacement cannot accumulate handlers.
 for i in $(seq 1 100); do
@@ -91,18 +147,18 @@ for i in $(seq 1 100); do
   # This action really changes persisted state and is allowed to invalidate/re-render views.
   if [ $((i % 10)) -eq 0 ]; then
     tap_xy "$current_week"; sleep 0.12
+    resolve_top_controls
   fi
 
-  # Modal controls are also rebuilt; exercise Add + Cancel without modifying timetable data.
+  # Modal controls are rebuilt and may be below the viewport. Scroll to the real physical
+  # button, exercise Add + Cancel, restore the top, then refresh every moved coordinate.
   if [ $((i % 5)) -eq 0 ]; then
-    adb shell input tap 880 1810; sleep 0.05
-    tap_xy "$day_jeu"; sleep 0.05
-    tap_xy "$add_course"; sleep 0.08
-    tap_xy "$cancel_edit"; sleep 0.08
+    exercise_add_cancel
   fi
 done
 sleep 4
 
+echo "all_controls_phase=stress_complete" | tee -a smoke/interaction-latency.txt
 assert_alive
 adb shell dumpsys meminfo com.wokgui.schedulewidget > smoke/meminfo-after-all-controls.txt || true
 adb logcat -d > smoke/all-controls-stress-log.txt || true
