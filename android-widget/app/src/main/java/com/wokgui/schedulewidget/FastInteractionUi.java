@@ -12,6 +12,7 @@ final class FastInteractionUi {
 
                 const state={tokens:Object.create(null),scheduled:0,executed:0,cancelled:0,clicks:0,submits:0};
                 const selector='button,.todayCourse,.editCourse,.wc';
+                let pointerHandled=null,pointerHandledAt=0;
 
                 function afterPaint(key,fn){
                   const token=key?((state.tokens[key]||0)+1):0;
@@ -90,12 +91,29 @@ final class FastInteractionUi {
                 document.addEventListener('pointerdown',function(e){
                   const el=controlFrom(e.target);if(!el)return;
                   flash(el);
-                  if(!(el.classList&&el.classList.contains('nav')))visualFor(el);
+                  if(el.classList&&el.classList.contains('nav'))return;
+                  visualFor(el);
+
+                  // Settings is special: showing its full-screen modal on pointer-down can
+                  // move the pointer-up target away from the gear button, so a browser click
+                  // is not guaranteed. Execute the existing action here exactly once while
+                  // preserving the immediate visual response.
+                  if(el.id==='settingsBtn'&&typeof el.onclick==='function'){
+                    const fn=el.onclick,n=++state.clicks,started=performance.now();
+                    pointerHandled=el;pointerHandledAt=started;
+                    console.log('EDT_FAST_INPUT|settings|visual|delegated');
+                    afterPaint('',function(){fn.call(el,e);logSettle('click','settings',n,started)});
+                  }
                 },{capture:true,passive:true});
 
                 document.addEventListener('click',function(e){
                   const el=controlFrom(e.target);if(!el)return;
                   if(el.classList&&el.classList.contains('nav'))return;
+                  if(el===pointerHandled&&performance.now()-pointerHandledAt<900){
+                    pointerHandled=null;
+                    try{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()}catch(ignore){}
+                    return;
+                  }
                   const fn=el.onclick;
                   if(typeof fn!=='function')return;
                   try{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()}catch(ignore){}
