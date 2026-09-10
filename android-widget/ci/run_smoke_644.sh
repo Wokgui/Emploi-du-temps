@@ -111,6 +111,17 @@ adb shell dumpsys meminfo com.wokgui.schedulewidget > smoke/meminfo-after-soak.t
 adb logcat -d > smoke/interaction-real-session-log.txt || true
 assert_clean_log smoke/interaction-real-session-log.txt
 
+# Prove this was a real editor/settings session rather than misplaced coordinate taps.
+editor_opens=$(grep -c "EDT_FAST_INPUT|edit-course|visual" smoke/interaction-real-session-log.txt || true)
+settings_opens=$(grep -c "EDT_FAST_INPUT|settings|visual" smoke/interaction-real-session-log.txt || true)
+nav_inputs=$(grep -c "EDT_FAST_INPUT|nav-" smoke/interaction-real-session-log.txt || true)
+echo "real_editor_opens=${editor_opens}" | tee -a smoke/interaction-latency.txt
+echo "real_settings_opens=${settings_opens}" | tee -a smoke/interaction-latency.txt
+echo "real_navigation_inputs=${nav_inputs}" | tee -a smoke/interaction-latency.txt
+test "$editor_opens" -ge 36
+test "$settings_opens" -ge 36
+test "$nav_inputs" -ge 100
+
 # Unlike the previous baseline comparison, these counters detect actual changes that
 # occurred DURING the soak. Repeated form rewrapping is the specific long-session bug.
 runtime_snapshots=$(grep -c "EDT_RUNTIME_644" smoke/interaction-real-session-log.txt || true)
