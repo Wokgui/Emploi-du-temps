@@ -53,6 +53,49 @@ measure_settings_latency() {
   test "$elapsed" -le 900
 }
 
+# Locate visible WebView controls by their accessibility text. If a control is lower in
+# a scrollable sheet, scroll a little and retry. This lets the regression exercise the
+# same editor buttons a real user touches instead of only fixed bottom-navigation taps.
+tap_text() {
+  local needle="$1"
+  for attempt in $(seq 1 5); do
+    adb shell uiautomator dump /sdcard/edt-ui.xml >/dev/null 2>&1 || true
+    adb pull /sdcard/edt-ui.xml smoke/edt-ui.xml >/dev/null 2>&1 || true
+    local coords=""
+    if [ -f smoke/edt-ui.xml ]; then
+      coords=$(python3 - "$needle" <<'PY'
+import re, sys, xml.etree.ElementTree as ET
+needle=sys.argv[1].casefold()
+try:
+    root=ET.parse('smoke/edt-ui.xml').getroot()
+except Exception:
+    sys.exit(0)
+for node in root.iter('node'):
+    hay=((node.attrib.get('text') or '')+' '+(node.attrib.get('content-desc') or '')).casefold()
+    if needle not in hay:
+        continue
+    m=re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]',node.attrib.get('bounds',''))
+    if not m:
+        continue
+    x1,y1,x2,y2=map(int,m.groups())
+    if x2>x1 and y2>y1:
+        print((x1+x2)//2,(y1+y2)//2)
+        break
+PY
+)
+    fi
+    if [ -n "$coords" ]; then
+      adb shell input tap $coords
+      return 0
+    fi
+    adb shell input swipe 540 1390 540 650 220
+    sleep 0.12
+  done
+  echo "Could not find visible control containing: $needle" >&2
+  adb exec-out screencap -p > "smoke/missing-control-${needle// /_}.png" || true
+  return 1
+}
+
 capture_main() {
   local label="$1"
   local mode="$2"
@@ -83,29 +126,24 @@ adb exec-out screencap -p > smoke/01-edit.png
 adb logcat -d > smoke/logcat-edit-full.txt || true
 assert_clean_log smoke/logcat-edit-full.txt
 
-# A tap must reach the paint-first handler promptly, before the heavy settings setup.
 : > smoke/interaction-latency.txt
 measure_settings_latency settings_visual
-sleep 1
-test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
+sleep 0.6
 adb exec-out screencap -p > smoke/02-settings.png
 
-# Close Settings before exercising the real bottom navigation.
+# Close Settings and retain the old navigation-only burst as a quick baseline.
 adb shell input tap 862 210
-sleep 0.4
-assert_main_alive
-
-# Short regression burst retained for quick diagnosis.
+sleep 0.3
 adb logcat -c
 for i in $(seq 1 12); do
   adb shell input tap 165 1810
-  sleep 0.06
+  sleep 0.05
   adb shell input tap 465 1810
-  sleep 0.06
+  sleep 0.05
   adb shell input tap 760 1810
-  sleep 0.06
+  sleep 0.05
 done
-sleep 1
+sleep 0.8
 assert_main_alive
 adb logcat -d > smoke/interaction-stress-log.txt || true
 stress_inputs=$(grep -c "EDT_FAST_INPUT|nav-" smoke/interaction-stress-log.txt || true)
@@ -113,39 +151,59 @@ echo "navigation_inputs_seen=${stress_inputs}" | tee -a smoke/interaction-latenc
 test "$stress_inputs" -ge 24
 assert_clean_log smoke/interaction-stress-log.txt
 measure_settings_latency settings_after_36_nav_taps
-sleep 0.5
-assert_main_alive
+sleep 0.3
 adb exec-out screencap -p > smoke/02b-settings-after-stress.png
-
-# 6.43 long-session regression. The previous test stopped after 36 navigation taps and
-# did not exercise the cumulative observer/render workload reported on a real phone.
-# Keep one WebView alive, close Settings, then perform 240 additional real navigation taps.
 adb shell input tap 862 210
-sleep 0.4
+sleep 0.3
+
+# 6.44 real-session regression. The former 276-tap test was misleading: it mostly
+# switched views and did not trigger the editor/settings refresh paths that used to
+# reinstall wrappers. Keep ONE WebView alive and repeatedly do what a real user does:
+# open/close the course editor, open/close Settings, and switch views in between.
+adb shell input tap 760 1810
+sleep 0.3
 adb logcat -c
-for i in $(seq 1 80); do
+for i in $(seq 1 18); do
+  tap_text "Ajouter un cours"
+  sleep 0.12
+  tap_text "Annuler"
+  sleep 0.12
+
+  adb shell input tap 1010 145
+  sleep 0.14
+  adb shell input tap 862 210
+  sleep 0.12
+
   adb shell input tap 165 1810
-  sleep 0.08
+  sleep 0.07
   adb shell input tap 465 1810
-  sleep 0.08
+  sleep 0.07
   adb shell input tap 760 1810
-  sleep 0.08
-  if [ $((i % 10)) -eq 0 ]; then
+  sleep 0.07
+
+  if [ $((i % 3)) -eq 0 ]; then
     assert_main_alive
-    sleep 0.4
+    sleep 0.25
   fi
 done
-sleep 2
+sleep 1
 assert_main_alive
-adb logcat -d > smoke/interaction-long-session-log.txt || true
-long_inputs=$(grep -c "EDT_FAST_INPUT|nav-" smoke/interaction-long-session-log.txt || true)
-echo "long_session_navigation_inputs_seen=${long_inputs}" | tee -a smoke/interaction-latency.txt
-test "$long_inputs" -ge 160
-assert_clean_log smoke/interaction-long-session-log.txt
-measure_settings_latency settings_after_276_nav_taps
-sleep 0.5
+adb logcat -d > smoke/interaction-real-session-log.txt || true
+assert_clean_log smoke/interaction-real-session-log.txt
+measure_settings_latency settings_after_real_editor_settings_session
+sleep 0.4
+adb exec-out screencap -p > smoke/02c-settings-after-real-session.png
+
+# Also validate the requested course-editor layout after the long interaction session.
+adb shell input tap 862 210
+sleep 0.25
+adb shell input tap 760 1810
+sleep 0.25
+tap_text "Ajouter un cours"
+sleep 0.4
+adb exec-out screencap -p > smoke/02d-course-editor-layout.png
+tap_text "Annuler"
 assert_main_alive
-adb exec-out screencap -p > smoke/02c-settings-after-long-session.png
 
 capture_main week week "" 03-week.png
 capture_main before today 2026-09-10T07:45:00 04-before.png
@@ -193,7 +251,7 @@ capture_widget() {
   sleep 4
   test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
   adb shell dumpsys activity activities > "smoke/activity-widget-${label}.txt" || true
-  grep -Fq "com.wokgui.schedulewidget/.WidgetPreviewActivity" "smoke/activity-widget-${label}.txt"
+  grep -Fq "com.wokgui.schedulewidget/.WidgetPreviewActivity" smoke/activity-widget-${label}.txt
   adb exec-out screencap -p > "smoke/${image}"
 }
 

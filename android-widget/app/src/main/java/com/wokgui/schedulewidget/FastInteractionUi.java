@@ -13,7 +13,7 @@ final class FastInteractionUi {
                   return;
                 }
 
-                const state={tokens:Object.create(null),scheduled:0,executed:0,cancelled:0,wrapped:0,patchTrees:0,pointerPatches:0};
+                const state={tokens:Object.create(null),scheduled:0,executed:0,cancelled:0,wrapped:0,formWrapped:0,patchTrees:0,pointerPatches:0};
 
                 function afterPaint(key,fn){
                   const token=key?((state.tokens[key]||0)+1):0;
@@ -43,6 +43,9 @@ final class FastInteractionUi {
                   if(el.classList&&el.classList.contains('nav'))return 'nav-'+(el.dataset.mode||'unknown');
                   if(el.classList&&el.classList.contains('weekTab'))return 'week-'+(el.dataset.week||'unknown');
                   if(el.classList&&el.classList.contains('dayTab'))return 'day-'+(el.dataset.day||el.textContent||'unknown');
+                  if(el.classList&&el.classList.contains('editCourse'))return 'edit-course';
+                  if(el.classList&&el.classList.contains('todayCourse'))return 'today-course';
+                  if(el.classList&&el.classList.contains('wc'))return 'week-cell';
                   return el.id||'control';
                 }
 
@@ -115,6 +118,8 @@ final class FastInteractionUi {
                   proxy.__edtFastOriginal=old;
                   form.onsubmit=proxy;
                   state.wrapped++;
+                  state.formWrapped++;
+                  console.log('EDT_FAST_FORM_WRAP|form='+(form.id||'form')+'|count='+state.formWrapped);
                   return true;
                 }
 
@@ -145,7 +150,7 @@ final class FastInteractionUi {
 
                 function maybeStats(){
                   if(state.scheduled>0&&state.scheduled%12===0){
-                    console.log('EDT_FAST_STATS|scheduled='+state.scheduled+'|executed='+state.executed+'|cancelled='+state.cancelled+'|wrapped='+state.wrapped+'|patchTrees='+state.patchTrees+'|pointerPatches='+state.pointerPatches);
+                    console.log('EDT_FAST_STATS|scheduled='+state.scheduled+'|executed='+state.executed+'|cancelled='+state.cancelled+'|wrapped='+state.wrapped+'|formWrapped='+state.formWrapped+'|patchTrees='+state.patchTrees+'|pointerPatches='+state.pointerPatches);
                   }
                 }
 
@@ -159,8 +164,7 @@ final class FastInteractionUi {
                   document.head.appendChild(style);
                 }
 
-                // No MutationObserver: it used to rescan the whole DOM after every render.
-                // New/dynamic controls are patched lazily on pointer-down, before click fires.
+                // No MutationObserver: new/dynamic controls are patched lazily on pointer-down.
                 document.addEventListener('pointerdown',function(e){patchTarget(e.target)},{capture:true,passive:true});
 
                 window.__edtFastInteractionV2={state:state,patchTree:patchTree,patchTarget:patchTarget};
