@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: android-widget-${{ github.ref_name }}-v7
+  group: android-widget-${{ github.ref_name }}-v8
   cancel-in-progress: true
 
 permissions:
@@ -96,7 +96,7 @@ jobs:
           emulator-boot-timeout: 240
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot -no-metrics
           disable-animations: true
-          script: bash android-widget/ci/run_smoke.sh
+          script: bash android-widget/ci/run_smoke_644.sh
       - name: Upload smoke-test captures
         if: always()
         uses: actions/upload-artifact@v4
