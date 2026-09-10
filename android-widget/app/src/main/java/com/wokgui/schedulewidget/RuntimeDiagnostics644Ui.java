@@ -18,9 +18,9 @@ final class RuntimeDiagnostics644Ui {
                   'refreshStability73','refreshStability74','refreshWeekendUi','refreshWorkflow85',
                   'refreshSettingsLayout'
                 ];
-                const baseline=Object.create(null);
-                names.forEach(n=>{if(typeof window[n]==='function')baseline[n]=window[n]});
-                let lastSubmit=null,submitTransitions=0,submitAssignments=0,clicks=0;
+                const lastFns=Object.create(null);
+                names.forEach(n=>{if(typeof window[n]==='function')lastFns[n]=window[n]});
+                let lastSubmit=null,submitTransitions=0,submitAssignments=0,renderTransitions=0,clicks=0;
                 let editorOpens=0,editorCloses=0,settingsOpens=0,settingsCloses=0;
                 const ids=new WeakMap();let nextId=1;
 
@@ -46,7 +46,14 @@ final class RuntimeDiagnostics644Ui {
                 }
                 function changedFunctions(){
                   const changed=[];
-                  names.forEach(n=>{if(baseline[n]&&window[n]!==baseline[n])changed.push(n)});
+                  names.forEach(n=>{
+                    if(typeof window[n]!=='function')return;
+                    if(lastFns[n]&&window[n]!==lastFns[n]){
+                      changed.push(n);
+                      renderTransitions++;
+                    }
+                    lastFns[n]=window[n];
+                  });
                   return changed;
                 }
                 function snapshot(reason){
@@ -60,10 +67,10 @@ final class RuntimeDiagnostics644Ui {
                   let changedSubmit=false;
                   if(lastSubmit&&submit&&submit!==lastSubmit){submitTransitions++;changedSubmit=true}
                   if(submit)lastSubmit=submit;
-                  console.log('EDT_RUNTIME_644|reason='+reason+'|nodes='+nodes+'|dupIds='+duplicateIds()+'|renderChanged='+changed.length+'|submitId='+submitId+'|submitChangedLast='+(changedSubmit?1:0)+'|submitTransitions='+submitTransitions+'|submitAssignments='+submitAssignments+'|submitMarkers='+markerFlags(submit)+'|fastWrapped='+wrapped+'|formWrapped='+formWrapped+'|editorOpens='+editorOpens+'|editorCloses='+editorCloses+'|settingsOpens='+settingsOpens+'|settingsCloses='+settingsCloses);
-                  if(changed.length)console.log('EDT_RUNTIME_RENDER_MUTATION|'+changed.join(','));
+                  console.log('EDT_RUNTIME_644|reason='+reason+'|nodes='+nodes+'|dupIds='+duplicateIds()+'|renderChanged='+changed.length+'|renderTransitions='+renderTransitions+'|submitId='+submitId+'|submitChangedLast='+(changedSubmit?1:0)+'|submitTransitions='+submitTransitions+'|submitAssignments='+submitAssignments+'|submitMarkers='+markerFlags(submit)+'|fastWrapped='+wrapped+'|formWrapped='+formWrapped+'|editorOpens='+editorOpens+'|editorCloses='+editorCloses+'|settingsOpens='+settingsOpens+'|settingsCloses='+settingsCloses);
+                  if(changed.length)console.log('EDT_RUNTIME_RENDER_TRANSITION|count='+renderTransitions+'|'+changed.join(','));
                   if(changedSubmit)console.log('EDT_RUNTIME_SUBMIT_TRANSITION|id='+submitId+'|markers='+markerFlags(submit));
-                  return {nodes:nodes,duplicates:duplicateIds(),renderChanged:changed,submitId:submitId,submitTransitions:submitTransitions,submitAssignments:submitAssignments,fastWrapped:wrapped,formWrapped:formWrapped,editorOpens:editorOpens,editorCloses:editorCloses,settingsOpens:settingsOpens,settingsCloses:settingsCloses};
+                  return {nodes:nodes,duplicates:duplicateIds(),renderChanged:changed,renderTransitions:renderTransitions,submitId:submitId,submitTransitions:submitTransitions,submitAssignments:submitAssignments,fastWrapped:wrapped,formWrapped:formWrapped,editorOpens:editorOpens,editorCloses:editorCloses,settingsOpens:settingsOpens,settingsCloses:settingsCloses};
                 }
 
                 // Trace every future assignment to the native DOM onsubmit property while
