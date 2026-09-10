@@ -22,73 +22,147 @@ assert_alive() {
   test -n "$(adb shell pidof com.wokgui.schedulewidget | tr -d '\r')"
 }
 
-tap_xy() {
-  set -- $1
+# Resolve a control from the accessibility tree captured at the exact current scroll/layout.
+# The stable regression suite already uses the same UIAutomator-bounds -> input-tap path for
+# real WebView controls. This avoids guessing pixel coordinates from a screenshot taken at a
+# different instant. `exact` matches the whole label; `prefix` is used for Cette semaine : X.
+resolve_control() {
+  local needle="$1"
+  local mode="${2:-exact}"
+  local slug
+  slug=$(printf '%s' "$needle" | tr ' /:' '____')
+  for attempt in $(seq 1 5); do
+    adb shell uiautomator dump /sdcard/edt-646-live.xml >/dev/null 2>&1 || true
+    adb pull /sdcard/edt-646-live.xml /tmp/edt-646-live.xml >/dev/null 2>&1 || true
+    local coords=""
+    coords=$(python3 - "$needle" "$mode" <<'PY'
+import re,sys,xml.etree.ElementTree as ET
+needle=sys.argv[1].replace('\u00a0',' ').strip().casefold()
+mode=sys.argv[2]
+try:
+    root=ET.parse('/tmp/edt-646-live.xml').getroot()
+except Exception:
+    raise SystemExit(0)
+for node in root.iter('node'):
+    text=(node.attrib.get('text') or '').replace('\u00a0',' ').strip()
+    desc=(node.attrib.get('content-desc') or '').replace('\u00a0',' ').strip()
+    candidates=[text,desc]
+    ok=any((v.casefold()==needle if mode=='exact' else v.casefold().startswith(needle)) for v in candidates if v)
+    if not ok:
+        continue
+    m=re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]',node.attrib.get('bounds',''))
+    if not m:
+        continue
+    x1,y1,x2,y2=map(int,m.groups())
+    if x2<=x1 or y2<=y1:
+        continue
+    # Prefer the actionable node itself. Chromium occasionally marks a child non-clickable;
+    # its bounds are still valid and this is the same fallback used by the inherited harness.
+    print((x1+x2)//2,(y1+y2)//2)
+    break
+PY
+)
+    if [ -n "$coords" ]; then
+      printf '%s\n' "$coords"
+      return 0
+    fi
+    sleep 0.15
+  done
+  adb shell uiautomator dump /sdcard/edt-646-live.xml >/dev/null 2>&1 || true
+  adb pull /sdcard/edt-646-live.xml "smoke/missing-${slug}.xml" >/dev/null 2>&1 || true
+  adb exec-out screencap -p > "smoke/missing-${slug}.png" || true
+  echo "6.46 could not resolve live control: ${needle}" >&2
+  return 1
+}
+
+tap_coord() {
+  local coords="$1"
+  set -- $coords
   adb shell input tap "$1" "$2"
 }
 
-# Coordinates measured on the actual 1080x1920 Edit view captured after the 450-tab soak
-# in run #609. The prior values came from an older, taller layout and landed in blank areas.
-week_a="240 314"
-week_b="692 314"
-current_week="540 241"
-day_lun="112 728"
-day_jeu="424 728"
+wait_fast_marker() {
+  local marker="$1"
+  local before="$2"
+  for _ in $(seq 1 25); do
+    sleep 0.06
+    local after
+    after=$(adb logcat -d | grep -Fc "$marker" || true)
+    if [ "$after" -gt "$before" ]; then return 0; fi
+  done
+  return 1
+}
 
-# Restore Edit and its top scroll position after the 450-tab stress.
+# Resolve and prove one live control. On a miss, refresh its bounds once before failing.
+prove_control() {
+  local needle="$1" mode="$2" marker="$3"
+  local coords before
+  for attempt in 1 2; do
+    coords=$(resolve_control "$needle" "$mode") || return 1
+    before=$(adb logcat -d | grep -Fc "$marker" || true)
+    tap_coord "$coords"
+    if wait_fast_marker "$marker" "$before"; then
+      printf '%s\n' "$coords"
+      return 0
+    fi
+  done
+  adb logcat -d > smoke/all-controls-live-resolution-failure-log.txt || true
+  adb shell uiautomator dump /sdcard/edt-646-live.xml >/dev/null 2>&1 || true
+  adb pull /sdcard/edt-646-live.xml smoke/all-controls-live-resolution-failure.xml >/dev/null 2>&1 || true
+  adb exec-out screencap -p > smoke/all-controls-live-resolution-failure.png || true
+  echo "6.46 resolved but did not receive marker for: ${needle}" >&2
+  return 1
+}
+
+# Restore Edit and top before resolving controls. The bottom navigation itself has just been
+# validated by 450 physical switches, so there is no redundant navigation preflight here.
 adb shell input tap 880 1810
-sleep 0.35
+sleep 0.45
 for _ in $(seq 1 3); do
   adb shell input swipe 540 900 540 1650 180
   sleep 0.08
 done
 assert_alive
 
-# Physical preflight only for the non-navigation control families. Navigation has already
-# been proven by the immediately preceding 450-tap soak; repeating a separate navigation
-# acknowledgement here created false negatives after logcat/accessibility churn. The long
-# phase below still requires >=330 real EDT_NAV_INPUT events, so navigation remains enforced.
+# Resolve all non-navigation controls from the live hierarchy and verify each one once. The
+# successful coordinates are then reused for the high-frequency stress so UIAutomator dump
+# latency is not accidentally included in interaction timing measurements.
 adb logcat -c
-tap_xy "$week_a"; sleep 0.10
-tap_xy "$week_b"; sleep 0.10
-tap_xy "$day_lun"; sleep 0.10
-tap_xy "$day_jeu"; sleep 0.10
-tap_xy "$current_week"; sleep 0.12
+week_a=$(prove_control "Semaine A" exact "EDT_FAST_INPUT|week-")
+week_b=$(prove_control "Semaine B" exact "EDT_FAST_INPUT|week-")
+day_lun=$(prove_control "Lun" exact "EDT_FAST_INPUT|day-")
+day_jeu=$(prove_control "Jeu" exact "EDT_FAST_INPUT|day-")
+current_week=$(prove_control "Cette semaine" prefix "EDT_FAST_INPUT|current-week|visual|delegated")
 assert_alive
 adb logcat -d > smoke/all-controls-preflight-log.txt || true
-for needle in "EDT_FAST_INPUT|week-" "EDT_FAST_INPUT|day-" "EDT_FAST_INPUT|current-week|visual|delegated"; do
-  grep -Fq "$needle" smoke/all-controls-preflight-log.txt
- done
+echo "all_controls_phase=preflight_complete" | tee -a smoke/interaction-latency.txt
 
 adb logcat -c
 adb shell dumpsys meminfo com.wokgui.schedulewidget > smoke/meminfo-before-all-controls.txt || true
 echo "all_controls_phase=stress_start" | tee -a smoke/interaction-latency.txt
 
 # 120 cycles deliberately exceed the previous 100-cycle plan. This repeatedly exercises
-# persistent controls (settings/current week), controls recreated by renderEdit (week/day),
-# and all three navigation targets after the already-completed 450-tab soak. Modal/editor
-# controls are already covered by the inherited long real-editor session before this phase.
+# persistent controls, controls recreated by Edit rendering, and all three navigation targets
+# after the already-completed 450-tab soak. Modal/editor controls are covered by the inherited
+# real-editor long session before this phase.
 for i in $(seq 1 120); do
-  tap_xy "$week_a"; sleep 0.035
-  tap_xy "$week_b"; sleep 0.035
+  tap_coord "$week_a"; sleep 0.035
+  tap_coord "$week_b"; sleep 0.035
 
-  tap_xy "$day_lun"; sleep 0.035
-  tap_xy "$day_jeu"; sleep 0.035
+  tap_coord "$day_lun"; sleep 0.035
+  tap_coord "$day_jeu"; sleep 0.035
 
   adb shell input tap 165 1810; sleep 0.025
   adb shell input tap 540 1810; sleep 0.025
   adb shell input tap 880 1810; sleep 0.035
 
-  # Open and close Settings with the same proven close coordinate as the inherited soak.
   if [ $((i % 2)) -eq 0 ]; then
     adb shell input tap 1010 145; sleep 0.10
     adb shell input tap 1000 245; sleep 0.10
   fi
 
-  # Current 6.46 behavior is deterministic: each tap on "Cette semaine" advances the
-  # current cycle directly (A -> B -> ...). There is no chooser to dismiss.
   if [ $((i % 10)) -eq 0 ]; then
-    tap_xy "$current_week"; sleep 0.12
+    tap_coord "$current_week"; sleep 0.12
   fi
 done
 sleep 4
@@ -112,11 +186,10 @@ echo "all_controls_nav_inputs=${nav_inputs}" | tee -a smoke/interaction-latency.
 echo "all_controls_fast_stats=${fast_stats}" | tee -a smoke/interaction-latency.txt
 test "$fast_inputs" -ge 500
 test "$nav_inputs" -ge 330
-# FastInteraction emits one runtime invariant sample every 100 delegated clicks. With at
-# least 500 non-navigation inputs in this phase, five samples are the strict mathematical floor.
+# FastInteraction emits one invariant sample every 100 delegated clicks. With >=500
+# non-navigation inputs in this phase, five samples are the strict mathematical floor.
 test "$fast_stats" -ge 5
 
-# Every major family exercised in this post-soak phase must still use the single delegated router.
 for needle in \
   "EDT_FAST_INPUT|settings|visual|delegated" \
   "EDT_FAST_INPUT|current-week|visual|delegated" \
@@ -125,13 +198,12 @@ for needle in \
   grep -Fq "$needle" smoke/all-controls-stress-log.txt
  done
 
-# Architectural invariant: one document router, zero per-control wrappers throughout the stress.
+# Architectural invariant: one document router, zero per-control wrappers throughout stress.
 if grep "EDT_FAST_STATS|" smoke/all-controls-stress-log.txt | grep -Ev "routers=1\|wrappers=0"; then
   echo "Delegated interaction invariant changed" >&2
   exit 1
 fi
 
-# Compare delegated-control latency at the beginning and end. Keep the same strict latency caps.
 python3 - <<'PY'
 from pathlib import Path
 import re,statistics
