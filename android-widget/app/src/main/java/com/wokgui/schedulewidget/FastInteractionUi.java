@@ -43,6 +43,9 @@ final class FastInteractionUi {
                   if(el.classList&&el.classList.contains('nav'))return 'nav-'+(el.dataset.mode||'unknown');
                   if(el.classList&&el.classList.contains('weekTab'))return 'week-'+(el.dataset.week||'unknown');
                   if(el.classList&&el.classList.contains('dayTab'))return 'day-'+(el.dataset.day||el.textContent||'unknown');
+                  if(el.classList&&el.classList.contains('editCourse'))return 'edit-course';
+                  if(el.classList&&el.classList.contains('todayCourse'))return 'today-course';
+                  if(el.classList&&el.classList.contains('wc'))return 'week-cell';
                   return el.id||'control';
                 }
 
