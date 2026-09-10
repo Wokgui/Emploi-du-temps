@@ -1,6 +1,6 @@
 package com.wokgui.schedulewidget;
 
-/** Keeps every clickable control responsive without per-element wrappers. */
+/** Keeps every clickable control responsive with one stable delegated router. */
 final class FastInteractionUi {
     private FastInteractionUi() {}
 
@@ -28,6 +28,8 @@ final class FastInteractionUi {
                   if(el.id==='settingsBtn')return 'settings';
                   if(el.id==='currentWeekBtn')return 'current-week';
                   if(el.id==='addCourse')return 'add-course';
+                  if(el.id==='cancelEdit')return 'cancel-edit';
+                  if(el.id==='deleteCourse')return 'delete-course';
                   if(el.classList&&el.classList.contains('nav'))return 'nav-'+(el.dataset.mode||'unknown');
                   if(el.classList&&el.classList.contains('weekTab'))return 'week-'+(el.dataset.week||'unknown');
                   if(el.classList&&el.classList.contains('dayTab'))return 'day-'+(el.dataset.day||el.textContent||'unknown');
@@ -67,6 +69,10 @@ final class FastInteractionUi {
                 function controlFrom(target){
                   try{return target&&target.closest?target.closest(selector):null}catch(e){return null}
                 }
+                function logSettle(kind,label,n,started){
+                  const elapsed=Math.round(performance.now()-started);
+                  if(n<=6||n%20===0)console.log('EDT_FAST_SETTLE|kind='+kind+'|label='+label+'|n='+n+'|ms='+elapsed);
+                }
 
                 if(!document.getElementById('edtFastInteractionStyle')){
                   const style=document.createElement('style');style.id='edtFastInteractionStyle';
@@ -86,15 +92,14 @@ final class FastInteractionUi {
 
                 document.addEventListener('click',function(e){
                   const el=controlFrom(e.target);if(!el)return;
-                  // Bottom navigation has its own zero-render controller.
                   if(el.classList&&el.classList.contains('nav'))return;
                   const fn=el.onclick;
                   if(typeof fn!=='function')return;
                   try{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()}catch(ignore){}
-                  state.clicks++;
-                  console.log('EDT_FAST_INPUT|'+labelFor(el)+'|delegated');
+                  const n=++state.clicks,started=performance.now(),label=labelFor(el);
+                  console.log('EDT_FAST_INPUT|'+label+'|delegated');
                   const group=groupFor(el);
-                  afterPaint(group,function(){fn.call(el,e)});
+                  afterPaint(group,function(){fn.call(el,e);logSettle('click',label,n,started)});
                 },true);
 
                 document.addEventListener('submit',function(e){
@@ -102,13 +107,12 @@ final class FastInteractionUi {
                   if(!form||form.tagName!=='FORM'||typeof form.onsubmit!=='function')return;
                   const fn=form.onsubmit;
                   try{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()}catch(ignore){}
-                  state.submits++;
-                  console.log('EDT_FAST_INPUT|'+(form.id||'form')+'-submit|delegated');
-                  afterPaint('',function(){fn.call(form,e)});
+                  const n=++state.submits,started=performance.now(),label=(form.id||'form')+'-submit';
+                  console.log('EDT_FAST_INPUT|'+label+'|delegated');
+                  afterPaint('',function(){fn.call(form,e);logSettle('submit',label,n,started)});
                 },true);
 
                 window.__edtFastInteractionV3={state:state};
-                // Compatibility hook for old callers: there is deliberately nothing to patch.
                 window.refreshFastInteractionUi=function(){};
                 console.log('EDT_FAST_MODE|single-delegated-router');
               }catch(e){console.log('FastInteractionUi',e)}
