@@ -38,6 +38,10 @@ final class Polish644Ui {
                       width:100%!important;
                       align-items:stretch!important;
                     }
+                    /* Adding a course only has Cancel/Save: let those two use the full row. */
+                    #courseForm .sheetActions:has(#deleteCourse[hidden]){
+                      grid-template-columns:repeat(2,minmax(0,1fr))!important;
+                    }
                     #courseForm .sheetActions>.leftActions85,
                     #courseForm .sheetActions>.rightActions{display:contents!important}
                     #courseForm .sheetActions .btn{
@@ -81,6 +85,7 @@ final class Polish644Ui {
                       justify-content:center!important;
                       text-align:center!important;
                     }
+                    #schoolCalendarBlock:has(#schoolEnabled:not(:checked)) #schoolHint{display:none!important}
                     #appPaletteTitle{text-align:center!important;width:100%!important}
 
                     /* The card already says “Affichage du widget”: remove duplicate “Widget”. */
