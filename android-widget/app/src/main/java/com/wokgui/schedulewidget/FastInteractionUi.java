@@ -1,6 +1,6 @@
 package com.wokgui.schedulewidget;
 
-/** Keeps controls responsive without accumulating work during long sessions. */
+/** Keeps every clickable control responsive without per-element wrappers. */
 final class FastInteractionUi {
     private FastInteractionUi() {}
 
@@ -8,31 +8,19 @@ final class FastInteractionUi {
         return """
             (function(){
               try{
-                if(window.__edtFastInteractionV2){
-                  try{window.__edtFastInteractionV2.patchTree(document.body)}catch(e){}
-                  return;
-                }
+                if(window.__edtFastInteractionV3)return;
 
-                const state={tokens:Object.create(null),scheduled:0,executed:0,cancelled:0,wrapped:0,formWrapped:0,patchTrees:0,pointerPatches:0,rewrapSkipped:0};
+                const state={tokens:Object.create(null),scheduled:0,executed:0,cancelled:0,clicks:0,submits:0};
+                const selector='button,.todayCourse,.editCourse,.wc';
 
                 function afterPaint(key,fn){
                   const token=key?((state.tokens[key]||0)+1):0;
                   if(key)state.tokens[key]=token;
                   state.scheduled++;
-                  requestAnimationFrame(function(){setTimeout(function(){
-                    if(key&&state.tokens[key]!==token){state.cancelled++;maybeStats();return}
+                  requestAnimationFrame(function(){
+                    if(key&&state.tokens[key]!==token){state.cancelled++;return}
                     try{state.executed++;fn()}catch(e){console.log('FastInteractionUi deferred',e)}
-                    maybeStats();
-                  },0)});
-                }
-
-                function activeView(target){
-                  try{
-                    document.querySelectorAll('.nav').forEach(function(b){b.classList.toggle('active',b.dataset.mode===target)});
-                    document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});
-                    var id='view'+target.charAt(0).toUpperCase()+target.slice(1),v=document.getElementById(id);
-                    if(v)v.classList.add('active');
-                  }catch(e){}
+                  });
                 }
 
                 function labelFor(el){
@@ -59,125 +47,70 @@ final class FastInteractionUi {
                 function flash(el){
                   if(!el||!el.classList)return;
                   el.classList.add('edtFastPressed');
-                  setTimeout(function(){try{el.classList.remove('edtFastPressed')}catch(e){}},120);
+                  setTimeout(function(){try{el.classList.remove('edtFastPressed')}catch(e){}},90);
                 }
 
                 function visualFor(el){
-                  if(!el)return null;
-                  if(el.id==='settingsBtn')return function(){var m=document.getElementById('settingsModal');if(m)m.classList.add('show')};
-                  if(el.classList&&el.classList.contains('weekTab')&&el.dataset.week)return function(){
+                  if(!el)return;
+                  if(el.id==='settingsBtn'){
+                    const m=document.getElementById('settingsModal');if(m)m.classList.add('show');return;
+                  }
+                  if(el.classList&&el.classList.contains('weekTab')&&el.dataset.week){
                     document.querySelectorAll('.weekTab').forEach(function(x){x.classList.toggle('active',x===el)});
-                    var l=document.getElementById('weekTitleLetter');if(l)l.textContent=el.dataset.week;
-                  };
-                  if(el.classList&&el.classList.contains('dayTab')&&!el.classList.contains('weekendAdd'))return function(){
+                    const l=document.getElementById('weekTitleLetter');if(l)l.textContent=el.dataset.week;return;
+                  }
+                  if(el.classList&&el.classList.contains('dayTab')&&!el.classList.contains('weekendAdd')){
                     document.querySelectorAll('.dayTab:not(.weekendAdd)').forEach(function(x){x.classList.toggle('active',x===el)});
-                  };
-                  return null;
-                }
-
-                function heavyClick(el){
-                  if(!el||typeof el.onclick!=='function')return false;
-                  // Bottom navigation is owned by NavigationPerformanceUi. Never put a
-                  // second deferred wrapper around it.
-                  if(el.classList&&el.classList.contains('nav'))return false;
-                  if(el.onclick.__edtFastProxy){el.__edtFastWrappedOnce=true;return false}
-                  // Several legacy layers replace onclick on persistent controls while
-                  // rendering. Re-wrapping the same DOM node each time recreates the
-                  // long-session slowdown. A control gets at most one FastInteraction proxy.
-                  if(el.__edtFastWrappedOnce){state.rewrapSkipped++;return false}
-                  const old=el.onclick,group=groupFor(el),visual=visualFor(el);
-                  const proxy=function(e){
-                    flash(el);
-                    try{if(visual)visual(e)}catch(ignore){}
-                    console.log('EDT_FAST_INPUT|'+labelFor(el)+'|visual');
-
-                    if(!group&&proxy.__running)return false;
-                    if(!group)proxy.__running=true;
-                    afterPaint(group,function(){
-                      try{old.call(el,e)}finally{if(!group)proxy.__running=false}
-                    });
-                    return false;
-                  };
-                  proxy.__edtFastProxy=true;
-                  proxy.__edtFastOriginal=old;
-                  el.onclick=proxy;
-                  el.__edtFastWrappedOnce=true;
-                  state.wrapped++;
-                  return true;
-                }
-
-                function heavySubmit(form){
-                  if(!form||typeof form.onsubmit!=='function'||form.onsubmit.__edtFastProxy)return false;
-                  const old=form.onsubmit;
-                  const proxy=function(e){
-                    try{if(e&&e.preventDefault)e.preventDefault()}catch(ignore){}
-                    var submit=form.querySelector('button[type="submit"],input[type="submit"]');
-                    flash(submit||form);
-                    console.log('EDT_FAST_INPUT|'+(form.id||'form')+'-submit|visual');
-                    if(proxy.__running)return false;
-                    proxy.__running=true;
-                    afterPaint('',function(){
-                      try{old.call(form,e)}finally{proxy.__running=false}
-                    });
-                    return false;
-                  };
-                  proxy.__edtFastProxy=true;
-                  proxy.__edtFastOriginal=old;
-                  form.onsubmit=proxy;
-                  state.wrapped++;
-                  state.formWrapped++;
-                  console.log('EDT_FAST_FORM_WRAP|form='+(form.id||'form')+'|count='+state.formWrapped);
-                  return true;
-                }
-
-                function patchOne(el){
-                  if(!el||el.nodeType!==1)return;
-                  if(el.matches&&el.matches('button,.todayCourse,.editCourse,.wc'))heavyClick(el);
-                  if(el.matches&&el.matches('form'))heavySubmit(el);
-                }
-
-                function patchTree(root){
-                  if(!root||root.nodeType!==1)return;
-                  state.patchTrees++;
-                  patchOne(root);
-                  if(root.querySelectorAll){
-                    root.querySelectorAll('button,.todayCourse,.editCourse,.wc').forEach(heavyClick);
-                    root.querySelectorAll('form').forEach(heavySubmit);
                   }
                 }
 
-                function patchTarget(target){
-                  state.pointerPatches++;
-                  if(!target||!target.closest)return;
-                  var el=target.closest('button,.todayCourse,.editCourse,.wc');
-                  if(el)heavyClick(el);
-                  var form=target.closest('form');
-                  if(form)heavySubmit(form);
-                }
-
-                function maybeStats(){
-                  if(state.scheduled>0&&state.scheduled%12===0){
-                    console.log('EDT_FAST_STATS|scheduled='+state.scheduled+'|executed='+state.executed+'|cancelled='+state.cancelled+'|wrapped='+state.wrapped+'|formWrapped='+state.formWrapped+'|patchTrees='+state.patchTrees+'|pointerPatches='+state.pointerPatches+'|rewrapSkipped='+state.rewrapSkipped);
-                  }
+                function controlFrom(target){
+                  try{return target&&target.closest?target.closest(selector):null}catch(e){return null}
                 }
 
                 if(!document.getElementById('edtFastInteractionStyle')){
-                  var style=document.createElement('style');style.id='edtFastInteractionStyle';
+                  const style=document.createElement('style');style.id='edtFastInteractionStyle';
                   style.textContent=`
                     button,.todayCourse,.editCourse,.wc{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
                     .edtFastPressed{filter:brightness(.96)!important}
-                    button.edtFastPressed{opacity:.82!important}
+                    button.edtFastPressed{opacity:.84!important}
                   `;
                   document.head.appendChild(style);
                 }
 
-                // No MutationObserver: new/dynamic controls are patched lazily on pointer-down.
-                document.addEventListener('pointerdown',function(e){patchTarget(e.target)},{capture:true,passive:true});
+                document.addEventListener('pointerdown',function(e){
+                  const el=controlFrom(e.target);if(!el)return;
+                  flash(el);
+                  if(!(el.classList&&el.classList.contains('nav')))visualFor(el);
+                },{capture:true,passive:true});
 
-                window.__edtFastInteractionV2={state:state,patchTree:patchTree,patchTarget:patchTarget};
-                window.refreshFastInteractionUi=function(){patchTree(document.body)};
-                patchTree(document.body);
-                console.log('EDT_FAST_MODE|delegated-no-observer');
+                document.addEventListener('click',function(e){
+                  const el=controlFrom(e.target);if(!el)return;
+                  // Bottom navigation has its own zero-render controller.
+                  if(el.classList&&el.classList.contains('nav'))return;
+                  const fn=el.onclick;
+                  if(typeof fn!=='function')return;
+                  try{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()}catch(ignore){}
+                  state.clicks++;
+                  console.log('EDT_FAST_INPUT|'+labelFor(el)+'|delegated');
+                  const group=groupFor(el);
+                  afterPaint(group,function(){fn.call(el,e)});
+                },true);
+
+                document.addEventListener('submit',function(e){
+                  const form=e.target;
+                  if(!form||form.tagName!=='FORM'||typeof form.onsubmit!=='function')return;
+                  const fn=form.onsubmit;
+                  try{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()}catch(ignore){}
+                  state.submits++;
+                  console.log('EDT_FAST_INPUT|'+(form.id||'form')+'-submit|delegated');
+                  afterPaint('',function(){fn.call(form,e)});
+                },true);
+
+                window.__edtFastInteractionV3={state:state};
+                // Compatibility hook for old callers: there is deliberately nothing to patch.
+                window.refreshFastInteractionUi=function(){};
+                console.log('EDT_FAST_MODE|single-delegated-router');
               }catch(e){console.log('FastInteractionUi',e)}
             })();
             """;
