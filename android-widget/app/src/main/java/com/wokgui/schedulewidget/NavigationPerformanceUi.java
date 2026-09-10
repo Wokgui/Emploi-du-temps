@@ -77,6 +77,16 @@ final class NavigationPerformanceUi {
                     if(view)view.classList.add('active');
                   }catch(e){}
                 }
+                function syncContext(target){
+                  try{
+                    const wanted=target==='today'?(typeof currentWeek!=='undefined'?currentWeek:'A'):(typeof activeWeek!=='undefined'?activeWeek:'A');
+                    document.querySelectorAll('.weekTab').forEach(function(b){b.classList.toggle('active',b.dataset.week===wanted)});
+                    if(target==='week'){
+                      const letter=document.getElementById('weekTitleLetter');
+                      if(letter&&letter.textContent!==String(wanted))letter.textContent=String(wanted);
+                    }
+                  }catch(e){}
+                }
                 function lightweightRefresh(target){
                   try{
                     if(target==='week'&&typeof window.paintWeek70==='function')window.paintWeek70();
@@ -85,7 +95,7 @@ final class NavigationPerformanceUi {
                 }
                 function renderTarget(target){
                   try{if(typeof mode!=='undefined')mode=target}catch(e){}
-                  try{if(typeof renderContext==='function')renderContext()}catch(e){}
+                  syncContext(target);
                   const before=signature(target);
                   if(!ready(target)||cache.sig[target]!==before){
                     if(target==='today'&&typeof renderToday==='function')renderToday();
