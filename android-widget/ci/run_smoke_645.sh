@@ -10,16 +10,10 @@ old='nav_inputs=$(grep -c "EDT_FAST_INPUT|nav-" smoke/interaction-real-session-l
 new='nav_inputs=$(grep -c "EDT_NAV_INPUT|" smoke/interaction-real-session-log.txt || true)'
 if old not in src: raise SystemExit('6.44 nav counter anchor not found')
 src=src.replace(old,new,1)
-# The inherited settings-recognition count is timing-sensitive on the emulator: the same
-# unchanged app produced 30, 18 and 21 recognized taps across consecutive runs. Keep a
-# meaningful lower bound, while leaving every navigation, crash, memory and latency gate
-# intact so this legacy harness cannot prevent the dedicated 450-tab regression from running.
 old='test "$settings_inputs" -ge 25'
 new='test "$settings_inputs" -ge 15'
 if old not in src: raise SystemExit('6.44 settings threshold anchor not found')
 src=src.replace(old,new,1)
-# run_smoke_644.sh generates a second script from run_smoke.sh. Convert every legacy
-# navigation-log assertion in that generated script, including the early 36-tap burst.
 anchor="Path('/tmp/run_smoke_644_generated.sh').write_text(src)"
 replacement="src=src.replace('EDT_FAST_INPUT|nav-','EDT_NAV_INPUT|')\n"+anchor
 if anchor not in src: raise SystemExit('generated-script write anchor not found')
@@ -33,24 +27,39 @@ PY
 chmod +x /tmp/run_smoke_645_base.sh
 bash /tmp/run_smoke_645_base.sh
 
-# Dedicated 6.45 regression for the actual reported failure: keep the same WebView alive
-# and change Today / Week / Edit hundreds of times. The inherited suite can finish while
-# the WebView is reinjecting its UI, so wait for a real navigation tap to be recognized
-# before starting the preflight and the measured 450-switch stress phase.
+# Dedicated 6.45 regression for the reported slowdown. Keep the same process/WebView alive
+# after the long inherited session, then repeatedly switch the three bottom tabs.
 adb shell input keyevent KEYCODE_BACK
 sleep 0.35
 adb logcat -c
 adb shell am start -W -n com.wokgui.schedulewidget/.MainActivity --es open_mode edit >/dev/null
 
+# Tap one navigation target and wait until the JavaScript owner acknowledges that exact tap.
+# Fixed sleeps were racy: run #596 visually reached Edit, but logcat was sampled before its
+# delayed EDT_NAV_INPUT line had been emitted.
+tap_and_wait_nav() {
+  target="$1"
+  x="$2"
+  before=$(adb logcat -d | grep -c "EDT_NAV_INPUT|${target}|" || true)
+  adb shell input tap "$x" 1810
+  for _ in $(seq 1 30); do
+    sleep 0.10
+    after=$(adb logcat -d | grep -c "EDT_NAV_INPUT|${target}|" || true)
+    if [ "$after" -gt "$before" ]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+# First prove the bottom navigation is interactive after the relaunch/reinjection.
 nav_ready=0
-for i in $(seq 1 60); do
-  adb shell input tap 880 1810
-  sleep 0.20
-  if adb logcat -d | grep -q "EDT_NAV_INPUT|"; then
+for _ in $(seq 1 20); do
+  if tap_and_wait_nav edit 880; then
     nav_ready=1
     break
   fi
-  sleep 0.20
+  sleep 0.15
 done
 if [ "$nav_ready" -ne 1 ]; then
   adb logcat -d > smoke/tab-stress-readiness-log.txt || true
@@ -58,30 +67,30 @@ if [ "$nav_ready" -ne 1 ]; then
   echo "6.45 navigation did not become interactive after relaunch" >&2
   exit 1
 fi
-sleep 0.35
 
-# Preflight the exact three coordinates only after the UI is demonstrably interactive.
-# This turns a stale overlay/layout regression into an immediate diagnostic failure while
-# preventing WebView reinjection time from being mistaken for a navigation failure.
+# Preflight every coordinate independently and wait for its own acknowledgement. This checks
+# that the exact three physical tap locations work without mistaking delayed processing for a
+# lost input.
 adb logcat -c
-adb shell input tap 165 1810
-sleep 0.15
-adb shell input tap 540 1810
-sleep 0.15
-adb shell input tap 880 1810
-sleep 0.25
+preflight_ok=1
+for spec in "today 165" "week 540" "edit 880"; do
+  set -- $spec
+  if ! tap_and_wait_nav "$1" "$2"; then
+    preflight_ok=0
+    break
+  fi
+done
 adb logcat -d > smoke/tab-stress-preflight-log.txt || true
 preflight_nav=$(grep -c "EDT_NAV_INPUT|" smoke/tab-stress-preflight-log.txt || true)
 echo "tab_stress_preflight_navigation_inputs=${preflight_nav}" | tee -a smoke/interaction-latency.txt
-if [ "$preflight_nav" -lt 3 ]; then
+if [ "$preflight_ok" -ne 1 ] || [ "$preflight_nav" -lt 3 ]; then
   adb exec-out screencap -p > smoke/20-tab-stress-preflight-failure.png || true
-  echo "6.45 tab-stress preflight did not reach all three bottom navigation buttons" >&2
+  echo "6.45 tab-stress preflight did not acknowledge all three bottom navigation buttons" >&2
   exit 1
 fi
 
 # Restore Edit, then measure only the dedicated stress phase.
-adb shell input tap 880 1810
-sleep 0.15
+tap_and_wait_nav edit 880 || true
 adb logcat -c
 adb shell dumpsys meminfo com.wokgui.schedulewidget > smoke/meminfo-before-tab-stress.txt || true
 
@@ -93,7 +102,8 @@ for i in $(seq 1 150); do
   adb shell input tap 880 1810
   sleep 0.06
 done
-sleep 2
+# Allow delayed UI work and log delivery to drain before sampling the final state.
+sleep 4
 
 adb shell dumpsys meminfo com.wokgui.schedulewidget > smoke/meminfo-after-tab-stress.txt || true
 adb logcat -d > smoke/tab-stress-log.txt || true
@@ -130,15 +140,15 @@ test -n "$hits" && test "$hits" -ge 300
 test -n "$rt" && test -n "$rw" && test -n "$re"
 test $((rt+rw+re)) -le 12
 
-# During pure bottom-tab switching the persistent FastInteraction wrapper total must not
-# creep upward. Dynamic course rows are not touched in this dedicated test.
+# During pure bottom-tab switching the persistent FastInteraction wrapper total must stay
+# constant. Dynamic course rows are not touched in this phase.
 fast_values=$(sed -n 's/.*EDT_NAV_STATS.*|fastWrapped=\([-0-9][0-9]*\).*/\1/p' smoke/tab-stress-log.txt | sort -nu | tr '\n' ' ')
 fast_unique=$(sed -n 's/.*EDT_NAV_STATS.*|fastWrapped=\([-0-9][0-9]*\).*/\1/p' smoke/tab-stress-log.txt | sort -nu | wc -l | tr -d ' ')
 echo "tab_stress_fastWrapped_values=${fast_values}" | tee -a smoke/interaction-latency.txt
 test "$fast_unique" -eq 1
 
-# Compare settled switch latency near the start and end. A fixed upper bound catches the
-# visible multi-second degradation, while the ratio catches progressive slowdown.
+# Compare settled switch latency near the start and end. The absolute cap catches visible
+# sluggishness, while the ratio catches progressive degradation.
 python3 - <<'PY'
 from pathlib import Path
 import re, statistics
