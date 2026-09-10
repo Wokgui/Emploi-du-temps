@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Align the inherited 6.44/6.45 physical taps with the current 6.46 layout before running it.
+# This only changes the CI working copy; it does not alter app behavior.
+sed -i \
+  -e 's/adb shell input tap 862 210/adb shell input tap 1000 245/g' \
+  -e 's/adb shell input tap 465 1810/adb shell input tap 540 1810/g' \
+  -e 's/adb shell input tap 760 1810/adb shell input tap 880 1810/g' \
+  android-widget/ci/run_smoke.sh
+
 # Keep every 6.45 regression, but 6.46 emits EDT_NAV_STATS once every 50 navigations.
 # The inherited 6.45 test expected >=12 samples from 450 taps; with the 6.46 sampler the
 # mathematically correct count is 9. Adapt only that harness sample count, not app behavior.
@@ -94,7 +102,6 @@ for i in $(seq 1 120); do
   adb shell input tap 880 1810; sleep 0.035
 
   # Open and close Settings with the same proven close coordinate as the inherited soak.
-  # Run #607 used 862,210, which could leave the modal open and divert later taps.
   if [ $((i % 2)) -eq 0 ]; then
     adb shell input tap 1010 145; sleep 0.10
     adb shell input tap 1000 245; sleep 0.10
@@ -102,7 +109,7 @@ for i in $(seq 1 120); do
 
   # This action intentionally changes persisted state and is allowed to invalidate views.
   # Always select A immediately so the week chooser cannot remain over the app and intercept
-  # the following cycles. Run #607 ended with this chooser visibly open.
+  # the following cycles.
   if [ $((i % 10)) -eq 0 ]; then
     tap_xy "$current_week"; sleep 0.10
     tap_xy "$current_week_choice_a"; sleep 0.12
