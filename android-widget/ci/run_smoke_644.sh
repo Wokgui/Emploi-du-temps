@@ -20,7 +20,6 @@ dismiss_launcher_anr() {
   adb shell uiautomator dump /sdcard/edt-system.xml >/dev/null 2>&1 || true
   adb pull /sdcard/edt-system.xml smoke/edt-system.xml >/dev/null 2>&1 || true
   if [ -f smoke/edt-system.xml ] && grep -Fq "Pixel Launcher isn't responding" smoke/edt-system.xml; then
-    # Fixed 1080x1920 test device: this is the centre of the system "Wait" row.
     adb shell input tap 360 1085 || true
     sleep 0.8
   fi
@@ -68,6 +67,9 @@ adb shell input swipe 540 560 540 1450 160 || true
 sleep 0.2
 dismiss_launcher_anr
 adb shell dumpsys meminfo com.wokgui.schedulewidget > smoke/meminfo-before-soak.txt || true
+
+# By here the prior 36-nav exercise has already produced diagnostic snapshots, so the
+# runtime's last-submit identity is settled. Clear only logcat, not the WebView state.
 adb logcat -c
 for i in $(seq 1 48); do
   # Open an existing course row. The modal backdrop itself routes this to cancelEdit.
@@ -109,15 +111,29 @@ adb shell dumpsys meminfo com.wokgui.schedulewidget > smoke/meminfo-after-soak.t
 adb logcat -d > smoke/interaction-real-session-log.txt || true
 assert_clean_log smoke/interaction-real-session-log.txt
 
-# The 6.44 runtime diagnostic fingerprints final render/refresh functions. Any mutation
-# here means a legacy refresh installed another wrapper during use, which is the exact
-# cumulative failure mode we are fixing.
+# Unlike the previous baseline comparison, these counters detect actual changes that
+# occurred DURING the soak. Repeated form rewrapping is the specific long-session bug.
 runtime_snapshots=$(grep -c "EDT_RUNTIME_644" smoke/interaction-real-session-log.txt || true)
-runtime_mutations=$(grep -c "EDT_RUNTIME_MUTATION" smoke/interaction-real-session-log.txt || true)
+render_mutations=$(grep -c "EDT_RUNTIME_RENDER_MUTATION" smoke/interaction-real-session-log.txt || true)
+submit_transitions=$(grep -c "EDT_RUNTIME_SUBMIT_TRANSITION" smoke/interaction-real-session-log.txt || true)
+course_form_rewraps=$(grep -c "EDT_FAST_FORM_WRAP|form=courseForm" smoke/interaction-real-session-log.txt || true)
 echo "runtime_snapshots=${runtime_snapshots}" | tee -a smoke/interaction-latency.txt
-echo "runtime_mutations=${runtime_mutations}" | tee -a smoke/interaction-latency.txt
+echo "render_mutations_during_soak=${render_mutations}" | tee -a smoke/interaction-latency.txt
+echo "submit_transitions_during_soak=${submit_transitions}" | tee -a smoke/interaction-latency.txt
+echo "course_form_fast_rewraps_during_soak=${course_form_rewraps}" | tee -a smoke/interaction-latency.txt
 test "$runtime_snapshots" -ge 6
-test "$runtime_mutations" -eq 0
+test "$render_mutations" -eq 0
+test "$submit_transitions" -eq 0
+test "$course_form_rewraps" -eq 0
+
+# A moderate WebView cache increase is normal; reject runaway process growth.
+before_pss=$(awk '/TOTAL PSS:/{print $3;exit}' smoke/meminfo-before-soak.txt || true)
+after_pss=$(awk '/TOTAL PSS:/{print $3;exit}' smoke/meminfo-after-soak.txt || true)
+if [ -n "$before_pss" ] && [ -n "$after_pss" ]; then
+  pss_growth_kb=$((after_pss-before_pss))
+  echo "pss_growth_kb=${pss_growth_kb}" | tee -a smoke/interaction-latency.txt
+  test "$pss_growth_kb" -le 25600
+fi
 
 measure_settings_latency settings_after_real_editor_settings_session
 sleep 0.5
@@ -128,7 +144,6 @@ adb shell input tap 1000 245
 sleep 0.25
 adb shell input tap 880 1810
 sleep 0.25
-# Scroll to the Add button, whose large text node is reliably exposed.
 tap_text "Ajouter un cours"
 sleep 0.6
 adb exec-out screencap -p > smoke/02d-course-editor-layout.png
