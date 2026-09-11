@@ -1,4 +1,3 @@
-e102096daac5c01f59847015d0fc798a25dff91e
 package com.wokgui.schedulewidget;
 
 import android.Manifest;
