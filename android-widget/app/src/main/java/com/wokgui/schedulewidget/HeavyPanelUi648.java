@@ -20,7 +20,12 @@ final class HeavyPanelUi648 {
                 const Native=window[name];if(typeof Native!=='function')return;
                 window[name]=new Proxy(Native,{construct(Target,args){
                   const instance=Reflect.construct(Target,args),observe=instance.observe;
-                  instance.observe=function(target,options){registry.push({instance:instance,target:target,type:name});return observe.call(instance,target,options)};
+                  instance.observe=function(target,options){
+                    registry.push({instance:instance,target:target,type:name});
+                    const owner=window.__edtHeavyPanelsOwnObservers648;
+                    if(owner&&!window.__edtAllowPanelObserver648&&target&&(target===owner.settings||target===owner.course||owner.settings.contains(target)||owner.course.contains(target)))return;
+                    return observe.call(instance,target,options);
+                  };
                   return instance;
                 }});
               }
@@ -187,6 +192,7 @@ final class HeavyPanelUi648 {
                 updateSlotOptions(1,false,'','');prepareContributedFields();
                 const preparedSettingsHeight=settingsSheet.offsetHeight;
                 const preparedCourseHeight=courseForm.offsetHeight;
+                window.__edtHeavyPanelsOwnObservers648={settings:settings,course:course};
                 let disconnectedObservers=0;
                 for(const entry of window.__edtPanelObserverRegistry648||[]){
                   const target=entry&&entry.target;

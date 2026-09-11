@@ -210,7 +210,9 @@ final class HeavyPanelPerformanceUi648 {
                 Object.keys(panelElements).forEach(function(name){
                   const modal=panelElements[name];if(!modal)return;
                   let open=panelOpen(name);
-                  new MutationObserver(function(){const next=panelOpen(name);if(next===open)return;open=next;transition(name,next)}).observe(modal,{attributes:true,attributeFilter:['class','data-edt-open']});
+                  window.__edtAllowPanelObserver648=true;
+                  try{new MutationObserver(function(){const next=panelOpen(name);if(next===open)return;open=next;transition(name,next)}).observe(modal,{attributes:true,attributeFilter:['class','data-edt-open']})}
+                  finally{window.__edtAllowPanelObserver648=false}
                 });
 
                 function captureInput(event,started){
