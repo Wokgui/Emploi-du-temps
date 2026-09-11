@@ -114,8 +114,10 @@ for i in $(seq 1 120); do
   tap_live "Jeu" exact; sleep 0.055
 
   if [ $((i % 2)) -eq 0 ]; then
-    adb shell input tap 1010 145; sleep 0.12
-    adb shell input tap 1000 245; sleep 0.12
+    # Physical centres verified on the current 6.47 layout: gear, then settings close button.
+    # The old coordinates could miss the gear and open the Edit "Horaire actuel" selector.
+    adb shell input tap 866 128; sleep 0.18
+    adb shell input tap 862 210; sleep 0.18
   fi
 
   if [ $((i % 10)) -eq 0 ]; then
