@@ -18,6 +18,10 @@ final class HeavyPanelPerformanceUi648 {
                 if(window.__edtHeavyPerfPrelude648)return;
                 const counters={listenerAdds:0,mutationObservers:0,resizeObservers:0,errors:0};
                 const nativeAdd=EventTarget.prototype.addEventListener;
+                const input={pointerdown:null};
+                nativeAdd.call(document,'pointerdown',function(event){
+                  const callback=input.pointerdown;if(callback)callback(event,performance.now());
+                },{capture:true,passive:true});
                 EventTarget.prototype.addEventListener=function(){
                   counters.listenerAdds++;
                   return nativeAdd.apply(this,arguments);
@@ -34,7 +38,7 @@ final class HeavyPanelPerformanceUi648 {
                     construct(Target,args){counters.resizeObservers++;return Reflect.construct(Target,args)}
                   });
                 }
-                window.__edtHeavyPerfPrelude648={counters:counters,nativeAdd:nativeAdd};
+                window.__edtHeavyPerfPrelude648={counters:counters,nativeAdd:nativeAdd,input:input};
               }catch(e){console.log('HeavyPanelPerformanceUi648 prelude',e)}
             })();
             """;
@@ -114,6 +118,11 @@ final class HeavyPanelPerformanceUi648 {
                 }
                 function begin(panel,action,started){
                   if(!panelElements[panel])return null;
+                  const active=activity[panel];
+                  if(active&&active.action===action){
+                    if(started&&started<active.started)active.started=started;
+                    return active;
+                  }
                   const n=++counts[panel][action];
                   const pending={panel:panel,action:action,n:n,started:started||performance.now(),
                     mutationStart:mutations[panel],mainStart:mutations.main,addedStart:added[panel],removedStart:removed[panel],
@@ -175,9 +184,11 @@ final class HeavyPanelPerformanceUi648 {
                   new MutationObserver(function(){const next=panelOpen(name);if(next===open)return;open=next;transition(name,next)}).observe(modal,{attributes:true,attributeFilter:['class','data-edt-open']});
                 });
 
-                document.addEventListener('pointerdown',function(event){
-                  const hit=classify(event.target);if(hit)begin(hit[0],hit[1],performance.now());
-                },{capture:true,passive:true});
+                function captureInput(event,started){
+                  const hit=classify(event.target);if(hit)begin(hit[0],hit[1],started||performance.now());
+                }
+                if(prelude.input)prelude.input.pointerdown=captureInput;
+                else document.addEventListener('pointerdown',function(event){captureInput(event,performance.now())},{capture:true,passive:true});
                 window.addEventListener('error',function(){counters.errors++});
                 window.addEventListener('unhandledrejection',function(){counters.errors++});
 
