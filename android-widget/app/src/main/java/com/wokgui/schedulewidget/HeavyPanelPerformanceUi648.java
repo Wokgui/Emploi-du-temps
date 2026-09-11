@@ -16,8 +16,11 @@ final class HeavyPanelPerformanceUi648 {
             (function(){
               try{
                 if(window.__edtHeavyPerfPrelude648)return;
-                const counters={listenerAdds:0,mutationObservers:0,resizeObservers:0,errors:0};
+                const counters={listenerAdds:0,mutationObservers:0,resizeObservers:0,errors:0,
+                  bridgeCalls:0,bridgeReads:0,bridgeWrites:0,storageReads:0,storageWrites:0,bridgeWrapped:false,bridgeByName:Object.create(null)};
                 const nativeAdd=EventTarget.prototype.addEventListener;
+                const nativeConsoleError=console.error.bind(console);
+                console.error=function(){counters.errors++;return nativeConsoleError.apply(console,arguments)};
                 const input={pointerdown:null};
                 nativeAdd.call(document,'pointerdown',function(event){
                   const callback=input.pointerdown;if(callback)callback(event,performance.now());
@@ -38,7 +41,28 @@ final class HeavyPanelPerformanceUi648 {
                     construct(Target,args){counters.resizeObservers++;return Reflect.construct(Target,args)}
                   });
                 }
-                window.__edtHeavyPerfPrelude648={counters:counters,nativeAdd:nativeAdd,input:input};
+                if(typeof window.Storage==='function'){
+                  const nativeGet=Storage.prototype.getItem,nativeSet=Storage.prototype.setItem,nativeRemove=Storage.prototype.removeItem,nativeClear=Storage.prototype.clear;
+                  Storage.prototype.getItem=function(){counters.storageReads++;return nativeGet.apply(this,arguments)};
+                  Storage.prototype.setItem=function(){counters.storageWrites++;return nativeSet.apply(this,arguments)};
+                  Storage.prototype.removeItem=function(){counters.storageWrites++;return nativeRemove.apply(this,arguments)};
+                  Storage.prototype.clear=function(){counters.storageWrites++;return nativeClear.apply(this,arguments)};
+                }
+                const nativeBridge=window.AndroidSchedule;
+                if(nativeBridge&&typeof window.Proxy==='function'){
+                  const wrappers=new Map();
+                  const proxy=new Proxy(nativeBridge,{get:function(target,property){
+                    const value=target[property];if(typeof value!=='function')return value;
+                    if(!wrappers.has(property))wrappers.set(property,function(){
+                      const name=String(property);counters.bridgeCalls++;counters.bridgeByName[name]=(counters.bridgeByName[name]||0)+1;
+                      if(/^(load|list|supported|download)/.test(name))counters.bridgeReads++;else counters.bridgeWrites++;
+                      return value.apply(target,arguments);
+                    });
+                    return wrappers.get(property);
+                  }});
+                  try{window.AndroidSchedule=proxy;counters.bridgeWrapped=window.AndroidSchedule===proxy}catch(e){}
+                }
+                window.__edtHeavyPerfPrelude648={counters:counters,nativeAdd:nativeAdd,nativeConsoleError:nativeConsoleError,input:input};
               }catch(e){console.log('HeavyPanelPerformanceUi648 prelude',e)}
             })();
             """;
@@ -127,7 +151,8 @@ final class HeavyPanelPerformanceUi648 {
                   const pending={panel:panel,action:action,n:n,started:started||performance.now(),
                     mutationStart:mutations[panel],mainStart:mutations.main,addedStart:added[panel],removedStart:removed[panel],
                     renderStart:totalRenders(),listenerStart:counters.listenerAdds,observerStart:counters.mutationObservers,
-                    resizeStart:counters.resizeObservers,firstMs:null};
+                    resizeStart:counters.resizeObservers,bridgeStart:counters.bridgeCalls,bridgeReadStart:counters.bridgeReads,
+                    bridgeWriteStart:counters.bridgeWrites,storageReadStart:counters.storageReads,storageWriteStart:counters.storageWrites,firstMs:null};
                   activity[panel]=pending;
                   if(checkpoints.has(n))console.log('EDT_HEAVY_INPUT|scenario='+scenario+'|panel='+panel+'|action='+action+'|n='+n);
                   return pending;
@@ -145,13 +170,17 @@ final class HeavyPanelPerformanceUi648 {
                     mutations:mutations[pending.panel]-pending.mutationStart,mainMutations:mutations.main-pending.mainStart,
                     added:added[pending.panel]-pending.addedStart,removed:removed[pending.panel]-pending.removedStart,
                     renders:totalRenders()-pending.renderStart,listeners:counters.listenerAdds-pending.listenerStart,
-                    observers:counters.mutationObservers-pending.observerStart,resizeObservers:counters.resizeObservers-pending.resizeStart};
+                    observers:counters.mutationObservers-pending.observerStart,resizeObservers:counters.resizeObservers-pending.resizeStart,
+                    bridgeCalls:counters.bridgeCalls-pending.bridgeStart,bridgeReads:counters.bridgeReads-pending.bridgeReadStart,
+                    bridgeWrites:counters.bridgeWrites-pending.bridgeWriteStart,storageReads:counters.storageReads-pending.storageReadStart,
+                    storageWrites:counters.storageWrites-pending.storageWriteStart};
                   samples[pending.panel][pending.action].push(result);activity[pending.panel]=null;
                   if(checkpoints.has(result.n)){
                     console.log('EDT_HEAVY_CHECKPOINT|scenario='+scenario+'|panel='+result.panel+'|action='+result.action+'|n='+result.n+
                       '|firstMs='+result.firstMs+'|readyMs='+result.readyMs+'|mutations='+result.mutations+'|mainMutations='+result.mainMutations+
                       '|added='+result.added+'|removed='+result.removed+'|renders='+result.renders+'|listeners='+result.listeners+
-                      '|observers='+result.observers+'|resizeObservers='+result.resizeObservers);
+                      '|observers='+result.observers+'|resizeObservers='+result.resizeObservers+'|bridgeCalls='+result.bridgeCalls+
+                      '|bridgeReads='+result.bridgeReads+'|bridgeWrites='+result.bridgeWrites+'|storageReads='+result.storageReads+'|storageWrites='+result.storageWrites);
                   }
                   const key=result.panel+'|'+result.action+'|'+result.n,resolve=waiters.get(key);
                   if(resolve){waiters.delete(key);resolve(result)}
@@ -221,20 +250,34 @@ final class HeavyPanelPerformanceUi648 {
                 function summarize(panel,before){
                   const opens=samples[panel].open,closes=samples[panel].close;
                   const openReady=opens.map(function(x){return x.readyMs}),openFirst=opens.map(function(x){return x.firstMs}),closeReady=closes.map(function(x){return x.readyMs});
+                  const headReady=openReady.slice(0,Math.min(20,openReady.length)),tailReady=openReady.slice(Math.max(0,openReady.length-20));
                   const mutationTotal=opens.concat(closes).reduce(function(n,x){return n+x.mutations},0);
                   const mainMutationTotal=opens.concat(closes).reduce(function(n,x){return n+x.mainMutations},0);
                   const renderTotal=opens.concat(closes).reduce(function(n,x){return n+x.renders},0);
+                  const bridgeTotal=opens.concat(closes).reduce(function(n,x){return n+x.bridgeCalls},0);
+                  const bridgeReadTotal=opens.concat(closes).reduce(function(n,x){return n+x.bridgeReads},0);
+                  const bridgeWriteTotal=opens.concat(closes).reduce(function(n,x){return n+x.bridgeWrites},0);
+                  const storageReadTotal=opens.concat(closes).reduce(function(n,x){return n+x.storageReads},0);
+                  const storageWriteTotal=opens.concat(closes).reduce(function(n,x){return n+x.storageWrites},0);
                   const out={panel:panel,openN:opens.length,closeN:closes.length,openFirstP50:rounded(percentile(openFirst,.5)),
+                    openFirstP95:rounded(percentile(openFirst,.95)),openFirstMax:rounded(percentile(openFirst,1)),
                     openReadyP50:rounded(percentile(openReady,.5)),openReadyP95:rounded(percentile(openReady,.95)),openReadyMax:rounded(percentile(openReady,1)),
+                    openHeadP50:rounded(percentile(headReady,.5)),openTailP50:rounded(percentile(tailReady,.5)),
                     closeReadyP50:rounded(percentile(closeReady,.5)),closeReadyP95:rounded(percentile(closeReady,.95)),closeReadyMax:rounded(percentile(closeReady,1)),
                     mutationTotal:mutationTotal,mainMutationTotal:mainMutationTotal,renderTotal:renderTotal,
+                    bridgeTotal:bridgeTotal,bridgeReadTotal:bridgeReadTotal,bridgeWriteTotal:bridgeWriteTotal,
+                    storageReadTotal:storageReadTotal,storageWriteTotal:storageWriteTotal,
                     listenerDelta:counters.listenerAdds-before.listeners,observerDelta:counters.mutationObservers-before.observers,
                     resizeObserverDelta:counters.resizeObservers-before.resizeObservers,nodeDelta:document.getElementsByTagName('*').length-before.nodes,
                     errorDelta:counters.errors-before.errors};
                   console.log('EDT_HEAVY_SUMMARY|scenario='+scenario+'|panel='+panel+'|openN='+out.openN+'|closeN='+out.closeN+
-                    '|openFirstP50='+out.openFirstP50+'|openReadyP50='+out.openReadyP50+'|openReadyP95='+out.openReadyP95+'|openReadyMax='+out.openReadyMax+
+                    '|openFirstP50='+out.openFirstP50+'|openFirstP95='+out.openFirstP95+'|openFirstMax='+out.openFirstMax+
+                    '|openReadyP50='+out.openReadyP50+'|openReadyP95='+out.openReadyP95+'|openReadyMax='+out.openReadyMax+
+                    '|openHeadP50='+out.openHeadP50+'|openTailP50='+out.openTailP50+
                     '|closeReadyP50='+out.closeReadyP50+'|closeReadyP95='+out.closeReadyP95+'|closeReadyMax='+out.closeReadyMax+
                     '|mutations='+out.mutationTotal+'|mainMutations='+out.mainMutationTotal+'|renders='+out.renderTotal+
+                    '|bridgeCalls='+out.bridgeTotal+'|bridgeReads='+out.bridgeReadTotal+'|bridgeWrites='+out.bridgeWriteTotal+
+                    '|storageReads='+out.storageReadTotal+'|storageWrites='+out.storageWriteTotal+
                     '|listenerDelta='+out.listenerDelta+'|observerDelta='+out.observerDelta+'|resizeObserverDelta='+out.resizeObserverDelta+
                     '|nodeDelta='+out.nodeDelta+'|errorDelta='+out.errorDelta);
                   return out;
@@ -264,9 +307,9 @@ final class HeavyPanelPerformanceUi648 {
                 window.__edtHeavyPanelMetrics648={counters:counters,samples:samples,counts:counts,begin:begin,transition:transition,panelOpen:panelOpen,run:runBenchmark};
                 window.runHeavyPanelBenchmark648=function(name,cycles){
                   if(window.__edtHeavyBenchmarkRunning648)return false;window.__edtHeavyBenchmarkRunning648=true;
-                  runBenchmark(name,cycles).catch(function(error){counters.errors++;console.error('EDT_HEAVY_BENCHMARK|scenario='+name+'|status=error|message='+error);});return true;
+                  runBenchmark(name,cycles).catch(function(error){console.error('EDT_HEAVY_BENCHMARK|scenario='+name+'|status=error|message='+error);});return true;
                 };
-                console.log('EDT_HEAVY_METRICS|ready|listeners='+counters.listenerAdds+'|observers='+counters.mutationObservers+'|resizeObservers='+counters.resizeObservers);
+                console.log('EDT_HEAVY_METRICS|ready|listeners='+counters.listenerAdds+'|observers='+counters.mutationObservers+'|resizeObservers='+counters.resizeObservers+'|bridgeWrapped='+(counters.bridgeWrapped?1:0));
               }catch(e){console.error('HeavyPanelPerformanceUi648',e)}
             })();
             """;
