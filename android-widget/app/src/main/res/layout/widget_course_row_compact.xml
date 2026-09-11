@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rowRoot"
+    android:layout_width="match_parent"
+    android:layout_height="38dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingTop="1dp"
+    android:paddingBottom="1dp">
+    <TextView android:id="@+id/rowIndex" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+    <LinearLayout android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" android:orientation="vertical">
+        <TextView android:id="@+id/rowLineTop" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+        <TextView android:id="@+id/rowDot" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+        <TextView android:id="@+id/rowLineBottom" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+    </LinearLayout>
+    <LinearLayout android:id="@+id/rowContent" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_vertical" android:paddingLeft="9dp" android:paddingTop="2dp" android:paddingRight="8dp" android:paddingBottom="2dp" android:background="#FFF0335D">
+        <TextView android:id="@+id/rowTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:textColor="#FFFFFF" android:textSize="10sp" android:textStyle="bold" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+            <TextView android:id="@+id/rowMeta" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:ellipsize="end" android:maxLines="1" android:textColor="#F7FBFF" android:textSize="8sp" />
+            <TextView android:id="@+id/rowRelative" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="4dp" android:paddingLeft="5dp" android:paddingRight="5dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:background="@drawable/widget_timer_pill" android:maxLines="1" android:textColor="#A72B45" android:textSize="8sp" android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
