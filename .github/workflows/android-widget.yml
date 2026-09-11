@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: android-widget-${{ github.ref_name }}-v9
+  group: android-widget-${{ github.ref_name }}-v10
   cancel-in-progress: true
 
 permissions:
@@ -49,7 +49,7 @@ jobs:
       - name: Verify install version and package
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='645001' versionName='6.45'" app/build/outputs/apk/debug/badging.txt
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='646001' versionName='6.46'" app/build/outputs/apk/debug/badging.txt
       - name: Rename APK
         run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/emploi-du-temps-widget.apk
       - name: Upload APK artifact
@@ -62,7 +62,7 @@ jobs:
   smoke:
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -86,7 +86,7 @@ jobs:
         with:
           name: emploi-du-temps-widget-apk
           path: smoke-apk
-      - name: Exercise app, long-session behavior and 450 repeated tab switches
+      - name: Exercise all controls, long-session behavior and repeated tab switches
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -96,7 +96,7 @@ jobs:
           emulator-boot-timeout: 240
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot -no-metrics
           disable-animations: true
-          script: bash android-widget/ci/run_smoke_645.sh
+          script: bash android-widget/ci/run_smoke_646.sh
       - name: Upload smoke-test captures
         if: always()
         uses: actions/upload-artifact@v4

@@ -10,8 +10,8 @@ android {
         applicationId 'com.wokgui.schedulewidget'
         minSdk 26
         targetSdk 35
-        versionCode 645001
-        versionName '6.45'
+        versionCode 646001
+        versionName '6.46'
     }
 
     buildFeatures {
@@ -36,4 +36,4 @@ dependencies {
     implementation 'com.google.mlkit:translate:17.0.3'
 }
 
-// 6.45: caches bottom-tab views and coalesces expensive DOM decoration work.
+// 6.46: one delegated interaction router for all controls and zero-render clean tab switches.

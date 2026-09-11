@@ -9,12 +9,11 @@ final class ChunkedUiScripts {
     private ChunkedUiScripts() {}
 
     static String[] all() {
-        List<String> out = new ArrayList<>(46);
+        List<String> out = new ArrayList<>(45);
         add(out, UiRuntimeBundle.domSafetyPrelude());
         addLayers(out, BaseSettingsUi.class, 1);
-        // Install paint-first tap handling before the expensive compatibility layers.
+        // One delegated router handles all clickable controls for the whole session.
         add(out, FastInteractionUi.script());
-        // Prevent the old inline OCR handler from applying data before review UI is ready.
         add(out, LazyImportBootstrapUi.script());
         addLayers(out, TimetableCoreUi.class, 10);
         add(out, WeekViewStabilityUi.script());
@@ -25,14 +24,9 @@ final class ChunkedUiScripts {
         add(out, TemporalStateUi.script());
         add(out, StartupViewRecoveryUi.script());
         add(out, LunchIconCleanupUi.script());
-        // Pure-CSS final polish plus the final one-time weekend hook installation.
         add(out, Polish644Ui.script());
-        // Later layers rebuild controls; refresh the fast handlers once at the end.
-        add(out, FastInteractionUi.script());
-        // Bottom navigation must be installed last: it reuses already-rendered views and
-        // prevents repeated Today/Week/Edit switches from rebuilding the whole DOM.
+        // Bottom navigation is installed last and never rerenders clean views.
         add(out, NavigationPerformanceUi.script());
-        // OCR parsing/review no longer blocks normal startup or navigation.
         add(out, UiRuntimeBundle.idleImportScript());
         return out.toArray(new String[0]);
     }
@@ -62,6 +56,6 @@ final class ChunkedUiScripts {
 
     private static void add(List<String> out, String script) {
         if (script == null || script.trim().isEmpty()) return;
-        out.add(UiRuntimeBundle.prepareChunk(script));
+        out.add(UiRuntimeBundle.prepareChunk(script).replace("APP_VERSION='6.45'", "APP_VERSION='6.46'"));
     }
 }
