@@ -2,7 +2,7 @@ name: Build and validate Android timetable
 
 on:
   push:
-    branches: [main, perf/zero-rerender-646]
+    branches: [main]
     paths:
       - 'android-widget/**'
       - '.github/workflows/android-widget.yml'
