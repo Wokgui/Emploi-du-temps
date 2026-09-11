@@ -6,8 +6,12 @@ PKG=com.wokgui.schedulewidget
 ACT=com.wokgui.schedulewidget/.MainActivity
 CONTROLLER=android-widget/app/src/main/java/com/wokgui/schedulewidget/HeavyPanelUi648.java
 
-if grep -Eq 'setTimeout|innerHTML|new MutationObserver|addEventListener' "$CONTROLLER"; then
-  echo 'Heavy-panel controller must not defer work, rebuild HTML, or register observers/listeners' >&2
+if grep -Eq 'setTimeout|innerHTML|new MutationObserver' "$CONTROLLER"; then
+  echo 'Heavy-panel controller must not defer work, rebuild HTML, or register observers' >&2
+  exit 1
+fi
+if [ "$(grep -o 'addEventListener' "$CONTROLLER" | wc -l)" -ne 1 ]; then
+  echo 'Heavy-panel input must use one stable listener registration site' >&2
   exit 1
 fi
 

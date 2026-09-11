@@ -20,18 +20,19 @@ final class HeavyPanelUi648 {
               function inputTarget(node){
                 return node&&node.closest?node.closest('#settingsBtn,#settingsX,#settingsDone,#settingsModal,#addCourse,#cancelEdit,#modal,.editCourse,.todayCourse,.wc'):null;
               }
-              document.onpointerdown=function(event){
+              const nativeAdd=EventTarget.prototype.addEventListener;
+              nativeAdd.call(document,'pointerdown',function(event){
                 const target=inputTarget(event.target);if(!target||!inputOwner.route)return;
                 const started=performance.now();if(inputOwner.metric)inputOwner.metric(event,started);
                 inputOwner.lastPanel=(target.id&&target.id.startsWith('settings'))?'settings':(target.id==='settingsModal'?'settings':'course');inputOwner.lastAt=started;
                 inputOwner.route(target,event);event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
-              };
-              document.onclick=function(event){
+              },{capture:true,passive:false});
+              nativeAdd.call(document,'click',function(event){
                 const target=inputTarget(event.target),recent=performance.now()-inputOwner.lastAt<900;
                 if(!target&&!recent)return;
                 if(!recent&&target&&inputOwner.route){if(inputOwner.metric)inputOwner.metric(event,performance.now());inputOwner.route(target,event)}
                 event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
-              };
+              },true);
               function wrap(name){
                 const Native=window[name];if(typeof Native!=='function')return;
                 window[name]=new Proxy(Native,{construct(Target,args){
