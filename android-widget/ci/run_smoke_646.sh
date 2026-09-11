@@ -37,16 +37,17 @@ restore_edit_top() {
   assert_alive
 }
 
-# Resolve all controls from one live accessibility snapshot. Repeating this once per short
-# stress block avoids the run-612 failure mode where coordinates captured before 120 mixed
-# cycles became stale after later Edit renders and started hitting course cells / Cancel.
+# Resolve controls whose vertical position can vary from one Edit render to another. The
+# current-week control itself is deliberately not read from the WebView accessibility bounds:
+# after restoring Edit to the top its screen position is stable at 540,281, while Chromium can
+# expose a content-local Y coordinate for that first row after a long session (run 613).
 resolve_live_controls() {
   local output=""
   for attempt in 1 2 3 4 5; do
     adb shell uiautomator dump /sdcard/edt-646-live.xml >/dev/null 2>&1 || true
     adb pull /sdcard/edt-646-live.xml /tmp/edt-646-live.xml >/dev/null 2>&1 || true
     output=$(python3 - <<'PY'
-import re, sys, xml.etree.ElementTree as ET
+import re, xml.etree.ElementTree as ET
 try:
     root=ET.parse('/tmp/edt-646-live.xml').getroot()
 except Exception:
@@ -57,7 +58,6 @@ wanted={
     'week_b': ('Semaine B','exact'),
     'day_lun': ('Lun','exact'),
     'day_jeu': ('Jeu','exact'),
-    'current_week': ('Cette semaine','prefix'),
 }
 found={}
 for node in root.iter('node'):
@@ -85,8 +85,9 @@ for key in wanted:
     print(f'{key}="{found[key]}"')
 PY
 )
-    if [ "$(printf '%s\n' "$output" | grep -c '=')" -eq 5 ]; then
+    if [ "$(printf '%s\n' "$output" | grep -c '=')" -eq 4 ]; then
       eval "$output"
+      current_week="540 281"
       return 0
     fi
     sleep 0.15
