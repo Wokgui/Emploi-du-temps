@@ -34,7 +34,7 @@ wait_for_log() {
   local needle="$1"
   local attempts="${2:-1200}"
   for _ in $(seq 1 "$attempts"); do
-    if adb logcat -d | grep -Fq "$needle"; then return 0; fi
+    if adb logcat -d | grep -F "$needle" >/dev/null; then return 0; fi
     sleep 0.05
   done
   echo "Timed out waiting for log: $needle" >&2
