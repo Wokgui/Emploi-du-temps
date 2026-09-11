@@ -35,7 +35,17 @@ final class HeavyPanelUi648 {
               function wrap(name){
                 const Native=window[name];if(typeof Native!=='function')return;
                 window[name]=new Proxy(Native,{construct(Target,args){
-                  const instance=Reflect.construct(Target,args),observe=instance.observe;
+                  const bypass=!!window.__edtAllowPanelObserver648,callback=args[0];
+                  const forwarded=bypass?callback:function(records,observer){
+                    const owner=window.__edtHeavyPanelsOwnObservers648;
+                    if(!owner)return callback.call(this,records,observer);
+                    const filtered=records.filter(record=>{
+                      const target=record&&record.target;
+                      return !(target&&(target===owner.settings||target===owner.course||owner.settings.contains(target)||owner.course.contains(target)));
+                    });
+                    if(filtered.length)return callback.call(this,filtered,observer);
+                  };
+                  const instance=Reflect.construct(Target,[forwarded].concat(args.slice(1))),observe=instance.observe;
                   instance.observe=function(target,options){
                     registry.push({instance:instance,target:target,type:name});
                     const owner=window.__edtHeavyPanelsOwnObservers648;
