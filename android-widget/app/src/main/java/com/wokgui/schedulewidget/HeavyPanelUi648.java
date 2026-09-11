@@ -11,6 +11,24 @@ package com.wokgui.schedulewidget;
 final class HeavyPanelUi648 {
     private HeavyPanelUi648() {}
 
+    static String prelude() {
+        return """
+            (function(){
+              if(window.__edtPanelObserverRegistry648)return;
+              const registry=[];window.__edtPanelObserverRegistry648=registry;
+              function wrap(name){
+                const Native=window[name];if(typeof Native!=='function')return;
+                window[name]=new Proxy(Native,{construct(Target,args){
+                  const instance=Reflect.construct(Target,args),observe=instance.observe;
+                  instance.observe=function(target,options){registry.push({instance:instance,target:target,type:name});return observe.call(instance,target,options)};
+                  return instance;
+                }});
+              }
+              wrap('MutationObserver');wrap('ResizeObserver');
+            })();
+            """;
+    }
+
     static String script() {
         return """
             (function(){
@@ -169,13 +187,20 @@ final class HeavyPanelUi648 {
                 updateSlotOptions(1,false,'','');prepareContributedFields();
                 const preparedSettingsHeight=settingsSheet.offsetHeight;
                 const preparedCourseHeight=courseForm.offsetHeight;
+                let disconnectedObservers=0;
+                for(const entry of window.__edtPanelObserverRegistry648||[]){
+                  const target=entry&&entry.target;
+                  if(target&&(target===settings||target===course||settings.contains(target)||course.contains(target))){
+                    try{entry.instance.disconnect();disconnectedObservers++}catch(e){}
+                  }
+                }
                 window.closeCoursePanel648=closeCourse;
                 window.__edtHeavyPanels648={
                   settings:settings,course:course,openSettings:openSettings,closeSettings:closeSettings,
                   openCourse:openCourse,closeCourse:closeCourse,isOpen:function(name){return isOpen(name==='settings'?settings:course)},
                   preparedSettingsHeight:preparedSettingsHeight,preparedCourseHeight:preparedCourseHeight
                 };
-                console.log('EDT_HEAVY_OWNER|ready|prepareMs='+(Math.round((performance.now()-preparationStarted)*10)/10)+'|settingsHeight='+preparedSettingsHeight+'|courseHeight='+preparedCourseHeight+'|settingsButtons='+(settings.querySelectorAll('button').length)+'|courseFields='+(courseForm.querySelectorAll('input,select').length)+'|slotOptions='+slotSelect.options.length+'|preparers='+(window.__edtCoursePanelPreparers648||[]).length);
+                console.log('EDT_HEAVY_OWNER|ready|prepareMs='+(Math.round((performance.now()-preparationStarted)*10)/10)+'|settingsHeight='+preparedSettingsHeight+'|courseHeight='+preparedCourseHeight+'|settingsButtons='+(settings.querySelectorAll('button').length)+'|courseFields='+(courseForm.querySelectorAll('input,select').length)+'|slotOptions='+slotSelect.options.length+'|preparers='+(window.__edtCoursePanelPreparers648||[]).length+'|disconnectedObservers='+disconnectedObservers);
               }catch(e){console.error('HeavyPanelUi648',e)}
             })();
             """;

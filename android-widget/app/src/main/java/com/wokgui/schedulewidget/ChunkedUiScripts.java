@@ -9,7 +9,8 @@ final class ChunkedUiScripts {
     private ChunkedUiScripts() {}
 
     static String[] all() {
-        List<String> out = new ArrayList<>(49);
+        List<String> out = new ArrayList<>(50);
+        add(out, HeavyPanelUi648.prelude());
         if (BuildConfig.DEBUG) add(out, HeavyPanelPerformanceUi648.prelude());
         add(out, UiRuntimeBundle.domSafetyPrelude());
         addLayers(out, BaseSettingsUi.class, 1);
