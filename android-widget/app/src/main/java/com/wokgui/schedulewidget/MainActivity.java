@@ -1,3 +1,4 @@
+e102096daac5c01f59847015d0fc798a25dff91e
 package com.wokgui.schedulewidget;
 
 import android.Manifest;
@@ -9,8 +10,10 @@ import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.webkit.CookieManager;
+import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -60,7 +63,16 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setAllowUniversalAccessFromFileURLs(true);
-        webView.setWebChromeClient(new WebChromeClient());
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onConsoleMessage(ConsoleMessage message) {
+                String text = message == null ? null : message.message();
+                if (text != null && text.startsWith("EDT_HEAVY_")) {
+                    Log.i("EDT_HEAVY", text);
+                    return true;
+                }
+                return super.onConsoleMessage(message);
+            }
+        });
 
         webView.addJavascriptInterface(new ScheduleBridge(), "AndroidSchedule");
         webView.setWebViewClient(new WebViewClient() {
