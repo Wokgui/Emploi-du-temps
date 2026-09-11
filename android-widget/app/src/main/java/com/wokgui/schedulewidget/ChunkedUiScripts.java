@@ -9,7 +9,7 @@ final class ChunkedUiScripts {
     private ChunkedUiScripts() {}
 
     static String[] all() {
-        List<String> out = new ArrayList<>(45);
+        List<String> out = new ArrayList<>(46);
         add(out, UiRuntimeBundle.domSafetyPrelude());
         addLayers(out, BaseSettingsUi.class, 1);
         // One delegated router handles all clickable controls for the whole session.
@@ -25,8 +25,9 @@ final class ChunkedUiScripts {
         add(out, StartupViewRecoveryUi.script());
         add(out, LunchIconCleanupUi.script());
         add(out, Polish644Ui.script());
-        // Bottom navigation is installed last and never rerenders clean views.
+        // Bottom navigation owns state changes; 6.47 then keeps all three views laid out.
         add(out, NavigationPerformanceUi.script());
+        add(out, InstantViewUi647.script());
         add(out, UiRuntimeBundle.idleImportScript());
         return out.toArray(new String[0]);
     }
@@ -56,6 +57,6 @@ final class ChunkedUiScripts {
 
     private static void add(List<String> out, String script) {
         if (script == null || script.trim().isEmpty()) return;
-        out.add(UiRuntimeBundle.prepareChunk(script).replace("APP_VERSION='6.45'", "APP_VERSION='6.46'"));
+        out.add(UiRuntimeBundle.prepareChunk(script).replace("APP_VERSION='6.45'", "APP_VERSION='6.47'"));
     }
 }
