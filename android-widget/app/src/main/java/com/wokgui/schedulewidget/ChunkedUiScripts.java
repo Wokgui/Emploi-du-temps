@@ -9,7 +9,8 @@ final class ChunkedUiScripts {
     private ChunkedUiScripts() {}
 
     static String[] all() {
-        List<String> out = new ArrayList<>(46);
+        List<String> out = new ArrayList<>(48);
+        add(out, HeavyPanelPerformanceUi648.prelude());
         add(out, UiRuntimeBundle.domSafetyPrelude());
         addLayers(out, BaseSettingsUi.class, 1);
         // One delegated router handles all clickable controls for the whole session.
@@ -28,6 +29,7 @@ final class ChunkedUiScripts {
         // Bottom navigation owns state changes; 6.47 then keeps all three views laid out.
         add(out, NavigationPerformanceUi.script());
         add(out, InstantViewUi647.script());
+        add(out, HeavyPanelPerformanceUi648.script());
         add(out, UiRuntimeBundle.idleImportScript());
         return out.toArray(new String[0]);
     }

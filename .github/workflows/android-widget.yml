@@ -2,7 +2,7 @@ name: Build and validate Android timetable
 
 on:
   push:
-    branches: [main, perf/instant-views-647]
+    branches: [main, perf/instant-views-647, perf/heavy-panels-648]
     paths:
       - 'android-widget/**'
       - '.github/workflows/android-widget.yml'
@@ -105,9 +105,55 @@ jobs:
           path: smoke/
           if-no-files-found: ignore
 
+  heavy-panels:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Enable KVM acceleration
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm
+          fi
+      - name: Download validated APK
+        uses: actions/download-artifact@v4
+        with:
+          name: emploi-du-temps-widget-apk
+          path: smoke-apk
+      - name: Measure and stress Settings and course editor
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          EDT_HEAVY_REQUIRE_FAST: '0'
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_2
+          emulator-boot-timeout: 240
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot -no-metrics
+          disable-animations: true
+          script: bash android-widget/ci/run_heavy_panels_648.sh
+      - name: Upload heavy-panel measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: heavy-panel-measurements
+          path: smoke-heavy/
+          if-no-files-found: ignore
+
   publish:
-    needs: smoke
-    if: ${{ needs.smoke.result == 'success' && github.ref == 'refs/heads/main' }}
+    needs: [smoke, heavy-panels]
+    if: ${{ needs.smoke.result == 'success' && needs.heavy-panels.result == 'success' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
 

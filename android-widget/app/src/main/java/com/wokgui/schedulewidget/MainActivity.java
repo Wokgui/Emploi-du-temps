@@ -41,6 +41,7 @@ public class MainActivity extends Activity {
     private boolean uiInjected = false;
     private boolean uiInjectionInFlight = false;
     private boolean skipNextResumeRefresh = false;
+    private boolean heavyPanelBenchmarkStarted = false;
     private final TextRecognizer textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
 
     @Override
@@ -340,7 +341,22 @@ public class MainActivity extends Activity {
             else {
                 primeWeekBadge();
                 revealWebViewStable();
+                runHeavyPanelBenchmarkIfRequested();
             }
+        });
+    }
+
+    /** Starts the deterministic WebView soak only for explicit debug-test launches. */
+    private void runHeavyPanelBenchmarkIfRequested() {
+        if (!BuildConfig.DEBUG || heavyPanelBenchmarkStarted || webView == null || getIntent() == null) return;
+        String scenario = getIntent().getStringExtra("heavy_panel_benchmark");
+        if (!("settings".equals(scenario) || "course".equals(scenario) || "mixed".equals(scenario))) return;
+        int cycles = Math.max(1, Math.min(300, getIntent().getIntExtra("heavy_panel_cycles", 300)));
+        heavyPanelBenchmarkStarted = true;
+        String script = "window.runHeavyPanelBenchmark648&&window.runHeavyPanelBenchmark648("
+                + JSONObject.quote(scenario) + "," + cycles + ");";
+        webView.post(() -> {
+            if (webView != null && pageLoaded) webView.evaluateJavascript(script, null);
         });
     }
 
