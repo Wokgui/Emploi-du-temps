@@ -198,8 +198,8 @@ final class ScheduleDisplayUi {
                 function editedCourse(){
                   try{if(typeof weeks==='undefined'||typeof activeWeek==='undefined'||typeof selected==='undefined'||typeof editing==='undefined'||editing==null)return null;return weeks[activeWeek]&&weeks[activeWeek][selected]?weeks[activeWeek][selected].courses[editing]||null:null}catch(e){return null}
                 }
-                function syncCoursePicker(){
-                  ensureFullCoursePicker();const c=editedCourse();
+                function syncCoursePicker(prepared){
+                  if(!prepared)ensureFullCoursePicker();const c=editedCourse();
                   customActive=false;
                   if(c&&isHex(c.color)){customBase=c.color.toUpperCase();customTone=0}else{customBase='#2F83E8';customTone=0}
                   const e=document.getElementById('fullCourseEnable84');if(e)e.checked=false;
@@ -265,7 +265,7 @@ final class ScheduleDisplayUi {
                   applySpecialCss();renderSpecialControls();ensureFullCoursePicker();wrapCourseSubmit();bindSyncToggle();repaintLiteralCourses();
                 }
                 window.refreshFineTuneUi=refresh;
-                (window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'full-course-color',run:syncCoursePicker});
+                (window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'full-course-color',run:function(){syncCoursePicker(true)}});
 
                 let literalTimer84=0;
                 function scheduleLiteral84(){if(literalTimer84)return;literalTimer84=setTimeout(()=>{literalTimer84=0;repaintLiteralCourses()},18)}

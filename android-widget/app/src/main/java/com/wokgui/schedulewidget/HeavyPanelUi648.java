@@ -18,8 +18,13 @@ final class HeavyPanelUi648 {
               const registry=[];window.__edtPanelObserverRegistry648=registry;
               const inputOwner={metric:null,route:null,lastPanel:'',lastAt:0,count:0};window.__edtHeavyInputOwner648=inputOwner;
               function logInput(target){
-                const label=target.id==='settingsBtn'?'settings':(target.id||'course');inputOwner.count++;
-                console.log('EDT_FAST_INPUT|'+label+'|visual|delegated');
+                let label=target.id||'course';
+                if(target.id==='settingsBtn')label='settings';
+                else if(target.classList&&target.classList.contains('editCourse'))label='edit-course';
+                else if(target.classList&&target.classList.contains('todayCourse'))label='today-course';
+                else if(target.classList&&target.classList.contains('wc'))label='week-cell';
+                inputOwner.count++;
+                if(inputOwner.count<=6||inputOwner.count%4===0)console.log('EDT_FAST_INPUT|'+label+'|visual|delegated');
                 if(inputOwner.count%100===0)console.log('EDT_FAST_STATS|clicks='+inputOwner.count+'|submits=0|scheduled=0|executed='+inputOwner.count+'|cancelled=0|routers=1|wrappers=0');
               }
               function inputTarget(node){

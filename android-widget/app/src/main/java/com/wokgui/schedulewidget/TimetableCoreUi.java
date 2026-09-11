@@ -1229,7 +1229,7 @@ final class TimetableCoreUi {
 
                 function refresh(){ensurePicker();decorateAll();if(modal&&modal.classList.contains('show'))syncPicker()}
                 window.refreshCourseColors=refresh;
-                (window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'course-color',run:syncPicker});
+                (window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'course-color',run:function(){pickedTouched=false;const c=currentEditedCourse();selectColor(c&&c.color?c.color:'');selectScope('cell')}});
                 refresh();
               }catch(e){console.log('Course colours',e)}
             })();
@@ -1799,7 +1799,7 @@ final class TimetableCoreUi {
                   }catch(e){}
                 }
                 window.refreshLunchBreakUi=refresh;
-                (window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'course-badge',run:syncCourseBadgeField});
+                (window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'course-badge',run:function(){const input=document.getElementById('fCourseBadge');if(input)input.value=courseBadge(currentEditedCourseV9())}});
                 refresh();
               }catch(e){console.log('Lunch break UI',e)}
             })();
@@ -2110,7 +2110,7 @@ final class TimetableCoreUi {
                 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(scheduleGrid);
 
                 refreshWidgetCourseLabels();installLabelUi();
-                (window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'widget-label',run:fillCourseWidgetField});
+                (window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'widget-label',run:function(){const input=document.getElementById('fWidgetLabel'),c=editedCourse();if(input)input.value=c?String(widgetCourseLabels()[keyFor(activeWeek,selected,c.start,c.end)]||''):''}});
                 scheduleGrid();
                 syncGrid();
                 setInterval(()=>{if(window.paintWeek69)window.paintWeek69()},30000);
