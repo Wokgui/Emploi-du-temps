@@ -22,25 +22,24 @@ final class HeavyPanelPerformanceUi648 {
                 const nativeConsoleError=console.error.bind(console);
                 console.error=function(){counters.errors++;return nativeConsoleError.apply(console,arguments)};
                 const input={pointerdown:null};
-                nativeAdd.call(document,'pointerdown',function(event){
-                  const callback=input.pointerdown;if(callback)callback(event,performance.now());
-                },{capture:true,passive:true});
+                const inputOwner=window.__edtHeavyInputOwner648;
+                if(inputOwner)inputOwner.metric=function(event,started){const callback=input.pointerdown;if(callback)callback(event,started)};
+                else nativeAdd.call(document,'pointerdown',function(event){const callback=input.pointerdown;if(callback)callback(event,performance.now())},{capture:true,passive:true});
                 EventTarget.prototype.addEventListener=function(){
                   counters.listenerAdds++;
                   return nativeAdd.apply(this,arguments);
                 };
-                if(typeof window.MutationObserver==='function'){
-                  const NativeMutationObserver=window.MutationObserver;
-                  window.MutationObserver=new Proxy(NativeMutationObserver,{
-                    construct(Target,args){counters.mutationObservers++;return Reflect.construct(Target,args)}
-                  });
+                function countActiveObservers(name,field){
+                  const Native=window[name];if(typeof Native!=='function')return;
+                  window[name]=new Proxy(Native,{construct(Target,args){
+                    const instance=Reflect.construct(Target,args),observe=instance.observe,disconnect=instance.disconnect;let active=false;
+                    instance.observe=function(){if(!active){active=true;counters[field]++}return observe.apply(instance,arguments)};
+                    instance.disconnect=function(){if(active){active=false;counters[field]--}return disconnect.apply(instance,arguments)};
+                    return instance;
+                  }});
                 }
-                if(typeof window.ResizeObserver==='function'){
-                  const NativeResizeObserver=window.ResizeObserver;
-                  window.ResizeObserver=new Proxy(NativeResizeObserver,{
-                    construct(Target,args){counters.resizeObservers++;return Reflect.construct(Target,args)}
-                  });
-                }
+                countActiveObservers('MutationObserver','mutationObservers');
+                countActiveObservers('ResizeObserver','resizeObservers');
                 if(typeof window.Storage==='function'){
                   const nativeGet=Storage.prototype.getItem,nativeSet=Storage.prototype.setItem,nativeRemove=Storage.prototype.removeItem,nativeClear=Storage.prototype.clear;
                   Storage.prototype.getItem=function(){counters.storageReads++;return nativeGet.apply(this,arguments)};

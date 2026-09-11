@@ -16,6 +16,22 @@ final class HeavyPanelUi648 {
             (function(){
               if(window.__edtPanelObserverRegistry648)return;
               const registry=[];window.__edtPanelObserverRegistry648=registry;
+              const inputOwner={metric:null,route:null,lastPanel:'',lastAt:0};window.__edtHeavyInputOwner648=inputOwner;
+              function inputTarget(node){
+                return node&&node.closest?node.closest('#settingsBtn,#settingsX,#settingsDone,#settingsModal,#addCourse,#cancelEdit,#modal,.editCourse,.todayCourse,.wc'):null;
+              }
+              document.onpointerdown=function(event){
+                const target=inputTarget(event.target);if(!target||!inputOwner.route)return;
+                const started=performance.now();if(inputOwner.metric)inputOwner.metric(event,started);
+                inputOwner.lastPanel=(target.id&&target.id.startsWith('settings'))?'settings':(target.id==='settingsModal'?'settings':'course');inputOwner.lastAt=started;
+                inputOwner.route(target,event);event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
+              };
+              document.onclick=function(event){
+                const target=inputTarget(event.target),recent=performance.now()-inputOwner.lastAt<900;
+                if(!target&&!recent)return;
+                if(!recent&&target&&inputOwner.route){if(inputOwner.metric)inputOwner.metric(event,performance.now());inputOwner.route(target,event)}
+                event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
+              };
               function wrap(name){
                 const Native=window[name];if(typeof Native!=='function')return;
                 window[name]=new Proxy(Native,{construct(Target,args){
@@ -168,6 +184,15 @@ final class HeavyPanelUi648 {
                   }catch(error){console.error('EDT_HEAVY_OPEN_ERROR|panel=course|message='+error)}
                   return false;
                 }
+
+                const inputOwner=window.__edtHeavyInputOwner648;
+                if(inputOwner)inputOwner.route=function(target,event){
+                  if(target.id==='settingsBtn')return openSettings();
+                  if(target.id==='settingsX'||target.id==='settingsDone'||target.id==='settingsModal')return closeSettings();
+                  if(target.id==='cancelEdit'||target.id==='modal'){closeCourse();editing=null;newPrefill=null;return false}
+                  if(target.id==='addCourse')return openCourse(null);
+                  if(typeof target.onclick==='function')return target.onclick.call(target,event);
+                };
 
                 window.fillSlotOptions=updateSlotOptions;
                 window.openEditor=openCourse;
