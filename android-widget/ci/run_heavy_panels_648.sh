@@ -4,6 +4,12 @@ set -euo pipefail
 mkdir -p smoke-heavy
 PKG=com.wokgui.schedulewidget
 ACT=com.wokgui.schedulewidget/.MainActivity
+CONTROLLER=android-widget/app/src/main/java/com/wokgui/schedulewidget/HeavyPanelUi648.java
+
+if grep -Eq 'setTimeout|innerHTML|new MutationObserver|addEventListener' "$CONTROLLER"; then
+  echo 'Heavy-panel controller must not defer work, rebuild HTML, or register observers/listeners' >&2
+  exit 1
+fi
 
 capture_failure() {
   local status=$?
@@ -24,7 +30,7 @@ adb logcat -G 16M || true
 
 assert_clean_log() {
   local file="$1"
-  if grep -E 'AndroidRuntime.*Process: com.wokgui.schedulewidget|ANR in com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|NotFoundError)|EDT_HEAVY_BENCHMARK.*status=error' "$file"; then
+  if grep -E 'AndroidRuntime.*Process: com.wokgui.schedulewidget|ANR in com.wokgui.schedulewidget|Uncaught (SyntaxError|ReferenceError|TypeError|RangeError|NotFoundError)|EDT_HEAVY_(BENCHMARK.*status=error|PREP_ERROR|OPEN_ERROR)' "$file"; then
     echo 'Crash, ANR or JavaScript error during heavy-panel stress' >&2
     return 1
   fi
@@ -34,8 +40,8 @@ wait_for_log() {
   local needle="$1"
   local attempts="${2:-1200}"
   for _ in $(seq 1 "$attempts"); do
-    if adb logcat -d | grep -F "$needle" >/dev/null; then return 0; fi
-    sleep 0.05
+    if adb logcat -d -s EDT_HEAVY:I '*:S' | grep -F "$needle" >/dev/null; then return 0; fi
+    sleep 0.10
   done
   echo "Timed out waiting for log: $needle" >&2
   return 1
@@ -76,6 +82,12 @@ adb logcat -c
 adb shell am start -W -n "$ACT" --es open_mode edit >/dev/null
 wait_for_log 'EDT_HEAVY_METRICS|ready|' 600
 sleep 0.5
+adb logcat -d > smoke-heavy/startup.log
+if [ "${EDT_HEAVY_REQUIRE_FAST:-0}" = 1 ]; then
+  grep -Fq 'EDT_HEAVY_OWNER|ready|' smoke-heavy/startup.log
+  grep -Fq 'EDT_HEAVY_METRICS|ready|' smoke-heavy/startup.log
+  grep -Fq 'bridgeWrapped=1' smoke-heavy/startup.log
+fi
 adb logcat -c
 tap_text 'Réglages'
 wait_for_log 'EDT_HEAVY_CHECKPOINT|scenario=physical|panel=settings|action=open|n=1' 200
@@ -142,14 +154,27 @@ for line in lines:
     expected=300 if scenario in ('settings','course') else 150
     if opens!=expected or closes!=expected:
         raise SystemExit(f'{scenario}/{panel}: expected {expected} complete cycles, got {opens}/{closes}')
-    for key in ('listenerDelta','observerDelta','resizeObserverDelta','nodeDelta','errorDelta','mainMutations','renders'):
+    for key in ('listenerDelta','observerDelta','resizeObserverDelta','nodeDelta','errorDelta','mainMutations','renders','bridgeCalls','storageReads','storageWrites','scenarioBridgeCalls','scenarioStorageReads','scenarioStorageWrites','scenarioMainMutations','scenarioRenders'):
         if int(float(data.get(key,-1)))!=0:
             raise SystemExit(f'{scenario}/{panel}: {key} accumulated: {data.get(key)}')
     p50=float(data['openReadyP50']); p95=float(data['openReadyP95']); maximum=float(data['openReadyMax'])
+    head=float(data.get('openHeadP50',p50)); tail=float(data.get('openTailP50',p50))
     if p95 > max(240, p50*2.5+80) or maximum>900:
         raise SystemExit(f'{scenario}/{panel}: progressive or extreme opening slowdown: p50={p50}, p95={p95}, max={maximum}')
-    if require_fast and (p50>80 or p95>140 or maximum>350):
+    if tail > max(head+35,head*1.5):
+        raise SystemExit(f'{scenario}/{panel}: progressive slowdown: first-20 p50={head}, last-20 p50={tail}')
+    close50=float(data['closeReadyP50']); close95=float(data['closeReadyP95']); closemax=float(data['closeReadyMax'])
+    if require_fast and (p50>80 or p95>140 or maximum>350 or close50>80 or close95>140 or closemax>350):
         raise SystemExit(f'{scenario}/{panel}: opening is not yet visually instant: p50={p50}, p95={p95}, max={maximum}')
+
+physical=Path('smoke-heavy/physical-input-measurements.txt').read_text(errors='ignore').splitlines()
+if len(physical)!=4:
+    raise SystemExit(f'expected four physical input measurements, got {len(physical)}')
+if require_fast:
+    for line in physical:
+        data=fields(line); ready=float(data.get('readyMs',9999))
+        if ready>350:
+            raise SystemExit(f'physical interaction is not visually instant: {line}')
 print(f'heavy_panel_fast_thresholds_enabled={int(require_fast)}')
 PY
 

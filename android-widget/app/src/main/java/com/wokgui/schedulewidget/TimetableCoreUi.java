@@ -773,7 +773,7 @@ final class TimetableCoreUi {
                 function loadProfiles(){
                   const sel=document.getElementById('advProfileSelect');if(!sel)return;try{const root=JSON.parse(window.AndroidSchedule&&AndroidSchedule.listProfiles?AndroidSchedule.listProfiles():'{}');sel.innerHTML='';for(const p of root.profiles||[]){const o=document.createElement('option');o.value=p.id;o.textContent=p.name;sel.appendChild(o)}sel.value=root.current||''}catch(e){}
                 }
-                function activateProfile(id){if(!(window.AndroidSchedule&&AndroidSchedule.activateProfile))return;AndroidSchedule.activateProfile(id);if(window.reloadSchedule)window.reloadSchedule();loadProfiles();setTimeout(refreshAdvancedFeatures,18)}
+                function activateProfile(id){if(!(window.AndroidSchedule&&AndroidSchedule.activateProfile))return;AndroidSchedule.activateProfile(id);if(window.reloadSchedule)window.reloadSchedule();if(window.refreshCourseWidgetLabelCache648)window.refreshCourseWidgetLabelCache648();loadProfiles();setTimeout(refreshAdvancedFeatures,18)}
 
                 function bind(){
                   const selectMap={advDensity:'density',advFormat:'widgetFormat',advAccess:'accessibility',advHoliday:'holidayMode'};for(const id in selectMap){const el=document.getElementById(id);if(el)el.onchange=e=>{adv[selectMap[id]]=e.target.value;saveAdv();if(typeof render==='function')render()}}
@@ -786,12 +786,12 @@ final class TimetableCoreUi {
                   const ps=document.getElementById('advProfileSelect');if(ps)ps.onchange=e=>activateProfile(e.target.value);
                   const np=document.getElementById('advNewProfile');if(np)np.onclick=()=>{if(!(window.AndroidSchedule&&AndroidSchedule.createProfile))return;const name=prompt(T().newProfile);if(!name)return;const dup=confirm(T().duplicateQuestion);const id=AndroidSchedule.createProfile(name,dup);loadProfiles();activateProfile(id)};
                   const rp=document.getElementById('advRenameProfile');if(rp)rp.onclick=()=>{const sel=document.getElementById('advProfileSelect');if(!sel||!sel.value)return;const name=prompt(T().rename,sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'');if(name&&window.AndroidSchedule&&AndroidSchedule.renameProfile){AndroidSchedule.renameProfile(sel.value,name);loadProfiles()}};
-                  const dp=document.getElementById('advDeleteProfile');if(dp)dp.onclick=()=>{const sel=document.getElementById('advProfileSelect');if(!sel||!sel.value||!(window.AndroidSchedule&&AndroidSchedule.deleteProfile))return;if(confirm(T().delete+' ?')){AndroidSchedule.deleteProfile(sel.value);loadProfiles();if(window.reloadSchedule)window.reloadSchedule()}};
+                  const dp=document.getElementById('advDeleteProfile');if(dp)dp.onclick=()=>{const sel=document.getElementById('advProfileSelect');if(!sel||!sel.value||!(window.AndroidSchedule&&AndroidSchedule.deleteProfile))return;if(confirm(T().delete+' ?')){AndroidSchedule.deleteProfile(sel.value);loadProfiles();if(window.reloadSchedule)window.reloadSchedule();if(window.refreshCourseWidgetLabelCache648)window.refreshCourseWidgetLabelCache648()}};
                   const sb=document.getElementById('advShareBackup');if(sb)sb.onclick=()=>{if(window.AndroidSchedule&&AndroidSchedule.shareBackup)AndroidSchedule.shareBackup()};const rb=document.getElementById('advRestoreBackup');if(rb)rb.onclick=()=>{if(window.AndroidSchedule&&AndroidSchedule.pickBackup)AndroidSchedule.pickBackup()};
                 }
                 bind();
 
-                window.applyBackupImported=ok=>{alert(ok?T().importOk:T().importFail);if(ok&&window.reloadSchedule)window.reloadSchedule()};
+                window.applyBackupImported=ok=>{alert(ok?T().importOk:T().importFail);if(ok){if(window.reloadSchedule)window.reloadSchedule();if(window.refreshCourseWidgetLabelCache648)window.refreshCourseWidgetLabelCache648()}};
 
                 function refreshAdvancedFeatures(){
                   loadAdv();restoreCycleFromNative();locAdv();syncControls();renderRanges();renderExceptions();loadProfiles();buildWeekTabs();decorateUncertain();renderEffectiveToday();applyAppAppearance();
@@ -1229,6 +1229,7 @@ final class TimetableCoreUi {
 
                 function refresh(){ensurePicker();decorateAll();if(modal&&modal.classList.contains('show'))syncPicker()}
                 window.refreshCourseColors=refresh;
+                (window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'course-color',run:syncPicker});
                 refresh();
               }catch(e){console.log('Course colours',e)}
             })();
@@ -1798,6 +1799,7 @@ final class TimetableCoreUi {
                   }catch(e){}
                 }
                 window.refreshLunchBreakUi=refresh;
+                (window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'course-badge',run:syncCourseBadgeField});
                 refresh();
               }catch(e){console.log('Lunch break UI',e)}
             })();
@@ -2021,6 +2023,13 @@ final class TimetableCoreUi {
                 function loadAdv(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
                 function saveAdv(o){try{AndroidSchedule.saveAdvancedSettings(JSON.stringify(o))}catch(e){}}
                 function keyFor(week,day,start,end){return String(week||'A')+'|'+String(day||2)+'|'+String(start||'')+'|'+String(end||'')}
+                let widgetCourseLabelsCache=null;
+                function refreshWidgetCourseLabels(){
+                  const a=loadAdv();widgetCourseLabelsCache=(a.widgetCourseLabels&&typeof a.widgetCourseLabels==='object')?Object.assign({},a.widgetCourseLabels):{};
+                  return widgetCourseLabelsCache;
+                }
+                function widgetCourseLabels(){return widgetCourseLabelsCache||refreshWidgetCourseLabels()}
+                window.refreshCourseWidgetLabelCache648=refreshWidgetCourseLabels;
 
                 function ensureCourseWidgetField(){
                   const form=document.getElementById('courseForm');if(!form)return;
@@ -2039,7 +2048,7 @@ final class TimetableCoreUi {
                 function fillCourseWidgetField(){
                   ensureCourseWidgetField();const input=document.getElementById('fWidgetLabel');if(!input)return;
                   const c=editedCourse();if(!c){input.value='';return}
-                  const a=loadAdv(),map=(a.widgetCourseLabels&&typeof a.widgetCourseLabels==='object')?a.widgetCourseLabels:{};
+                  const map=widgetCourseLabels();
                   input.value=String(map[keyFor(activeWeek,selected,c.start,c.end)]||'');
                 }
 
@@ -2059,6 +2068,7 @@ final class TimetableCoreUi {
                       const a=loadAdv();a.widgetCourseLabels=(a.widgetCourseLabels&&typeof a.widgetCourseLabels==='object')?a.widgetCourseLabels:{};
                       if(oldKey)delete a.widgetCourseLabels[oldKey];const newKey=keyFor(week,day,start,end);
                       if(widgetLabel)a.widgetCourseLabels[newKey]=widgetLabel;else delete a.widgetCourseLabels[newKey];saveAdv(a);
+                      widgetCourseLabelsCache=Object.assign({},a.widgetCourseLabels);
                     }catch(ex){}
                     return result;
                   };
@@ -2099,7 +2109,8 @@ final class TimetableCoreUi {
                 document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleGrid()});
                 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(scheduleGrid);
 
-                installLabelUi();
+                refreshWidgetCourseLabels();installLabelUi();
+                (window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'widget-label',run:fillCourseWidgetField});
                 scheduleGrid();
                 syncGrid();
                 setInterval(()=>{if(window.paintWeek69)window.paintWeek69()},30000);

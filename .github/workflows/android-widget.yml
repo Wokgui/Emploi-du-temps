@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: android-widget-${{ github.ref_name }}-v10
+  group: android-widget-${{ github.ref_name }}-v11
   cancel-in-progress: true
 
 permissions:
@@ -49,7 +49,7 @@ jobs:
       - name: Verify install version and package
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='647001' versionName='6.47'" app/build/outputs/apk/debug/badging.txt
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='648001' versionName='6.48'" app/build/outputs/apk/debug/badging.txt
       - name: Rename APK
         run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/emploi-du-temps-widget.apk
       - name: Upload APK artifact
@@ -133,7 +133,7 @@ jobs:
       - name: Measure and stress Settings and course editor
         uses: reactivecircus/android-emulator-runner@v2
         env:
-          EDT_HEAVY_REQUIRE_FAST: '0'
+          EDT_HEAVY_REQUIRE_FAST: '1'
         with:
           api-level: 35
           arch: x86_64

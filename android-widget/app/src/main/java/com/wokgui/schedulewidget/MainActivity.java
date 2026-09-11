@@ -314,7 +314,7 @@ public class MainActivity extends Activity {
     private void refreshScheduleAndUi() {
         if (webView == null || !pageLoaded) return;
         webView.evaluateJavascript(
-                "if(window.reloadSchedule){reloadSchedule();}",
+                "if(window.reloadSchedule){reloadSchedule();}if(window.refreshCourseWidgetLabelCache648){refreshCourseWidgetLabelCache648();}",
                 value -> {
                     if (webView == null || !pageLoaded) return;
                     if (!forceWeekOpening) {

@@ -265,6 +265,7 @@ final class ScheduleDisplayUi {
                   applySpecialCss();renderSpecialControls();ensureFullCoursePicker();wrapCourseSubmit();bindSyncToggle();repaintLiteralCourses();
                 }
                 window.refreshFineTuneUi=refresh;
+                (window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'full-course-color',run:syncCoursePicker});
 
                 let literalTimer84=0;
                 function scheduleLiteral84(){if(literalTimer84)return;literalTimer84=setTimeout(()=>{literalTimer84=0;repaintLiteralCourses()},18)}

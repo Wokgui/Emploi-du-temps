@@ -47,15 +47,10 @@ final class FastInteractionUi {
                   return '';
                 }
 
-                function flash(el){
-                  if(!el||!el.classList)return;
-                  el.classList.add('edtFastPressed');
-                  setTimeout(function(){try{el.classList.remove('edtFastPressed')}catch(e){}},90);
-                }
-
                 function visualFor(el){
                   if(!el)return;
                   if(el.id==='settingsBtn'){
+                    if(window.__edtHeavyPanels648){window.__edtHeavyPanels648.openSettings();return}
                     const m=document.getElementById('settingsModal');if(m)m.classList.add('show');return;
                   }
                   if(el.classList&&el.classList.contains('weekTab')&&el.dataset.week){
@@ -82,15 +77,14 @@ final class FastInteractionUi {
                   const style=document.createElement('style');style.id='edtFastInteractionStyle';
                   style.textContent=`
                     button,.todayCourse,.editCourse,.wc{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-                    .edtFastPressed{filter:brightness(.96)!important}
-                    button.edtFastPressed{opacity:.84!important}
+                    button:active,.todayCourse:active,.editCourse:active,.wc:active{filter:brightness(.96)!important}
+                    button:active{opacity:.84!important}
                   `;
                   document.head.appendChild(style);
                 }
 
                 document.addEventListener('pointerdown',function(e){
                   const el=controlFrom(e.target);if(!el)return;
-                  flash(el);
                   if(el.classList&&el.classList.contains('nav'))return;
                   visualFor(el);
 
@@ -105,7 +99,6 @@ final class FastInteractionUi {
                     afterPaint('',function(){fn.call(el,e);logSettle('click','settings',n,started)});
                   }
                 },{capture:true,passive:true});
-
                 document.addEventListener('click',function(e){
                   const el=controlFrom(e.target);if(!el)return;
                   if(el.classList&&el.classList.contains('nav'))return;

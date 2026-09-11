@@ -245,7 +245,8 @@ final class HeavyPanelPerformanceUi648 {
                   scenario=name;
                   ['settings','course'].forEach(function(panel){['open','close'].forEach(function(action){samples[panel][action].length=0;counts[panel][action]=0});activity[panel]=null});
                   return {listeners:counters.listenerAdds,observers:counters.mutationObservers,resizeObservers:counters.resizeObservers,
-                    nodes:document.getElementsByTagName('*').length,errors:counters.errors,renders:totalRenders(),mainMutations:mutations.main};
+                    nodes:document.getElementsByTagName('*').length,errors:counters.errors,renders:totalRenders(),mainMutations:mutations.main,
+                    bridgeCalls:counters.bridgeCalls,storageReads:counters.storageReads,storageWrites:counters.storageWrites};
                 }
                 function summarize(panel,before){
                   const opens=samples[panel].open,closes=samples[panel].close;
@@ -267,6 +268,9 @@ final class HeavyPanelPerformanceUi648 {
                     mutationTotal:mutationTotal,mainMutationTotal:mainMutationTotal,renderTotal:renderTotal,
                     bridgeTotal:bridgeTotal,bridgeReadTotal:bridgeReadTotal,bridgeWriteTotal:bridgeWriteTotal,
                     storageReadTotal:storageReadTotal,storageWriteTotal:storageWriteTotal,
+                    scenarioBridgeCalls:counters.bridgeCalls-before.bridgeCalls,scenarioStorageReads:counters.storageReads-before.storageReads,
+                    scenarioStorageWrites:counters.storageWrites-before.storageWrites,scenarioMainMutations:mutations.main-before.mainMutations,
+                    scenarioRenders:totalRenders()-before.renders,
                     listenerDelta:counters.listenerAdds-before.listeners,observerDelta:counters.mutationObservers-before.observers,
                     resizeObserverDelta:counters.resizeObservers-before.resizeObservers,nodeDelta:document.getElementsByTagName('*').length-before.nodes,
                     errorDelta:counters.errors-before.errors};
@@ -278,6 +282,8 @@ final class HeavyPanelPerformanceUi648 {
                     '|mutations='+out.mutationTotal+'|mainMutations='+out.mainMutationTotal+'|renders='+out.renderTotal+
                     '|bridgeCalls='+out.bridgeTotal+'|bridgeReads='+out.bridgeReadTotal+'|bridgeWrites='+out.bridgeWriteTotal+
                     '|storageReads='+out.storageReadTotal+'|storageWrites='+out.storageWriteTotal+
+                    '|scenarioBridgeCalls='+out.scenarioBridgeCalls+'|scenarioStorageReads='+out.scenarioStorageReads+'|scenarioStorageWrites='+out.scenarioStorageWrites+
+                    '|scenarioMainMutations='+out.scenarioMainMutations+'|scenarioRenders='+out.scenarioRenders+
                     '|listenerDelta='+out.listenerDelta+'|observerDelta='+out.observerDelta+'|resizeObserverDelta='+out.resizeObserverDelta+
                     '|nodeDelta='+out.nodeDelta+'|errorDelta='+out.errorDelta);
                   return out;
@@ -299,6 +305,7 @@ final class HeavyPanelPerformanceUi648 {
                   else if(name==='course')for(let i=0;i<cycles;i++)await courseCycle();
                   else if(name==='mixed')for(let i=0;i<cycles;i++){if(i%2===0)await settingsCycle();else await courseCycle()}
                   else throw new Error('unknown benchmark '+name);
+                  await frame();await frame();await frame();
                   const reports=[];if(name!=='course')reports.push(summarize('settings',before));if(name!=='settings')reports.push(summarize('course',before));
                   console.log('EDT_HEAVY_BENCHMARK|scenario='+name+'|status=complete|cycles='+cycles+'|errors='+(counters.errors-before.errors));
                   return reports;
