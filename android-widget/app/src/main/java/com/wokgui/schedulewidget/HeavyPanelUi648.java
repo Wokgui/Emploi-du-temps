@@ -24,7 +24,7 @@ final class HeavyPanelUi648 {
                 else if(target.classList&&target.classList.contains('todayCourse'))label='today-course';
                 else if(target.classList&&target.classList.contains('wc'))label='week-cell';
                 inputOwner.count++;
-                if(inputOwner.count<=6||inputOwner.count%4===0)console.log('EDT_FAST_INPUT|'+label+'|visual|delegated');
+                if(label==='settings'||label==='edit-course'||inputOwner.count<=6||inputOwner.count%4===0)console.log('EDT_FAST_INPUT|'+label+'|visual|delegated');
                 if(inputOwner.count%100===0)console.log('EDT_FAST_STATS|clicks='+inputOwner.count+'|submits=0|scheduled=0|executed='+inputOwner.count+'|cancelled=0|routers=1|wrappers=0');
               }
               function inputTarget(node){
