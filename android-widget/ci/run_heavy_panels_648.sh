@@ -5,6 +5,17 @@ mkdir -p smoke-heavy
 PKG=com.wokgui.schedulewidget
 ACT=com.wokgui.schedulewidget/.MainActivity
 
+capture_failure() {
+  local status=$?
+  trap - EXIT
+  if [ "$status" -ne 0 ]; then
+    adb logcat -d > smoke-heavy/failure.log 2>&1 || true
+    adb exec-out screencap -p > smoke-heavy/failure.png 2>/dev/null || true
+  fi
+  exit "$status"
+}
+trap capture_failure EXIT
+
 adb install -r smoke-apk/emploi-du-temps-widget.apk
 adb shell wm size 1080x1920
 adb shell input keyevent KEYCODE_WAKEUP || true
@@ -26,6 +37,7 @@ wait_for_log() {
     if adb logcat -d | grep -Fq "$needle"; then return 0; fi
     sleep 0.05
   done
+  echo "Timed out waiting for log: $needle" >&2
   return 1
 }
 
