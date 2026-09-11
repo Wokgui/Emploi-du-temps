@@ -133,7 +133,7 @@ if len(lines)<4:
     raise SystemExit(f'expected at least four heavy-panel summaries, got {len(lines)}')
 
 def fields(line):
-    return {k:v for k,v in re.findall(r'([A-Za-z]+)=([^|\s]+)',line)}
+    return {k:v for k,v in re.findall(r'([A-Za-z][A-Za-z0-9]*)=([^|\s]+)',line)}
 
 for line in lines:
     data=fields(line)
