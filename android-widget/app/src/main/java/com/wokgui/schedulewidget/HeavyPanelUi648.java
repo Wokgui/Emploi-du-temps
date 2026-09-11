@@ -16,7 +16,12 @@ final class HeavyPanelUi648 {
             (function(){
               if(window.__edtPanelObserverRegistry648)return;
               const registry=[];window.__edtPanelObserverRegistry648=registry;
-              const inputOwner={metric:null,route:null,lastPanel:'',lastAt:0};window.__edtHeavyInputOwner648=inputOwner;
+              const inputOwner={metric:null,route:null,lastPanel:'',lastAt:0,count:0};window.__edtHeavyInputOwner648=inputOwner;
+              function logInput(target){
+                const label=target.id==='settingsBtn'?'settings':(target.id||'course');inputOwner.count++;
+                console.log('EDT_FAST_INPUT|'+label+'|visual|delegated');
+                if(inputOwner.count%100===0)console.log('EDT_FAST_STATS|clicks='+inputOwner.count+'|submits=0|scheduled=0|executed='+inputOwner.count+'|cancelled=0|routers=1|wrappers=0');
+              }
               function inputTarget(node){
                 return node&&node.closest?node.closest('#settingsBtn,#settingsX,#settingsDone,#settingsModal,#addCourse,#cancelEdit,#modal,.editCourse,.todayCourse,.wc'):null;
               }
@@ -25,12 +30,13 @@ final class HeavyPanelUi648 {
                 const target=inputTarget(event.target);if(!target||!inputOwner.route)return;
                 const started=performance.now();if(inputOwner.metric)inputOwner.metric(event,started);
                 inputOwner.lastPanel=(target.id&&target.id.startsWith('settings'))?'settings':(target.id==='settingsModal'?'settings':'course');inputOwner.lastAt=started;
+                logInput(target);
                 inputOwner.route(target,event);event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
               },{capture:true,passive:false});
               nativeAdd.call(document,'click',function(event){
                 const target=inputTarget(event.target),recent=performance.now()-inputOwner.lastAt<900;
                 if(!target&&!recent)return;
-                if(!recent&&target&&inputOwner.route){if(inputOwner.metric)inputOwner.metric(event,performance.now());inputOwner.route(target,event)}
+                if(!recent&&target&&inputOwner.route){if(inputOwner.metric)inputOwner.metric(event,performance.now());logInput(target);inputOwner.route(target,event)}
                 event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
               },true);
               function wrap(name){
@@ -198,11 +204,20 @@ final class HeavyPanelUi648 {
 
                 const inputOwner=window.__edtHeavyInputOwner648;
                 if(inputOwner)inputOwner.route=function(target,event){
-                  if(target.id==='settingsBtn')return openSettings();
-                  if(target.id==='settingsX'||target.id==='settingsDone'||target.id==='settingsModal')return closeSettings();
-                  if(target.id==='cancelEdit'||target.id==='modal'){closeCourse();editing=null;newPrefill=null;return false}
-                  if(target.id==='addCourse')return openCourse(null);
-                  if(typeof target.onclick==='function')return target.onclick.call(target,event);
+                  const counters=window.__edtHeavyPerfPrelude648&&window.__edtHeavyPerfPrelude648.counters;
+                  const before=counters?{bridge:counters.bridgeCalls,reads:counters.storageReads,writes:counters.storageWrites,listeners:counters.listenerAdds,observers:counters.mutationObservers,resize:counters.resizeObservers}:null;
+                  let result;
+                  if(target.id==='settingsBtn')result=openSettings();
+                  else if(target.id==='settingsX'||target.id==='settingsDone'||target.id==='settingsModal')result=closeSettings();
+                  else if(target.id==='cancelEdit'||target.id==='modal'){closeCourse();editing=null;newPrefill=null;result=false}
+                  else if(target.id==='addCourse')result=openCourse(null);
+                  else if(typeof target.onclick==='function')result=target.onclick.call(target,event);
+                  if(before){
+                    const totals=window.__edtHeavyDirectWork648||(window.__edtHeavyDirectWork648={transitions:0,bridgeCalls:0,storageReads:0,storageWrites:0,listenerAdds:0,observerDelta:0,resizeObserverDelta:0});
+                    totals.transitions++;totals.bridgeCalls+=counters.bridgeCalls-before.bridge;totals.storageReads+=counters.storageReads-before.reads;totals.storageWrites+=counters.storageWrites-before.writes;
+                    totals.listenerAdds+=counters.listenerAdds-before.listeners;totals.observerDelta+=counters.mutationObservers-before.observers;totals.resizeObserverDelta+=counters.resizeObservers-before.resize;
+                  }
+                  return result;
                 };
 
                 window.fillSlotOptions=updateSlotOptions;

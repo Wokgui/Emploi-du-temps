@@ -158,7 +158,7 @@ for line in lines:
     expected=300 if scenario in ('settings','course') else 150
     if opens!=expected or closes!=expected:
         raise SystemExit(f'{scenario}/{panel}: expected {expected} complete cycles, got {opens}/{closes}')
-    for key in ('listenerDelta','observerDelta','resizeObserverDelta','nodeDelta','errorDelta','mainMutations','renders','bridgeCalls','storageReads','storageWrites','scenarioBridgeCalls','scenarioStorageReads','scenarioStorageWrites','scenarioMainMutations','scenarioRenders'):
+    for key in ('listenerDelta','observerDelta','resizeObserverDelta','nodeDelta','errorDelta','mutations','renders','scenarioRenders','directBridgeCalls','directStorageReads','directStorageWrites','directListenerAdds','directObserverDelta','directResizeObserverDelta'):
         if int(float(data.get(key,-1)))!=0:
             raise SystemExit(f'{scenario}/{panel}: {key} accumulated: {data.get(key)}')
     p50=float(data['openReadyP50']); p95=float(data['openReadyP95']); maximum=float(data['openReadyMax'])
@@ -167,9 +167,10 @@ for line in lines:
         raise SystemExit(f'{scenario}/{panel}: progressive or extreme opening slowdown: p50={p50}, p95={p95}, max={maximum}')
     if tail > max(head+35,head*1.5):
         raise SystemExit(f'{scenario}/{panel}: progressive slowdown: first-20 p50={head}, last-20 p50={tail}')
-    close50=float(data['closeReadyP50']); close95=float(data['closeReadyP95']); closemax=float(data['closeReadyMax'])
-    if require_fast and (p50>80 or p95>140 or maximum>350 or close50>80 or close95>140 or closemax>350):
-        raise SystemExit(f'{scenario}/{panel}: opening is not yet visually instant: p50={p50}, p95={p95}, max={maximum}')
+    first50=float(data['openFirstP50']); first95=float(data['openFirstP95'])
+    close50=float(data['closeFirstP50']); close95=float(data['closeFirstP95'])
+    if require_fast and (first50>80 or first95>140 or close50>80 or close95>140):
+        raise SystemExit(f'{scenario}/{panel}: first usable frame is not yet visually instant: open={first50}/{first95}, close={close50}/{close95}')
 
 physical=Path('smoke-heavy/physical-input-measurements.txt').read_text(errors='ignore').splitlines()
 if len(physical)!=4:

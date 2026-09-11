@@ -247,11 +247,13 @@ final class HeavyPanelPerformanceUi648 {
                   ['settings','course'].forEach(function(panel){['open','close'].forEach(function(action){samples[panel][action].length=0;counts[panel][action]=0});activity[panel]=null});
                   return {listeners:counters.listenerAdds,observers:counters.mutationObservers,resizeObservers:counters.resizeObservers,
                     nodes:document.getElementsByTagName('*').length,errors:counters.errors,renders:totalRenders(),mainMutations:mutations.main,
-                    bridgeCalls:counters.bridgeCalls,storageReads:counters.storageReads,storageWrites:counters.storageWrites};
+                    bridgeCalls:counters.bridgeCalls,storageReads:counters.storageReads,storageWrites:counters.storageWrites,
+                    direct:Object.assign({},window.__edtHeavyDirectWork648||{})};
                 }
                 function summarize(panel,before){
                   const opens=samples[panel].open,closes=samples[panel].close;
-                  const openReady=opens.map(function(x){return x.readyMs}),openFirst=opens.map(function(x){return x.firstMs}),closeReady=closes.map(function(x){return x.readyMs});
+                  const openReady=opens.map(function(x){return x.readyMs}),openFirst=opens.map(function(x){return x.firstMs}),closeReady=closes.map(function(x){return x.readyMs}),closeFirst=closes.map(function(x){return x.firstMs});
+                  const direct=window.__edtHeavyDirectWork648||{},directBefore=before.direct||{};
                   const headReady=openReady.slice(0,Math.min(20,openReady.length)),tailReady=openReady.slice(Math.max(0,openReady.length-20));
                   const mutationTotal=opens.concat(closes).reduce(function(n,x){return n+x.mutations},0);
                   const mainMutationTotal=opens.concat(closes).reduce(function(n,x){return n+x.mainMutations},0);
@@ -265,6 +267,7 @@ final class HeavyPanelPerformanceUi648 {
                     openFirstP95:rounded(percentile(openFirst,.95)),openFirstMax:rounded(percentile(openFirst,1)),
                     openReadyP50:rounded(percentile(openReady,.5)),openReadyP95:rounded(percentile(openReady,.95)),openReadyMax:rounded(percentile(openReady,1)),
                     openHeadP50:rounded(percentile(headReady,.5)),openTailP50:rounded(percentile(tailReady,.5)),
+                    closeFirstP50:rounded(percentile(closeFirst,.5)),closeFirstP95:rounded(percentile(closeFirst,.95)),closeFirstMax:rounded(percentile(closeFirst,1)),
                     closeReadyP50:rounded(percentile(closeReady,.5)),closeReadyP95:rounded(percentile(closeReady,.95)),closeReadyMax:rounded(percentile(closeReady,1)),
                     mutationTotal:mutationTotal,mainMutationTotal:mainMutationTotal,renderTotal:renderTotal,
                     bridgeTotal:bridgeTotal,bridgeReadTotal:bridgeReadTotal,bridgeWriteTotal:bridgeWriteTotal,
@@ -272,6 +275,9 @@ final class HeavyPanelPerformanceUi648 {
                     scenarioBridgeCalls:counters.bridgeCalls-before.bridgeCalls,scenarioStorageReads:counters.storageReads-before.storageReads,
                     scenarioStorageWrites:counters.storageWrites-before.storageWrites,scenarioMainMutations:mutations.main-before.mainMutations,
                     scenarioRenders:totalRenders()-before.renders,
+                    directBridgeCalls:(direct.bridgeCalls||0)-(directBefore.bridgeCalls||0),directStorageReads:(direct.storageReads||0)-(directBefore.storageReads||0),
+                    directStorageWrites:(direct.storageWrites||0)-(directBefore.storageWrites||0),directListenerAdds:(direct.listenerAdds||0)-(directBefore.listenerAdds||0),
+                    directObserverDelta:(direct.observerDelta||0)-(directBefore.observerDelta||0),directResizeObserverDelta:(direct.resizeObserverDelta||0)-(directBefore.resizeObserverDelta||0),
                     listenerDelta:counters.listenerAdds-before.listeners,observerDelta:counters.mutationObservers-before.observers,
                     resizeObserverDelta:counters.resizeObservers-before.resizeObservers,nodeDelta:document.getElementsByTagName('*').length-before.nodes,
                     errorDelta:counters.errors-before.errors};
@@ -279,12 +285,15 @@ final class HeavyPanelPerformanceUi648 {
                     '|openFirstP50='+out.openFirstP50+'|openFirstP95='+out.openFirstP95+'|openFirstMax='+out.openFirstMax+
                     '|openReadyP50='+out.openReadyP50+'|openReadyP95='+out.openReadyP95+'|openReadyMax='+out.openReadyMax+
                     '|openHeadP50='+out.openHeadP50+'|openTailP50='+out.openTailP50+
+                    '|closeFirstP50='+out.closeFirstP50+'|closeFirstP95='+out.closeFirstP95+'|closeFirstMax='+out.closeFirstMax+
                     '|closeReadyP50='+out.closeReadyP50+'|closeReadyP95='+out.closeReadyP95+'|closeReadyMax='+out.closeReadyMax+
                     '|mutations='+out.mutationTotal+'|mainMutations='+out.mainMutationTotal+'|renders='+out.renderTotal+
                     '|bridgeCalls='+out.bridgeTotal+'|bridgeReads='+out.bridgeReadTotal+'|bridgeWrites='+out.bridgeWriteTotal+
                     '|storageReads='+out.storageReadTotal+'|storageWrites='+out.storageWriteTotal+
                     '|scenarioBridgeCalls='+out.scenarioBridgeCalls+'|scenarioStorageReads='+out.scenarioStorageReads+'|scenarioStorageWrites='+out.scenarioStorageWrites+
                     '|scenarioMainMutations='+out.scenarioMainMutations+'|scenarioRenders='+out.scenarioRenders+
+                    '|directBridgeCalls='+out.directBridgeCalls+'|directStorageReads='+out.directStorageReads+'|directStorageWrites='+out.directStorageWrites+
+                    '|directListenerAdds='+out.directListenerAdds+'|directObserverDelta='+out.directObserverDelta+'|directResizeObserverDelta='+out.directResizeObserverDelta+
                     '|listenerDelta='+out.listenerDelta+'|observerDelta='+out.observerDelta+'|resizeObserverDelta='+out.resizeObserverDelta+
                     '|nodeDelta='+out.nodeDelta+'|errorDelta='+out.errorDelta);
                   return out;
