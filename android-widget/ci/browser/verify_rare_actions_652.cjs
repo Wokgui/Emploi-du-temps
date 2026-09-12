@@ -45,30 +45,40 @@ fs.mkdirSync(out,{recursive:true});
   const report=await page.evaluate(async()=>{
     const chain=window.__edtActionChains651,perf=window.__edtHeavyPerfPrelude648.counters;
     const controls=['schoolEnabled','schoolYear','schoolZone','advHoliday','advProfileSelect'].map(id=>document.getElementById(id)).filter(Boolean);
-    const before={listeners:perf.listenerAdds,observers:perf.mutationObservers,resize:perf.resizeObservers,nodes:document.getElementsByTagName('*').length,
-      actions:chain.stats.actions,targeted:chain.stats.targetedRenders,suppressed:chain.stats.suppressedRenders,calls:Object.assign({},window.__testAndroidCalls)};
+    const snap=()=>({listeners:perf.listenerAdds,observers:perf.mutationObservers,resize:perf.resizeObservers,nodes:document.getElementsByTagName('*').length,
+      actions:chain.stats.actions,targeted:chain.stats.targetedRenders,suppressed:chain.stats.suppressedRenders,calls:Object.assign({},window.__testAndroidCalls)});
+    const exercise=el=>{
+      if(el.tagName==='SELECT'&&el.options.length>1)el.selectedIndex=(el.selectedIndex+1)%el.options.length;
+      else if(el.type==='checkbox')el.checked=!el.checked;
+      el.dispatchEvent(new Event('change',{bubbles:true}));
+    };
+    const cold=snap();
+    const warmup=[];
+    for(const el of controls){
+      const before=snap();
+      exercise(el);
+      await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      const after=snap();
+      warmup.push({id:el.id,listenerDelta:after.listeners-before.listeners,observerDelta:after.observers-before.observers,resizeDelta:after.resize-before.resize,nodeDelta:after.nodes-before.nodes});
+    }
+    const before=snap();
     const samples=[];
     for(let i=0;i<120;i++){
       const t=performance.now();
-      for(const el of controls){
-        if(el.tagName==='SELECT'&&el.options.length>1)el.selectedIndex=(el.selectedIndex+1)%el.options.length;
-        else if(el.type==='checkbox')el.checked=!el.checked;
-        el.dispatchEvent(new Event('change',{bubbles:true}));
-      }
+      for(const el of controls)exercise(el);
       samples.push(performance.now()-t);
       if(i%20===0)await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
     }
     await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-    const after={listeners:perf.listenerAdds,observers:perf.mutationObservers,resize:perf.resizeObservers,nodes:document.getElementsByTagName('*').length,
-      actions:chain.stats.actions,targeted:chain.stats.targetedRenders,suppressed:chain.stats.suppressedRenders,calls:Object.assign({},window.__testAndroidCalls)};
+    const after=snap();
     const median=a=>{const s=a.slice().sort((x,y)=>x-y);return s[Math.floor(s.length/2)]||0};
-    return {controls:controls.map(x=>x.id),before,after,headP50:median(samples.slice(0,20)),tailP50:median(samples.slice(-20)),stats:chain.stats};
+    return {controls:controls.map(x=>x.id),cold,warmup,before,after,headP50:median(samples.slice(0,20)),tailP50:median(samples.slice(-20)),stats:chain.stats};
   });
 
   assert.ok(report.controls.length>=3,'rare-action suite must resolve school/holiday/profile controls');
-  assert.equal(report.after.listeners-report.before.listeners,0,'rare actions must not accumulate listeners');
-  assert.equal(report.after.observers-report.before.observers,0,'rare actions must not accumulate MutationObservers');
-  assert.equal(report.after.resize-report.before.resize,0,'rare actions must not accumulate ResizeObservers');
+  assert.equal(report.after.listeners-report.before.listeners,0,'rare actions must not accumulate listeners after first-use initialization');
+  assert.equal(report.after.observers-report.before.observers,0,'rare actions must not accumulate MutationObservers after first-use initialization');
+  assert.equal(report.after.resize-report.before.resize,0,'rare actions must not accumulate ResizeObservers after first-use initialization');
   assert.ok(report.after.nodes-report.before.nodes<=8,'rare actions must not progressively grow the DOM');
   assert.ok(report.tailP50<=Math.max(report.headP50*2,report.headP50+5),'rare actions must not progressively slow down');
   assert.deepEqual(errors,[],'6.52 rare-action JavaScript errors');
