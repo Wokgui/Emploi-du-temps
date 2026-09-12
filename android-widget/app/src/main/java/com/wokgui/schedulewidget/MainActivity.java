@@ -9,8 +9,10 @@ import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.webkit.CookieManager;
+import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -41,6 +43,7 @@ public class MainActivity extends Activity {
     private boolean uiInjected = false;
     private boolean uiInjectionInFlight = false;
     private boolean skipNextResumeRefresh = false;
+    private boolean heavyPanelBenchmarkStarted = false;
     private final TextRecognizer textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
 
     @Override
@@ -59,7 +62,16 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setAllowUniversalAccessFromFileURLs(true);
-        webView.setWebChromeClient(new WebChromeClient());
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onConsoleMessage(ConsoleMessage message) {
+                String text = message == null ? null : message.message();
+                if (text != null && text.startsWith("EDT_HEAVY_")) {
+                    Log.i("EDT_HEAVY", text);
+                    return true;
+                }
+                return super.onConsoleMessage(message);
+            }
+        });
 
         webView.addJavascriptInterface(new ScheduleBridge(), "AndroidSchedule");
         webView.setWebViewClient(new WebViewClient() {
@@ -302,7 +314,7 @@ public class MainActivity extends Activity {
     private void refreshScheduleAndUi() {
         if (webView == null || !pageLoaded) return;
         webView.evaluateJavascript(
-                "if(window.reloadSchedule){reloadSchedule();}",
+                "if(window.reloadSchedule){reloadSchedule();}if(window.refreshCourseWidgetLabelCache648){refreshCourseWidgetLabelCache648();}",
                 value -> {
                     if (webView == null || !pageLoaded) return;
                     if (!forceWeekOpening) {
@@ -340,7 +352,22 @@ public class MainActivity extends Activity {
             else {
                 primeWeekBadge();
                 revealWebViewStable();
+                runHeavyPanelBenchmarkIfRequested();
             }
+        });
+    }
+
+    /** Starts the deterministic WebView soak only for explicit debug-test launches. */
+    private void runHeavyPanelBenchmarkIfRequested() {
+        if (!BuildConfig.DEBUG || heavyPanelBenchmarkStarted || webView == null || getIntent() == null) return;
+        String scenario = getIntent().getStringExtra("heavy_panel_benchmark");
+        if (!("settings".equals(scenario) || "course".equals(scenario) || "mixed".equals(scenario))) return;
+        int cycles = Math.max(1, Math.min(300, getIntent().getIntExtra("heavy_panel_cycles", 300)));
+        heavyPanelBenchmarkStarted = true;
+        String script = "window.runHeavyPanelBenchmark648&&window.runHeavyPanelBenchmark648("
+                + JSONObject.quote(scenario) + "," + cycles + ");";
+        webView.post(() -> {
+            if (webView != null && pageLoaded) webView.evaluateJavascript(script, null);
         });
     }
 

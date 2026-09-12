@@ -10,8 +10,8 @@ android {
         applicationId 'com.wokgui.schedulewidget'
         minSdk 26
         targetSdk 35
-        versionCode 647001
-        versionName '6.47'
+        versionCode 650001
+        versionName '6.50'
     }
 
     buildFeatures {
@@ -36,4 +36,4 @@ dependencies {
     implementation 'com.google.mlkit:translate:17.0.3'
 }
 
-// 6.47: keep the three main timetable views mounted and laid out for instant tab switching.
+// 6.50: coalesce course-save pipelines and keep edit-day/slot controls mounted.

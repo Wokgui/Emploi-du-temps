@@ -2,20 +2,45 @@ name: Build and validate Android timetable
 
 on:
   push:
-    branches: [main, perf/instant-views-647]
+    branches: [main, perf/instant-views-647, perf/heavy-panels-648, perf/heavy-panels-649, perf/render-pipeline-650]
     paths:
       - 'android-widget/**'
       - '.github/workflows/android-widget.yml'
   workflow_dispatch:
 
 concurrency:
-  group: android-widget-${{ github.ref_name }}-v10
+  group: android-widget-${{ github.ref_name }}-v12
   cancel-in-progress: true
 
 permissions:
   contents: write
 
 jobs:
+  browser-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install browser test runtime
+        run: |
+          npm install --no-save --package-lock=false playwright@1.62.1
+          npx playwright install --with-deps chromium
+      - name: Verify actual generated UI, touch gestures and 300-cycle suites
+        run: bash android-widget/ci/run_browser_649.sh
+      - name: Upload browser regression evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-ui-650
+          path: smoke-browser/
+
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -49,7 +74,7 @@ jobs:
       - name: Verify install version and package
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='647001' versionName='6.47'" app/build/outputs/apk/debug/badging.txt
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='650001' versionName='6.50'" app/build/outputs/apk/debug/badging.txt
       - name: Rename APK
         run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/emploi-du-temps-widget.apk
       - name: Upload APK artifact
@@ -105,9 +130,55 @@ jobs:
           path: smoke/
           if-no-files-found: ignore
 
+  heavy-panels:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Enable KVM acceleration
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm
+          fi
+      - name: Download validated APK
+        uses: actions/download-artifact@v4
+        with:
+          name: emploi-du-temps-widget-apk
+          path: smoke-apk
+      - name: Measure and stress Settings and course editor
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          EDT_HEAVY_REQUIRE_FAST: '1'
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_2
+          emulator-boot-timeout: 240
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot -no-metrics
+          disable-animations: true
+          script: bash android-widget/ci/run_heavy_panels_648.sh
+      - name: Upload heavy-panel measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: heavy-panel-measurements
+          path: smoke-heavy/
+          if-no-files-found: ignore
+
   publish:
-    needs: smoke
-    if: ${{ needs.smoke.result == 'success' && github.ref == 'refs/heads/main' }}
+    needs: [smoke, heavy-panels, browser-ui]
+    if: ${{ needs.smoke.result == 'success' && needs.heavy-panels.result == 'success' && needs.browser-ui.result == 'success' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
 

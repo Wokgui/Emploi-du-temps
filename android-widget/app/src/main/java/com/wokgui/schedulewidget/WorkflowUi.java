@@ -73,7 +73,7 @@ final class WorkflowUi {
                 function syncDuplicate85(){
                   const b=document.getElementById('duplicateCourse85');if(!b)return;
                   let show=false;try{show=typeof editing!=='undefined'&&editing!=null}catch(e){}
-                  b.hidden=!show;
+                  if(b.hidden!==!show)b.hidden=!show;
                 }
                 function duplicate85(){
                   try{
@@ -135,6 +135,7 @@ final class WorkflowUi {
                 function setVersion85(){const v=document.getElementById('appVersionInfo');if(v)v.textContent='Version '+APP_VERSION}
                 function refresh(){ensureDuplicate85();arrangeAdvanced85();setVersion85()}
                 window.refreshWorkflow85=refresh;
+                (window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'duplicate-course',run:syncDuplicate85});
 
                 wrapOpenEditor85();ensureDuplicate85();installFastPress85();
                 const sm=document.getElementById('settingsModal');if(sm)new MutationObserver(()=>{if(sm.classList.contains('show'))scheduleArrange85()}).observe(sm,{attributes:true,attributeFilter:['class']});

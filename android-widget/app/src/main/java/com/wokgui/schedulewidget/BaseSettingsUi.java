@@ -109,8 +109,19 @@ final class BaseSettingsUi {
                 }
 
                 function renderThemeButtons(){
-                  const grid=document.getElementById('themeGrid');if(!grid)return;grid.innerHTML='';
-                  Object.keys(THEMES).forEach(id=>{const th=THEMES[id];const b=document.createElement('button');b.type='button';b.className='themeButton';b.dataset.theme=id;b.innerHTML='<span class="themeSwatch" style="background:linear-gradient(135deg,'+th.a+','+th.s+')"></span><span class="themeName">'+th[language()]+'</span>';b.onclick=()=>{state.theme=id;applyTheme();persist()};grid.appendChild(b)});
+                  const grid=document.getElementById('themeGrid');if(!grid)return;
+                  Object.keys(THEMES).forEach(id=>{
+                    const th=THEMES[id];let b=grid.querySelector('.themeButton[data-theme="'+id+'"]');
+                    if(!b){
+                      b=document.createElement('button');b.type='button';b.className='themeButton';b.dataset.theme=id;
+                      const swatch=document.createElement('span');swatch.className='themeSwatch';
+                      const name=document.createElement('span');name.className='themeName';b.append(swatch,name);
+                      b.onclick=()=>{state.theme=id;applyTheme();persist()};grid.appendChild(b);
+                    }
+                    const swatch=b.querySelector('.themeSwatch'),name=b.querySelector('.themeName');
+                    if(swatch)swatch.style.background='linear-gradient(135deg,'+th.a+','+th.s+')';
+                    if(name&&name.textContent!==th[language()])name.textContent=th[language()];
+                  });
                   applyTheme();
                 }
 
@@ -164,7 +175,7 @@ final class BaseSettingsUi {
                 document.getElementById('settingsReset').onclick=()=>{state={appFontScale:1,widgetFontScale:1,language:'fr',theme:'blue'};document.getElementById('languageSelect').value='fr';renderThemeButtons();refresh();persist()};
 
                 window.refreshSettingsV3=refresh;
-                refresh();
+                renderThemeButtons();refresh();
               } catch(e) { console.log('Settings V3',e); }
             })();
             """;
