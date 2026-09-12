@@ -53,6 +53,7 @@ final class NavigationPerformanceUi {
                   if(!targets){cache.dirty.today=cache.dirty.week=cache.dirty.edit=true;return}
                   (Array.isArray(targets)?targets:[targets]).forEach(function(t){if(Object.prototype.hasOwnProperty.call(cache.dirty,t))cache.dirty[t]=true});
                 }
+                function markClean(target){if(Object.prototype.hasOwnProperty.call(cache.dirty,target))cache.dirty[target]=false}
                 function renderTarget(target){
                   syncContext(target);
                   if(!ready(target)||cache.dirty[target]){
@@ -113,8 +114,9 @@ final class NavigationPerformanceUi {
                 },{capture:true,passive:true});
 
                 try{cache.dirty[currentMode()]=false}catch(e){}
-                window.__edtNavigationCacheV2={cache:cache,rebind:rebind,invalidate:invalidate};
+                window.__edtNavigationCacheV2={cache:cache,rebind:rebind,invalidate:invalidate,renderTarget:renderTarget,activate:activate,syncContext:syncContext,markClean:markClean,ready:ready};
                 window.invalidateTimetableViews=invalidate;
+                window.renderTimetableTarget=renderTarget;
                 rebind();
                 console.log('EDT_NAV_CACHE|ready|zero-render');
               }catch(e){console.log('NavigationPerformanceUi',e)}
