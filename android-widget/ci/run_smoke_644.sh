@@ -79,7 +79,7 @@ for i in $(seq 1 48); do
 
   adb shell input tap 1010 145
   sleep 0.18
-  adb shell input tap 1000 245
+  adb shell input tap 862 210
   sleep 0.14
 
   adb shell input tap 165 1810
@@ -141,7 +141,7 @@ sleep 0.5
 adb exec-out screencap -p > smoke/02c-settings-after-real-session.png
 
 # Validate the requested Add-course layout after the soak.
-adb shell input tap 1000 245
+adb shell input tap 862 210
 sleep 0.20
 adb shell input tap 880 1810
 sleep 0.20
