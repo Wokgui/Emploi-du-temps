@@ -166,11 +166,12 @@ final class HeavyPanelPerformanceUi648 {
                   return sorted[Math.min(sorted.length-1,Math.max(0,Math.ceil(sorted.length*p)-1))];
                 }
                 function rounded(value){return Math.round(value*10)/10}
-                function finish(pending){
+                function finish(pending,readyMs){
                   if(activity[pending.panel]!==pending)return;
                   const now=performance.now();
+                  const measuredReady=readyMs==null?now-pending.started:readyMs;
                   const result={panel:pending.panel,action:pending.action,n:pending.n,
-                    firstMs:rounded(pending.firstMs==null?now-pending.started:pending.firstMs),readyMs:rounded(now-pending.started),
+                    firstMs:rounded(pending.firstMs==null?now-pending.started:pending.firstMs),readyMs:rounded(measuredReady),confirmMs:rounded(now-pending.started),
                     mutations:mutations[pending.panel]-pending.mutationStart,mainMutations:mutations.main-pending.mainStart,
                     added:added[pending.panel]-pending.addedStart,removed:removed[pending.panel]-pending.removedStart,
                     renders:totalRenders()-pending.renderStart,listeners:counters.listenerAdds-pending.listenerStart,
@@ -181,7 +182,7 @@ final class HeavyPanelPerformanceUi648 {
                   samples[pending.panel][pending.action].push(result);activity[pending.panel]=null;
                   if(checkpoints.has(result.n)){
                     console.log('EDT_HEAVY_CHECKPOINT|scenario='+scenario+'|panel='+result.panel+'|action='+result.action+'|n='+result.n+
-                      '|firstMs='+result.firstMs+'|readyMs='+result.readyMs+'|mutations='+result.mutations+'|mainMutations='+result.mainMutations+
+                      '|firstMs='+result.firstMs+'|readyMs='+result.readyMs+'|confirmMs='+result.confirmMs+'|mutations='+result.mutations+'|mainMutations='+result.mainMutations+
                       '|added='+result.added+'|removed='+result.removed+'|renders='+result.renders+'|listeners='+result.listeners+
                       '|observers='+result.observers+'|resizeObservers='+result.resizeObservers+'|bridgeCalls='+result.bridgeCalls+
                       '|bridgeReads='+result.bridgeReads+'|bridgeWrites='+result.bridgeWrites+'|storageReads='+result.storageReads+'|storageWrites='+result.storageWrites);
@@ -191,16 +192,21 @@ final class HeavyPanelPerformanceUi648 {
                   window.dispatchEvent(new CustomEvent('edt-heavy-sample',{detail:result}));
                 }
                 function settle(pending){
-                  let stableFrames=0,lastMutation=mutations[pending.panel],frames=0;
+                  let stableFrames=0,lastMutation=mutations[pending.panel],frames=0,quietCandidateMs=null;
                   function frame(){
                     if(activity[pending.panel]!==pending)return;
                     frames++;
                     const now=performance.now(),ready=panelReady(pending.panel,pending.action);
                     if(pending.firstMs==null&&ready)pending.firstMs=now-pending.started;
-                    if(ready&&mutations[pending.panel]===lastMutation&&now-mutationAt[pending.panel]>=12)stableFrames++;
-                    else stableFrames=0;
+                    if(ready&&mutations[pending.panel]===lastMutation&&now-mutationAt[pending.panel]>=12){
+                      if(stableFrames===0)quietCandidateMs=now-pending.started;
+                      stableFrames++;
+                    }else{
+                      stableFrames=0;quietCandidateMs=null;
+                    }
                     lastMutation=mutations[pending.panel];
-                    if(stableFrames>=2||frames>=180){finish(pending);return}
+                    if(stableFrames>=2){finish(pending,quietCandidateMs);return}
+                    if(frames>=180){finish(pending);return}
                     requestAnimationFrame(frame);
                   }
                   requestAnimationFrame(frame);
