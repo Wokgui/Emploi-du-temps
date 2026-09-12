@@ -39,9 +39,9 @@ final class HeavyPanelUi648 {
                 inputOwner.route(target,event);event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
               },{capture:true,passive:false});
               nativeAdd.call(document,'click',function(event){
-                const target=inputTarget(event.target),recent=performance.now()-inputOwner.lastAt<900;
-                if(!target&&!recent)return;
-                if(!recent&&target&&inputOwner.route){if(inputOwner.metric)inputOwner.metric(event,performance.now());logInput(target);inputOwner.route(target,event)}
+                const target=inputTarget(event.target);if(!target)return;
+                const recent=performance.now()-inputOwner.lastAt<900;
+                if(!recent&&inputOwner.route){if(inputOwner.metric)inputOwner.metric(event,performance.now());logInput(target);inputOwner.route(target,event)}
                 event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
               },true);
               function wrap(name){
