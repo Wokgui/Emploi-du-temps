@@ -9,7 +9,7 @@ final class ChunkedUiScripts {
     private ChunkedUiScripts() {}
 
     static String[] all() {
-        List<String> out = new ArrayList<>(50);
+        List<String> out = new ArrayList<>(52);
         add(out, HeavyPanelUi648.prelude());
         if (BuildConfig.DEBUG) add(out, HeavyPanelPerformanceUi648.prelude());
         add(out, UiRuntimeBundle.domSafetyPrelude());
@@ -31,6 +31,9 @@ final class ChunkedUiScripts {
         add(out, NavigationPerformanceUi.script());
         add(out, InstantViewUi647.script());
         add(out, HeavyPanelUi648.script());
+        // 6.50 runs after all legacy wrappers so one interaction cannot fan out into
+        // repeated saves/renders or rebuild static edit controls.
+        add(out, RenderPipelineUi650.script());
         if (BuildConfig.DEBUG) add(out, HeavyPanelPerformanceUi648.script());
         add(out, UiRuntimeBundle.idleImportScript());
         return out.toArray(new String[0]);
@@ -61,6 +64,6 @@ final class ChunkedUiScripts {
 
     private static void add(List<String> out, String script) {
         if (script == null || script.trim().isEmpty()) return;
-        out.add(UiRuntimeBundle.prepareChunk(script).replace("APP_VERSION='6.45'", "APP_VERSION='6.49'"));
+        out.add(UiRuntimeBundle.prepareChunk(script).replace("APP_VERSION='6.45'", "APP_VERSION='6.50'"));
     }
 }
