@@ -83,8 +83,9 @@ PY
   return 1
 }
 
-# Two real Android taps establish the input-to-usable-frame measurement independently of the
-# deterministic 300-cycle runner used below.
+# Real Android taps establish the input-to-first-usable-frame measurement independently of the
+# deterministic 300-cycle runner used below. The later quiet-frame time is retained as a
+# separate guard against a panel that keeps doing work after it becomes usable.
 adb shell am force-stop "$PKG" || true
 adb logcat -c
 adb shell am start -W -n "$ACT" --es open_mode edit >/dev/null
@@ -188,9 +189,12 @@ if len(physical)!=4:
     raise SystemExit(f'expected four physical input measurements, got {len(physical)}')
 if require_fast:
     for line in physical:
-        data=fields(line); ready=float(data.get('readyMs',9999))
-        if ready>350:
-            raise SystemExit(f'physical interaction is not visually instant: {line}')
+        data=fields(line)
+        first=float(data.get('firstMs',9999)); ready=float(data.get('readyMs',9999))
+        if first>140:
+            raise SystemExit(f'physical first usable frame is not visually instant: {line}')
+        if ready>900:
+            raise SystemExit(f'physical panel did not settle promptly after becoming usable: {line}')
 print(f'heavy_panel_fast_thresholds_enabled={int(require_fast)}')
 PY
 
