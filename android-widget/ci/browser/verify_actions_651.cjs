@@ -98,17 +98,23 @@ fs.mkdirSync(out,{recursive:true});
     const from=document.getElementById('advCopyFrom'),to=document.getElementById('advCopyTo');
     if(!from||!to)throw new Error('copy-day controls missing');from.value='2';to.value='3';
   });
-  const copyBefore=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders}));
+  const copyBefore=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders,actions:__edtActionChains651.stats.actions}));
   await page.evaluate(()=>{const b=document.getElementById('advCopyDay');if(!b)throw new Error('advCopyDay missing');b.click()});
-  const copyAfter=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders}));
+  await page.waitForFunction(before=>__edtActionChains651.stats.actions>before,copyBefore.actions);
+  const copyAfter=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders,actions:__edtActionChains651.stats.actions}));
   assert.equal(copyAfter.save-copyBefore.save,1,'copy-day must persist once');
   assert.ok(copyAfter.targeted-copyBefore.targeted<=1,'copy-day must refresh at most one visible view');
 
-  const resetBefore=await page.evaluate(()=>__edtActionChains651.stats.targetedRenders);
-  await page.evaluate(()=>{const b=document.getElementById('resetText87');if(b)b.click()});
-  const resetAfter=await page.evaluate(()=>__edtActionChains651.stats.targetedRenders);
-  assert.equal(resetAfter-resetBefore,0,'settings section reset must not redraw the timetable');
+  const hasReset=await page.evaluate(()=>!!document.getElementById('resetText87'));
+  if(hasReset){
+    const resetBefore=await page.evaluate(()=>({targeted:__edtActionChains651.stats.targetedRenders,actions:__edtActionChains651.stats.actions}));
+    await page.evaluate(()=>document.getElementById('resetText87').click());
+    await page.waitForFunction(before=>__edtActionChains651.stats.actions>before,resetBefore.actions);
+    const resetAfter=await page.evaluate(()=>({targeted:__edtActionChains651.stats.targetedRenders,actions:__edtActionChains651.stats.actions}));
+    assert.equal(resetAfter.targeted-resetBefore.targeted,0,'settings section reset must not redraw the timetable');
+  }
   await page.locator('#settingsX').tap();
+  await page.waitForFunction(()=>!__edtHeavyPanels648.isOpen('settings'));
 
   await page.evaluate(()=>window.setModeFromAndroid('edit'));
   await page.waitForTimeout(50);
@@ -134,6 +140,7 @@ fs.mkdirSync(out,{recursive:true});
   if(hasModeButton){
     const modeBefore=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders,actions:__edtActionChains651.stats.actions}));
     await page.evaluate(()=>document.querySelector('#weekModeBar .weekModeChoice[data-m="1"]').click());
+    await page.waitForFunction(before=>__edtActionChains651.stats.actions>before,modeBefore.actions);
     const modeNow=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders,actions:__edtActionChains651.stats.actions}));
     await page.waitForTimeout(220);
     const modeLate=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders,actions:__edtActionChains651.stats.actions}));
