@@ -42,7 +42,6 @@ fs.mkdirSync(out,{recursive:true});
   await page.evaluate(()=>window.setModeFromAndroid('week'));
   await page.waitForTimeout(100);
 
-  // Real routed click, then 300 coordinator actions. Selecting another display week must never save the timetable.
   await page.locator('#weekTabs .weekTab[data-week="B"]').tap();
   await page.waitForTimeout(50);
   const weekStress=await page.evaluate(()=>{
@@ -64,7 +63,6 @@ fs.mkdirSync(out,{recursive:true});
   assert.ok(weekStress.nodeDelta<=0,'week switching must not accumulate DOM nodes');
   assert.ok(weekStress.tailP50<=Math.max(weekStress.headP50*1.8,weekStress.headP50+2),'week switching must not progressively slow down');
 
-  // Current-week changes use the dedicated native anchor API, never full schedule serialization.
   const currentWeek=await page.evaluate(()=>{
     const c=__testAndroidCalls,chain=__edtActionChains651,el=document.getElementById('currentWeekBtn');
     const s0=c.saveSchedule||0,w0=c.setCurrentWeek||0,r0=chain.stats.targetedRenders;
@@ -75,9 +73,9 @@ fs.mkdirSync(out,{recursive:true});
   assert.equal(currentWeek.setWeekDelta,100,'current-week toggle must use the dedicated native week setter');
   assert.ok(currentWeek.targeted<=100,'current-week toggle may refresh the visible target at most once per action');
 
-  // Widget-only advanced settings must not redraw timetable views.
   await page.locator('#settingsBtn').tap();
   await page.waitForFunction(()=>window.__edtHeavyPanels648&&__edtHeavyPanels648.isOpen('settings'));
+  if(await page.locator('#advancedSettings85').count())await page.locator('#advancedSettings85').evaluate(el=>{el.open=true});
   const advBefore=await page.evaluate(()=>({targeted:__edtActionChains651.stats.targetedRenders,suppressed:__edtActionChains651.stats.suppressedRenders}));
   await page.locator('#advDensity').selectOption('compact');
   await page.locator('#advFollowing').selectOption('2');
@@ -86,14 +84,12 @@ fs.mkdirSync(out,{recursive:true});
   assert.equal(advAfter.targeted-advBefore.targeted,0,'widget-only settings must not redraw timetable views');
   assert.ok(advAfter.suppressed-advBefore.suppressed>=3,'legacy timetable renders must be coalesced for widget-only settings');
 
-  // Cycle change historically did save()+render();render(). It may persist once and target-render once.
   const cycleBefore=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders}));
   await page.locator('#advCycle').selectOption('3');
   const cycleAfter=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders}));
   assert.equal(cycleAfter.save-cycleBefore.save,1,'cycle change must persist the schedule once');
   assert.ok(cycleAfter.targeted-cycleBefore.targeted<=1,'cycle change must target-render at most once');
 
-  // Copy-day used to render twice. One persistence, at most one visible target refresh.
   await page.locator('#advCopyFrom').selectOption('2');await page.locator('#advCopyTo').selectOption('3');
   const copyBefore=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders}));
   await page.locator('#advCopyDay').tap();
@@ -101,14 +97,12 @@ fs.mkdirSync(out,{recursive:true});
   assert.equal(copyAfter.save-copyBefore.save,1,'copy-day must persist once');
   assert.ok(copyAfter.targeted-copyBefore.targeted<=1,'copy-day must refresh at most one visible view');
 
-  // Section reset refreshes settings only; its legacy timetable render is suppressed.
   const resetBefore=await page.evaluate(()=>__edtActionChains651.stats.targetedRenders);
   if(await page.locator('#resetText87').count())await page.locator('#resetText87').tap();
   const resetAfter=await page.evaluate(()=>__edtActionChains651.stats.targetedRenders);
   assert.equal(resetAfter-resetBefore,0,'settings section reset must not redraw the timetable');
   await page.locator('#settingsX').tap();
 
-  // Break label: input is visual-only; change persists exactly once and no delayed duplicate follows.
   await page.evaluate(()=>window.setModeFromAndroid('edit'));
   await page.waitForTimeout(50);
   const breakBefore=await page.evaluate(()=>__testAndroidCalls.saveSchedule||0);
@@ -120,7 +114,6 @@ fs.mkdirSync(out,{recursive:true});
   const breakAfter=await page.evaluate(()=>__testAndroidCalls.saveSchedule||0);
   assert.equal(breakAfter-breakBefore,1,'break label validation must persist exactly once');
 
-  // Course deletion keeps the static edit controls mounted and writes once.
   const anchors=await page.evaluate(()=>{document.querySelector('#slotSettings .slotRow').dataset.anchor651='slot';document.querySelector('#dayTabs .dayTab:not(.weekendAdd)').dataset.anchor651='day';return __testAndroidCalls.saveSchedule||0});
   await page.locator('#editList .editCourse').first().tap();
   await page.locator('#deleteCourse').tap();
@@ -130,7 +123,6 @@ fs.mkdirSync(out,{recursive:true});
   assert.equal(deletion.slot,true,'course deletion must keep slot controls mounted');
   assert.equal(deletion.day,true,'course deletion must keep day tabs mounted');
 
-  // 1-week mode replaces the old 140ms delayed render chain with one synchronous commit.
   const modeButton=page.locator('#weekModeBar .weekModeChoice[data-m="1"]');
   if(await modeButton.count()){
     const modeBefore=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders,actions:__edtActionChains651.stats.actions}));
@@ -149,4 +141,4 @@ fs.mkdirSync(out,{recursive:true});
   assert.deepEqual(errors,[],'6.51 action-chain JavaScript errors');
   console.log('browser_action_chains_651=passed',JSON.stringify(report));
   await context.close();await browser.close();
-})().catch(async e=>{console.error(e);process.exitCode=1});
+})().catch(e=>{console.error(e);process.exit(1)});
