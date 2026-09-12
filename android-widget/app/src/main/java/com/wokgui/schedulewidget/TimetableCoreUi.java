@@ -1024,6 +1024,8 @@ final class TimetableCoreUi {
                 let picked='';
                 let pickedTouched=false;
                 let scope='cell';
+                let cellScopeHint='';
+                let classScopeHint='';
 
                 function language(){
                   try{const raw=window.AndroidSchedule&&AndroidSchedule.loadUiSettings?AndroidSchedule.loadUiSettings():null;if(raw){const o=JSON.parse(raw);if(o.language==='en'||o.language==='de')return o.language}}catch(e){}
@@ -1075,7 +1077,9 @@ final class TimetableCoreUi {
                   const title=document.getElementById('courseColorLabel');if(title)title.textContent=label('Couleur de la case','Cell colour','Farbe des Feldes');
                   const cell=document.getElementById('scopeCell');if(cell)cell.textContent=label('Cette case','This cell','Dieses Feld');
                   const cls=document.getElementById('scopeClass');if(cls)cls.textContent=label('Toute la classe','Whole class','Ganze Klasse');
-                  const hint=document.getElementById('courseColorHint');if(hint)hint.textContent=scope==='class'?label('La couleur sera appliquée à toutes les cases portant le même nom de classe, dans toutes les semaines.','The colour will be applied to every cell with the same class name, in all weeks.','Die Farbe wird auf alle Felder mit demselben Klassennamen in allen Wochen angewendet.'):label('La couleur sera appliquée uniquement à cette case.','The colour will only be applied to this cell.','Die Farbe wird nur auf dieses Feld angewendet.');
+                  classScopeHint=label('La couleur sera appliquée à toutes les cases portant le même nom de classe, dans toutes les semaines.','The colour will be applied to every cell with the same class name, in all weeks.','Die Farbe wird auf alle Felder mit demselben Klassennamen in allen Wochen angewendet.');
+                  cellScopeHint=label('La couleur sera appliquée uniquement à cette case.','The colour will only be applied to this cell.','Die Farbe wird nur auf dieses Feld angewendet.');
+                  const hint=document.getElementById('courseColorHint');if(hint)hint.textContent=scope==='class'?classScopeHint:cellScopeHint;
                 }
 
                 function selectColor(id){
@@ -1229,7 +1233,11 @@ final class TimetableCoreUi {
 
                 function refresh(){ensurePicker();decorateAll();if(modal&&modal.classList.contains('show'))syncPicker()}
                 window.refreshCourseColors=refresh;
-                (window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'course-color',run:function(){pickedTouched=false;const c=currentEditedCourse();selectColor(c&&c.color?c.color:'');selectScope('cell')}});
+                (window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'course-color',run:function(){
+                  pickedTouched=false;const c=currentEditedCourse();selectColor(c&&c.color?c.color:'');scope='cell';
+                  const a=document.getElementById('scopeCell'),b=document.getElementById('scopeClass'),hint=document.getElementById('courseColorHint');
+                  if(a)a.classList.add('active');if(b)b.classList.remove('active');if(hint)hint.textContent=cellScopeHint;
+                }});
                 refresh();
               }catch(e){console.log('Course colours',e)}
             })();
