@@ -128,7 +128,7 @@ function load(){
   normalize();render();
 }
 window.reloadSchedule=load;
-function exportState(){const root={_slots:slots.map(s=>({start:s.start,end:s.end})),_breaks:{...breaks},_currentWeek:currentWeek,_weeks:{A:{},B:{}}};for(const w of ['A','B','C','D'])for(const d of DAYS)root._weeks[w][d]={enabled:true,courses:weeks[w][d].courses};const current=weeks[currentWeek];for(const d of DAYS)root[d]={enabled:true,courses:current[d].courses};return root}
+function exportState(){const root={_slots:slots.map(s=>({start:s.start,end:s.end})),_breaks:{...breaks},_currentWeek:currentWeek,_weeks:{}};for(const w of ['A','B','C','D']){if(!weeks[w])continue;root._weeks[w]={};for(const d of DAYS)root._weeks[w][d]={enabled:true,courses:weeks[w][d]?.courses||[]}}const current=weeks[currentWeek];for(const d of DAYS)root[d]={enabled:true,courses:current[d].courses};return root}
 function save(){normalize();const raw=JSON.stringify(exportState());try{if(window.AndroidSchedule&&AndroidSchedule.saveSchedule)AndroidSchedule.saveSchedule(raw);else localStorage.setItem('edt',raw)}catch(e){}render()}
 function todayKey(){const d=new Date().getDay();return d>=1&&d<=5?d+1:2}
 function currentCourse(day){const now=new Date(),m=now.getHours()*60+now.getMinutes();if(day!==now.getDay()+1)return null;return weeks[currentWeek][day].courses.find(c=>m>=min(c.start)&&m<min(c.end))||null}

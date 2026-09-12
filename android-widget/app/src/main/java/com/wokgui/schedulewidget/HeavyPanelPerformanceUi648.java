@@ -139,8 +139,8 @@ final class HeavyPanelPerformanceUi648 {
                   const el=target&&target.closest?target.closest('button,.editCourse,.todayCourse,.wc,#settingsModal,#modal'):null;
                   if(!el)return null;
                   if(el.id==='settingsBtn')return ['settings','open'];
-                  if(el.id==='settingsX'||el.id==='settingsDone'||el.id==='settingsModal')return ['settings','close'];
-                  if(el.id==='cancelEdit'||el.id==='modal')return ['course','close'];
+                  if(el.id==='settingsX'||el.id==='settingsDone'||(el.id==='settingsModal'&&target===el))return ['settings','close'];
+                  if(el.id==='cancelEdit'||(el.id==='modal'&&target===el))return ['course','close'];
                   if(el.id==='addCourse'||el.classList.contains('editCourse')||el.classList.contains('todayCourse')||el.classList.contains('wc'))return ['course','open'];
                   return null;
                 }

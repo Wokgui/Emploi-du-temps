@@ -16,6 +16,31 @@ permissions:
   contents: write
 
 jobs:
+  browser-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install browser test runtime
+        run: |
+          npm install --no-save --package-lock=false playwright@1.62.1
+          npx playwright install --with-deps chromium
+      - name: Verify actual generated UI, touch gestures and 300-cycle suites
+        run: bash android-widget/ci/run_browser_649.sh
+      - name: Upload browser regression evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-ui-649
+          path: smoke-browser/
+
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -152,8 +177,8 @@ jobs:
           if-no-files-found: ignore
 
   publish:
-    needs: [smoke, heavy-panels]
-    if: ${{ needs.smoke.result == 'success' && needs.heavy-panels.result == 'success' && github.ref == 'refs/heads/main' }}
+    needs: [smoke, heavy-panels, browser-ui]
+    if: ${{ needs.smoke.result == 'success' && needs.heavy-panels.result == 'success' && needs.browser-ui.result == 'success' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
 

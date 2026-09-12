@@ -73,7 +73,7 @@ final class WorkflowUi {
                 function syncDuplicate85(){
                   const b=document.getElementById('duplicateCourse85');if(!b)return;
                   let show=false;try{show=typeof editing!=='undefined'&&editing!=null}catch(e){}
-                  b.hidden=!show;
+                  if(b.hidden!==!show)b.hidden=!show;
                 }
                 function duplicate85(){
                   try{

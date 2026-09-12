@@ -30,20 +30,37 @@ final class HeavyPanelUi648 {
                 if(inputOwner.count%100===0)console.log('EDT_FAST_STATS|clicks='+inputOwner.count+'|submits=0|scheduled=0|executed='+inputOwner.count+'|cancelled=0|routers=1|wrappers=0');
               }
               function inputTarget(node){
-                return node&&node.closest?node.closest('#settingsBtn,#settingsX,#settingsDone,#settingsModal,#addCourse,#cancelEdit,#modal,.editCourse,.todayCourse,.wc'):null;
+                if(!node||!node.closest)return null;
+                const target=node.closest('#settingsBtn,#settingsX,#settingsDone,#addCourse,#cancelEdit,.editCourse,.todayCourse,.wc');
+                if(target)return target;
+                // Only the backdrop itself closes a sheet; fields and inner controls keep
+                // their native focus, scrolling and form behaviour.
+                return node.id==='settingsModal'||node.id==='modal'?node:null;
               }
+              let pendingClick=null;
               const nativeAdd=EventTarget.prototype.addEventListener;
               nativeAdd.call(document,'pointerdown',function(event){
+                pendingClick=null;
                 const target=inputTarget(event.target);if(!target||!inputOwner.route)return;
+                if(event.isPrimary===false||event.button>0||target.disabled)return;
+                pendingClick=target;
                 const started=performance.now();if(inputOwner.metric)inputOwner.metric(event,started);
                 inputOwner.lastPanel=(target.id&&target.id.startsWith('settings'))?'settings':(target.id==='settingsModal'?'settings':'course');inputOwner.lastAt=started;
                 logInput(target);
                 inputOwner.route(target,event);event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
               },{capture:true,passive:false});
+              nativeAdd.call(document,'pointerup',function(event){
+                if(pendingClick){event.preventDefault();event.stopPropagation();event.stopImmediatePropagation()}
+              },true);
+              nativeAdd.call(document,'pointercancel',function(){pendingClick=null},true);
               nativeAdd.call(document,'click',function(event){
+                // A sheet closes on pointer-down. Its matching browser click can land on
+                // the timetable underneath; consume that same gesture before any router.
+                if(pendingClick&&(event.detail>0||event.pointerType||inputTarget(event.target)===pendingClick)){
+                  pendingClick=null;event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();return;
+                }
                 const target=inputTarget(event.target);if(!target)return;
-                const recent=performance.now()-inputOwner.lastAt<900;
-                if(!recent&&inputOwner.route){if(inputOwner.metric)inputOwner.metric(event,performance.now());logInput(target);inputOwner.route(target,event)}
+                if(!target.disabled&&inputOwner.route){if(inputOwner.metric)inputOwner.metric(event,performance.now());logInput(target);inputOwner.route(target,event)}
                 event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
               },true);
               function wrap(name){
@@ -53,9 +70,6 @@ final class HeavyPanelUi648 {
                   const forwarded=bypass?callback:function(records,observer){
                     const owner=window.__edtHeavyPanelsOwnObservers648;
                     if(!owner)return callback.call(this,records,observer);
-                    // A modal is an interaction boundary: background timetable observers must
-                    // not rebuild or restyle either mounted sheet while the user is in it.
-                    if(owner.settings.getAttribute('data-edt-open')==='true'||owner.course.getAttribute('data-edt-open')==='true')return;
                     const filtered=records.filter(record=>{
                       const target=record&&record.target;
                       return !(target&&(target===owner.settings||target===owner.course||owner.settings.contains(target)||owner.course.contains(target)));
@@ -174,7 +188,7 @@ final class HeavyPanelUi648 {
                       setText(slotOptions[i],periodName(i+1)+' · '+value.start+'–'+value.end);
                     }
                   }
-                  const selected=Number(selectedSlot)||1;
+                  const selected=Number.isFinite(Number(selectedSlot))?Number(selectedSlot):1;
                   setValue(slotSelect,selected===0&&custom?0:selected);
                   const n=Number(slotSelect.value);
                   if(n===0){

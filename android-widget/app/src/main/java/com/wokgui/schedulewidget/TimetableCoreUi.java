@@ -1168,6 +1168,9 @@ final class TimetableCoreUi {
                 }
 
                 function updateWeekNow(){
+                  // The final week renderer owns the current-time marker. Recreating its
+                  // removed legacy rail would wake list/palette observers indefinitely.
+                  if(typeof window.paintWeek70==='function')return;
                   try{
                     const grid=document.getElementById('weekGrid');if(!grid||typeof uniqueWeekTimes!=='function')return;
                     const parts=ensureNowParts(grid,'week');const now=new Date(),jsDay=now.getDay();
@@ -1236,7 +1239,7 @@ final class TimetableCoreUi {
                 (window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'course-color',run:function(){
                   pickedTouched=false;const c=currentEditedCourse();selectColor(c&&c.color?c.color:'');scope='cell';
                   const a=document.getElementById('scopeCell'),b=document.getElementById('scopeClass'),hint=document.getElementById('courseColorHint');
-                  if(a)a.classList.add('active');if(b)b.classList.remove('active');if(hint)hint.textContent=cellScopeHint;
+                  if(a)a.classList.toggle('active',true);if(b)b.classList.toggle('active',false);if(hint&&hint.textContent!==cellScopeHint)hint.textContent=cellScopeHint;
                 }});
                 refresh();
               }catch(e){console.log('Course colours',e)}

@@ -193,7 +193,12 @@ final class ScheduleDisplayUi {
                 }
                 function updateCoursePickerPreview(){
                   const box=document.getElementById('fullCourseColorBox'),pick=document.getElementById('fullCourseColor'),tone=document.getElementById('fullCourseTone'),hex=document.getElementById('fullCourseHex');if(!box||!pick||!tone)return;
-                  pick.value=isHex(customBase)?customBase:'#2F83E8';tone.value=String(customTone);tone.style.setProperty('--tone-base',pick.value);if(hex)hex.textContent=currentCustom();box.classList.toggle('fullColorActive',customActive);
+                  const nextBase=isHex(customBase)?customBase:'#2F83E8',nextTone=String(customTone),nextHex=currentCustom();
+                  if(pick.value.toUpperCase()!==nextBase.toUpperCase())pick.value=nextBase;
+                  if(tone.value!==nextTone)tone.value=nextTone;
+                  if(tone.style.getPropertyValue('--tone-base')!==pick.value)tone.style.setProperty('--tone-base',pick.value);
+                  if(hex&&hex.textContent!==nextHex)hex.textContent=nextHex;
+                  box.classList.toggle('fullColorActive',customActive);
                 }
                 function editedCourse(){
                   try{if(typeof weeks==='undefined'||typeof activeWeek==='undefined'||typeof selected==='undefined'||typeof editing==='undefined'||editing==null)return null;return weeks[activeWeek]&&weeks[activeWeek][selected]?weeks[activeWeek][selected].courses[editing]||null:null}catch(e){return null}
@@ -203,8 +208,8 @@ final class ScheduleDisplayUi {
                   customActive=false;
                   if(c&&isHex(c.color)){customBase=c.color.toUpperCase();customTone=0}else{customBase='#2F83E8';customTone=0}
                   const e=document.getElementById('fullCourseEnable84');if(e)e.checked=false;
-                  const p=document.getElementById('fullCourseColor'),t=document.getElementById('fullCourseTone');if(p)p.disabled=true;if(t)t.disabled=true;
-                  const box=document.getElementById('fullCourseColorBox');if(box)box.classList.remove('fullColorEnabled84');
+                  const p=document.getElementById('fullCourseColor'),t=document.getElementById('fullCourseTone');if(p&&!p.disabled)p.disabled=true;if(t&&!t.disabled)t.disabled=true;
+                  const box=document.getElementById('fullCourseColorBox');if(box)box.classList.toggle('fullColorEnabled84',false);
                   updateCoursePickerPreview();
                 }
 
@@ -1417,7 +1422,11 @@ final class ScheduleDisplayUi {
                     b.style.setProperty('touch-action','manipulation','important');
                   });
                   const order={'1':0,'2':1,'3':2,'4':3};
-                  [...box.querySelectorAll('.weekModeChoice')].sort((a,b)=>(order[a.dataset.m]??99)-(order[b.dataset.m]??99)).forEach(b=>box.appendChild(b));
+                  // Keep the existing order without moving already-correct buttons. The
+                  // child-list observer below must not queue itself again on every frame.
+                  [...box.querySelectorAll('.weekModeChoice')].sort((a,b)=>(order[a.dataset.m]??99)-(order[b.dataset.m]??99)).forEach((b,i)=>{
+                    if(box.children[i]!==b)box.insertBefore(b,box.children[i]||null);
+                  });
                   markMode(currentMode());
                 }
 
