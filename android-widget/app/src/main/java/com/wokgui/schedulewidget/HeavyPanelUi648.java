@@ -53,6 +53,9 @@ final class HeavyPanelUi648 {
                   const forwarded=bypass?callback:function(records,observer){
                     const owner=window.__edtHeavyPanelsOwnObservers648;
                     if(!owner)return callback.call(this,records,observer);
+                    // A modal is an interaction boundary: background timetable observers must
+                    // not rebuild or restyle either mounted sheet while the user is in it.
+                    if(owner.settings.getAttribute('data-edt-open')==='true'||owner.course.getAttribute('data-edt-open')==='true')return;
                     const filtered=records.filter(record=>{
                       const target=record&&record.target;
                       return !(target&&(target===owner.settings||target===owner.course||owner.settings.contains(target)||owner.course.contains(target)));

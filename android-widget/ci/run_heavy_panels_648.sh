@@ -164,9 +164,14 @@ for line in lines:
     expected=300 if scenario in ('settings','course') else 150
     if opens!=expected or closes!=expected:
         raise SystemExit(f'{scenario}/{panel}: expected {expected} complete cycles, got {opens}/{closes}')
-    for key in ('listenerDelta','observerDelta','resizeObserverDelta','nodeDelta','errorDelta','mutations','added','removed','renders','scenarioRenders','directBridgeCalls','directStorageReads','directStorageWrites','directListenerAdds','directObserverDelta','directResizeObserverDelta'):
+    for key in ('listenerDelta','observerDelta','resizeObserverDelta','nodeDelta','errorDelta','renders','scenarioRenders','directBridgeCalls','directStorageReads','directStorageWrites','directListenerAdds','directObserverDelta','directResizeObserverDelta'):
         if int(float(data.get(key,-1)))!=0:
             raise SystemExit(f'{scenario}/{panel}: {key} accumulated: {data.get(key)}')
+    # Value changes may replace a text node on the first distinct course. They must stay
+    # strictly bounded across 300 cycles: any per-open DOM rebuilding immediately fails.
+    mutations=int(float(data.get('mutations',-1))); added=int(float(data.get('added',-1))); removed=int(float(data.get('removed',-1)))
+    if mutations>16 or added>4 or removed>4:
+        raise SystemExit(f'{scenario}/{panel}: repeated DOM reconstruction: mutations={mutations}, added={added}, removed={removed}')
     p50=float(data['openReadyP50']); p95=float(data['openReadyP95']); maximum=float(data['openReadyMax'])
     head=float(data.get('openHeadP50',p50)); tail=float(data.get('openTailP50',p50))
     if p95 > max(240, p50*2.5+80) or maximum>900:
