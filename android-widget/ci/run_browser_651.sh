@@ -18,3 +18,6 @@ echo 'BROWSER_SUITE|bursts650|passed'
 echo 'BROWSER_SUITE|actions651|start'
 EDT_UI_CHUNKS=smoke-browser/chunks timeout 90s node android-widget/ci/browser/verify_actions_651.cjs
 echo 'BROWSER_SUITE|actions651|passed'
+echo 'BROWSER_SUITE|rare-actions652|start'
+EDT_UI_CHUNKS=smoke-browser/chunks timeout 90s node android-widget/ci/browser/verify_rare_actions_652.cjs
+echo 'BROWSER_SUITE|rare-actions652|passed'
