@@ -46,6 +46,12 @@ final class RenderBurstUi650 {
                   };
                   wrapped.__edtRenderBurst650=true;button.onclick=wrapped;
                 }
+
+                const baseApplyOcr=window.applyOcrSchedule;
+                if(typeof baseApplyOcr==='function'){
+                  const applyOcr=function(){const result=baseApplyOcr.apply(this,arguments);bindOcrCorrection();return result};
+                  applyOcr.__edtRenderBurst650=true;assign('applyOcrSchedule',applyOcr);
+                }
                 bindOcrCorrection();
 
                 window.__edtRenderBurst650={stats:stats,bindOcrCorrection:bindOcrCorrection};
