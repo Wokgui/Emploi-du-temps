@@ -86,9 +86,8 @@ fs.mkdirSync(out,{recursive:true});
   const cycleBefore=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders}));
   await page.evaluate(()=>{
     const e=document.getElementById('advCycle');
-    assertNode(e,'advCycle');
+    if(!e)throw new Error('advCycle missing');
     e.value='3';e.dispatchEvent(new Event('change',{bubbles:true}));
-    function assertNode(node,name){if(!node)throw new Error(name+' missing')}
   });
   const cycleAfter=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders}));
   assert.equal(cycleAfter.save-cycleBefore.save,1,'cycle change must persist the schedule once');
@@ -136,10 +135,11 @@ fs.mkdirSync(out,{recursive:true});
   assert.equal(deletion.slot,true,'course deletion must keep slot controls mounted');
   assert.equal(deletion.day,true,'course deletion must keep day tabs mounted');
 
-  const hasModeButton=await page.evaluate(()=>!!document.querySelector('#weekModeBar .weekModeChoice[data-m="1"]'));
-  if(hasModeButton){
+  const modeButton=page.locator('#weekModeBar .weekModeChoice[data-m="1"]');
+  if(await modeButton.count()){
+    assert.equal(await modeButton.isVisible(),true,'single-week mode button must be visible and tappable');
     const modeBefore=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders,actions:__edtActionChains651.stats.actions}));
-    await page.evaluate(()=>document.querySelector('#weekModeBar .weekModeChoice[data-m="1"]').click());
+    await modeButton.tap();
     await page.waitForFunction(before=>__edtActionChains651.stats.actions>before,modeBefore.actions);
     const modeNow=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders,actions:__edtActionChains651.stats.actions}));
     await page.waitForTimeout(220);
