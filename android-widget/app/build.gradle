@@ -10,8 +10,8 @@ android {
         applicationId 'com.wokgui.schedulewidget'
         minSdk 26
         targetSdk 35
-        versionCode 650001
-        versionName '6.50'
+        versionCode 651001
+        versionName '6.51'
     }
 
     buildFeatures {
@@ -36,4 +36,4 @@ dependencies {
     implementation 'com.google.mlkit:translate:17.0.3'
 }
 
-// 6.50: coalesce course-save pipelines and keep edit-day/slot controls mounted.
+// 6.51: one user action -> one persistence/targeted-render commit across remaining chains.
