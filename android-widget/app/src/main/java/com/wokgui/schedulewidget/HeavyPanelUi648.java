@@ -5,7 +5,7 @@ package com.wokgui.schedulewidget;
  *
  * <p>Both sheets stay mounted and laid out for the whole WebView session. Legacy modules can
  * contribute one idempotent course-field preparer at startup; opening the editor then updates
- * only values that depend on the selected course. A dedicated state attribute owns visibility,
+ * only values that depend on the selected course. A dedicated state attribute owns exposure,
  * so opening a sheet cannot wake historical observers attached to the legacy {@code show} class.</p>
  */
 final class HeavyPanelUi648 {
@@ -107,12 +107,11 @@ final class HeavyPanelUi648 {
                   const style=document.createElement('style');style.id='edtHeavyPanels648Style';
                   style.textContent=`
                     #settingsModal.edtHeavyPanel648,#modal.edtHeavyPanel648{
-                      display:flex!important;visibility:hidden!important;
-                      pointer-events:none!important;contain:layout style paint;
+                      display:flex!important;clip-path:inset(0 0 100% 0);contain:layout style paint;
                     }
                     #settingsModal.edtHeavyPanel648[data-edt-open="true"],
                     #modal.edtHeavyPanel648[data-edt-open="true"]{
-                      visibility:visible!important;pointer-events:auto!important;
+                      clip-path:inset(0);
                     }
                   `;
                   document.head.appendChild(style);
@@ -124,6 +123,7 @@ final class HeavyPanelUi648 {
                   if(alreadyOpen)panel.classList.remove('show');
                   panel.setAttribute('data-edt-open',alreadyOpen?'true':'false');
                   panel.setAttribute('aria-hidden',alreadyOpen?'false':'true');
+                  panel.inert=!alreadyOpen;
                 }
                 mount(settings);mount(course);
 
@@ -136,6 +136,7 @@ final class HeavyPanelUi648 {
                   if(!value&&panel.contains(document.activeElement)){
                     try{document.activeElement.blur()}catch(e){}
                   }
+                  panel.inert=!value;
                   panel.setAttribute('data-edt-open',next);panel.setAttribute('aria-hidden',value?'false':'true');
                   return true;
                 }
