@@ -63,18 +63,33 @@ fs.mkdirSync(out,{recursive:true});
     }
     const before=snap();
     const samples=[];
+    const listenerEvents=[];
+    let previousListeners=before.listeners;
     for(let i=0;i<120;i++){
       const t=performance.now();
-      for(const el of controls)exercise(el);
+      for(const el of controls){
+        const listenerBefore=perf.listenerAdds;
+        exercise(el);
+        const listenerAfter=perf.listenerAdds;
+        if(listenerAfter!==listenerBefore)listenerEvents.push({cycle:i,id:el.id,delta:listenerAfter-listenerBefore,total:listenerAfter,phase:'dispatch'});
+      }
       samples.push(performance.now()-t);
-      if(i%20===0)await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      if(i%20===0){
+        await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+        if(perf.listenerAdds!==previousListeners)listenerEvents.push({cycle:i,id:null,delta:perf.listenerAdds-previousListeners,total:perf.listenerAdds,phase:'afterFrames'});
+        previousListeners=perf.listenerAdds;
+      }
     }
     await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    if(perf.listenerAdds!==previousListeners)listenerEvents.push({cycle:120,id:null,delta:perf.listenerAdds-previousListeners,total:perf.listenerAdds,phase:'finalFrames'});
     const after=snap();
     const median=a=>{const s=a.slice().sort((x,y)=>x-y);return s[Math.floor(s.length/2)]||0};
-    return {controls:controls.map(x=>x.id),cold,warmup,before,after,headP50:median(samples.slice(0,20)),tailP50:median(samples.slice(-20)),stats:chain.stats};
+    return {controls:controls.map(x=>x.id),cold,warmup,before,after,listenerEvents,headP50:median(samples.slice(0,20)),tailP50:median(samples.slice(-20)),stats:chain.stats};
   });
 
+  fs.writeFileSync(path.join(out,'rare-actions-652.json'),JSON.stringify(report,null,2));
+  fs.writeFileSync(path.join(out,'rare-actions-652.log'),logs.join('\n'));
+  console.log('browser_rare_actions_652_report',JSON.stringify(report));
   assert.ok(report.controls.length>=3,'rare-action suite must resolve school/holiday/profile controls');
   assert.equal(report.after.listeners-report.before.listeners,0,'rare actions must not accumulate listeners after first-use initialization');
   assert.equal(report.after.observers-report.before.observers,0,'rare actions must not accumulate MutationObservers after first-use initialization');
@@ -82,8 +97,6 @@ fs.mkdirSync(out,{recursive:true});
   assert.ok(report.after.nodes-report.before.nodes<=8,'rare actions must not progressively grow the DOM');
   assert.ok(report.tailP50<=Math.max(report.headP50*2,report.headP50+5),'rare actions must not progressively slow down');
   assert.deepEqual(errors,[],'6.52 rare-action JavaScript errors');
-  fs.writeFileSync(path.join(out,'rare-actions-652.json'),JSON.stringify(report,null,2));
-  fs.writeFileSync(path.join(out,'rare-actions-652.log'),logs.join('\n'));
   console.log('browser_rare_actions_652=passed',JSON.stringify(report));
   await context.close();await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});
