@@ -7,3 +7,4 @@ javac -encoding UTF-8 -d smoke-browser/classes "${sources[@]}" "$src/RuntimeRepa
 java -cp smoke-browser/classes com.wokgui.schedulewidget.ExportUi smoke-browser/chunks
 EDT_UI_CHUNKS=smoke-browser/chunks node android-widget/ci/browser/verify.cjs
 EDT_UI_CHUNKS=smoke-browser/chunks node android-widget/ci/browser/verify_pipeline_650.cjs
+EDT_UI_CHUNKS=smoke-browser/chunks node android-widget/ci/browser/verify_bursts_650.cjs
