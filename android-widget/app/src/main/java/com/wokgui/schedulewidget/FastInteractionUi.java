@@ -72,6 +72,16 @@ final class FastInteractionUi {
                     console.log('EDT_FAST_STATS|clicks='+state.clicks+'|submits='+state.submits+'|scheduled='+state.scheduled+'|executed='+state.executed+'|cancelled='+state.cancelled+'|routers=1|wrappers=0');
                   }
                 }
+                function invokeClick(el,event,fn){
+                  const chain=window.__edtActionChains651;
+                  if(chain&&typeof chain.runClick==='function'&&chain.runClick(el,event,fn))return;
+                  fn.call(el,event);
+                }
+                function invokeSubmit(form,event,fn){
+                  const chain=window.__edtActionChains651;
+                  if(chain&&typeof chain.runSubmit==='function'&&chain.runSubmit(form,event,fn))return;
+                  fn.call(form,event);
+                }
 
                 if(!document.getElementById('edtFastInteractionStyle')){
                   const style=document.createElement('style');style.id='edtFastInteractionStyle';
@@ -96,7 +106,7 @@ final class FastInteractionUi {
                     const fn=el.onclick,n=++state.clicks,started=performance.now();
                     pointerHandled=el;pointerHandledAt=started;
                     console.log('EDT_FAST_INPUT|settings|visual|delegated');
-                    afterPaint('',function(){fn.call(el,e);logSettle('click','settings',n,started)});
+                    afterPaint('',function(){invokeClick(el,e,fn);logSettle('click','settings',n,started)});
                   }
                 },{capture:true,passive:true});
                 document.addEventListener('click',function(e){
@@ -113,7 +123,7 @@ final class FastInteractionUi {
                   const n=++state.clicks,started=performance.now(),label=labelFor(el);
                   console.log('EDT_FAST_INPUT|'+label+'|visual|delegated');
                   const group=groupFor(el);
-                  afterPaint(group,function(){fn.call(el,e);logSettle('click',label,n,started)});
+                  afterPaint(group,function(){invokeClick(el,e,fn);logSettle('click',label,n,started)});
                 },true);
 
                 document.addEventListener('submit',function(e){
@@ -123,7 +133,7 @@ final class FastInteractionUi {
                   try{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()}catch(ignore){}
                   const n=++state.submits,started=performance.now(),label=(form.id||'form')+'-submit';
                   console.log('EDT_FAST_INPUT|'+label+'|visual|delegated');
-                  afterPaint('',function(){fn.call(form,e);logSettle('submit',label,n,started)});
+                  afterPaint('',function(){invokeSubmit(form,e,fn);logSettle('submit',label,n,started)});
                 },true);
 
                 window.__edtFastInteractionV3={state:state};
