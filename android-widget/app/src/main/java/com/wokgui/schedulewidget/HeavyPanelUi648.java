@@ -16,7 +16,7 @@ final class HeavyPanelUi648 {
             (function(){
               if(window.__edtPanelObserverRegistry648)return;
               const registry=[];window.__edtPanelObserverRegistry648=registry;
-              const inputOwner={metric:null,route:null,lastPanel:'',lastAt:0,count:0};window.__edtHeavyInputOwner648=inputOwner;
+              const inputOwner={metric:null,route:null,lastPanel:'',lastAt:0,count:0,labelCounts:Object.create(null)};window.__edtHeavyInputOwner648=inputOwner;
               function logInput(target){
                 let label=target.id||'course';
                 if(target.id==='settingsBtn')label='settings';
@@ -24,7 +24,8 @@ final class HeavyPanelUi648 {
                 else if(target.classList&&target.classList.contains('todayCourse'))label='today-course';
                 else if(target.classList&&target.classList.contains('wc'))label='week-cell';
                 inputOwner.count++;
-                if(label==='settings'||label==='edit-course'||inputOwner.count<=6||inputOwner.count%4===0)console.log('EDT_FAST_INPUT|'+label+'|visual|delegated');
+                const labelCount=(inputOwner.labelCounts[label]||0)+1;inputOwner.labelCounts[label]=labelCount;
+                if(((label==='settings'||label==='edit-course')&&labelCount<=60)||inputOwner.count<=6||inputOwner.count%20===0)console.log('EDT_FAST_INPUT|'+label+'|visual|delegated');
                 if(inputOwner.count%100===0)console.log('EDT_FAST_STATS|clicks='+inputOwner.count+'|submits=0|scheduled=0|executed='+inputOwner.count+'|cancelled=0|routers=1|wrappers=0');
               }
               function inputTarget(node){
