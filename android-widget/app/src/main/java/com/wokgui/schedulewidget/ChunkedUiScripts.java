@@ -61,6 +61,6 @@ final class ChunkedUiScripts {
 
     private static void add(List<String> out, String script) {
         if (script == null || script.trim().isEmpty()) return;
-        out.add(UiRuntimeBundle.prepareChunk(script).replace("APP_VERSION='6.45'", "APP_VERSION='6.48'"));
+        out.add(UiRuntimeBundle.prepareChunk(script).replace("APP_VERSION='6.45'", "APP_VERSION='6.49'"));
     }
 }

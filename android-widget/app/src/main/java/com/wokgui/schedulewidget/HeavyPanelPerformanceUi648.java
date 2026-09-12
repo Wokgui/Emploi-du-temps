@@ -98,9 +98,14 @@ final class HeavyPanelPerformanceUi648 {
                     });
                   }).observe(root,{childList:true,subtree:true,characterData:true,attributes:true});
                 }
-                observeMutations('settings',panelRoots.settings);
-                observeMutations('course',panelRoots.course);
-                observeMutations('main',document.querySelector('main.wrap'));
+                // Metrics observers are explicitly exempt from the production quarantine.
+                // Otherwise the benchmark would report zero panel mutations without observing them.
+                window.__edtAllowPanelObserver648=true;
+                try{
+                  observeMutations('settings',panelRoots.settings);
+                  observeMutations('course',panelRoots.course);
+                  observeMutations('main',document.querySelector('main.wrap'));
+                }finally{window.__edtAllowPanelObserver648=false}
 
                 function wrapRender(name,key){
                   const old=window[name];if(typeof old!=='function'||old.__edtHeavyMetrics648)return;
@@ -257,6 +262,8 @@ final class HeavyPanelPerformanceUi648 {
                   const direct=window.__edtHeavyDirectWork648||{},directBefore=before.direct||{};
                   const headReady=openReady.slice(0,Math.min(20,openReady.length)),tailReady=openReady.slice(Math.max(0,openReady.length-20));
                   const mutationTotal=opens.concat(closes).reduce(function(n,x){return n+x.mutations},0);
+                  const addedTotal=opens.concat(closes).reduce(function(n,x){return n+x.added},0);
+                  const removedTotal=opens.concat(closes).reduce(function(n,x){return n+x.removed},0);
                   const mainMutationTotal=opens.concat(closes).reduce(function(n,x){return n+x.mainMutations},0);
                   const renderTotal=opens.concat(closes).reduce(function(n,x){return n+x.renders},0);
                   const bridgeTotal=opens.concat(closes).reduce(function(n,x){return n+x.bridgeCalls},0);
@@ -270,7 +277,7 @@ final class HeavyPanelPerformanceUi648 {
                     openHeadP50:rounded(percentile(headReady,.5)),openTailP50:rounded(percentile(tailReady,.5)),
                     closeFirstP50:rounded(percentile(closeFirst,.5)),closeFirstP95:rounded(percentile(closeFirst,.95)),closeFirstMax:rounded(percentile(closeFirst,1)),
                     closeReadyP50:rounded(percentile(closeReady,.5)),closeReadyP95:rounded(percentile(closeReady,.95)),closeReadyMax:rounded(percentile(closeReady,1)),
-                    mutationTotal:mutationTotal,mainMutationTotal:mainMutationTotal,renderTotal:renderTotal,
+                    mutationTotal:mutationTotal,addedTotal:addedTotal,removedTotal:removedTotal,mainMutationTotal:mainMutationTotal,renderTotal:renderTotal,
                     bridgeTotal:bridgeTotal,bridgeReadTotal:bridgeReadTotal,bridgeWriteTotal:bridgeWriteTotal,
                     storageReadTotal:storageReadTotal,storageWriteTotal:storageWriteTotal,
                     scenarioBridgeCalls:counters.bridgeCalls-before.bridgeCalls,scenarioStorageReads:counters.storageReads-before.storageReads,
@@ -288,7 +295,7 @@ final class HeavyPanelPerformanceUi648 {
                     '|openHeadP50='+out.openHeadP50+'|openTailP50='+out.openTailP50+
                     '|closeFirstP50='+out.closeFirstP50+'|closeFirstP95='+out.closeFirstP95+'|closeFirstMax='+out.closeFirstMax+
                     '|closeReadyP50='+out.closeReadyP50+'|closeReadyP95='+out.closeReadyP95+'|closeReadyMax='+out.closeReadyMax+
-                    '|mutations='+out.mutationTotal+'|mainMutations='+out.mainMutationTotal+'|renders='+out.renderTotal+
+                    '|mutations='+out.mutationTotal+'|added='+out.addedTotal+'|removed='+out.removedTotal+'|mainMutations='+out.mainMutationTotal+'|renders='+out.renderTotal+
                     '|bridgeCalls='+out.bridgeTotal+'|bridgeReads='+out.bridgeReadTotal+'|bridgeWrites='+out.bridgeWriteTotal+
                     '|storageReads='+out.storageReadTotal+'|storageWrites='+out.storageWriteTotal+
                     '|scenarioBridgeCalls='+out.scenarioBridgeCalls+'|scenarioStorageReads='+out.scenarioStorageReads+'|scenarioStorageWrites='+out.scenarioStorageWrites+

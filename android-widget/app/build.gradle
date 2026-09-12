@@ -10,8 +10,8 @@ android {
         applicationId 'com.wokgui.schedulewidget'
         minSdk 26
         targetSdk 35
-        versionCode 648001
-        versionName '6.48'
+        versionCode 649001
+        versionName '6.49'
     }
 
     buildFeatures {
@@ -36,4 +36,4 @@ dependencies {
     implementation 'com.google.mlkit:translate:17.0.3'
 }
 
-// 6.48: keep the two heavy sheets mounted and prepared as well as the three main views.
+// 6.49: release compositor layers after closing heavy panels and verify real DOM churn.

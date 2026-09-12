@@ -10,6 +10,10 @@ if grep -Eq 'setTimeout|innerHTML|new MutationObserver' "$CONTROLLER"; then
   echo 'Heavy-panel controller must not defer work, rebuild HTML, or register observers' >&2
   exit 1
 fi
+if grep -Eq 'will-change|opacity:' "$CONTROLLER"; then
+  echo 'Heavy-panel controller must not retain full-screen compositor layers' >&2
+  exit 1
+fi
 if [ "$(grep -o 'addEventListener' "$CONTROLLER" | wc -l)" -ne 1 ]; then
   echo 'Heavy-panel input must use one stable listener registration site' >&2
   exit 1
@@ -91,7 +95,9 @@ if [ "${EDT_HEAVY_REQUIRE_FAST:-0}" = 1 ]; then
   grep -Fq 'EDT_HEAVY_OWNER|ready|' smoke-heavy/startup.log
   grep -Fq 'EDT_HEAVY_METRICS|ready|' smoke-heavy/startup.log
   grep -Fq 'bridgeWrapped=1' smoke-heavy/startup.log
+  grep -Fq 'persistentOpacityLayer=0' smoke-heavy/startup.log
 fi
+grep 'EDT_HEAVY_OWNER|ready|' smoke-heavy/startup.log | tee smoke-heavy/startup-measurement.txt
 adb logcat -c
 tap_text 'Réglages'
 wait_for_log 'EDT_HEAVY_CHECKPOINT|scenario=physical|panel=settings|action=open|n=1' 200
@@ -158,7 +164,7 @@ for line in lines:
     expected=300 if scenario in ('settings','course') else 150
     if opens!=expected or closes!=expected:
         raise SystemExit(f'{scenario}/{panel}: expected {expected} complete cycles, got {opens}/{closes}')
-    for key in ('listenerDelta','observerDelta','resizeObserverDelta','nodeDelta','errorDelta','mutations','renders','scenarioRenders','directBridgeCalls','directStorageReads','directStorageWrites','directListenerAdds','directObserverDelta','directResizeObserverDelta'):
+    for key in ('listenerDelta','observerDelta','resizeObserverDelta','nodeDelta','errorDelta','mutations','added','removed','renders','scenarioRenders','directBridgeCalls','directStorageReads','directStorageWrites','directListenerAdds','directObserverDelta','directResizeObserverDelta'):
         if int(float(data.get(key,-1)))!=0:
             raise SystemExit(f'{scenario}/{panel}: {key} accumulated: {data.get(key)}')
     p50=float(data['openReadyP50']); p95=float(data['openReadyP95']); maximum=float(data['openReadyMax'])

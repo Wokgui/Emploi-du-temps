@@ -90,13 +90,12 @@ final class HeavyPanelUi648 {
                   const style=document.createElement('style');style.id='edtHeavyPanels648Style';
                   style.textContent=`
                     #settingsModal.edtHeavyPanel648,#modal.edtHeavyPanel648{
-                      display:flex!important;visibility:hidden!important;opacity:0!important;
-                      pointer-events:none!important;contain:layout style paint;
-                      will-change:opacity;
+                      display:flex!important;visibility:hidden!important;
+                      pointer-events:none!important;contain:strict;
                     }
                     #settingsModal.edtHeavyPanel648[data-edt-open="true"],
                     #modal.edtHeavyPanel648[data-edt-open="true"]{
-                      visibility:visible!important;opacity:1!important;pointer-events:auto!important;
+                      visibility:visible!important;pointer-events:auto!important;
                     }
                   `;
                   document.head.appendChild(style);
@@ -142,6 +141,7 @@ final class HeavyPanelUi648 {
                 const slotPreview=document.getElementById('slotPreview');
                 const customOption=document.createElement('option');customOption.value='0';
                 const slotOptions=[];
+                let slotLabelsKey='';
                 const fragment=document.createDocumentFragment();fragment.appendChild(customOption);
                 for(let i=0;i<9;i++){
                   const option=document.createElement('option');option.value=String(i+1);slotOptions.push(option);fragment.appendChild(option);
@@ -162,10 +162,14 @@ final class HeavyPanelUi648 {
                   const custom=!!(allowCustom&&start&&end),lang=language();
                   setFlag(customOption,'hidden',!custom);setFlag(customOption,'disabled',!custom);
                   setText(customOption,custom?(lang==='de'?'Aktuelle Zeit ('+start+'–'+end+')':(lang==='en'?'Current time ('+start+'–'+end+')':'Horaire actuel ('+start+'–'+end+')')):'');
-                  for(let i=0;i<slotOptions.length;i++){
-                    const value=(typeof slots!=='undefined'&&slots[i])?slots[i]:{start:'',end:''};
-                    const text=periodName(i+1)+' · '+value.start+'–'+value.end;
-                    setText(slotOptions[i],text);
+                  const currentSlots=typeof slots!=='undefined'?slots:[];
+                  const labelsKey=lang+'|'+currentSlots.map(function(value){return (value&&value.start||'')+'-'+(value&&value.end||'')}).join('|');
+                  if(labelsKey!==slotLabelsKey){
+                    slotLabelsKey=labelsKey;
+                    for(let i=0;i<slotOptions.length;i++){
+                      const value=currentSlots[i]||{start:'',end:''};
+                      setText(slotOptions[i],periodName(i+1)+' · '+value.start+'–'+value.end);
+                    }
                   }
                   const selected=Number(selectedSlot)||1;
                   setValue(slotSelect,selected===0&&custom?0:selected);
@@ -264,7 +268,7 @@ final class HeavyPanelUi648 {
                   openCourse:openCourse,closeCourse:closeCourse,isOpen:function(name){return isOpen(name==='settings'?settings:course)},
                   preparedSettingsHeight:preparedSettingsHeight,preparedCourseHeight:preparedCourseHeight
                 };
-                console.log('EDT_HEAVY_OWNER|ready|prepareMs='+(Math.round((performance.now()-preparationStarted)*10)/10)+'|settingsHeight='+preparedSettingsHeight+'|courseHeight='+preparedCourseHeight+'|settingsButtons='+(settings.querySelectorAll('button').length)+'|courseFields='+(courseForm.querySelectorAll('input,select').length)+'|slotOptions='+slotSelect.options.length+'|preparers='+(window.__edtCoursePanelPreparers648||[]).length+'|disconnectedObservers='+disconnectedObservers);
+                console.log('EDT_HEAVY_OWNER|ready|prepareMs='+(Math.round((performance.now()-preparationStarted)*10)/10)+'|navigationMs='+(Math.round(performance.now()*10)/10)+'|settingsHeight='+preparedSettingsHeight+'|courseHeight='+preparedCourseHeight+'|settingsButtons='+(settings.querySelectorAll('button').length)+'|courseFields='+(courseForm.querySelectorAll('input,select').length)+'|slotOptions='+slotSelect.options.length+'|preparers='+(window.__edtCoursePanelPreparers648||[]).length+'|disconnectedObservers='+disconnectedObservers+'|persistentOpacityLayer=0');
               }catch(e){console.error('HeavyPanelUi648',e)}
             })();
             """;
