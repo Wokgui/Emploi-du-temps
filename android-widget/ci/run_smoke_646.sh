@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Reuse the complete 6.45 regression suite with only the two known 6.46 harness adaptations.
+# Reuse the complete 6.45 regression suite with the navigation-coordinate adaptations.
+# The Settings close button is deliberately left at the stable 862/210 position: changing it
+# to 1000/245 misses the visible × on the current sheet and leaves the modal over navigation.
 sed -i \
-  -e 's/adb shell input tap 862 210/adb shell input tap 1000 245/g' \
   -e 's/adb shell input tap 465 1810/adb shell input tap 540 1810/g' \
   -e 's/adb shell input tap 760 1810/adb shell input tap 880 1810/g' \
   android-widget/ci/run_smoke.sh
