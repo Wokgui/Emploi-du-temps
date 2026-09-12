@@ -244,6 +244,7 @@ final class HeavyPanelPerformanceUi648 {
                 }
                 function startScenario(name){
                   scenario=name;
+                  if(inputOwner)inputOwner.scenario=name;
                   ['settings','course'].forEach(function(panel){['open','close'].forEach(function(action){samples[panel][action].length=0;counts[panel][action]=0});activity[panel]=null});
                   return {listeners:counters.listenerAdds,observers:counters.mutationObservers,resizeObservers:counters.resizeObservers,
                     nodes:document.getElementsByTagName('*').length,errors:counters.errors,renders:totalRenders(),mainMutations:mutations.main,

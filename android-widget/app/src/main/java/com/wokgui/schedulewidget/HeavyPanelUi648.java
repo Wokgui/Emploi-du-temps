@@ -18,6 +18,7 @@ final class HeavyPanelUi648 {
               const registry=[];window.__edtPanelObserverRegistry648=registry;
               const inputOwner={metric:null,route:null,lastPanel:'',lastAt:0,count:0,labelCounts:Object.create(null)};window.__edtHeavyInputOwner648=inputOwner;
               function logInput(target){
+                if(inputOwner.scenario&&inputOwner.scenario!=='physical')return;
                 let label=target.id||'course';
                 if(target.id==='settingsBtn')label='settings';
                 else if(target.classList&&target.classList.contains('editCourse'))label='edit-course';
