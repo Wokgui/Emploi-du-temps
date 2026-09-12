@@ -33,7 +33,6 @@ final class FastInteractionUi {
                   if(el.id==='deleteCourse')return 'delete-course';
                   if(el.classList&&el.classList.contains('nav'))return 'nav-'+(el.dataset.mode||'unknown');
                   if(el.classList&&el.classList.contains('weekTab'))return 'week-'+(el.dataset.week||'unknown');
-                  if(el.classList&&el.classList.contains('weekModeChoice'))return 'week-mode-'+(el.dataset.m||'unknown');
                   if(el.classList&&el.classList.contains('dayTab'))return 'day-'+(el.dataset.day||el.textContent||'unknown');
                   if(el.classList&&el.classList.contains('editCourse'))return 'edit-course';
                   if(el.classList&&el.classList.contains('todayCourse'))return 'today-course';
@@ -65,10 +64,6 @@ final class FastInteractionUi {
 
                 function controlFrom(target){
                   try{return target&&target.closest?target.closest(selector):null}catch(e){return null}
-                }
-                function coordinatorOwnsWithoutLegacyHandler(el){
-                  const chain=window.__edtActionChains651;
-                  return !!(chain&&typeof chain.runClick==='function'&&el&&el.classList&&el.classList.contains('weekModeChoice'));
                 }
                 function logSettle(kind,label,n,started){
                   const elapsed=Math.round(performance.now()-started);
@@ -117,19 +112,17 @@ final class FastInteractionUi {
                 document.addEventListener('click',function(e){
                   const el=controlFrom(e.target);if(!el)return;
                   if(el.classList&&el.classList.contains('nav'))return;
+                  // Stability73 is the single physical owner of the week-cycle strip. Its
+                  // pointer-up route is repaired to call the 6.51 coordinator directly. Do not
+                  // add a second click route here or WebView can execute the same mode twice.
+                  if(el.classList&&el.classList.contains('weekModeChoice'))return;
                   if(el===pointerHandled&&performance.now()-pointerHandledAt<900){
                     pointerHandled=null;
                     try{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()}catch(ignore){}
                     return;
                   }
-                  let fn=el.onclick;
-                  // 6.51 owns week-cycle buttons even when a legacy layer has rebuilt one
-                  // without restoring its onclick. The delegated router must not silently
-                  // drop that tap merely because the obsolete handler is absent.
-                  if(typeof fn!=='function'){
-                    if(!coordinatorOwnsWithoutLegacyHandler(el))return;
-                    fn=function(){};
-                  }
+                  const fn=el.onclick;
+                  if(typeof fn!=='function')return;
                   try{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()}catch(ignore){}
                   const n=++state.clicks,started=performance.now(),label=labelFor(el);
                   console.log('EDT_FAST_INPUT|'+label+'|visual|delegated');
