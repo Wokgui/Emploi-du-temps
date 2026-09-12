@@ -91,7 +91,7 @@ final class HeavyPanelUi648 {
                   style.textContent=`
                     #settingsModal.edtHeavyPanel648,#modal.edtHeavyPanel648{
                       display:flex!important;visibility:hidden!important;
-                      pointer-events:none!important;contain:strict;
+                      pointer-events:none!important;contain:layout style paint;
                     }
                     #settingsModal.edtHeavyPanel648[data-edt-open="true"],
                     #modal.edtHeavyPanel648[data-edt-open="true"]{
