@@ -29,11 +29,16 @@ final class LegacyChainRepair651 {
                 "if(window.refreshAdvancedFeatures)setTimeout(window.refreshAdvancedFeatures,20);\n                  if(typeof render==='function')setTimeout(render,30);",
                 "if(window.__edtActionChains651)window.__edtActionChains651.schoolCalendarChanged();\n                  else{if(window.refreshAdvancedFeatures)setTimeout(window.refreshAdvancedFeatures,20);if(typeof render==='function')setTimeout(render,30);}");
 
-        // Break labels need live visual feedback, not three persistence triggers. Keep the
-        // input path visual-only and persist once on change.
+        // Break labels historically persisted on input, change and blur. Do these replacements
+        // line by line rather than matching a whitespace-sensitive three-line block: chunks are
+        // normalized before this repair and their indentation is not a stable API. Input remains
+        // visual-only; the action coordinator owns the single persistence transaction on change.
         script = script.replace(
-                "input.addEventListener('input',queuePersist);\n                      input.addEventListener('change',applyBreakSettingsV9);\n                      input.addEventListener('blur',applyBreakSettingsV9);",
-                "input.addEventListener('input',()=>{syncBreakStateFromControls();syncBreakCells()});\n                      input.addEventListener('change',applyBreakSettingsV9);");
+                "input.addEventListener('input',queuePersist);",
+                "input.addEventListener('input',()=>{syncBreakStateFromControls();syncBreakCells()});");
+        script = script.replace(
+                "input.addEventListener('blur',applyBreakSettingsV9);",
+                "/* 6.51: change is the sole break-label persistence trigger. */");
 
         // Edit history can use its already-maintained last snapshot as the true pre-save
         // state. This removes one full exportState()/JSON serialization from every save and
