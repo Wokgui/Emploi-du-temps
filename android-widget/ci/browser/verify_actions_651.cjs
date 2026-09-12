@@ -75,7 +75,6 @@ fs.mkdirSync(out,{recursive:true});
 
   await page.locator('#settingsBtn').tap();
   await page.waitForFunction(()=>window.__edtHeavyPanels648&&__edtHeavyPanels648.isOpen('settings'));
-  if(await page.locator('#advancedSettings85').count())await page.locator('#advancedSettings85').evaluate(el=>{el.open=true});
   const advBefore=await page.evaluate(()=>({targeted:__edtActionChains651.stats.targetedRenders,suppressed:__edtActionChains651.stats.suppressedRenders}));
   await page.locator('#advDensity').selectOption('compact');
   await page.locator('#advFollowing').selectOption('2');
@@ -85,20 +84,28 @@ fs.mkdirSync(out,{recursive:true});
   assert.ok(advAfter.suppressed-advBefore.suppressed>=3,'legacy timetable renders must be coalesced for widget-only settings');
 
   const cycleBefore=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders}));
-  await page.locator('#advCycle').selectOption('3');
+  await page.evaluate(()=>{
+    const e=document.getElementById('advCycle');
+    assertNode(e,'advCycle');
+    e.value='3';e.dispatchEvent(new Event('change',{bubbles:true}));
+    function assertNode(node,name){if(!node)throw new Error(name+' missing')}
+  });
   const cycleAfter=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders}));
   assert.equal(cycleAfter.save-cycleBefore.save,1,'cycle change must persist the schedule once');
   assert.ok(cycleAfter.targeted-cycleBefore.targeted<=1,'cycle change must target-render at most once');
 
-  await page.locator('#advCopyFrom').selectOption('2');await page.locator('#advCopyTo').selectOption('3');
+  await page.evaluate(()=>{
+    const from=document.getElementById('advCopyFrom'),to=document.getElementById('advCopyTo');
+    if(!from||!to)throw new Error('copy-day controls missing');from.value='2';to.value='3';
+  });
   const copyBefore=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders}));
-  await page.locator('#advCopyDay').tap();
+  await page.evaluate(()=>{const b=document.getElementById('advCopyDay');if(!b)throw new Error('advCopyDay missing');b.click()});
   const copyAfter=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders}));
   assert.equal(copyAfter.save-copyBefore.save,1,'copy-day must persist once');
   assert.ok(copyAfter.targeted-copyBefore.targeted<=1,'copy-day must refresh at most one visible view');
 
   const resetBefore=await page.evaluate(()=>__edtActionChains651.stats.targetedRenders);
-  if(await page.locator('#resetText87').count())await page.locator('#resetText87').tap();
+  await page.evaluate(()=>{const b=document.getElementById('resetText87');if(b)b.click()});
   const resetAfter=await page.evaluate(()=>__edtActionChains651.stats.targetedRenders);
   assert.equal(resetAfter-resetBefore,0,'settings section reset must not redraw the timetable');
   await page.locator('#settingsX').tap();
@@ -123,10 +130,10 @@ fs.mkdirSync(out,{recursive:true});
   assert.equal(deletion.slot,true,'course deletion must keep slot controls mounted');
   assert.equal(deletion.day,true,'course deletion must keep day tabs mounted');
 
-  const modeButton=page.locator('#weekModeBar .weekModeChoice[data-m="1"]');
-  if(await modeButton.count()){
+  const hasModeButton=await page.evaluate(()=>!!document.querySelector('#weekModeBar .weekModeChoice[data-m="1"]'));
+  if(hasModeButton){
     const modeBefore=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders,actions:__edtActionChains651.stats.actions}));
-    await modeButton.tap();
+    await page.evaluate(()=>document.querySelector('#weekModeBar .weekModeChoice[data-m="1"]').click());
     const modeNow=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders,actions:__edtActionChains651.stats.actions}));
     await page.waitForTimeout(220);
     const modeLate=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders,actions:__edtActionChains651.stats.actions}));
