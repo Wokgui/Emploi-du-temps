@@ -2,14 +2,14 @@ name: Build and validate Android timetable
 
 on:
   push:
-    branches: [main, perf/instant-views-647, perf/heavy-panels-648, perf/heavy-panels-649]
+    branches: [main, perf/instant-views-647, perf/heavy-panels-648, perf/heavy-panels-649, perf/render-pipeline-650]
     paths:
       - 'android-widget/**'
       - '.github/workflows/android-widget.yml'
   workflow_dispatch:
 
 concurrency:
-  group: android-widget-${{ github.ref_name }}-v11
+  group: android-widget-${{ github.ref_name }}-v12
   cancel-in-progress: true
 
 permissions:
@@ -38,7 +38,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: browser-ui-649
+          name: browser-ui-650
           path: smoke-browser/
 
   build:
@@ -74,7 +74,7 @@ jobs:
       - name: Verify install version and package
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='649001' versionName='6.49'" app/build/outputs/apk/debug/badging.txt
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='650001' versionName='6.50'" app/build/outputs/apk/debug/badging.txt
       - name: Rename APK
         run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/emploi-du-temps-widget.apk
       - name: Upload APK artifact
