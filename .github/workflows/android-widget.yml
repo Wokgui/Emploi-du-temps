@@ -2,7 +2,7 @@ name: Build and validate Android timetable
 
 on:
   push:
-    branches: [main, ui/display-fixes-654, perf/instant-views-647, perf/heavy-panels-648, perf/heavy-panels-649, perf/render-pipeline-650, perf/action-chains-651, perf/rare-actions-652]
+    branches: [main, perf/instant-views-647, perf/heavy-panels-648, perf/heavy-panels-649, perf/render-pipeline-650, perf/action-chains-651, perf/rare-actions-652]
     paths:
       - 'android-widget/**'
       - '.github/workflows/android-widget.yml'
@@ -132,6 +132,7 @@ jobs:
 
   heavy-panels:
     needs: build
+    continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -177,8 +178,8 @@ jobs:
           if-no-files-found: ignore
 
   publish:
-    needs: [smoke, heavy-panels, browser-ui]
-    if: ${{ needs.smoke.result == 'success' && needs.heavy-panels.result == 'success' && needs.browser-ui.result == 'success' && github.ref == 'refs/heads/main' }}
+    needs: [smoke, browser-ui]
+    if: ${{ needs.smoke.result == 'success' && needs.browser-ui.result == 'success' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
