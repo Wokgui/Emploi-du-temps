@@ -65,6 +65,33 @@ sleep 0.35
 dismiss_launcher_anr
 adb shell dumpsys meminfo com.wokgui.schedulewidget > smoke/meminfo-before-soak.txt || true
 adb logcat -c
+
+# A fixed sleep after a physical tap is not proof that WebView accepted the gesture. Under
+# emulator load those taps can be delivered late or dropped while the UI is settling. Retry
+# the same real coordinate until the production navigation owner acknowledges that target.
+# 6.45 rewrites the legacy EDT_FAST_INPUT|nav- prefix below to EDT_NAV_INPUT|, so the same
+# deterministic helper validates both the 6.44 and 6.45+ ownership paths without weakening
+# any existing input-count threshold.
+tap_and_wait_real_nav() {
+  local target="$1"
+  local x="$2"
+  local marker="EDT_FAST_INPUT|nav-${target}"
+  local before after
+  before=$(adb logcat -d | grep -c "$marker" || true)
+  for _attempt in 1 2 3; do
+    adb shell input tap "$x" 1810
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+      sleep 0.06
+      after=$(adb logcat -d | grep -c "$marker" || true)
+      if [ "$after" -gt "$before" ]; then
+        return 0
+      fi
+    done
+  done
+  echo "real-session navigation target was not acknowledged: ${target}" >&2
+  return 1
+}
+
 for i in $(seq 1 48); do
   adb shell input tap 880 1810
   sleep 0.10
@@ -82,12 +109,9 @@ for i in $(seq 1 48); do
   adb shell input tap 862 210
   sleep 0.14
 
-  adb shell input tap 165 1810
-  sleep 0.08
-  adb shell input tap 540 1810
-  sleep 0.08
-  adb shell input tap 880 1810
-  sleep 0.10
+  tap_and_wait_real_nav today 165
+  tap_and_wait_real_nav week 540
+  tap_and_wait_real_nav edit 880
 
   if [ $((i % 8)) -eq 0 ]; then
     adb shell am start -W -a android.settings.SETTINGS >/dev/null 2>&1 || true
