@@ -66,19 +66,15 @@ dismiss_launcher_anr
 adb shell dumpsys meminfo com.wokgui.schedulewidget > smoke/meminfo-before-soak.txt || true
 adb logcat -c
 
-# Read only a bounded recent log window. The previous acknowledgement helper repeatedly
-# rescanned the entire accumulated logcat, so the test harness itself became progressively
-# more expensive during the soak and could miss an otherwise healthy navigation tap under
-# emulator load. Comparing the latest timestamped production marker keeps acknowledgement
-# cost constant without relaxing any functional or count threshold.
+# Read only a bounded recent log window. Repeatedly rescanning all accumulated logcat makes
+# the harness itself progressively more expensive under emulator load.
 latest_real_marker() {
   local marker="$1"
   adb logcat -d -t 800 2>/dev/null | grep -F "$marker" | tail -n 1 || true
 }
 
 # Retry the same real physical coordinate until the production navigation owner emits a new
-# marker for that exact target. 6.45 rewrites the legacy EDT_FAST_INPUT|nav- prefix below to
-# EDT_NAV_INPUT|, so this validates the production owner used by 6.45+ as well.
+# marker for that exact target. 6.45 rewrites the legacy prefix below to EDT_NAV_INPUT|.
 tap_and_wait_real_nav() {
   local target="$1"
   local x="$2"
@@ -101,26 +97,20 @@ tap_and_wait_real_nav() {
   return 1
 }
 
-# Settings is an inert full-screen sheet while open. A dropped close tap therefore blocks
-# every bottom-navigation coordinate underneath it. Use the same bounded recent-marker
-# acknowledgement so closing Settings cannot make the harness progressively slower either.
-close_settings_and_wait() {
-  local marker="EDT_FAST_INPUT|settingsX|visual|delegated"
-  local before after
-  before=$(latest_real_marker "$marker")
+# EDT_FAST_INPUT intentionally samples ordinary control labels, so a settingsX log line is
+# not emitted for every close. Validate the close by its observable production effect instead:
+# after pressing the real close coordinate, the underlying Today navigation must acknowledge
+# a real physical tap. If the close was dropped, the full-screen Settings sheet blocks that tap.
+close_settings_and_go_today() {
   for _attempt in 1 2 3; do
     adb shell input tap 862 210
-    for _ in 1 2 3 4 5 6 7 8 9 10; do
-      sleep 0.08
-      after=$(latest_real_marker "$marker")
-      if [ -n "$after" ] && [ "$after" != "$before" ]; then
-        return 0
-      fi
-    done
+    if tap_and_wait_real_nav today 165; then
+      return 0
+    fi
   done
-  adb exec-out screencap -p > smoke/settings-close-ack-failure.png || true
-  adb logcat -d -t 2000 > smoke/settings-close-ack-failure-log.txt || true
-  echo "real-session Settings close was not acknowledged" >&2
+  adb exec-out screencap -p > smoke/settings-close-functional-failure.png || true
+  adb logcat -d -t 2000 > smoke/settings-close-functional-failure-log.txt || true
+  echo "real-session Settings close did not expose working navigation" >&2
   return 1
 }
 
@@ -138,9 +128,8 @@ for i in $(seq 1 48); do
 
   adb shell input tap 1010 145
   sleep 0.18
-  close_settings_and_wait
+  close_settings_and_go_today
 
-  tap_and_wait_real_nav today 165
   tap_and_wait_real_nav week 540
   tap_and_wait_real_nav edit 880
 
@@ -195,9 +184,10 @@ measure_settings_latency settings_after_real_editor_settings_session
 sleep 0.5
 adb exec-out screencap -p > smoke/02c-settings-after-real-session.png
 
-# Validate the requested Add-course layout after the soak.
-close_settings_and_wait
-adb shell input tap 880 1810
+# Validate the requested Add-course layout after the soak. Closing Settings is again proved by
+# a recognized real navigation tap rather than by a sampled diagnostic control label.
+close_settings_and_go_today
+tap_and_wait_real_nav edit 880
 sleep 0.20
 tap_text "Ajouter un cours"
 sleep 0.5
