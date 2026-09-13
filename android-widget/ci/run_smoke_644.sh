@@ -66,52 +66,60 @@ dismiss_launcher_anr
 adb shell dumpsys meminfo com.wokgui.schedulewidget > smoke/meminfo-before-soak.txt || true
 adb logcat -c
 
-# A fixed sleep after a physical tap is not proof that WebView accepted the gesture. Under
-# emulator load those taps can be delivered late or dropped while the UI is settling. Retry
-# the same real coordinate until the production navigation owner acknowledges that target.
-# 6.45 rewrites the legacy EDT_FAST_INPUT|nav- prefix below to EDT_NAV_INPUT|, so the same
-# deterministic helper validates both the 6.44 and 6.45+ ownership paths without weakening
-# any existing input-count threshold.
+# Read only a bounded recent log window. The previous acknowledgement helper repeatedly
+# rescanned the entire accumulated logcat, so the test harness itself became progressively
+# more expensive during the soak and could miss an otherwise healthy navigation tap under
+# emulator load. Comparing the latest timestamped production marker keeps acknowledgement
+# cost constant without relaxing any functional or count threshold.
+latest_real_marker() {
+  local marker="$1"
+  adb logcat -d -t 800 2>/dev/null | grep -F "$marker" | tail -n 1 || true
+}
+
+# Retry the same real physical coordinate until the production navigation owner emits a new
+# marker for that exact target. 6.45 rewrites the legacy EDT_FAST_INPUT|nav- prefix below to
+# EDT_NAV_INPUT|, so this validates the production owner used by 6.45+ as well.
 tap_and_wait_real_nav() {
   local target="$1"
   local x="$2"
   local marker="EDT_FAST_INPUT|nav-${target}"
   local before after
-  before=$(adb logcat -d | grep -c "$marker" || true)
+  before=$(latest_real_marker "$marker")
   for _attempt in 1 2 3; do
     adb shell input tap "$x" 1810
     for _ in 1 2 3 4 5 6 7 8 9 10; do
-      sleep 0.06
-      after=$(adb logcat -d | grep -c "$marker" || true)
-      if [ "$after" -gt "$before" ]; then
+      sleep 0.08
+      after=$(latest_real_marker "$marker")
+      if [ -n "$after" ] && [ "$after" != "$before" ]; then
         return 0
       fi
     done
   done
+  adb exec-out screencap -p > smoke/navigation-ack-failure.png || true
+  adb logcat -d -t 2000 > smoke/navigation-ack-failure-log.txt || true
   echo "real-session navigation target was not acknowledged: ${target}" >&2
   return 1
 }
 
 # Settings is an inert full-screen sheet while open. A dropped close tap therefore blocks
-# every bottom-navigation coordinate underneath it. Wait for the production heavy-panel input
-# owner to acknowledge the real close button before attempting navigation, retrying only the
-# same physical close coordinate. This removes harness timing races without relaxing any test.
+# every bottom-navigation coordinate underneath it. Use the same bounded recent-marker
+# acknowledgement so closing Settings cannot make the harness progressively slower either.
 close_settings_and_wait() {
   local marker="EDT_FAST_INPUT|settingsX|visual|delegated"
   local before after
-  before=$(adb logcat -d | grep -c "$marker" || true)
+  before=$(latest_real_marker "$marker")
   for _attempt in 1 2 3; do
     adb shell input tap 862 210
     for _ in 1 2 3 4 5 6 7 8 9 10; do
-      sleep 0.06
-      after=$(adb logcat -d | grep -c "$marker" || true)
-      if [ "$after" -gt "$before" ]; then
+      sleep 0.08
+      after=$(latest_real_marker "$marker")
+      if [ -n "$after" ] && [ "$after" != "$before" ]; then
         return 0
       fi
     done
   done
   adb exec-out screencap -p > smoke/settings-close-ack-failure.png || true
-  adb logcat -d > smoke/settings-close-ack-failure-log.txt || true
+  adb logcat -d -t 2000 > smoke/settings-close-ack-failure-log.txt || true
   echo "real-session Settings close was not acknowledged" >&2
   return 1
 }
