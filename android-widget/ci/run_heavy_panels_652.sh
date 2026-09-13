@@ -42,7 +42,9 @@ tap_until_heavy_ack() {
 tap_until_heavy_ack 1010 145 \\
   'EDT_HEAVY_INPUT|scenario=physical|panel=settings|action=open|n=1' \\
   'EDT_HEAVY_CHECKPOINT|scenario=physical|panel=settings|action=open|n=1'
-tap_until_heavy_ack 862 210 \\
+# In the native 1080x1920 screenshot the × hit target is centered at (1003,244).
+# The earlier 862,210 value came from a UI-scaled preview, not device coordinates.
+tap_until_heavy_ack 1003 244 \\
   'EDT_HEAVY_INPUT|scenario=physical|panel=settings|action=close|n=1' \\
   'EDT_HEAVY_CHECKPOINT|scenario=physical|panel=settings|action=close|n=1'
 """
