@@ -10,8 +10,8 @@ android {
         applicationId 'com.wokgui.schedulewidget'
         minSdk 26
         targetSdk 35
-        versionCode 652001
-        versionName '6.52'
+        versionCode 653001
+        versionName '6.53'
     }
 
     buildFeatures {
@@ -36,4 +36,4 @@ dependencies {
     implementation 'com.google.mlkit:translate:17.0.3'
 }
 
-// 6.52: rare-action audit plus layout-preserving heavy-panel exposure without repeated clip-path paint.
+// 6.53: full-width week lunch boundaries and clearer lunch/free-period colour/widget settings.
