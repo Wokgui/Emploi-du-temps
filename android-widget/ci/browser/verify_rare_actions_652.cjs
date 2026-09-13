@@ -94,6 +94,7 @@ fs.mkdirSync(out,{recursive:true});
   fs.writeFileSync(path.join(out,'rare-actions-652.json'),JSON.stringify(report,null,2));
   fs.writeFileSync(path.join(out,'rare-actions-652.log'),logs.join('\n'));
   console.log('browser_rare_actions_652_report',JSON.stringify(report));
+  console.log('rare_actions_652_listener_events',JSON.stringify({warmup:report.warmup,block1:report.block1.listenerEvents,block2:report.block2.listenerEvents}));
   assert.ok(report.controls.length>=3,'rare-action suite must resolve school/holiday/profile controls');
   assert.equal(report.block2.after.listeners-report.block2.before.listeners,0,'rare actions must not progressively accumulate listeners after a complete exercised block');
   assert.equal(report.block2.after.observers-report.block2.before.observers,0,'rare actions must not progressively accumulate MutationObservers');
