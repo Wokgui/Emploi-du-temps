@@ -73,23 +73,33 @@ latest_real_marker() {
   adb logcat -d -t 800 2>/dev/null | grep -F "$marker" | tail -n 1 || true
 }
 
+wait_for_new_marker() {
+  local marker="$1"
+  local before="$2"
+  local after
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    sleep 0.08
+    after=$(latest_real_marker "$marker")
+    if [ -n "$after" ] && [ "$after" != "$before" ]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 # Retry the same real physical coordinate until the production navigation owner emits a new
 # marker for that exact target. 6.45 rewrites the legacy prefix below to EDT_NAV_INPUT|.
 tap_and_wait_real_nav() {
   local target="$1"
   local x="$2"
   local marker="EDT_FAST_INPUT|nav-${target}"
-  local before after
+  local before
   before=$(latest_real_marker "$marker")
   for _attempt in 1 2 3; do
     adb shell input tap "$x" 1810
-    for _ in 1 2 3 4 5 6 7 8 9 10; do
-      sleep 0.08
-      after=$(latest_real_marker "$marker")
-      if [ -n "$after" ] && [ "$after" != "$before" ]; then
-        return 0
-      fi
-    done
+    if wait_for_new_marker "$marker" "$before"; then
+      return 0
+    fi
   done
   adb exec-out screencap -p > smoke/navigation-ack-failure.png || true
   adb logcat -d -t 2000 > smoke/navigation-ack-failure-log.txt || true
@@ -97,17 +107,55 @@ tap_and_wait_real_nav() {
   return 1
 }
 
-# EDT_FAST_INPUT intentionally samples ordinary control labels, so a settingsX log line is
-# not emitted for every close. Validate the close by its observable production effect instead:
-# after pressing the real close coordinate, the underlying Today navigation must acknowledge
-# a real physical tap. If the close was dropped, the full-screen Settings sheet blocks that tap.
-close_settings_and_go_today() {
+# Do not continue unless the Settings sheet itself acknowledged the physical gear tap. This
+# keeps later close coordinates from ever being sent while another panel is still on screen.
+tap_and_wait_settings() {
+  local marker="EDT_FAST_INPUT|settings|visual"
+  local before
+  before=$(latest_real_marker "$marker")
   for _attempt in 1 2 3; do
-    adb shell input tap 862 210
-    if tap_and_wait_real_nav today 165; then
+    adb shell input tap 1010 145
+    if wait_for_new_marker "$marker" "$before"; then
       return 0
     fi
   done
+  adb exec-out screencap -p > smoke/settings-open-ack-failure.png || true
+  adb logcat -d -t 2000 > smoke/settings-open-ack-failure-log.txt || true
+  echo "real-session Settings open was not acknowledged" >&2
+  return 1
+}
+
+# Open a real existing course and require the production edit-course owner to acknowledge it.
+# The emulator has a fixed 1080x1920 viewport in this suite; the course coordinate is stable,
+# while closing uses the visible semantic Annuler control so the sheet can scroll safely.
+open_and_cancel_real_course() {
+  local marker="EDT_FAST_INPUT|edit-course|visual"
+  local before
+  before=$(latest_real_marker "$marker")
+  adb shell input tap 510 825
+  sleep 0.12
+  for _attempt in 1 2 3; do
+    adb shell input tap 500 1080
+    if wait_for_new_marker "$marker" "$before"; then
+      sleep 0.08
+      tap_text "Annuler"
+      sleep 0.12
+      return 0
+    fi
+  done
+  adb exec-out screencap -p > smoke/course-open-ack-failure.png || true
+  adb logcat -d -t 2000 > smoke/course-open-ack-failure-log.txt || true
+  echo "real-session course editor open was not acknowledged" >&2
+  return 1
+}
+
+# Settings was explicitly acknowledged before this function is called. One real close tap must
+# expose working Today navigation; if it does not, fail rather than sending more blind taps.
+close_settings_and_go_today() {
+  adb shell input tap 862 210
+  if tap_and_wait_real_nav today 165; then
+    return 0
+  fi
   adb exec-out screencap -p > smoke/settings-close-functional-failure.png || true
   adb logcat -d -t 2000 > smoke/settings-close-functional-failure-log.txt || true
   echo "real-session Settings close did not expose working navigation" >&2
@@ -115,19 +163,10 @@ close_settings_and_go_today() {
 }
 
 for i in $(seq 1 48); do
-  adb shell input tap 880 1810
-  sleep 0.10
-  adb shell input tap 510 825
-  sleep 0.12
-  adb shell input tap 500 1080
-  sleep 0.16
-  adb shell input tap 540 390
-  sleep 0.10
-  adb shell input tap 540 105
-  sleep 0.14
+  tap_and_wait_real_nav edit 880
+  open_and_cancel_real_course
 
-  adb shell input tap 1010 145
-  sleep 0.18
+  tap_and_wait_settings
   close_settings_and_go_today
 
   tap_and_wait_real_nav week 540
@@ -154,14 +193,17 @@ assert_clean_log smoke/interaction-real-session-log.txt
 editor_inputs=$(grep -c "EDT_FAST_INPUT|edit-course|visual" smoke/interaction-real-session-log.txt || true)
 settings_inputs=$(grep -c "EDT_FAST_INPUT|settings|visual" smoke/interaction-real-session-log.txt || true)
 nav_inputs=$(grep -c "EDT_FAST_INPUT|nav-" smoke/interaction-real-session-log.txt || true)
+delete_inputs=$(grep -c "EDT_FAST_INPUT|delete-course|visual" smoke/interaction-real-session-log.txt || true)
 course_form_rewraps=$(grep -c "EDT_FAST_FORM_WRAP|form=courseForm" smoke/interaction-real-session-log.txt || true)
 echo "real_editor_inputs=${editor_inputs}" | tee -a smoke/interaction-latency.txt
 echo "real_settings_inputs=${settings_inputs}" | tee -a smoke/interaction-latency.txt
 echo "real_navigation_inputs=${nav_inputs}" | tee -a smoke/interaction-latency.txt
+echo "unexpected_delete_inputs=${delete_inputs}" | tee -a smoke/interaction-latency.txt
 echo "course_form_fast_rewraps_during_soak=${course_form_rewraps}" | tee -a smoke/interaction-latency.txt
 test "$editor_inputs" -ge 25
 test "$settings_inputs" -ge 25
 test "$nav_inputs" -ge 90
+test "$delete_inputs" -eq 0
 test "$course_form_rewraps" -eq 0
 
 # formWrapped may have a non-zero startup baseline, but it must stay constant throughout
@@ -192,7 +234,7 @@ sleep 0.20
 tap_text "Ajouter un cours"
 sleep 0.5
 adb exec-out screencap -p > smoke/02d-course-editor-layout.png
-adb shell input tap 540 105
+tap_text "Annuler"
 sleep 0.2
 assert_main_alive
 '''
