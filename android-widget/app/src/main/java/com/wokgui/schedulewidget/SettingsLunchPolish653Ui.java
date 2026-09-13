@@ -19,7 +19,7 @@ final class SettingsLunchPolish653Ui {
                   try{return String((JSON.parse(AndroidSchedule.loadUiSettings()||'{}').language||'fr'))}catch(e){return 'fr'}
                 }
                 function tr(fr,en,de){const l=language();return l==='en'?en:(l==='de'?de:fr)}
-                function toMin(v){const m=String(v||'').match(/(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):-1}
+                function toMin(v){const m=String(v||'').match(/([0-9]{1,2}):([0-9]{2})/);return m?Number(m[1])*60+Number(m[2]):-1}
 
                 const style=document.createElement('style');
                 style.id='settingsLunchPolish653Style';
@@ -141,7 +141,7 @@ final class SettingsLunchPolish653Ui {
                   const heads=[...grid.querySelectorAll(':scope > .wh.day')];
                   const dayCount=heads.length||5;
                   for(const time of [...grid.querySelectorAll(':scope > .wh.timecol')]){
-                    const found=(time.textContent||'').match(/[0-2]?\d:[0-5]\d/g)||[];
+                    const found=(time.textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[];
                     if(found.length<2)continue;
                     const cells=[];let n=time.nextElementSibling;
                     while(n&&cells.length<dayCount){if(n.classList&&n.classList.contains('wc'))cells.push(n);n=n.nextElementSibling}
