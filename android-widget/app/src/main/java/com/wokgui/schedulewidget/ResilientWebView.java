@@ -5,14 +5,13 @@ import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.View;
 import android.webkit.ValueCallback;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 /**
- * WebView that keeps the last complete frame visible while timetable UI layers settle.
- * Runtime UI layers are evaluated one at a time and yield to user interaction.
+ * WebView that evaluates runtime UI layers one at a time and yields to user interaction.
+ * Visibility is owned by MainActivity so cold starts stay hidden until the final UI is ready.
  */
 public final class ResilientWebView extends WebView {
     private static final String CHUNK_TAG = "EDT_UI_CHUNK";
@@ -42,23 +41,6 @@ public final class ResilientWebView extends WebView {
             }
         }
         return super.onTouchEvent(event);
-    }
-
-    @Override
-    public void setVisibility(int visibility) {
-        // Never expose the empty native activity behind the WebView while modes settle.
-        boolean changed = getVisibility() != View.VISIBLE || getAlpha() < 0.99f;
-        if (getVisibility() != View.VISIBLE) super.setVisibility(View.VISIBLE);
-        if (getAlpha() < 0.99f) super.setAlpha(1f);
-        if (changed) invalidate();
-    }
-
-    @Override
-    public void setAlpha(float alpha) {
-        boolean changed = getAlpha() < 0.99f || getVisibility() != View.VISIBLE;
-        if (getAlpha() < 0.99f) super.setAlpha(1f);
-        if (getVisibility() != View.VISIBLE) super.setVisibility(View.VISIBLE);
-        if (changed) invalidate();
     }
 
     @Override
