@@ -92,6 +92,30 @@ tap_and_wait_real_nav() {
   return 1
 }
 
+# Settings is an inert full-screen sheet while open. A dropped close tap therefore blocks
+# every bottom-navigation coordinate underneath it. Wait for the production heavy-panel input
+# owner to acknowledge the real close button before attempting navigation, retrying only the
+# same physical close coordinate. This removes harness timing races without relaxing any test.
+close_settings_and_wait() {
+  local marker="EDT_FAST_INPUT|settingsX|visual|delegated"
+  local before after
+  before=$(adb logcat -d | grep -c "$marker" || true)
+  for _attempt in 1 2 3; do
+    adb shell input tap 862 210
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+      sleep 0.06
+      after=$(adb logcat -d | grep -c "$marker" || true)
+      if [ "$after" -gt "$before" ]; then
+        return 0
+      fi
+    done
+  done
+  adb exec-out screencap -p > smoke/settings-close-ack-failure.png || true
+  adb logcat -d > smoke/settings-close-ack-failure-log.txt || true
+  echo "real-session Settings close was not acknowledged" >&2
+  return 1
+}
+
 for i in $(seq 1 48); do
   adb shell input tap 880 1810
   sleep 0.10
@@ -106,8 +130,7 @@ for i in $(seq 1 48); do
 
   adb shell input tap 1010 145
   sleep 0.18
-  adb shell input tap 862 210
-  sleep 0.14
+  close_settings_and_wait
 
   tap_and_wait_real_nav today 165
   tap_and_wait_real_nav week 540
@@ -165,8 +188,7 @@ sleep 0.5
 adb exec-out screencap -p > smoke/02c-settings-after-real-session.png
 
 # Validate the requested Add-course layout after the soak.
-adb shell input tap 862 210
-sleep 0.20
+close_settings_and_wait
 adb shell input tap 880 1810
 sleep 0.20
 tap_text "Ajouter un cours"
