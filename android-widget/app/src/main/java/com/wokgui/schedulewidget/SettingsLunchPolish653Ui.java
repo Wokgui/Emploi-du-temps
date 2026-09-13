@@ -1,6 +1,6 @@
 package com.wokgui.schedulewidget;
 
-/** Final 6.53 presentation pass for lunch/free-period settings and week lunch boundaries. */
+/** Final presentation pass for lunch/free-period settings and full-width week lunch boundaries. */
 final class SettingsLunchPolish653Ui {
     private SettingsLunchPolish653Ui() {}
 
@@ -78,8 +78,7 @@ final class SettingsLunchPolish653Ui {
                     white-space:nowrap!important
                   }
 
-                  /* The lunch band is delimited across every displayed day, not only cells
-                     that happen to carry a lunch label on that day. */
+                  /* Lunch boundaries must run from the time column through the last displayed day. */
                   #weekGrid .lunch653Top{
                     border-bottom-width:var(--week-strong-line,2px)!important;
                     border-bottom-style:solid!important;
@@ -137,10 +136,12 @@ final class SettingsLunchPolish653Ui {
                 }
 
                 function rowsOf(grid){
-                  const rows=[];if(!grid)return rows;
+                  const rows=[];if(!grid)return {rows,heads:[],headerTime:null};
                   const heads=[...grid.querySelectorAll(':scope > .wh.day')];
+                  const timeColumns=[...grid.querySelectorAll(':scope > .wh.timecol')];
+                  const headerTime=timeColumns.find(x=>((x.textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[]).length<2)||null;
                   const dayCount=heads.length||5;
-                  for(const time of [...grid.querySelectorAll(':scope > .wh.timecol')]){
+                  for(const time of timeColumns){
                     const found=(time.textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[];
                     if(found.length<2)continue;
                     const cells=[];let n=time.nextElementSibling;
@@ -148,7 +149,7 @@ final class SettingsLunchPolish653Ui {
                     if(cells.length===dayCount)rows.push({time,start:toMin(found[0]),end:toMin(found[1]),cells});
                   }
                   rows.sort((a,b)=>a.time.offsetTop-b.time.offsetTop);
-                  return {rows,heads};
+                  return {rows,heads,headerTime};
                 }
 
                 function isLunchCell(cell){
@@ -164,16 +165,16 @@ final class SettingsLunchPolish653Ui {
                   const grid=document.getElementById('weekGrid');if(!grid)return;
                   grid.querySelectorAll('.lunch653Top,.lunch653Bottom').forEach(x=>x.classList.remove('lunch653Top','lunch653Bottom'));
                   if(grid.classList.contains('hideWeekLunch70'))return;
-                  const data=rowsOf(grid),rows=data.rows,heads=data.heads;
+                  const data=rowsOf(grid),rows=data.rows,heads=data.heads,headerTime=data.headerTime;
                   if(!rows.length)return;
                   const flags=rows.map(row=>row.cells.some(isLunchCell));
                   let i=0;
                   while(i<flags.length){
                     if(!flags[i]){i++;continue}
                     let j=i;while(j+1<flags.length&&flags[j+1])j++;
-                    const top=i>0?rows[i-1].cells:heads;
-                    top.forEach(cell=>cell&&cell.classList.add('lunch653Top'));
-                    rows[j].cells.forEach(cell=>cell.classList.add('lunch653Bottom'));
+                    const topCells=i>0?[rows[i-1].time,...rows[i-1].cells]:[headerTime,...heads];
+                    topCells.forEach(cell=>cell&&cell.classList.add('lunch653Top'));
+                    [rows[j].time,...rows[j].cells].forEach(cell=>cell&&cell.classList.add('lunch653Bottom'));
                     i=j+1;
                   }
                 }

@@ -38,7 +38,7 @@ final class ChunkedUiScripts {
         add(out, RenderBurstUi650.script());
         // 6.51 is final so all legacy click/change handlers flow through one action commit.
         add(out, ActionChainUi651.script());
-        // 6.53 owns the final presentation of lunch/free-period controls and week lunch edges.
+        // Final presentation of lunch/free-period controls and week lunch edges.
         add(out, SettingsLunchPolish653Ui.script());
         if (BuildConfig.DEBUG) add(out, HeavyPanelPerformanceUi648.script());
         add(out, UiRuntimeBundle.idleImportScript());
@@ -71,6 +71,6 @@ final class ChunkedUiScripts {
     private static void add(List<String> out, String script) {
         if (script == null || script.trim().isEmpty()) return;
         script = LegacyChainRepair651.repair(UiRuntimeBundle.prepareChunk(script));
-        out.add(script.replace("APP_VERSION='6.45'", "APP_VERSION='6.53'"));
+        out.add(script.replace("APP_VERSION='6.45'", "APP_VERSION='6.54'"));
     }
 }

@@ -1,6 +1,7 @@
 package com.wokgui.schedulewidget;
 
 import android.content.Context;
+import android.graphics.drawable.ColorDrawable;
 import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -11,15 +12,19 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 /**
- * WebView that keeps the last complete frame visible while timetable UI layers settle.
- * Runtime UI layers are evaluated one at a time and yield to user interaction.
+ * WebView that evaluates runtime UI layers one at a time and yields to user interaction.
+ * During cold assembly, MainActivity's existing hide/reveal calls are represented by an
+ * opaque native mask rather than by removing the WebView from rendering. This keeps the
+ * final layout measurable while preventing partially assembled UI from flashing on screen.
  */
 public final class ResilientWebView extends WebView {
     private static final String CHUNK_TAG = "EDT_UI_CHUNK";
     private static final long INITIAL_CHUNK_DELAY_MS = 120L;
     private static final long CHUNK_YIELD_MS = 16L;
     private static final long INPUT_PRIORITY_WINDOW_MS = 420L;
+    private static final int STARTUP_MASK_COLOR = 0xFFF6F8FB;
     private long lastUserInteractionAt = 0L;
+    private boolean startupMasked = false;
 
     public ResilientWebView(Context context) {
         super(context);
@@ -33,8 +38,38 @@ public final class ResilientWebView extends WebView {
         super(context, attrs, defStyleAttr);
     }
 
+    private void setStartupMasked(boolean masked) {
+        if (startupMasked == masked) return;
+        startupMasked = masked;
+        setForeground(masked ? new ColorDrawable(STARTUP_MASK_COLOR) : null);
+        invalidate();
+    }
+
+    @Override
+    public void setVisibility(int visibility) {
+        // MainActivity uses INVISIBLE only as a cold-start presentation guard. Keeping the
+        // WebView laid out lets Chromium finish the final geometry behind an opaque mask.
+        if (visibility == View.INVISIBLE || visibility == View.GONE) {
+            setStartupMasked(true);
+            super.setVisibility(View.VISIBLE);
+            return;
+        }
+        setStartupMasked(false);
+        super.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void setAlpha(float alpha) {
+        // Mirror the same presentation contract for MainActivity's alpha guard without
+        // suppressing WebView drawing or layout while the UI chunks are being applied.
+        if (alpha <= 0.01f) setStartupMasked(true);
+        else if (alpha >= 0.99f) setStartupMasked(false);
+        super.setAlpha(1f);
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        if (startupMasked) return true;
         if (event != null) {
             int action = event.getActionMasked();
             if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE || action == MotionEvent.ACTION_UP) {
@@ -42,23 +77,6 @@ public final class ResilientWebView extends WebView {
             }
         }
         return super.onTouchEvent(event);
-    }
-
-    @Override
-    public void setVisibility(int visibility) {
-        // Never expose the empty native activity behind the WebView while modes settle.
-        boolean changed = getVisibility() != View.VISIBLE || getAlpha() < 0.99f;
-        if (getVisibility() != View.VISIBLE) super.setVisibility(View.VISIBLE);
-        if (getAlpha() < 0.99f) super.setAlpha(1f);
-        if (changed) invalidate();
-    }
-
-    @Override
-    public void setAlpha(float alpha) {
-        boolean changed = getAlpha() < 0.99f || getVisibility() != View.VISIBLE;
-        if (getAlpha() < 0.99f) super.setAlpha(1f);
-        if (getVisibility() != View.VISIBLE) super.setVisibility(View.VISIBLE);
-        if (changed) invalidate();
     }
 
     @Override
