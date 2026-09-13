@@ -2,7 +2,7 @@ name: Build and validate Android timetable
 
 on:
   push:
-    branches: [main, perf/instant-views-647, perf/heavy-panels-648, perf/heavy-panels-649, perf/render-pipeline-650, perf/action-chains-651]
+    branches: [main, perf/instant-views-647, perf/heavy-panels-648, perf/heavy-panels-649, perf/render-pipeline-650, perf/action-chains-651, perf/rare-actions-652]
     paths:
       - 'android-widget/**'
       - '.github/workflows/android-widget.yml'
