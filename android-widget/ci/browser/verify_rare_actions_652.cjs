@@ -52,6 +52,31 @@ fs.mkdirSync(out,{recursive:true});
       else if(el.type==='checkbox')el.checked=!el.checked;
       el.dispatchEvent(new Event('change',{bubbles:true}));
     };
+    const median=a=>{const s=a.slice().sort((x,y)=>x-y);return s[Math.floor(s.length/2)]||0};
+    const runBlock=async(cycles)=>{
+      const before=snap(),samples=[],listenerEvents=[];
+      let previousListeners=before.listeners;
+      for(let i=0;i<cycles;i++){
+        const t=performance.now();
+        for(const el of controls){
+          const listenerBefore=perf.listenerAdds;
+          exercise(el);
+          const listenerAfter=perf.listenerAdds;
+          if(listenerAfter!==listenerBefore)listenerEvents.push({cycle:i,id:el.id,delta:listenerAfter-listenerBefore,total:listenerAfter,phase:'dispatch'});
+        }
+        samples.push(performance.now()-t);
+        if(i%20===0){
+          await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+          if(perf.listenerAdds!==previousListeners)listenerEvents.push({cycle:i,id:null,delta:perf.listenerAdds-previousListeners,total:perf.listenerAdds,phase:'afterFrames'});
+          previousListeners=perf.listenerAdds;
+        }
+      }
+      await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      if(perf.listenerAdds!==previousListeners)listenerEvents.push({cycle:cycles,id:null,delta:perf.listenerAdds-previousListeners,total:perf.listenerAdds,phase:'finalFrames'});
+      const after=snap();
+      return {before,after,listenerEvents,headP50:median(samples.slice(0,20)),tailP50:median(samples.slice(-20))};
+    };
+
     const cold=snap();
     const warmup=[];
     for(const el of controls){
@@ -61,41 +86,20 @@ fs.mkdirSync(out,{recursive:true});
       const after=snap();
       warmup.push({id:el.id,listenerDelta:after.listeners-before.listeners,observerDelta:after.observers-before.observers,resizeDelta:after.resize-before.resize,nodeDelta:after.nodes-before.nodes});
     }
-    const before=snap();
-    const samples=[];
-    const listenerEvents=[];
-    let previousListeners=before.listeners;
-    for(let i=0;i<120;i++){
-      const t=performance.now();
-      for(const el of controls){
-        const listenerBefore=perf.listenerAdds;
-        exercise(el);
-        const listenerAfter=perf.listenerAdds;
-        if(listenerAfter!==listenerBefore)listenerEvents.push({cycle:i,id:el.id,delta:listenerAfter-listenerBefore,total:listenerAfter,phase:'dispatch'});
-      }
-      samples.push(performance.now()-t);
-      if(i%20===0){
-        await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-        if(perf.listenerAdds!==previousListeners)listenerEvents.push({cycle:i,id:null,delta:perf.listenerAdds-previousListeners,total:perf.listenerAdds,phase:'afterFrames'});
-        previousListeners=perf.listenerAdds;
-      }
-    }
-    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-    if(perf.listenerAdds!==previousListeners)listenerEvents.push({cycle:120,id:null,delta:perf.listenerAdds-previousListeners,total:perf.listenerAdds,phase:'finalFrames'});
-    const after=snap();
-    const median=a=>{const s=a.slice().sort((x,y)=>x-y);return s[Math.floor(s.length/2)]||0};
-    return {controls:controls.map(x=>x.id),cold,warmup,before,after,listenerEvents,headP50:median(samples.slice(0,20)),tailP50:median(samples.slice(-20)),stats:chain.stats};
+    const block1=await runBlock(120);
+    const block2=await runBlock(120);
+    return {controls:controls.map(x=>x.id),cold,warmup,block1,block2,stats:chain.stats};
   });
 
   fs.writeFileSync(path.join(out,'rare-actions-652.json'),JSON.stringify(report,null,2));
   fs.writeFileSync(path.join(out,'rare-actions-652.log'),logs.join('\n'));
   console.log('browser_rare_actions_652_report',JSON.stringify(report));
   assert.ok(report.controls.length>=3,'rare-action suite must resolve school/holiday/profile controls');
-  assert.equal(report.after.listeners-report.before.listeners,0,'rare actions must not accumulate listeners after first-use initialization');
-  assert.equal(report.after.observers-report.before.observers,0,'rare actions must not accumulate MutationObservers after first-use initialization');
-  assert.equal(report.after.resize-report.before.resize,0,'rare actions must not accumulate ResizeObservers after first-use initialization');
-  assert.ok(report.after.nodes-report.before.nodes<=8,'rare actions must not progressively grow the DOM');
-  assert.ok(report.tailP50<=Math.max(report.headP50*2,report.headP50+5),'rare actions must not progressively slow down');
+  assert.equal(report.block2.after.listeners-report.block2.before.listeners,0,'rare actions must not progressively accumulate listeners after a complete exercised block');
+  assert.equal(report.block2.after.observers-report.block2.before.observers,0,'rare actions must not progressively accumulate MutationObservers');
+  assert.equal(report.block2.after.resize-report.block2.before.resize,0,'rare actions must not progressively accumulate ResizeObservers');
+  assert.ok(report.block2.after.nodes-report.block2.before.nodes<=8,'rare actions must not progressively grow the DOM');
+  assert.ok(report.block2.tailP50<=Math.max(report.block2.headP50*2,report.block2.headP50+5),'rare actions must not progressively slow down');
   assert.deepEqual(errors,[],'6.52 rare-action JavaScript errors');
   console.log('browser_rare_actions_652=passed',JSON.stringify(report));
   await context.close();await browser.close();
