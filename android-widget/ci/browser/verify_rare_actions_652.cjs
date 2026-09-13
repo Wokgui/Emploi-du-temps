@@ -44,9 +44,16 @@ fs.mkdirSync(out,{recursive:true});
 
   const report=await page.evaluate(async()=>{
     const chain=window.__edtActionChains651,perf=window.__edtHeavyPerfPrelude648.counters;
+    const listenerOrigins=[];
+    const nativeAdd=EventTarget.prototype.addEventListener;
+    EventTarget.prototype.addEventListener=function(type,listener,options){
+      const label=this===window?'window':this===document?'document':(this&&this.id?('#'+this.id):(this&&this.tagName?this.tagName.toLowerCase():String(this)));
+      listenerOrigins.push({type,label,stack:(new Error().stack||'').split('\n').slice(1,6).join(' | ')});
+      return nativeAdd.call(this,type,listener,options);
+    };
     const controls=['schoolEnabled','schoolYear','schoolZone','advHoliday','advProfileSelect'].map(id=>document.getElementById(id)).filter(Boolean);
     const snap=()=>({listeners:perf.listenerAdds,observers:perf.mutationObservers,resize:perf.resizeObservers,nodes:document.getElementsByTagName('*').length,
-      actions:chain.stats.actions,targeted:chain.stats.targetedRenders,suppressed:chain.stats.suppressedRenders,calls:Object.assign({},window.__testAndroidCalls)});
+      actions:chain.stats.actions,targeted:chain.stats.targetedRenders,suppressed:chain.stats.suppressedRenders,calls:Object.assign({},window.__testAndroidCalls),originCount:listenerOrigins.length});
     const exercise=el=>{
       if(el.tagName==='SELECT'&&el.options.length>1)el.selectedIndex=(el.selectedIndex+1)%el.options.length;
       else if(el.type==='checkbox')el.checked=!el.checked;
@@ -55,24 +62,24 @@ fs.mkdirSync(out,{recursive:true});
     const median=a=>{const s=a.slice().sort((x,y)=>x-y);return s[Math.floor(s.length/2)]||0};
     const runBlock=async(cycles)=>{
       const before=snap(),samples=[],listenerEvents=[];
-      let previousListeners=before.listeners;
+      let previousListeners=before.listeners,previousOrigins=before.originCount;
       for(let i=0;i<cycles;i++){
         const t=performance.now();
         for(const el of controls){
-          const listenerBefore=perf.listenerAdds;
+          const listenerBefore=perf.listenerAdds,originBefore=listenerOrigins.length;
           exercise(el);
-          const listenerAfter=perf.listenerAdds;
-          if(listenerAfter!==listenerBefore)listenerEvents.push({cycle:i,id:el.id,delta:listenerAfter-listenerBefore,total:listenerAfter,phase:'dispatch'});
+          const listenerAfter=perf.listenerAdds,originAfter=listenerOrigins.length;
+          if(listenerAfter!==listenerBefore||originAfter!==originBefore)listenerEvents.push({cycle:i,id:el.id,delta:listenerAfter-listenerBefore,total:listenerAfter,origins:listenerOrigins.slice(originBefore,originAfter),phase:'dispatch'});
         }
         samples.push(performance.now()-t);
         if(i%20===0){
           await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-          if(perf.listenerAdds!==previousListeners)listenerEvents.push({cycle:i,id:null,delta:perf.listenerAdds-previousListeners,total:perf.listenerAdds,phase:'afterFrames'});
-          previousListeners=perf.listenerAdds;
+          if(perf.listenerAdds!==previousListeners||listenerOrigins.length!==previousOrigins)listenerEvents.push({cycle:i,id:null,delta:perf.listenerAdds-previousListeners,total:perf.listenerAdds,origins:listenerOrigins.slice(previousOrigins),phase:'afterFrames'});
+          previousListeners=perf.listenerAdds;previousOrigins=listenerOrigins.length;
         }
       }
       await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-      if(perf.listenerAdds!==previousListeners)listenerEvents.push({cycle:cycles,id:null,delta:perf.listenerAdds-previousListeners,total:perf.listenerAdds,phase:'finalFrames'});
+      if(perf.listenerAdds!==previousListeners||listenerOrigins.length!==previousOrigins)listenerEvents.push({cycle:cycles,id:null,delta:perf.listenerAdds-previousListeners,total:perf.listenerAdds,origins:listenerOrigins.slice(previousOrigins),phase:'finalFrames'});
       const after=snap();
       return {before,after,listenerEvents,headP50:median(samples.slice(0,20)),tailP50:median(samples.slice(-20))};
     };
@@ -80,15 +87,16 @@ fs.mkdirSync(out,{recursive:true});
     const cold=snap();
     const warmup=[];
     for(const el of controls){
-      const before=snap();
+      const before=snap(),originBefore=listenerOrigins.length;
       exercise(el);
       await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
       const after=snap();
-      warmup.push({id:el.id,listenerDelta:after.listeners-before.listeners,observerDelta:after.observers-before.observers,resizeDelta:after.resize-before.resize,nodeDelta:after.nodes-before.nodes});
+      warmup.push({id:el.id,listenerDelta:after.listeners-before.listeners,observerDelta:after.observers-before.observers,resizeDelta:after.resize-before.resize,nodeDelta:after.nodes-before.nodes,origins:listenerOrigins.slice(originBefore)});
     }
     const block1=await runBlock(120);
     const block2=await runBlock(120);
-    return {controls:controls.map(x=>x.id),cold,warmup,block1,block2,stats:chain.stats};
+    EventTarget.prototype.addEventListener=nativeAdd;
+    return {controls:controls.map(x=>x.id),cold,warmup,block1,block2,listenerOrigins,stats:chain.stats};
   });
 
   fs.writeFileSync(path.join(out,'rare-actions-652.json'),JSON.stringify(report,null,2));
