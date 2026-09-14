@@ -1,21 +1,33 @@
 package com.wokgui.schedulewidget;
 
+import android.appwidget.AppWidgetManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.webkit.WebView;
 
-/** Deterministic visual harness for the editable photo-import confirmation screen. */
+/** Deterministic import-review harness, also reused as the launcher's widget configuration activity. */
 public class ImportReviewPreviewActivity extends MainActivity {
     private static final String TAG = "EDT_IMPORT_REVIEW";
     private final Handler handler = new Handler(Looper.getMainLooper());
     private int readinessAttempts;
     private int openAttempts;
+    private boolean widgetConfiguration;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        int widgetId = getIntent().getIntExtra(
+                AppWidgetManager.EXTRA_APPWIDGET_ID,
+                AppWidgetManager.INVALID_APPWIDGET_ID
+        );
+        widgetConfiguration = widgetId != AppWidgetManager.INVALID_APPWIDGET_ID;
         super.onCreate(savedInstanceState);
+        if (widgetConfiguration) {
+            handler.removeCallbacksAndMessages(null);
+            WidgetFormatPickerUi.show(this, widgetId);
+            return;
+        }
         handler.postDelayed(this::tryOpenPreview, 400);
     }
 
