@@ -81,7 +81,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         for (int id : ids) updateWidget(context, manager, id);
     }
 
-    private static void updateWidget(Context context, AppWidgetManager manager, int widgetId) {
+    static void updateWidget(Context context, AppWidgetManager manager, int widgetId) {
         ScheduleStore.ensureInitialized(context);
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_schedule);
 
@@ -89,6 +89,15 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         views.setViewVisibility(R.id.widgetHeader, View.GONE);
         views.setViewVisibility(R.id.currentCard, View.GONE);
         views.setViewVisibility(R.id.btnWidgetMode, View.GONE);
+
+        int format = WidgetLayoutStore.get(context, widgetId);
+        boolean lightSurface = format == WidgetLayoutStore.FORMAT_CONDENSED
+                || format == WidgetLayoutStore.FORMAT_MINI;
+        int surface = lightSurface ? 0xFFF7F9FC : 0x00000000;
+        views.setInt(R.id.widgetRoot, "setBackgroundColor", surface);
+        views.setInt(R.id.widgetBody, "setBackgroundColor", surface);
+        views.setInt(R.id.emptyUpcoming, "setBackgroundColor", surface);
+        views.setTextColor(R.id.emptyUpcoming, lightSurface ? 0xFF64748B : 0xFFE7EAF0);
 
         Intent listIntent = new Intent(context, UpcomingCoursesService.class);
         listIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId);
