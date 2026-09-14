@@ -9,7 +9,7 @@ final class ChunkedUiScripts {
     private ChunkedUiScripts() {}
 
     static String[] all() {
-        List<String> out = new ArrayList<>(57);
+        List<String> out = new ArrayList<>(58);
         add(out, HeavyPanelUi648.prelude());
         if (BuildConfig.DEBUG) add(out, HeavyPanelPerformanceUi648.prelude());
         add(out, UiRuntimeBundle.domSafetyPrelude());
@@ -38,8 +38,10 @@ final class ChunkedUiScripts {
         add(out, RenderBurstUi650.script());
         // 6.51 is final so all legacy click/change handlers flow through one action commit.
         add(out, ActionChainUi651.script());
-        // Final presentation: settings polish plus 6.55 week-lunch completion.
+        // Settings polish plus complete week-lunch fill.
         add(out, SettingsLunchPolish653Ui.script());
+        // 6.56 removes the remaining vertical seams inside that lunch band.
+        add(out, LunchBandContinuity656Ui.script());
         if (BuildConfig.DEBUG) add(out, HeavyPanelPerformanceUi648.script());
         add(out, UiRuntimeBundle.idleImportScript());
         return out.toArray(new String[0]);
@@ -71,6 +73,7 @@ final class ChunkedUiScripts {
     private static void add(List<String> out, String script) {
         if (script == null || script.trim().isEmpty()) return;
         script = LegacyChainRepair651.repair(UiRuntimeBundle.prepareChunk(script));
-        out.add(script.replace("APP_VERSION='6.45'", "APP_VERSION='6.55'"));
+        out.add(script.replace("APP_VERSION='6.45'", "APP_VERSION='6.56'")
+                      .replace("APP_VERSION='6.55'", "APP_VERSION='6.56'"));
     }
 }
