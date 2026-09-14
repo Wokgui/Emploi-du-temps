@@ -18,6 +18,10 @@ final class WidgetLayoutStore {
         return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
+    static boolean has(Context context, int widgetId) {
+        return prefs(context).contains(PREFIX + widgetId);
+    }
+
     static int get(Context context, int widgetId) {
         int value = prefs(context).getInt(PREFIX + widgetId, FORMAT_CLASSIC);
         return isSupported(value) ? value : FORMAT_CLASSIC;
