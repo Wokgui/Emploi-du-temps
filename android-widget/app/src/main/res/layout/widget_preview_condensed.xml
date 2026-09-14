@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="0dp"
+    android:background="#F7F9FC">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingLeft="3dp"
+        android:paddingRight="6dp">
+        <TextView android:layout_width="52dp" android:layout_height="match_parent" android:gravity="center" android:text="08:00" android:textColor="#5D6B82" android:textSize="9sp" android:textStyle="bold" />
+        <TextView android:layout_width="5dp" android:layout_height="28dp" android:background="#F0335D" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center_vertical" android:paddingLeft="7dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="5G4 ALL" android:textColor="#17213A" android:textSize="12sp" android:textStyle="bold" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Salle 217 · Dans 2 h" android:textColor="#64748B" android:textSize="9sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E3E8EF" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingLeft="3dp"
+        android:paddingRight="6dp">
+        <TextView android:layout_width="52dp" android:layout_height="match_parent" android:gravity="center" android:text="09:00" android:textColor="#5D6B82" android:textSize="9sp" android:textStyle="bold" />
+        <TextView android:layout_width="5dp" android:layout_height="28dp" android:background="#18B9BE" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center_vertical" android:paddingLeft="7dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="4G3 ALL · 4G4 ALL" android:textColor="#17213A" android:textSize="12sp" android:textStyle="bold" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Salle 217 · Dans 3 h" android:textColor="#64748B" android:textSize="9sp" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
