@@ -10,8 +10,8 @@ android {
         applicationId 'com.wokgui.schedulewidget'
         minSdk 26
         targetSdk 35
-        versionCode 654001
-        versionName '6.54'
+        versionCode 655001
+        versionName '6.55'
     }
 
     buildFeatures {
@@ -36,4 +36,4 @@ dependencies {
     implementation 'com.google.mlkit:translate:17.0.3'
 }
 
-// 6.54: hide intermediate startup layouts and extend week lunch boundaries across the full grid.
+// 6.55: choose among three widget formats and complete lunch rows without crossing the time column.
