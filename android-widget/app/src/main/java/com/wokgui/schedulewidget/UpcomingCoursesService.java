@@ -3,6 +3,7 @@ package com.wokgui.schedulewidget;
 import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -413,14 +414,16 @@ public class UpcomingCoursesService extends RemoteViewsService {
         private static final class Segment {
             final int start;
             final String label;
+            final String room;
             final int background;
             final int ink;
             final boolean course;
             final boolean visible;
 
-            Segment(int start, String label, int background, int ink, boolean course, boolean visible) {
+            Segment(int start, String label, String room, int background, int ink, boolean course, boolean visible) {
                 this.start = start;
                 this.label = label == null ? "" : label;
+                this.room = room == null ? "" : room;
                 this.background = background;
                 this.ink = ink;
                 this.course = course;
@@ -464,7 +467,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             for (int i = 0; i < segments.size(); i++) if (segments.get(i).course) lastCourse = i;
             for (int i = lastCourse + 1; i < segments.size(); i++) {
                 Segment s = segments.get(i);
-                segments.set(i, new Segment(s.start, s.label, s.background, s.ink, false, false));
+                segments.set(i, new Segment(s.start, s.label, s.room, s.background, s.ink, false, false));
             }
         }
 
@@ -481,7 +484,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             cursor.add(Calendar.DAY_OF_YEAR, 1);
             for (int i = 0; i < 21; i++) {
                 List<ScheduleData.Course> list = ScheduleStore.getCourses(context, cursor);
-                if (list != null && !list.isEmpty()) return (Calendar) cursor.clone();
+                if (list != null && !list.isEmpty()) return (Calendar) cursor.clone(), 0;
                 cursor.add(Calendar.DAY_OF_YEAR, 1);
             }
             return null;
@@ -497,7 +500,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             int start = ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, beforeSlot));
             int end = ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, afterSlot));
             if (end <= start) {
-                segments.add(new Segment(start, "", 0x00000000, 0xFF64748B, false, false));
+                segments.add(new Segment(start, "", "", 0x00000000, 0xFF64748B, false, false));
                 return;
             }
             segments.add(segment(courses, start, end, 0, lunch));
@@ -517,22 +520,22 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 int order = found.slot > 0 ? found.slot : Math.max(1, slot);
                 int bg = WidgetPaletteStore.courseColor(context, order, found.label, found.color);
                 boolean dark = WidgetPaletteStore.useDarkText(context, order, found.label, found.color);
-                return new Segment(start, AdvancedSettingsStore.widgetCourseLabel(context, targetDate, found), bg,
+                return new Segment(start, AdvancedSettingsStore.widgetCourseLabel(context, targetDate, found), found.room, bg,
                         dark ? 0xFF17213A : 0xFFFFFFFF, true, true);
             }
             if (lunch && AdvancedSettingsStore.showLunch(context)) {
                 String label = ScheduleStore.getLunchLabel(context);
                 if ("Pause de midi".equalsIgnoreCase(label)) label = "Midi";
-                return new Segment(start, AdvancedSettingsStore.widgetLunchLabel(context, label),
+                return new Segment(start, AdvancedSettingsStore.widgetLunchLabel(context, label), "",
                         WidgetPaletteStore.lunchBackground(context), WidgetPaletteStore.lunchText(context), false, true);
             }
             if (AdvancedSettingsStore.showBreaks(context)) {
                 String label = ScheduleStore.getGapLabel(context);
                 if ("Trou".equalsIgnoreCase(label)) label = UiSettingsStore.t(context, "gap");
-                return new Segment(start, AdvancedSettingsStore.widgetGapLabel(context, label),
+                return new Segment(start, AdvancedSettingsStore.widgetGapLabel(context, label), "",
                         WidgetPaletteStore.gapBackground(context), WidgetPaletteStore.gapText(context), false, true);
             }
-            return new Segment(start, "", 0x00000000, 0xFF64748B, false, true);
+            return new Segment(start, "", "", 0xFFF7F9FC, 0xFF64748B, false, true);
         }
 
         @Override
@@ -545,6 +548,18 @@ public class UpcomingCoursesService extends RemoteViewsService {
             v.setTextViewText(R.id.rowMiniTitle, "Emploi du temps");
             v.setTextViewText(R.id.rowMiniDate, dateLabel(targetDate));
 
+            float scale = UiSettingsStore.widgetFontScale(context);
+            v.setTextViewTextSize(R.id.rowMiniTitle, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
+            v.setTextViewTextSize(R.id.rowMiniDate, TypedValue.COMPLEX_UNIT_SP, 8f * scale);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && widgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+                Bundle options = AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId);
+                int height = options == null ? 108 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 108);
+                int contentHeight = Math.max(96, height);
+                v.setViewLayoutHeight(R.id.rowMiniContent, contentHeight, TypedValue.COMPLEX_UNIT_DIP);
+                v.setViewLayoutHeight(R.id.rowMiniTimeline, Math.max(70, contentHeight - 26), TypedValue.COMPLEX_UNIT_DIP);
+            }
+
             for (int i = 0; i < CELL_IDS.length; i++) {
                 int id = CELL_IDS[i];
                 if (i >= segments.size() || !segments.get(i).visible) {
@@ -553,7 +568,11 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 }
                 Segment s = segments.get(i);
                 v.setViewVisibility(id, View.VISIBLE);
-                v.setTextViewText(id, hourLabel(s.start) + (s.label.isEmpty() ? "" : "\n" + shortLabel(s.label)));
+                String text = hourLabel(s.start);
+                if (!s.label.isEmpty()) text += "\n" + shortLabel(s.label);
+                if (s.course && AdvancedSettingsStore.showRoom(context) && !s.room.isEmpty()) text += "\n" + shortRoom(s.room);
+                v.setTextViewText(id, text);
+                v.setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_SP, 7f * scale);
                 v.setInt(id, "setBackgroundColor", s.background);
                 v.setTextColor(id, s.ink);
             }
@@ -570,6 +589,12 @@ public class UpcomingCoursesService extends RemoteViewsService {
             String text = value == null ? "" : value.trim();
             while (text.contains("  ")) text = text.replace("  ", " ");
             return text.length() <= 8 ? text : text.substring(0, 7).trim() + ".";
+        }
+
+        private String shortRoom(String value) {
+            String text = value == null ? "" : value.trim();
+            if (text.isEmpty()) return "";
+            return text.length() <= 7 ? text : text.substring(0, 7).trim();
         }
 
         private String hourLabel(int minute) {
