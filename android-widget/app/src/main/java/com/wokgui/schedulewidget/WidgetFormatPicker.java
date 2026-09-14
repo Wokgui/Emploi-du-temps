@@ -2,8 +2,8 @@ package com.wokgui.schedulewidget;
 
 import android.app.Activity;
 import android.appwidget.AppWidgetManager;
-import android.content.ColorStateList;
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
