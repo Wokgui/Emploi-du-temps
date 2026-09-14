@@ -25,7 +25,8 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="44dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingLeft="3dp"
@@ -37,4 +38,13 @@
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Salle 217 · Dans 3 h" android:textColor="#64748B" android:textSize="9sp" />
         </LinearLayout>
     </LinearLayout>
+
+    <ProgressBar
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="5dp"
+        android:max="1000"
+        android:progress="520"
+        android:progressTint="#1677E8"
+        android:progressBackgroundTint="#D8E0EA" />
 </LinearLayout>
