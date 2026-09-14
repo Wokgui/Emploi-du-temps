@@ -111,7 +111,7 @@ jobs:
         with:
           name: emploi-du-temps-widget-apk
           path: smoke-apk
-      - name: Exercise all controls, long-session behavior and instant mounted views
+      - name: Exercise all controls, widget formats, long-session behavior and instant mounted views
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -121,7 +121,7 @@ jobs:
           emulator-boot-timeout: 240
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot -no-metrics
           disable-animations: true
-          script: bash android-widget/ci/run_smoke_646.sh && bash android-widget/ci/run_latency_647.sh
+          script: bash android-widget/ci/run_smoke_646.sh && bash android-widget/ci/run_widget_formats_655.sh && bash android-widget/ci/run_latency_647.sh
       - name: Upload smoke-test captures
         if: always()
         uses: actions/upload-artifact@v4
