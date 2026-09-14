@@ -127,7 +127,7 @@ public final class WidgetFormatConfigActivity extends Activity {
         root.addView(install, buttonLp);
 
         TextView note = text(
-                "Le format pourra être modifié ensuite depuis les options du widget proposées par le lanceur.",
+                "Le choix s’applique à ce widget. Pour un autre format, ajoute simplement un autre widget.",
                 12,
                 false,
                 0xFF7A879B
@@ -174,7 +174,9 @@ public final class WidgetFormatConfigActivity extends Activity {
         }
 
         WidgetLayoutStore.set(this, widgetId, format);
-        ScheduleWidgetProvider.refreshWidget(this, widgetId);
+        Intent refresh = new Intent(this, ScheduleWidgetProvider.class);
+        refresh.setAction(ScheduleWidgetProvider.ACTION_REFRESH);
+        sendBroadcast(refresh);
 
         Intent result = new Intent();
         result.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId);
