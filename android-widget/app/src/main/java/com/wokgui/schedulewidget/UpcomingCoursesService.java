@@ -21,6 +21,13 @@ public class UpcomingCoursesService extends RemoteViewsService {
     public RemoteViewsFactory onGetViewFactory(Intent intent) {
         int widgetId = intent == null ? AppWidgetManager.INVALID_APPWIDGET_ID
                 : intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
+        int format = WidgetLayoutStore.get(getApplicationContext(), widgetId);
+        if (format == WidgetLayoutStore.FORMAT_CONDENSED) {
+            return CondensedCoursesService.createFactory(getApplicationContext(), widgetId);
+        }
+        if (format == WidgetLayoutStore.FORMAT_MINI) {
+            return new MiniFactory(getApplicationContext(), widgetId);
+        }
         return new Factory(getApplicationContext(), widgetId);
     }
 
@@ -120,8 +127,6 @@ public class UpcomingCoursesService extends RemoteViewsService {
             int previousEnd = -1;
             boolean firstVisibleCourse = true;
 
-            // In an expanded widget, keep the break that is actually in progress at the
-            // top of the list. Previously the target jumped straight to the next course.
             if (!compactHeight && !futureDay && target.firstCourse > 0) {
                 ScheduleData.Course previous = courses.get(target.firstCourse - 1);
                 ScheduleData.Course next = courses.get(target.firstCourse);
@@ -394,6 +399,195 @@ public class UpcomingCoursesService extends RemoteViewsService {
         @Override public RemoteViews getLoadingView() { return null; }
         @Override public int getViewTypeCount() { return 1; }
         @Override public long getItemId(int position) { return position; }
+        @Override public boolean hasStableIds() { return true; }
+    }
+
+    /** Format 4 factory kept separate from the classic factory so format 1 remains untouched. */
+    private static final class MiniFactory implements RemoteViewsFactory {
+        private static final int[] CELL_IDS = {
+                R.id.miniCell1, R.id.miniCell2, R.id.miniCell3, R.id.miniCell4,
+                R.id.miniCell5, R.id.miniCell6, R.id.miniCell7, R.id.miniCell8,
+                R.id.miniCell9, R.id.miniCell10, R.id.miniCell11
+        };
+
+        private static final class Segment {
+            final int start;
+            final String label;
+            final int background;
+            final int ink;
+            final boolean course;
+            final boolean visible;
+
+            Segment(int start, String label, int background, int ink, boolean course, boolean visible) {
+                this.start = start;
+                this.label = label == null ? "" : label;
+                this.background = background;
+                this.ink = ink;
+                this.course = course;
+                this.visible = visible;
+            }
+        }
+
+        private final Context context;
+        private final int widgetId;
+        private final List<Segment> segments = new ArrayList<>();
+        private Calendar targetDate;
+
+        MiniFactory(Context context, int widgetId) {
+            this.context = context;
+            this.widgetId = widgetId;
+        }
+
+        @Override public void onCreate() { reload(); }
+        @Override public void onDataSetChanged() { reload(); }
+        @Override public void onDestroy() { segments.clear(); targetDate = null; }
+        @Override public int getCount() { return targetDate == null ? 0 : 1; }
+
+        private void reload() {
+            segments.clear();
+            ScheduleStore.ensureInitialized(context);
+            targetDate = resolveTargetDate();
+            if (targetDate == null) return;
+            List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, targetDate);
+            if (courses == null || courses.isEmpty()) { targetDate = null; return; }
+
+            for (int slot = 1; slot <= 4; slot++) addSlot(courses, slot);
+            addBreak(courses, 4, 5, true);
+            addSlot(courses, 5);
+            addSlot(courses, 6);
+            addBreak(courses, 6, 7, false);
+            addSlot(courses, 7);
+            addSlot(courses, 8);
+            addSlot(courses, 9);
+
+            int lastCourse = -1;
+            for (int i = 0; i < segments.size(); i++) if (segments.get(i).course) lastCourse = i;
+            for (int i = lastCourse + 1; i < segments.size(); i++) {
+                Segment s = segments.get(i);
+                segments.set(i, new Segment(s.start, s.label, s.background, s.ink, false, false));
+            }
+        }
+
+        private Calendar resolveTargetDate() {
+            Calendar now = Calendar.getInstance();
+            int nowMinute = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
+            List<ScheduleData.Course> today = ScheduleStore.getCourses(context, now);
+            if (today != null && !today.isEmpty()) {
+                int lastEnd = 0;
+                for (ScheduleData.Course c : today) lastEnd = Math.max(lastEnd, ScheduleData.toMinutes(c.end));
+                if (nowMinute < lastEnd) return (Calendar) now.clone();
+            }
+            Calendar cursor = (Calendar) now.clone();
+            cursor.add(Calendar.DAY_OF_YEAR, 1);
+            for (int i = 0; i < 21; i++) {
+                List<ScheduleData.Course> list = ScheduleStore.getCourses(context, cursor);
+                if (list != null && !list.isEmpty()) return (Calendar) cursor.clone();
+                cursor.add(Calendar.DAY_OF_YEAR, 1);
+            }
+            return null;
+        }
+
+        private void addSlot(List<ScheduleData.Course> courses, int slot) {
+            int start = ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, slot));
+            int end = ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, slot));
+            segments.add(segment(courses, start, end, slot, false));
+        }
+
+        private void addBreak(List<ScheduleData.Course> courses, int beforeSlot, int afterSlot, boolean lunch) {
+            int start = ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, beforeSlot));
+            int end = ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, afterSlot));
+            if (end <= start) {
+                segments.add(new Segment(start, "", 0x00000000, 0xFF64748B, false, false));
+                return;
+            }
+            segments.add(segment(courses, start, end, 0, lunch));
+        }
+
+        private Segment segment(List<ScheduleData.Course> courses, int start, int end, int slot, boolean lunch) {
+            ScheduleData.Course found = null;
+            for (ScheduleData.Course c : courses) {
+                if (slot > 0 && c.slot == slot) { found = c; break; }
+            }
+            if (found == null) {
+                for (ScheduleData.Course c : courses) {
+                    if (ScheduleData.toMinutes(c.start) < end && ScheduleData.toMinutes(c.end) > start) { found = c; break; }
+                }
+            }
+            if (found != null) {
+                int order = found.slot > 0 ? found.slot : Math.max(1, slot);
+                int bg = WidgetPaletteStore.courseColor(context, order, found.label, found.color);
+                boolean dark = WidgetPaletteStore.useDarkText(context, order, found.label, found.color);
+                return new Segment(start, AdvancedSettingsStore.widgetCourseLabel(context, targetDate, found), bg,
+                        dark ? 0xFF17213A : 0xFFFFFFFF, true, true);
+            }
+            if (lunch && AdvancedSettingsStore.showLunch(context)) {
+                String label = ScheduleStore.getLunchLabel(context);
+                if ("Pause de midi".equalsIgnoreCase(label)) label = "Midi";
+                return new Segment(start, AdvancedSettingsStore.widgetLunchLabel(context, label),
+                        WidgetPaletteStore.lunchBackground(context), WidgetPaletteStore.lunchText(context), false, true);
+            }
+            if (AdvancedSettingsStore.showBreaks(context)) {
+                String label = ScheduleStore.getGapLabel(context);
+                if ("Trou".equalsIgnoreCase(label)) label = UiSettingsStore.t(context, "gap");
+                return new Segment(start, AdvancedSettingsStore.widgetGapLabel(context, label),
+                        WidgetPaletteStore.gapBackground(context), WidgetPaletteStore.gapText(context), false, true);
+            }
+            return new Segment(start, "", 0x00000000, 0xFF64748B, false, true);
+        }
+
+        @Override
+        public RemoteViews getViewAt(int position) {
+            if (position != 0 || targetDate == null) return null;
+            RemoteViews v = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
+            v.setViewVisibility(R.id.rowContent, View.GONE);
+            v.setViewVisibility(R.id.rowCondensedContent, View.GONE);
+            v.setViewVisibility(R.id.rowMiniContent, View.VISIBLE);
+            v.setTextViewText(R.id.rowMiniTitle, "Emploi du temps");
+            v.setTextViewText(R.id.rowMiniDate, dateLabel(targetDate));
+
+            for (int i = 0; i < CELL_IDS.length; i++) {
+                int id = CELL_IDS[i];
+                if (i >= segments.size() || !segments.get(i).visible) {
+                    v.setViewVisibility(id, View.GONE);
+                    continue;
+                }
+                Segment s = segments.get(i);
+                v.setViewVisibility(id, View.VISIBLE);
+                v.setTextViewText(id, hourLabel(s.start) + (s.label.isEmpty() ? "" : "\n" + shortLabel(s.label)));
+                v.setInt(id, "setBackgroundColor", s.background);
+                v.setTextColor(id, s.ink);
+            }
+
+            Intent fill = new Intent();
+            fill.putExtra("open_mode", "week");
+            v.setOnClickFillInIntent(R.id.rowRoot, fill);
+            v.setOnClickFillInIntent(R.id.rowMiniContent, fill);
+            for (int id : CELL_IDS) v.setOnClickFillInIntent(id, fill);
+            return v;
+        }
+
+        private String shortLabel(String value) {
+            String text = value == null ? "" : value.trim();
+            while (text.contains("  ")) text = text.replace("  ", " ");
+            return text.length() <= 8 ? text : text.substring(0, 7).trim() + ".";
+        }
+
+        private String hourLabel(int minute) {
+            if (minute < 0) return "";
+            int h = minute / 60, m = minute % 60;
+            return m == 0 ? h + "h" : String.format(Locale.FRANCE, "%d:%02d", h, m);
+        }
+
+        private String dateLabel(Calendar date) {
+            String lang = UiSettingsStore.language(context);
+            Locale locale = "de".equals(lang) ? Locale.GERMANY : ("en".equals(lang) ? Locale.UK : Locale.FRANCE);
+            String pattern = "de".equals(lang) ? "EEE d. MMM" : "EEE d MMM";
+            return new SimpleDateFormat(pattern, locale).format(date.getTime()) + " - " + ScheduleStore.getWeekLetter(context, date);
+        }
+
+        @Override public RemoteViews getLoadingView() { return null; }
+        @Override public int getViewTypeCount() { return 1; }
+        @Override public long getItemId(int position) { return widgetId; }
         @Override public boolean hasStableIds() { return true; }
     }
 }
