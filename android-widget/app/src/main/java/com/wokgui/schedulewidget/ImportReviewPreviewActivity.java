@@ -25,7 +25,7 @@ public class ImportReviewPreviewActivity extends MainActivity {
         super.onCreate(savedInstanceState);
         if (widgetConfiguration) {
             handler.removeCallbacksAndMessages(null);
-            WidgetFormatPickerUi.show(this, widgetId);
+            WidgetFormatPicker.show(this, widgetId);
             return;
         }
         handler.postDelayed(this::tryOpenPreview, 400);
