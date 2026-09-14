@@ -3,6 +3,7 @@ package com.wokgui.schedulewidget;
 import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
@@ -209,6 +210,11 @@ public final class CondensedCoursesService extends RemoteViewsService {
             if (position < 0 || position >= items.size()) return null;
             Item item = items.get(position);
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
+
+            float scale = UiSettingsStore.widgetFontScale(context);
+            views.setTextViewTextSize(R.id.rowCondensedTime, TypedValue.COMPLEX_UNIT_SP, 9f * scale);
+            views.setTextViewTextSize(R.id.rowCondensedTitle, TypedValue.COMPLEX_UNIT_SP, 12f * scale);
+            views.setTextViewTextSize(R.id.rowCondensedMeta, TypedValue.COMPLEX_UNIT_SP, 9f * scale);
 
             views.setViewVisibility(R.id.rowContent, View.GONE);
             views.setViewVisibility(R.id.rowCondensedContent, View.VISIBLE);
