@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Emploi du temps</string>
+    <string name="widget_name_classic">Emploi du temps · Classique</string>
+    <string name="widget_name_condensed">Emploi du temps · Condensé</string>
+    <string name="widget_name_mini">Emploi du temps · Mini</string>
     <string name="widget_description">Cours actuel, prochain cours et progression de la journée</string>
+    <string name="widget_description_condensed">Format horizontal compact pour les prochains cours</string>
+    <string name="widget_description_mini">Format étroit pour les prochains cours</string>
     <string name="refresh">Actualiser</string>
 </resources>
