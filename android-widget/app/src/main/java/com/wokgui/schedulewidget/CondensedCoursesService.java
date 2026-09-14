@@ -15,11 +15,15 @@ import java.util.Locale;
 
 /** RemoteViews source for format 3: a compact chronological day list. */
 public final class CondensedCoursesService extends RemoteViewsService {
+    static RemoteViewsFactory createFactory(Context context, int widgetId) {
+        return new Factory(context.getApplicationContext(), widgetId);
+    }
+
     @Override
     public RemoteViewsFactory onGetViewFactory(Intent intent) {
         int widgetId = intent == null ? AppWidgetManager.INVALID_APPWIDGET_ID
                 : intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
-        return new Factory(getApplicationContext(), widgetId);
+        return createFactory(getApplicationContext(), widgetId);
     }
 
     private static final class Item {
