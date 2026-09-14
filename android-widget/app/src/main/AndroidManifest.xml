@@ -38,6 +38,7 @@
 
         <receiver
             android:name=".ScheduleWidgetProvider"
+            android:label="@string/widget_name_classic"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -51,6 +52,30 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".ScheduleWidgetCondensedProvider"
+            android:label="@string/widget_name_condensed"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_condensed" />
+        </receiver>
+
+        <receiver
+            android:name=".ScheduleWidgetMiniProvider"
+            android:label="@string/widget_name_mini"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_mini" />
         </receiver>
     </application>
 </manifest>
