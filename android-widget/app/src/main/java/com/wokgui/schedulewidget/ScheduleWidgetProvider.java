@@ -85,7 +85,6 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         ScheduleStore.ensureInitialized(context);
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_schedule);
 
-        // Le nouveau widget n'a plus de bandeau ni de tuile « prochain cours » séparée.
         views.setViewVisibility(R.id.widgetHeader, View.GONE);
         views.setViewVisibility(R.id.currentCard, View.GONE);
         views.setViewVisibility(R.id.btnWidgetMode, View.GONE);
@@ -98,6 +97,9 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         views.setInt(R.id.widgetBody, "setBackgroundColor", surface);
         views.setInt(R.id.emptyUpcoming, "setBackgroundColor", surface);
         views.setTextColor(R.id.emptyUpcoming, lightSurface ? 0xFF64748B : 0xFFE7EAF0);
+
+        int dayProgress = dayProgress(context);
+        views.setProgressBar(R.id.dayProgress, 1000, dayProgress, false);
 
         Intent listIntent = new Intent(context, UpcomingCoursesService.class);
         listIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId);
@@ -129,6 +131,17 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
 
         manager.updateAppWidget(widgetId, views);
         manager.notifyAppWidgetViewDataChanged(widgetId, R.id.upcomingList);
+    }
+
+    private static int dayProgress(Context context) {
+        Calendar now = Calendar.getInstance();
+        int nowMinute = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
+        int start = ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, 1));
+        int end = ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, 9));
+        if (end <= start) return 0;
+        if (nowMinute <= start) return 0;
+        if (nowMinute >= end) return 1000;
+        return Math.max(0, Math.min(1000, Math.round((nowMinute - start) * 1000f / (end - start))));
     }
 
     private static void scheduleNextBoundary(Context context) {
