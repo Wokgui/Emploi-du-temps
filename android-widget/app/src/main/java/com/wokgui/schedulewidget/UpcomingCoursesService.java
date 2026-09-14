@@ -83,7 +83,6 @@ public class UpcomingCoursesService extends RemoteViewsService {
             this(context, widgetId, null, null);
         }
 
-        /** Debug preview uses this overload through reflection; production always uses the constructor above. */
         Factory(Context context, int widgetId, Integer forcedHeightDp, Calendar forcedNow) {
             this.context = context;
             this.widgetId = widgetId;
@@ -96,11 +95,6 @@ public class UpcomingCoursesService extends RemoteViewsService {
         @Override public void onDestroy() { items.clear(); }
         @Override public int getCount() { return items.size(); }
 
-        /**
-         * At the minimum widget height (108 dp) two 54 dp course rows fit exactly.
-         * In that configuration breaks are intentionally omitted so the visible pair
-         * is always the current/next course pair rather than a gap taking the second row.
-         */
         private boolean isCompactHeight() {
             if (forcedHeightDp != null) return forcedHeightDp > 0 && forcedHeightDp <= 145;
             if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return false;
@@ -196,17 +190,8 @@ public class UpcomingCoursesService extends RemoteViewsService {
                     && (cutoffMinute < 0 || lunchEnd > cutoffMinute)) {
                 String appLabel = localizedAppBreakLabel(true);
                 String label = AdvancedSettingsStore.widgetLunchLabel(context, appLabel);
-                items.add(new Item(
-                        label,
-                        appLabel,
-                        minuteLabel(lunchStart) + " - " + minuteLabel(lunchEnd),
-                        "",
-                        Item.LUNCH,
-                        0,
-                        lunchRelative(lunchEnd),
-                        false,
-                        ""
-                ));
+                items.add(new Item(label, appLabel, minuteLabel(lunchStart) + " - " + minuteLabel(lunchEnd), "",
+                        Item.LUNCH, 0, lunchRelative(lunchEnd), false, ""));
             }
             if (to > lunchEnd) addGap(Math.max(from, lunchEnd), to, cutoffMinute);
         }
@@ -216,17 +201,8 @@ public class UpcomingCoursesService extends RemoteViewsService {
             if (cutoffMinute >= 0 && end <= cutoffMinute) return;
             String appLabel = localizedAppBreakLabel(false);
             String label = AdvancedSettingsStore.widgetGapLabel(context, appLabel);
-            items.add(new Item(
-                    label,
-                    appLabel,
-                    minuteLabel(start) + " - " + minuteLabel(end),
-                    "",
-                    Item.GAP,
-                    0,
-                    gapRelative(start, end),
-                    false,
-                    ""
-            ));
+            items.add(new Item(label, appLabel, minuteLabel(start) + " - " + minuteLabel(end), "",
+                    Item.GAP, 0, gapRelative(start, end), false, ""));
         }
 
         private String localizedAppBreakLabel(boolean lunch) {
@@ -262,22 +238,15 @@ public class UpcomingCoursesService extends RemoteViewsService {
             Calendar start = atMinute(targetDate, ScheduleData.toMinutes(course.start));
             Calendar end = atMinute(targetDate, ScheduleData.toMinutes(course.end));
             long nowMs = now.getTimeInMillis();
-
             if (nowMs >= start.getTimeInMillis() && nowMs < end.getTimeInMillis()) {
                 long rem = Math.max(1L, (end.getTimeInMillis() - nowMs + 59999L) / 60000L);
                 return rem + " min";
             }
-
             long diff = Math.max(0L, (start.getTimeInMillis() - nowMs) / 60000L);
             if (diff <= 0) return "";
-
             String base;
             if (diff < 60) base = UiSettingsStore.t(context, "in") + " " + diff + " min";
-            else {
-                long hours = Math.max(1L, Math.round(diff / 60.0));
-                base = UiSettingsStore.t(context, "in") + " " + hours + " h";
-            }
-
+            else base = UiSettingsStore.t(context, "in") + " " + Math.max(1L, Math.round(diff / 60.0)) + " h";
             if (includeDate) base += dateSuffix(targetDate);
             return base;
         }
@@ -403,7 +372,6 @@ public class UpcomingCoursesService extends RemoteViewsService {
         @Override public boolean hasStableIds() { return true; }
     }
 
-    /** Format 4 factory kept separate from the classic factory so format 1 remains untouched. */
     private static final class MiniFactory implements RemoteViewsFactory {
         private static final int[] CELL_IDS = {
                 R.id.miniCell1, R.id.miniCell2, R.id.miniCell3, R.id.miniCell4,
@@ -484,7 +452,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             cursor.add(Calendar.DAY_OF_YEAR, 1);
             for (int i = 0; i < 21; i++) {
                 List<ScheduleData.Course> list = ScheduleStore.getCourses(context, cursor);
-                if (list != null && !list.isEmpty()) return (Calendar) cursor.clone(), 0;
+                if (list != null && !list.isEmpty()) return (Calendar) cursor.clone();
                 cursor.add(Calendar.DAY_OF_YEAR, 1);
             }
             return null;
@@ -500,7 +468,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             int start = ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, beforeSlot));
             int end = ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, afterSlot));
             if (end <= start) {
-                segments.add(new Segment(start, "", "", 0x00000000, 0xFF64748B, false, false));
+                segments.add(new Segment(start, "", "", 0xFFF7F9FC, 0xFF64748B, false, false));
                 return;
             }
             segments.add(segment(courses, start, end, 0, lunch));
@@ -593,8 +561,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
 
         private String shortRoom(String value) {
             String text = value == null ? "" : value.trim();
-            if (text.isEmpty()) return "";
-            return text.length() <= 7 ? text : text.substring(0, 7).trim();
+            return text.length() <= 8 ? text : text.substring(0, 8).trim();
         }
 
         private String hourLabel(int minute) {
