@@ -6,6 +6,13 @@ ACTIVITY="$PKG/.ImportReviewPreviewActivity"
 OUT_DIR="smoke/widget-formats-655"
 mkdir -p "$OUT_DIR"
 
+# 6.56: the launcher must see three distinct AppWidgetProvider components,
+# not one provider with an internal format chooser only.
+adb shell dumpsys package "$PKG" > "$OUT_DIR/package.txt"
+grep -q "ScheduleWidgetProvider" "$OUT_DIR/package.txt"
+grep -q "ScheduleWidgetCondensedProvider" "$OUT_DIR/package.txt"
+grep -q "ScheduleWidgetMiniProvider" "$OUT_DIR/package.txt"
+
 wait_for_text() {
   local needle="$1"
   local tries=0
@@ -71,4 +78,4 @@ choose_and_assert 4241 "Version actuelle" 1
 choose_and_assert 4243 "Version 3" 3
 choose_and_assert 4244 "Version 4" 4
 
-echo "Widget format chooser 6.55 OK: classic=1 condensed=3 mini=4"
+echo "Widget formats 6.56 OK: three launcher providers + classic=1 condensed=3 mini=4"
