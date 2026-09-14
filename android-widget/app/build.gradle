@@ -10,8 +10,8 @@ android {
         applicationId 'com.wokgui.schedulewidget'
         minSdk 26
         targetSdk 35
-        versionCode 656001
-        versionName '6.56'
+        versionCode 657001
+        versionName '6.57'
     }
 
     buildFeatures {
@@ -36,4 +36,5 @@ dependencies {
     implementation 'com.google.mlkit:translate:17.0.3'
 }
 
-// 6.56: expose three launcher-selectable widget variants and render lunch as one continuous band.
+// 6.57: polish all three widgets: opaque surfaces, rooms, vertical resizing,
+// shared font scaling, accurate launcher previews and day-progress indicator.
