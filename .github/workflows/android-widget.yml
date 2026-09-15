@@ -3,16 +3,12 @@ name: Build and validate Android timetable
 on:
   push:
     branches: [main, feature/widget-layout-picker-655, feature/widget-selectable-formats-656, feature/widget-polish-657, feature/widget-week-polish-658, perf/instant-views-647, perf/heavy-panels-648, perf/heavy-panels-649, perf/render-pipeline-650, perf/action-chains-651, perf/rare-actions-652]
-    paths:
-      - 'android-widget/**'
-      - '.github/workflows/android-widget.yml'
+    paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
-
 concurrency:
-  group: android-widget-${{ github.ref_name }}-v14
+  group: android-widget-${{ github.ref_name }}-v15
   cancel-in-progress: true
-permissions:
-  contents: write
+permissions: {contents: write}
 
 jobs:
   browser-ui:
@@ -24,44 +20,36 @@ jobs:
         with: {distribution: temurin, java-version: '17'}
       - uses: actions/setup-node@v4
         with: {node-version: '24'}
-      - name: Install browser test runtime
-        run: |
+      - run: |
           npm install --no-save --package-lock=false playwright@1.62.1
           npx playwright install --with-deps chromium
-      - name: Verify actual generated UI, touch gestures and 300-cycle suites
-        run: bash android-widget/ci/run_browser_651.sh
-      - name: Upload browser regression evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with: {name: browser-ui-651, path: smoke-browser/}
+      - run: bash android-widget/ci/run_browser_651.sh
 
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults: {run: {working-directory: android-widget}}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '17'}
-      - uses: android-actions/setup-android@v3
-      - name: Install Android 35 SDK
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Use runner Android SDK directly
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME:-$ANDROID_SDK_ROOT}" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-$ANDROID_HOME}" >> "$GITHUB_ENV"
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
       - uses: gradle/actions/setup-gradle@v4
         with: {gradle-version: '8.10.2'}
-      - name: Keep the same debug signing key
-        uses: actions/cache@v4
+      - uses: actions/cache@v4
         with: {path: ~/.android/debug.keystore, key: emploi-du-temps-debug-keystore-v1}
-      - name: Clean build
-        run: gradle clean :app:assembleDebug --stacktrace
-      - name: Verify install version and package
+      - run: gradle clean :app:assembleDebug --stacktrace
+      - name: Verify 6.58 package
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/badging.txt
           grep -q "package: name='com.wokgui.schedulewidget' versionCode='658001' versionName='6.58'" app/build/outputs/apk/debug/badging.txt
-      - name: Rename APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/emploi-du-temps-widget.apk
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+      - run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/emploi-du-temps-widget.apk
+      - uses: actions/upload-artifact@v4
         with: {name: emploi-du-temps-widget-apk, path: android-widget/app/build/outputs/apk/debug/emploi-du-temps-widget.apk, if-no-files-found: error}
 
   smoke:
@@ -72,15 +60,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '17'}
-      - uses: android-actions/setup-android@v3
-      - name: Enable KVM acceleration
-        run: if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
-      - name: Install screenshot validator
-        run: python3 -m pip install --quiet pillow
+      - name: Use runner Android SDK directly
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME:-$ANDROID_SDK_ROOT}" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-$ANDROID_HOME}" >> "$GITHUB_ENV"
+      - run: if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+      - run: python3 -m pip install --quiet pillow
       - uses: actions/download-artifact@v4
         with: {name: emploi-du-temps-widget-apk, path: smoke-apk}
-      - name: Exercise app and widget formats
-        uses: reactivecircus/android-emulator-runner@v2
+      - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
           arch: x86_64
@@ -90,10 +78,6 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot -no-metrics
           disable-animations: true
           script: bash android-widget/ci/run_smoke_646.sh && bash android-widget/ci/run_widget_formats_655.sh && bash android-widget/ci/run_latency_647.sh
-      - name: Upload smoke-test captures
-        if: always()
-        uses: actions/upload-artifact@v4
-        with: {name: android-smoke-screenshots, path: smoke/, if-no-files-found: ignore}
 
   heavy-panels:
     needs: build
@@ -104,13 +88,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '17'}
-      - uses: android-actions/setup-android@v3
-      - name: Enable KVM acceleration
-        run: if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+      - name: Use runner Android SDK directly
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME:-$ANDROID_SDK_ROOT}" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-$ANDROID_HOME}" >> "$GITHUB_ENV"
+      - run: if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
       - uses: actions/download-artifact@v4
         with: {name: emploi-du-temps-widget-apk, path: smoke-apk}
-      - name: Measure and stress Settings and course editor
-        uses: reactivecircus/android-emulator-runner@v2
+      - uses: reactivecircus/android-emulator-runner@v2
         env: {EDT_HEAVY_REQUIRE_FAST: '1'}
         with:
           api-level: 35
@@ -121,22 +106,3 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot -no-metrics
           disable-animations: true
           script: bash android-widget/ci/run_heavy_panels_648.sh
-      - name: Upload heavy-panel measurements
-        if: always()
-        uses: actions/upload-artifact@v4
-        with: {name: heavy-panel-measurements, path: smoke-heavy/, if-no-files-found: ignore}
-
-  publish:
-    needs: [smoke, browser-ui]
-    if: ${{ needs.smoke.result == 'success' && needs.browser-ui.result == 'success' && github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with: {name: emploi-du-temps-widget-apk, path: release-apk}
-      - name: Publish stable APK
-        env: {GH_TOKEN: '${{ github.token }}'}
-        run: |
-          if ! gh release view widget-latest >/dev/null 2>&1; then gh release create widget-latest --title "Emploi du temps widget" --notes "APK Android installable du widget d’emploi du temps."; fi
-          gh release upload widget-latest release-apk/emploi-du-temps-widget.apk --clobber
