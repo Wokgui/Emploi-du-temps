@@ -10,8 +10,8 @@ android {
         applicationId 'com.wokgui.schedulewidget'
         minSdk 26
         targetSdk 35
-        versionCode 657001
-        versionName '6.57'
+        versionCode 658001
+        versionName '6.58'
     }
 
     buildFeatures {
@@ -36,5 +36,5 @@ dependencies {
     implementation 'com.google.mlkit:translate:17.0.3'
 }
 
-// 6.57: polish all three widgets: opaque surfaces, rooms, vertical resizing,
-// shared font scaling, accurate launcher previews and day-progress indicator.
+// 6.58: clearer week view with configurable free/course/lunch colours and
+// per-day lunch visibility/position; keeps 6.57 widget improvements.
