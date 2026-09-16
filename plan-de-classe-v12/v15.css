@@ -1,0 +1,20 @@
+/* v15 — gender colors, centered student icons, cleaner tables */
+.seat,.desk{box-sizing:border-box!important}
+.desk{padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+.desk::before,.desk::after,.seat::before,.seat::after{content:none!important;display:none!important}
+.seat{height:100%!important;min-height:31px!important;border:1px solid #c7d3d0!important;border-radius:12px!important;background:#fff!important;box-shadow:0 2px 5px rgba(35,70,62,.08)!important;padding:6px 8px 12px!important;position:relative!important}
+.seat.boy{background:var(--boy)!important;border-color:var(--boyb)!important}
+.seat.girl{background:var(--girl)!important;border-color:var(--girlb)!important}
+.seat.empty{background:#fff!important}
+.seat.pick{box-shadow:0 0 0 3px rgba(7,149,121,.14),0 2px 6px rgba(35,70,62,.10)!important}
+.seatname{display:block!important;max-width:100%!important;text-align:center!important;margin:0 auto!important}
+.seaticons{position:absolute!important;left:50%!important;right:auto!important;bottom:3px!important;transform:translateX(-50%)!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:2px!important;z-index:3!important}
+.miniicon{width:10px!important;height:10px!important}
+.objbuttons{gap:10px!important}.objbuttons button{min-height:34px!important;height:34px!important;padding:0 14px!important;border-radius:12px!important;font-size:11px!important;font-weight:800!important;line-height:1!important}
+.statuslegend{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px 22px!important;max-width:320px!important;margin:10px auto 0!important;align-items:start!important}
+.statuslegend .legenditem{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;text-align:center!important;gap:6px!important;min-width:0!important}
+.statuslegend .legenditem .tagb{margin:0 auto!important;width:46px!important;height:42px!important}
+.statuslegend .legenditem .tagb svg{width:23px!important;height:23px!important}
+.statuslegend .legenditem>span:last-child{display:block!important;width:100%!important;text-align:center!important;font-size:10px!important;line-height:1.2!important}
+.statuslegend .legenditem:last-child{grid-column:1/-1!important;justify-self:center!important;width:calc(50% - 11px)!important}
+.v15-palette{margin-top:8px!important}.v15-palette h2{text-align:center!important}.v15-palette-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-width:330px;margin:0 auto}.v15-palette-item{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}.v15-palette-item label{font-size:10px;color:var(--mut);font-weight:800}.v15-palette-item input[type=color]{width:72px;height:42px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:3px}.v15-palette-reset{display:block;margin:10px auto 0!important;height:34px!important;border-radius:11px!important;padding:0 14px!important;font-size:10px!important}
