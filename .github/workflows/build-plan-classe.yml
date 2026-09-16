@@ -1,4 +1,4 @@
-name: Build Plan de classe v13
+name: Build Plan de classe v14
 on:
   push:
     branches: ["plan-de-classe-v12"]
@@ -30,7 +30,7 @@ jobs:
           mkdir -p "$HOME/.android"
           base64 -d plan-de-classe-v12/fixed-debug-keystore.b64 > "$HOME/.android/debug.keystore"
           keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey >/dev/null
-      - name: Restore source and apply v13
+      - name: Restore source and apply v14
         shell: bash
         run: |
           set -euo pipefail
@@ -40,26 +40,24 @@ jobs:
           mkdir -p plan-de-classe
           unzip -q /tmp/plan.zip -d plan-de-classe
           sed -i 's/android:layout_width="55%"/android:layout_width="180dp"/; s/android:layout_width="30%"/android:layout_width="100dp"/' plan-de-classe/app/src/main/res/layout/widget_preview_layout.xml
-          cp plan-de-classe-v12/v13.css plan-de-classe/app/src/main/assets/v13.css
-          cp plan-de-classe-v12/v13.js plan-de-classe/app/src/main/assets/v13.js
+          cp plan-de-classe-v12/v14.css plan-de-classe/app/src/main/assets/v14.css
+          cp plan-de-classe-v12/v14.js plan-de-classe/app/src/main/assets/v14.js
           python3 - <<'PY'
           from pathlib import Path
           import re
           p=Path('plan-de-classe/app/src/main/assets/index.html')
           s=p.read_text()
-          s=re.sub(r'<link[^>]+href=["\']v12[^"\']*\.css["\'][^>]*>','',s)
-          s=re.sub(r'<script[^>]+src=["\']v12[^"\']*\.js["\'][^>]*></script>','',s)
-          s=re.sub(r'<link[^>]+href=["\']v13\.css["\'][^>]*>','',s)
-          s=re.sub(r'<script[^>]+src=["\']v13\.js["\'][^>]*></script>','',s)
-          s=s.replace('</head>','<link rel="stylesheet" href="v13.css"></head>')
-          s=s.replace('</body>','<script src="v13.js"></script></body>')
+          s=re.sub(r'<link[^>]+href=["\']v(?:12|13|14)[^"\']*\.css["\'][^>]*>','',s)
+          s=re.sub(r'<script[^>]+src=["\']v(?:12|13|14)[^"\']*\.js["\'][^>]*></script>','',s)
+          s=s.replace('</head>','<link rel="stylesheet" href="v14.css"></head>')
+          s=s.replace('</body>','<script src="v14.js"></script></body>')
           s=s.replace("function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x&&x.classes?.length)return x}catch(e){}return{cur:null,classes:[defaultClass()]}}",
           "function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x&&x.classes?.length)return x}catch(e){}try{if(window.AndroidBridge&&AndroidBridge.loadState){let n=AndroidBridge.loadState();if(n){let x=JSON.parse(n);if(x&&x.classes?.length){localStorage.setItem(KEY,n);return x}}}}catch(e){}return{cur:null,classes:[defaultClass()]}}")
           p.write_text(s)
           g=Path('plan-de-classe/app/build.gradle')
           b=g.read_text()
-          b=re.sub(r'versionCode\s+\d+','versionCode 19',b)
-          b=re.sub(r"versionName\s+'[^']+'","versionName '13.0'",b)
+          b=re.sub(r'versionCode\s+\d+','versionCode 20',b)
+          b=re.sub(r"versionName\s+'[^']+'","versionName '14.0'",b)
           g.write_text(b)
           PY
           mkdir -p plan-de-classe/app/src/main/java/fr/wokgui/planclasse
@@ -95,22 +93,23 @@ jobs:
           if 'name="app_name"' not in s:s=s.replace('</resources>','    <string name="app_name">Plan de classe</string>\n</resources>')
           p.write_text(s)
           PY
-          node --check plan-de-classe/app/src/main/assets/v13.js
+          node --check plan-de-classe/app/src/main/assets/v14.js
       - name: Deep regression checks
         shell: bash
         run: |
           set -euo pipefail
           INDEX=plan-de-classe/app/src/main/assets/index.html
-          grep -q 'v13.css' "$INDEX"
-          grep -q 'v13.js' "$INDEX"
-          ! grep -Eq 'v12[a-z0-9]*\.(js|css)' "$INDEX"
-          grep -q "seat.onclick=onSeatClick" plan-de-classe/app/src/main/assets/v13.js
-          grep -q "document.getElementById('mix').onclick=mix" plan-de-classe/app/src/main/assets/v13.js
-          grep -q "makeStepButton('−'" plan-de-classe/app/src/main/assets/v13.js
-          grep -q "bj.onclick=" plan-de-classe/app/src/main/assets/v13.js
-          grep -q "bi.onclick=" plan-de-classe/app/src/main/assets/v13.js
-          grep -q "overflow-x:hidden" plan-de-classe/app/src/main/assets/v13.css
-          grep -q "grid-template-columns:minmax(0,1fr) minmax(0,1fr)" plan-de-classe/app/src/main/assets/v13.css
+          grep -q 'v14.css' "$INDEX"
+          grep -q 'v14.js' "$INDEX"
+          ! grep -Eq 'v(12|13)[a-z0-9]*\.(js|css)' "$INDEX"
+          grep -q "for(let slot=c.rows.length;slot>=0;slot--)" plan-de-classe/app/src/main/assets/v14.js
+          grep -q "seat.onclick=onSeatClick" plan-de-classe/app/src/main/assets/v14.js
+          grep -q "document.getElementById('mix').onclick=mix" plan-de-classe/app/src/main/assets/v14.js
+          grep -q "Disposition rapide" plan-de-classe/app/src/main/assets/v14.js
+          grep -q "Appliquer à tous les rangs" plan-de-classe/app/src/main/assets/v14.js
+          grep -q "flex-direction:column!important" plan-de-classe/app/src/main/assets/v14.css
+          grep -q "text-align:center!important" plan-de-classe/app/src/main/assets/v14.css
+          grep -q "v14-plan-icon" plan-de-classe/app/src/main/assets/v14.css
           python3 - <<'PY'
           from pathlib import Path
           import re,collections
@@ -127,15 +126,15 @@ jobs:
           APK=plan-de-classe/app/build/outputs/apk/debug/app-debug.apk
           test -s "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | tee /tmp/badging.txt
-          grep -q "package: name='fr.wokgui.planclasse' versionCode='19' versionName='13.0'" /tmp/badging.txt
+          grep -q "package: name='fr.wokgui.planclasse' versionCode='20' versionName='14.0'" /tmp/badging.txt
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
-          unzip -l "$APK" | grep -q 'assets/v13.js'
-          unzip -l "$APK" | grep -q 'assets/v13.css'
-          unzip -p "$APK" assets/index.html | grep -q 'v13.js'
-          ! unzip -p "$APK" assets/index.html | grep -Eq 'v12[a-z0-9]*\.(js|css)'
-          cp "$APK" Plan-de-classe-v13.apk
+          unzip -l "$APK" | grep -q 'assets/v14.js'
+          unzip -l "$APK" | grep -q 'assets/v14.css'
+          unzip -p "$APK" assets/index.html | grep -q 'v14.js'
+          ! unzip -p "$APK" assets/index.html | grep -Eq 'v(12|13)[a-z0-9]*\.(js|css)'
+          cp "$APK" Plan-de-classe-v14.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: Plan-de-classe-v13
-          path: Plan-de-classe-v13.apk
+          name: Plan-de-classe-v14
+          path: Plan-de-classe-v14.apk
           if-no-files-found: error
