@@ -1,0 +1,14 @@
+/* v12b review fixes */
+#v-students>.section>.form{display:grid!important;grid-template-columns:minmax(0,1fr) 64px 64px 64px!important;gap:6px!important;align-items:center!important}
+#v-students>.section>.form .genderpick{display:contents!important}
+#newBoy,#newGirl,#addS{width:64px!important;min-width:64px!important;height:40px!important;padding:0 4px!important;font-size:10px!important}
+.tools{display:grid!important;grid-template-columns:78px minmax(0,1fr) 78px!important;align-items:center!important;gap:12px!important;margin-top:8px!important}
+#undo,#redo{width:78px!important;min-width:78px!important;height:42px!important;border-radius:14px!important;font-size:18px!important}
+#mix{height:44px!important;border-radius:14px!important;font-size:12px!important}
+.v12b-explain{margin:8px 0 6px!important;text-align:center!important;font-size:10px!important;line-height:1.35!important;color:var(--mut)!important}
+@media(max-width:370px){
+  #v-students>.section>.form{grid-template-columns:minmax(0,1fr) 58px 58px 58px!important;gap:5px!important}
+  #newBoy,#newGirl,#addS{width:58px!important;min-width:58px!important;font-size:9px!important}
+  .tools{grid-template-columns:72px minmax(0,1fr) 72px!important;gap:8px!important}
+  #undo,#redo{width:72px!important;min-width:72px!important}
+}
