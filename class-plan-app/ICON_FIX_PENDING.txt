@@ -1,0 +1,1 @@
+This branch is being updated with a verified binary launcher icon and startup fix.
