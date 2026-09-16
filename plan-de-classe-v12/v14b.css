@@ -1,0 +1,13 @@
+/* v14b polish */
+.desk{padding:0!important}
+.desk::before,.desk::after,.seat::before,.seat::after{content:none!important;display:none!important}
+.seat{height:100%!important;min-height:31px!important;border:1px solid #c7d3d0!important;border-radius:12px!important;background:#fff!important;box-shadow:0 2px 5px rgba(35,70,62,.08)!important;padding:6px 8px!important}
+.seat.boy,.seat.girl,.seat.empty,.seat.pick{background:#fff!important}
+.seat.pick{box-shadow:0 0 0 3px rgba(7,149,121,.13),0 2px 6px rgba(35,70,62,.10)!important}
+.objbuttons{gap:10px!important}
+.objbuttons button{min-height:34px!important;height:34px!important;padding:0 14px!important;border-radius:12px!important;font-size:11px!important;font-weight:800!important;line-height:1!important}
+.statuslegend{max-width:340px!important;gap:14px 22px!important}
+.statuslegend .legenditem{gap:6px!important;width:100%!important}
+.statuslegend .legenditem .tagb{width:46px!important;height:42px!important}
+.statuslegend .legenditem>span:last-child{display:block!important;width:100%!important;text-align:center!important;font-size:10px!important;line-height:1.2!important}
+.statuslegend .legenditem:last-child{grid-column:1/-1!important;justify-self:center!important;width:calc(50% - 11px)!important}
