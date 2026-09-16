@@ -7,7 +7,7 @@
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="false">
         <activity
-            android:name=".MainActivity"
+            android:name="fr.wokgui.planclasse.MainActivity"
             android:screenOrientation="portrait"
             android:exported="true">
             <intent-filter>
