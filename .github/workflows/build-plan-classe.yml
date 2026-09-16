@@ -6,13 +6,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      - name: Prepare Android SDK
+        shell: bash
+        run: |
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
+          echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          echo "/usr/local/lib/android/sdk/platform-tools" >> "$GITHUB_PATH"
+          yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null || true
+          /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
@@ -23,10 +31,18 @@ jobs:
           base64 -d /tmp/plan.b64 > /tmp/plan.zip
           mkdir -p plan-de-classe
           unzip -q /tmp/plan.zip -d plan-de-classe
+          sed -i 's/android:layout_width="55%"/android:layout_width="180dp"/; s/android:layout_width="30%"/android:layout_width="100dp"/' plan-de-classe/app/src/main/res/layout/widget_preview_layout.xml
       - name: Build APK
-        run: gradle -p plan-de-classe assembleDebug --stacktrace
-      - name: Copy APK
-        run: cp plan-de-classe/app/build/outputs/apk/debug/app-debug.apk Plan-de-classe-v11-widget.apk
+        run: gradle -p plan-de-classe clean :app:assembleDebug --stacktrace
+      - name: Verify APK and widget declaration
+        shell: bash
+        run: |
+          APK=plan-de-classe/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | tee /tmp/badging.txt
+          grep -q "package: name='fr.wokgui.planclasse' versionCode='11' versionName='11.0'" /tmp/badging.txt
+          unzip -l "$APK" | grep -q 'res/xml/widget_info.xml'
+          cp "$APK" Plan-de-classe-v11-widget.apk
       - uses: actions/upload-artifact@v4
         with:
           name: Plan-de-classe-v11-widget
