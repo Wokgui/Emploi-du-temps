@@ -1,0 +1,1 @@
+Plan de classe v4: nouvelle interface, réglages de rangées/tables, genres, icônes élèves, tableau/bureau mobiles.
