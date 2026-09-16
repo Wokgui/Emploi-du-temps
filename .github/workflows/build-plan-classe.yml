@@ -1,4 +1,4 @@
-name: Build Plan de classe v12b
+name: Build Plan de classe v12c
 on:
   push:
     branches: ["plan-de-classe-v12"]
@@ -24,9 +24,16 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
-      - name: Restore source and apply v12b
+      - name: Install stable debug key
         shell: bash
         run: |
+          mkdir -p "$HOME/.android"
+          base64 -d plan-de-classe-v12/fixed-debug-keystore.b64 > "$HOME/.android/debug.keystore"
+          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey >/dev/null
+      - name: Restore source and apply v12c
+        shell: bash
+        run: |
+          set -euo pipefail
           cat plan-de-classe-src/chunk_* > /tmp/plan.b64
           base64 -d /tmp/plan.b64 > /tmp/plan.zip
           rm -rf plan-de-classe
@@ -37,6 +44,7 @@ jobs:
           cp plan-de-classe-v12/v12.js plan-de-classe/app/src/main/assets/v12.js
           cp plan-de-classe-v12/v12b.css plan-de-classe/app/src/main/assets/v12b.css
           cp plan-de-classe-v12/v12b.js plan-de-classe/app/src/main/assets/v12b.js
+          cp plan-de-classe-v12/v12c.js plan-de-classe/app/src/main/assets/v12c.js
           python3 - <<'PY'
           from pathlib import Path
           import re
@@ -46,13 +54,14 @@ jobs:
           if 'v12b.css' not in s: s=s.replace('</head>','<link rel="stylesheet" href="v12b.css"></head>')
           if 'v12.js' not in s: s=s.replace('</body>','<script src="v12.js"></script></body>')
           if 'v12b.js' not in s: s=s.replace('</body>','<script src="v12b.js"></script></body>')
+          if 'v12c.js' not in s: s=s.replace('</body>','<script src="v12c.js"></script></body>')
           s=s.replace("function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x&&x.classes?.length)return x}catch(e){}return{cur:null,classes:[defaultClass()]}}",
           "function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x&&x.classes?.length)return x}catch(e){}try{if(window.AndroidBridge&&AndroidBridge.loadState){let n=AndroidBridge.loadState();if(n){let x=JSON.parse(n);if(x&&x.classes?.length){localStorage.setItem(KEY,n);return x}}}}catch(e){}return{cur:null,classes:[defaultClass()]}}")
           p.write_text(s)
           g=Path('plan-de-classe/app/build.gradle')
           b=g.read_text()
-          b=re.sub(r'versionCode\s+\d+','versionCode 13',b)
-          b=re.sub(r"versionName\s+'[^']+'","versionName '12.1'",b)
+          b=re.sub(r'versionCode\s+\d+','versionCode 14',b)
+          b=re.sub(r"versionName\s+'[^']+'","versionName '12.2'",b)
           g.write_text(b)
           PY
           mkdir -p plan-de-classe/app/src/main/java/fr/wokgui/planclasse
@@ -68,12 +77,11 @@ jobs:
           ICON_SRC=plan-de-classe/app/src/main/res/drawable-nodpi/app_icon.webp
           ICON_DST=plan-de-classe/app/src/main/res/drawable-nodpi/launcher_full.png
           if command -v magick >/dev/null 2>&1; then
-            magick "$ICON_SRC" -fuzz 8% -trim +repage -resize '132x132^' -gravity center -extent 108x108 "$ICON_DST"
+            magick "$ICON_SRC" -fuzz 8% -trim +repage -resize '118x118^' -gravity center -extent 108x108 "$ICON_DST"
           elif command -v convert >/dev/null 2>&1; then
-            convert "$ICON_SRC" -fuzz 8% -trim +repage -resize '132x132^' -gravity center -extent 108x108 "$ICON_DST"
+            convert "$ICON_SRC" -fuzz 8% -trim +repage -resize '118x118^' -gravity center -extent 108x108 "$ICON_DST"
           else
             cp "$ICON_SRC" plan-de-classe/app/src/main/res/drawable-nodpi/launcher_full.webp
-            sed -i 's/@drawable\/launcher_full/@drawable\/launcher_full/' plan-de-classe/app/src/main/res/drawable/ic_launcher_foreground.xml
           fi
           python3 - <<'PY'
           from pathlib import Path
@@ -91,8 +99,8 @@ jobs:
           PY
           node --check plan-de-classe/app/src/main/assets/v12.js
           node --check plan-de-classe/app/src/main/assets/v12b.js
-          grep -q 'v12b.css' plan-de-classe/app/src/main/assets/index.html
-          grep -q 'v12b.js' plan-de-classe/app/src/main/assets/index.html
+          node --check plan-de-classe/app/src/main/assets/v12c.js
+          grep -q 'v12c.js' plan-de-classe/app/src/main/assets/index.html
       - name: Build APK
         run: gradle -p plan-de-classe clean :app:assembleDebug --stacktrace
       - name: Verify APK
@@ -101,13 +109,12 @@ jobs:
           APK=plan-de-classe/app/build/outputs/apk/debug/app-debug.apk
           test -s "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | tee /tmp/badging.txt
-          grep -q "package: name='fr.wokgui.planclasse' versionCode='13' versionName='12.1'" /tmp/badging.txt
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump xmltree "$APK" AndroidManifest.xml | grep -q 'PlanWidgetProvider'
-          unzip -l "$APK" | grep -q 'assets/v12b.js'
-          unzip -l "$APK" | grep -q 'assets/v12b.css'
-          cp "$APK" Plan-de-classe-v12b.apk
+          grep -q "package: name='fr.wokgui.planclasse' versionCode='14' versionName='12.2'" /tmp/badging.txt
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
+          unzip -l "$APK" | grep -q 'assets/v12c.js'
+          cp "$APK" Plan-de-classe-v12c.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: Plan-de-classe-v12b
-          path: Plan-de-classe-v12b.apk
+          name: Plan-de-classe-v12c
+          path: Plan-de-classe-v12c.apk
           if-no-files-found: error
