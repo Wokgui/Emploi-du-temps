@@ -1,5 +1,9 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item>
+    <item
+        android:left="8dp"
+        android:top="8dp"
+        android:right="8dp"
+        android:bottom="8dp">
         <bitmap
             android:gravity="fill"
             android:src="@drawable/launcher_full" />
