@@ -32,6 +32,7 @@ jobs:
           rm -rf plan-de-classe
           mkdir -p plan-de-classe
           unzip -q /tmp/plan.zip -d plan-de-classe
+          sed -i 's/android:layout_width="55%"/android:layout_width="180dp"/; s/android:layout_width="30%"/android:layout_width="100dp"/' plan-de-classe/app/src/main/res/layout/widget_preview_layout.xml
           cp plan-de-classe-v12/v12.css plan-de-classe/app/src/main/assets/v12.css
           cp plan-de-classe-v12/v12.js plan-de-classe/app/src/main/assets/v12.js
           python3 - <<'PY'
@@ -41,7 +42,6 @@ jobs:
           s=p.read_text()
           if 'v12.css' not in s: s=s.replace('</head>','<link rel="stylesheet" href="v12.css"></head>')
           if 'v12.js' not in s: s=s.replace('</body>','<script src="v12.js"></script></body>')
-          # Restore persisted widget/app state after an update or WebView recreation.
           s=s.replace("function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x&&x.classes?.length)return x}catch(e){}return{cur:null,classes:[defaultClass()]}}",
           "function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x&&x.classes?.length)return x}catch(e){}try{if(window.AndroidBridge&&AndroidBridge.loadState){let n=AndroidBridge.loadState();if(n){let x=JSON.parse(n);if(x&&x.classes?.length){localStorage.setItem(KEY,n);return x}}}}catch(e){}return{cur:null,classes:[defaultClass()]}}")
           p.write_text(s)
