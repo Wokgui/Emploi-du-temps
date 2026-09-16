@@ -1,0 +1,36 @@
+name: Build Plan de classe APK
+
+on:
+  push:
+    branches:
+      - build/class-plan-apk
+    paths:
+      - 'class-plan-app/**'
+      - '.github/workflows/build-class-plan-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build debug APK
+        working-directory: class-plan-app
+        run: gradle :app:assembleDebug --no-daemon
+      - name: Rename APK
+        run: cp class-plan-app/app/build/outputs/apk/debug/app-debug.apk Plan-de-classe-3G34.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Plan-de-classe-3G34-APK
+          path: Plan-de-classe-3G34.apk
+          if-no-files-found: error
