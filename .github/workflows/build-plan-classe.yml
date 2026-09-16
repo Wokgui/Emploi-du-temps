@@ -1,4 +1,4 @@
-name: Build Plan de classe v14b
+name: Build Plan de classe v15
 on:
   push:
     branches: ["plan-de-classe-v12"]
@@ -36,26 +36,27 @@ jobs:
           base64 -d /tmp/plan.b64 > /tmp/plan.zip
           rm -rf plan-de-classe && mkdir plan-de-classe
           unzip -q /tmp/plan.zip -d plan-de-classe
-          sed -i 's/android:layout_width="55%"/android:layout_width="180dp"/; s/android:layout_width="30%"/android:layout_width="100dp"/' plan-de-classe/app/src/main/res/layout/widget_preview_layout.xml
           cp plan-de-classe-v12/v14.css plan-de-classe/app/src/main/assets/v14.css
           cp plan-de-classe-v12/v14b.css plan-de-classe/app/src/main/assets/v14b.css
           cp plan-de-classe-v12/v14.js plan-de-classe/app/src/main/assets/v14.js
+          cp plan-de-classe-v12/v15.css plan-de-classe/app/src/main/assets/v15.css
+          cp plan-de-classe-v12/v15.js plan-de-classe/app/src/main/assets/v15.js
           python3 - <<'PY'
           from pathlib import Path
           import re
           p=Path('plan-de-classe/app/src/main/assets/index.html')
           s=p.read_text()
-          s=re.sub(r'<link[^>]+href=["\']v(?:12|13|14)[^"\']*\.css["\'][^>]*>','',s)
-          s=re.sub(r'<script[^>]+src=["\']v(?:12|13|14)[^"\']*\.js["\'][^>]*></script>','',s)
-          s=s.replace('</head>','<link rel="stylesheet" href="v14.css"><link rel="stylesheet" href="v14b.css"></head>')
-          s=s.replace('</body>','<script src="v14.js"></script></body>')
+          s=re.sub(r'<link[^>]+href=["\']v(?:12|13|14|15)[^"\']*\.css["\'][^>]*>','',s)
+          s=re.sub(r'<script[^>]+src=["\']v(?:12|13|14|15)[^"\']*\.js["\'][^>]*></script>','',s)
+          s=s.replace('</head>','<link rel="stylesheet" href="v14.css"><link rel="stylesheet" href="v14b.css"><link rel="stylesheet" href="v15.css"></head>')
+          s=s.replace('</body>','<script src="v14.js"></script><script src="v15.js"></script></body>')
           s=s.replace("function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x&&x.classes?.length)return x}catch(e){}return{cur:null,classes:[defaultClass()]}}",
           "function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x&&x.classes?.length)return x}catch(e){}try{if(window.AndroidBridge&&AndroidBridge.loadState){let n=AndroidBridge.loadState();if(n){let x=JSON.parse(n);if(x&&x.classes?.length){localStorage.setItem(KEY,n);return x}}}}catch(e){}return{cur:null,classes:[defaultClass()]}}")
           p.write_text(s)
           g=Path('plan-de-classe/app/build.gradle')
           b=g.read_text()
-          b=re.sub(r'versionCode\s+\d+','versionCode 21',b)
-          b=re.sub(r"versionName\s+'[^']+'","versionName '14.1'",b)
+          b=re.sub(r'versionCode\s+\d+','versionCode 22',b)
+          b=re.sub(r"versionName\s+'[^']+'","versionName '15.0'",b)
           g.write_text(b)
           PY
           mkdir -p plan-de-classe/app/src/main/java/fr/wokgui/planclasse
@@ -64,6 +65,7 @@ jobs:
           cp plan-de-classe-v12/AndroidManifest.xml plan-de-classe/app/src/main/AndroidManifest.xml
           mkdir -p plan-de-classe/app/src/main/res/layout plan-de-classe/app/src/main/res/xml plan-de-classe/app/src/main/res/drawable plan-de-classe/app/src/main/res/drawable-nodpi plan-de-classe/app/src/main/res/mipmap-anydpi-v26 plan-de-classe/app/src/main/res/values
           cp plan-de-classe-v12/widget_plan.xml plan-de-classe/app/src/main/res/layout/widget_plan.xml
+          cp plan-de-classe-v12/widget_preview_layout.xml plan-de-classe/app/src/main/res/layout/widget_preview_layout.xml
           cp plan-de-classe-v12/widget_info.xml plan-de-classe/app/src/main/res/xml/widget_info.xml
           cp plan-de-classe-v12/ic_launcher_foreground.xml plan-de-classe/app/src/main/res/drawable/ic_launcher_foreground.xml
           cp plan-de-classe-v12/ic_launcher.xml plan-de-classe/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
@@ -84,8 +86,12 @@ jobs:
           p.write_text(s)
           PY
           node --check plan-de-classe/app/src/main/assets/v14.js
-          grep -q 'v14b.css' plan-de-classe/app/src/main/assets/index.html
-          grep -q 'desk::before,.desk::after' plan-de-classe/app/src/main/assets/v14b.css
+          node --check plan-de-classe/app/src/main/assets/v15.js
+          grep -q 'v15.css' plan-de-classe/app/src/main/assets/index.html
+          grep -q 'v15.js' plan-de-classe/app/src/main/assets/index.html
+          grep -q 'previewLayout="@layout/widget_preview_layout"' plan-de-classe/app/src/main/res/xml/widget_info.xml
+          grep -q 'widget_root' plan-de-classe/app/src/main/res/layout/widget_plan.xml
+          grep -q 'optJSONObject("palette")' plan-de-classe/app/src/main/java/fr/wokgui/planclasse/PlanWidgetProvider.java
       - name: Build APK
         run: gradle -p plan-de-classe clean :app:assembleDebug --stacktrace
       - name: Verify APK
@@ -94,12 +100,14 @@ jobs:
           APK=plan-de-classe/app/build/outputs/apk/debug/app-debug.apk
           test -s "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | tee /tmp/badging.txt
-          grep -q "package: name='fr.wokgui.planclasse' versionCode='21' versionName='14.1'" /tmp/badging.txt
+          grep -q "package: name='fr.wokgui.planclasse' versionCode='22' versionName='15.0'" /tmp/badging.txt
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
-          unzip -l "$APK" | grep -q 'assets/v14b.css'
-          cp "$APK" Plan-de-classe-v14b.apk
+          unzip -l "$APK" | grep -q 'assets/v15.js'
+          unzip -l "$APK" | grep -q 'assets/v15.css'
+          unzip -l "$APK" | grep -q 'res/layout/widget_preview_layout.xml'
+          cp "$APK" Plan-de-classe-v15.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: Plan-de-classe-v14b
-          path: Plan-de-classe-v14b.apk
+          name: Plan-de-classe-v15
+          path: Plan-de-classe-v15.apk
           if-no-files-found: error
