@@ -10,8 +10,8 @@ android {
         applicationId 'com.wokgui.schedulewidget'
         minSdk 26
         targetSdk 35
-        versionCode 660001
-        versionName '6.60'
+        versionCode 661001
+        versionName '6.61'
     }
 
     buildFeatures {
@@ -36,5 +36,5 @@ dependencies {
     implementation 'com.google.mlkit:translate:17.0.3'
 }
 
-// 6.60: stabilizes day/week/settings navigation, unifies gaps and lunch bands,
-// opens on the relevant day, and exports the complete application settings.
+// 6.61: removes duplicate lunch settings, makes lunch boundaries continuous,
+// and packs widget courses into single full-height rows.

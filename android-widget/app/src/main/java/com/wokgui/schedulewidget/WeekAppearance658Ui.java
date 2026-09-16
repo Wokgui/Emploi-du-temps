@@ -52,7 +52,7 @@ final class WeekAppearance658Ui {
                 function gapCell(cell){return !!(cell&&cell.classList.contains('gapCell'))}
                 function cleanInline(element){['background','background-color','box-shadow','outline','border-left','border-right','border-top','border-bottom','border-left-color','border-right-color','border-top-color','border-bottom-color','border-radius','padding','margin','color'].forEach(p=>element.style.removeProperty(p));element.removeAttribute('data-midi-edge-v14')}
                 function cleanCell(cell){
-                  cell.classList.remove('week658Course','week658Free','week658Gap','week658Lunch','week658LunchTop','week658LunchBottom','week658LunchCourseBoundary');
+                  cell.classList.remove('week658Course','week658Free','week658Gap','week658Lunch','week658LunchTop','week658LunchBottom','week658LunchRowTop','week658LunchRowBottom','week658LunchCourseBoundary');
                   cell.querySelectorAll(':scope > .week658LunchLabel').forEach(x=>x.remove());cleanInline(cell);
                 }
                 function courseOverlaps(day,start,end){
@@ -61,7 +61,7 @@ final class WeekAppearance658Ui {
                 function paint(){
                   const grid=document.getElementById('weekGrid');if(!grid)return;const settings=load(),data=rowsOf(grid);if(!data.rows.length)return;
                   grid.style.setProperty('--week658-free',settings.free);grid.style.setProperty('--week658-course',settings.course);grid.style.setProperty('--week658-lunch',settings.lunch);
-                  data.rows.forEach(row=>{row.time.classList.remove('week658LunchTime','week658LunchTop','week658LunchBottom');cleanInline(row.time);row.cells.forEach(cell=>{cleanCell(cell);if(courseCell(cell))cell.classList.add('week658Course');else{cell.classList.add('week658Free');if(gapCell(cell))cell.classList.add('week658Gap')}})});
+                  data.rows.forEach(row=>{row.time.classList.remove('week658LunchTime','week658LunchTop','week658LunchBottom','week658LunchRowTop','week658LunchRowBottom');cleanInline(row.time);row.cells.forEach(cell=>{cleanCell(cell);if(courseCell(cell))cell.classList.add('week658Course');else{cell.classList.add('week658Free');if(gapCell(cell))cell.classList.add('week658Gap')}})});
                   data.heads.forEach((head,dayIndex)=>{
                     const day=dayKey(head,dayIndex),cfg=settings.days[day]||{enabled:true,start:720,end:780};if(cfg.enabled===false||courseOverlaps(day,cfg.start,cfg.end))return;
                     const band=data.rows.filter(row=>row.start<cfg.end&&row.end>cfg.start);if(!band.length)return;
@@ -71,7 +71,14 @@ final class WeekAppearance658Ui {
                     const label=document.createElement('span');label.className='week658LunchLabel';label.textContent=tr('Midi','Lunch','Mittag');painted[0].appendChild(label);
                   });
                   const flags=data.rows.map(row=>row.cells.some(cell=>cell.classList.contains('week658Lunch')));let index=0;
-                  while(index<flags.length){if(!flags[index]){index++;continue}let last=index;while(last+1<flags.length&&flags[last+1])last++;for(let i=index;i<=last;i++)data.rows[i].time.classList.add('week658LunchTime');data.rows[index].time.classList.add('week658LunchTop');data.rows[last].time.classList.add('week658LunchBottom');index=last+1}
+                  while(index<flags.length){
+                    if(!flags[index]){index++;continue}let last=index;while(last+1<flags.length&&flags[last+1])last++;
+                    for(let i=index;i<=last;i++)data.rows[i].time.classList.add('week658LunchTime');
+                    const top=data.rows[index],bottom=data.rows[last];
+                    [top.time,...top.cells].forEach(cell=>cell.classList.add('week658LunchRowTop'));
+                    [bottom.time,...bottom.cells].forEach(cell=>cell.classList.add('week658LunchRowBottom'));
+                    index=last+1;
+                  }
                 }
                 const style=document.createElement('style');style.id='weekAppearance658Style';style.textContent=`
                   html body #viewWeek #weekGrid#weekGrid .wc.week658Free{background:var(--week658-free,#E6F2FF)!important;color:#53627a!important;box-shadow:none!important;border-radius:0!important}
@@ -80,8 +87,11 @@ final class WeekAppearance658Ui {
                   html body #viewWeek #weekGrid#weekGrid .wc.week658Lunch{position:relative!important;background:var(--week658-lunch,#FFE08A)!important;color:#59491d!important;box-shadow:none!important;border-left-color:transparent!important;border-right-color:transparent!important;border-radius:0!important;overflow:hidden!important}
                   html body #viewWeek #weekGrid#weekGrid .wc.week658Lunch>:not(.week658LunchLabel){display:none!important;visibility:hidden!important}
                   html body #viewWeek #weekGrid#weekGrid .wc.week658Lunch:before,html body #viewWeek #weekGrid#weekGrid .wc.week658Lunch:after{content:none!important;display:none!important}
-                  html body #viewWeek #weekGrid#weekGrid .week658LunchLabel{position:absolute!important;inset:0!important;display:flex!important;visibility:visible!important;align-items:center!important;justify-content:center!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;color:#59491d!important;font-weight:850!important;font-size:.88em!important;line-height:1!important;text-align:center!important;white-space:nowrap!important;z-index:10!important}
+                  html body #viewWeek #weekGrid#weekGrid .week658LunchLabel{position:absolute!important;inset:0!important;display:flex!important;visibility:visible!important;align-items:center!important;justify-content:center!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;color:#59491d!important;font-family:inherit!important;font-weight:800!important;font-size:13px!important;line-height:1!important;text-align:center!important;white-space:nowrap!important;z-index:10!important}
                   html body #viewWeek #weekGrid#weekGrid .wh.timecol.week658LunchTime{background:var(--week658-lunch,#FFE08A)!important;color:#59491d!important;border-right-color:transparent!important}
+                  html body #viewWeek #weekGrid#weekGrid .week658LunchRowTop{box-shadow:inset 0 1px 0 #D5B84D!important}
+                  html body #viewWeek #weekGrid#weekGrid .week658LunchRowBottom{box-shadow:inset 0 -1px 0 #D5B84D!important}
+                  html body #viewWeek #weekGrid#weekGrid .week658LunchRowTop.week658LunchRowBottom{box-shadow:inset 0 1px 0 #D5B84D,inset 0 -1px 0 #D5B84D!important}
                   html body #viewWeek #weekGrid#weekGrid .week658LunchTop{border-top:1px solid #D5B84D!important}
                   html body #viewWeek #weekGrid#weekGrid .week658LunchBottom{border-bottom:1px solid #D5B84D!important}
                   html body #viewWeek #weekGrid#weekGrid .lunch653Top,html body #viewWeek #weekGrid#weekGrid .lunch653Bottom{border-bottom-color:transparent!important}

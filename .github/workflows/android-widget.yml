@@ -2,11 +2,11 @@ name: Build and validate Android timetable
 
 on:
   push:
-    branches: [feature/widget-week-polish-658, fix/user-feedback-659, fix/calendar-polish-660]
+    branches: [feature/widget-week-polish-658, fix/user-feedback-659, fix/calendar-polish-660, fix/widget-compact-661]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 concurrency:
-  group: android-widget-${{ github.ref_name }}-v18
+  group: android-widget-${{ github.ref_name }}-v19
   cancel-in-progress: true
 permissions: {contents: read}
 
@@ -52,13 +52,13 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with: {gradle-version: '8.10.2'}
       - run: gradle clean :app:assembleDebug --stacktrace
-      - name: Verify and package 6.60
+      - name: Verify and package 6.61
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='660001' versionName='6.60'" app/build/outputs/apk/debug/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/emploi-du-temps-widget-6.60.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='661001' versionName='6.61'" app/build/outputs/apk/debug/badging.txt
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/emploi-du-temps-widget-6.61.apk
       - uses: actions/upload-artifact@v4
         with:
           name: emploi-du-temps-widget-apk
-          path: android-widget/app/build/outputs/apk/debug/emploi-du-temps-widget-6.60.apk
+          path: android-widget/app/build/outputs/apk/debug/emploi-du-temps-widget-6.61.apk
           if-no-files-found: error

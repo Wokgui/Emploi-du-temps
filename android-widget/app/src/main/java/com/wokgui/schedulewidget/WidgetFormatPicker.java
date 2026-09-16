@@ -76,7 +76,7 @@ final class WidgetFormatPicker {
         addOption(activity, choices,
                 WidgetLayoutStore.FORMAT_CONDENSED,
                 "Version 3 — Journée condensée",
-                "Liste chronologique plus compacte avec l’heure à gauche et un repère coloré pour suivre clairement l’enchaînement des cours.");
+                "Maximum de cours visibles : une seule ligne compacte par cours, avec l’heure à gauche et un repère coloré.");
         addOption(activity, choices,
                 WidgetLayoutStore.FORMAT_MINI,
                 "Version 4 — Mini planning",

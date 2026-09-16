@@ -3,6 +3,7 @@ package com.wokgui.schedulewidget;
 import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.TypedValue;
@@ -30,27 +31,21 @@ public final class CondensedCoursesService extends RemoteViewsService {
     }
 
     private static final class Item {
-        static final int COURSE = 0;
-        static final int LUNCH = 1;
-        static final int GAP = 2;
-
         final String label;
         final String sourceLabel;
         final String time;
         final String room;
         final String relative;
         final String colorId;
-        final int type;
         final int order;
         final boolean uncertain;
 
-        Item(String label, String sourceLabel, String time, String room, int type, int order,
+        Item(String label, String sourceLabel, String time, String room, int order,
              String relative, boolean uncertain, String colorId) {
             this.label = label;
             this.sourceLabel = sourceLabel == null ? label : sourceLabel;
             this.time = time;
             this.room = room == null ? "" : room;
-            this.type = type;
             this.order = order;
             this.relative = relative == null ? "" : relative;
             this.uncertain = uncertain;
@@ -97,25 +92,11 @@ public final class CondensedCoursesService extends RemoteViewsService {
             List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, target.date);
             if (courses == null || courses.isEmpty() || target.firstCourse >= courses.size()) return;
 
-            int lunchStart = ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, 4));
-            int lunchEnd = ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, 5));
             boolean futureDay = !sameDay(now, target.date);
-            int previousEnd = -1;
             boolean firstVisibleCourse = true;
-
-            if (!futureDay && target.firstCourse > 0) {
-                ScheduleData.Course previous = courses.get(target.firstCourse - 1);
-                ScheduleData.Course next = courses.get(target.firstCourse);
-                int from = ScheduleData.toMinutes(previous.end);
-                int to = ScheduleData.toMinutes(next.start);
-                if (nowMin >= from && nowMin < to) appendBreaks(from, to, lunchStart, lunchEnd, nowMin);
-            }
 
             for (int i = target.firstCourse; i < courses.size(); i++) {
                 ScheduleData.Course course = courses.get(i);
-                int start = ScheduleData.toMinutes(course.start);
-                if (previousEnd >= 0) appendBreaks(previousEnd, start, lunchStart, lunchEnd, -1);
-
                 int order = course.slot > 0 ? course.slot : i + 1;
                 String displayLabel = AdvancedSettingsStore.widgetCourseLabel(context, target.date, course);
                 items.add(new Item(
@@ -123,13 +104,11 @@ public final class CondensedCoursesService extends RemoteViewsService {
                         course.label,
                         course.start + " - " + course.end,
                         course.room,
-                        Item.COURSE,
                         order,
                         relativeLabel(now, target.date, course, futureDay && firstVisibleCourse),
                         course.uncertain,
                         course.color
                 ));
-                previousEnd = ScheduleData.toMinutes(course.end);
                 firstVisibleCourse = false;
             }
         }
@@ -137,8 +116,14 @@ public final class CondensedCoursesService extends RemoteViewsService {
         private int resolveWidgetHeightDp() {
             if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return 49;
             Bundle options = AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId);
-            return options == null ? 49
-                    : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 49);
+            if (options == null) return 49;
+            boolean landscape = context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
+            return WidgetHeightSizing.resolveHeightDp(
+                    options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0),
+                    options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0),
+                    landscape,
+                    49
+            );
         }
 
         private Target resolveTarget(Calendar now, int nowMin) {
@@ -161,60 +146,6 @@ public final class CondensedCoursesService extends RemoteViewsService {
             return null;
         }
 
-        private void appendBreaks(int from, int to, int lunchStart, int lunchEnd, int cutoffMinute) {
-            if (to <= from) return;
-            boolean lunchValid = lunchEnd > lunchStart;
-            if (!lunchValid || to <= lunchStart || from >= lunchEnd) {
-                addGap(from, to, cutoffMinute);
-                return;
-            }
-            if (from < lunchStart) addGap(from, Math.min(to, lunchStart), cutoffMinute);
-            if (from <= lunchStart && to >= lunchEnd
-                    && AdvancedSettingsStore.showLunch(context)
-                    && (cutoffMinute < 0 || lunchEnd > cutoffMinute)) {
-                String source = lunchLabel();
-                items.add(new Item(
-                        AdvancedSettingsStore.widgetLunchLabel(context, source),
-                        source,
-                        minuteLabel(lunchStart) + " - " + minuteLabel(lunchEnd),
-                        "",
-                        Item.LUNCH,
-                        0,
-                        lunchRelative(lunchEnd),
-                        false,
-                        ""
-                ));
-            }
-            if (to > lunchEnd) addGap(Math.max(from, lunchEnd), to, cutoffMinute);
-        }
-
-        private void addGap(int start, int end, int cutoffMinute) {
-            if (!AdvancedSettingsStore.showBreaks(context) || end <= start) return;
-            if (cutoffMinute >= 0 && end <= cutoffMinute) return;
-            String source = gapLabel();
-            items.add(new Item(
-                    AdvancedSettingsStore.widgetGapLabel(context, source),
-                    source,
-                    minuteLabel(start) + " - " + minuteLabel(end),
-                    "",
-                    Item.GAP,
-                    0,
-                    gapRelative(start, end),
-                    false,
-                    ""
-            ));
-        }
-
-        private String lunchLabel() {
-            String value = ScheduleStore.getLunchLabel(context);
-            return "Pause de midi".equalsIgnoreCase(value) ? "Midi" : value;
-        }
-
-        private String gapLabel() {
-            String value = ScheduleStore.getGapLabel(context);
-            return "Trou".equalsIgnoreCase(value) ? UiSettingsStore.t(context, "gap") : value;
-        }
-
         @Override
         public RemoteViews getViewAt(int position) {
             if (position < 0 || position >= items.size()) return null;
@@ -222,9 +153,8 @@ public final class CondensedCoursesService extends RemoteViewsService {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
 
             float scale = UiSettingsStore.widgetFontScale(context);
-            views.setTextViewTextSize(R.id.rowCondensedTime, TypedValue.COMPLEX_UNIT_SP, 9f * scale);
-            views.setTextViewTextSize(R.id.rowCondensedTitle, TypedValue.COMPLEX_UNIT_SP, 12f * scale);
-            views.setTextViewTextSize(R.id.rowCondensedMeta, TypedValue.COMPLEX_UNIT_SP, 9f * scale);
+            views.setTextViewTextSize(R.id.rowCondensedTime, TypedValue.COMPLEX_UNIT_SP, 8f * scale);
+            views.setTextViewTextSize(R.id.rowCondensedTitle, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
 
             views.setViewVisibility(R.id.rowContent, View.GONE);
             views.setViewVisibility(R.id.rowCondensedContent, View.VISIBLE);
@@ -233,29 +163,24 @@ public final class CondensedCoursesService extends RemoteViewsService {
             views.setViewVisibility(R.id.rowCondensedLineBottom, position == items.size() - 1 ? View.GONE : View.VISIBLE);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 int fittedHeight = CondensedRowSizing.rowHeightDp(widgetHeightDp, items.size(), position);
+                views.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
                 views.setViewLayoutHeight(R.id.rowCondensedContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
-                int halfLine = Math.max(22, fittedHeight / 2);
+                int halfLine = Math.max(14, fittedHeight / 2);
                 views.setViewLayoutHeight(R.id.rowCondensedLineTop, halfLine, TypedValue.COMPLEX_UNIT_DIP);
                 views.setViewLayoutHeight(R.id.rowCondensedLineBottom, halfLine, TypedValue.COMPLEX_UNIT_DIP);
+                views.setViewLayoutHeight(R.id.rowCondensedAccent, Math.max(18, fittedHeight - 8), TypedValue.COMPLEX_UNIT_DIP);
             }
 
             String title = item.label;
-            if (item.type == Item.COURSE && item.uncertain) title = "⚠ " + title;
+            if (item.uncertain) title = "⚠ " + title;
+            String meta = condensedMeta(item);
+            if (!meta.isEmpty()) title += " · " + meta;
             views.setTextViewText(R.id.rowCondensedTitle, title);
             views.setTextViewText(R.id.rowCondensedTime, AdvancedSettingsStore.showTimes(context) ? startTime(item.time) : "");
+            views.setTextViewText(R.id.rowCondensedMeta, "");
+            views.setViewVisibility(R.id.rowCondensedMeta, View.GONE);
 
-            String meta = condensedMeta(item);
-            views.setTextViewText(R.id.rowCondensedMeta, meta);
-            views.setViewVisibility(R.id.rowCondensedMeta, meta.isEmpty() ? View.GONE : View.VISIBLE);
-
-            int accent;
-            if (item.type == Item.LUNCH) {
-                accent = darken(WidgetPaletteStore.lunchBackground(context));
-            } else if (item.type == Item.GAP) {
-                accent = darken(WidgetPaletteStore.gapBackground(context));
-            } else {
-                accent = WidgetPaletteStore.courseColor(context, item.order, item.sourceLabel, item.colorId);
-            }
+            int accent = WidgetPaletteStore.courseColor(context, item.order, item.sourceLabel, item.colorId);
             views.setInt(R.id.rowCondensedAccent, "setBackgroundColor", accent);
 
             Intent fill = new Intent();
@@ -270,7 +195,7 @@ public final class CondensedCoursesService extends RemoteViewsService {
 
         private String condensedMeta(Item item) {
             List<String> parts = new ArrayList<>();
-            if (item.type == Item.COURSE && AdvancedSettingsStore.showRoom(context)) {
+            if (AdvancedSettingsStore.showRoom(context)) {
                 parts.add(UiSettingsStore.t(context, "room") + " " + (item.room.isEmpty() ? "—" : item.room));
             }
             if (AdvancedSettingsStore.showRemaining(context) && !item.relative.isEmpty()) parts.add(item.relative);
@@ -298,28 +223,6 @@ public final class CondensedCoursesService extends RemoteViewsService {
             return includeDate ? base + dateSuffix(targetDate) : base;
         }
 
-        private String lunchRelative(int endMinute) {
-            String lang = UiSettingsStore.language(context);
-            String time = "fr".equals(lang) && endMinute % 60 == 0
-                    ? (endMinute / 60) + " h"
-                    : minuteLabel(endMinute);
-            return UiSettingsStore.t(context, "backAt") + " " + time;
-        }
-
-        private String gapRelative(int start, int end) {
-            int duration = Math.max(0, end - start);
-            String lang = UiSettingsStore.language(context);
-            if (duration % 60 == 0 && duration >= 60) {
-                int hours = duration / 60;
-                if ("de".equals(lang)) return "Frei " + hours + " Std.";
-                if ("en".equals(lang)) return "Free " + hours + " h";
-                return "Libre " + hours + " h";
-            }
-            if ("de".equals(lang)) return "Frei " + duration + " Min.";
-            if ("en".equals(lang)) return "Free " + duration + " min";
-            return "Libre " + duration + " min";
-        }
-
         private String dateSuffix(Calendar date) {
             String lang = UiSettingsStore.language(context);
             Locale locale = "de".equals(lang) ? Locale.GERMANY : ("en".equals(lang) ? Locale.UK : Locale.FRANCE);
@@ -340,20 +243,6 @@ public final class CondensedCoursesService extends RemoteViewsService {
         private boolean sameDay(Calendar a, Calendar b) {
             return a.get(Calendar.YEAR) == b.get(Calendar.YEAR)
                     && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR);
-        }
-
-        private String minuteLabel(int minute) {
-            return String.format(Locale.FRANCE, "%02d:%02d", minute / 60, minute % 60);
-        }
-
-        private int darken(int color) {
-            int r = (color >> 16) & 0xFF;
-            int g = (color >> 8) & 0xFF;
-            int b = color & 0xFF;
-            r = Math.max(45, (int) (r * .62f));
-            g = Math.max(45, (int) (g * .62f));
-            b = Math.max(45, (int) (b * .62f));
-            return 0xFF000000 | (r << 16) | (g << 8) | b;
         }
 
         @Override public RemoteViews getLoadingView() { return null; }

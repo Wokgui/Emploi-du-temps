@@ -2,8 +2,8 @@ package com.wokgui.schedulewidget;
 
 /** Pure sizing rule shared by the condensed widget renderer and its JVM regression test. */
 final class CondensedRowSizing {
-    static final int NATURAL_ROW_DP = 44;
-    static final int PROGRESS_STRIP_DP = 5;
+    static final int NATURAL_ROW_DP = 28;
+    static final int PROGRESS_STRIP_DP = 3;
 
     private CondensedRowSizing() {}
 

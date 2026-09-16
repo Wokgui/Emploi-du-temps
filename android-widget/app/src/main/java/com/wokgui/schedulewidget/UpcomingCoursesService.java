@@ -3,6 +3,7 @@ package com.wokgui.schedulewidget;
 import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.TypedValue;
@@ -522,10 +523,15 @@ public class UpcomingCoursesService extends RemoteViewsService {
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && widgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
                 Bundle options = AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId);
-                int height = options == null ? 108 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 108);
-                int contentHeight = Math.max(96, height);
+                boolean landscape = context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
+                int minHeight = options == null ? 0 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0);
+                int maxHeight = options == null ? 0 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0);
+                int contentHeight = WidgetHeightSizing.contentHeightDp(minHeight, maxHeight, landscape,
+                        108, CondensedRowSizing.PROGRESS_STRIP_DP, 72);
+                v.setViewLayoutHeight(R.id.rowRoot, contentHeight, TypedValue.COMPLEX_UNIT_DIP);
                 v.setViewLayoutHeight(R.id.rowMiniContent, contentHeight, TypedValue.COMPLEX_UNIT_DIP);
-                v.setViewLayoutHeight(R.id.rowMiniTimeline, Math.max(70, contentHeight - 26), TypedValue.COMPLEX_UNIT_DIP);
+                v.setViewLayoutHeight(R.id.rowMiniHeader, 20, TypedValue.COMPLEX_UNIT_DIP);
+                v.setViewLayoutHeight(R.id.rowMiniTimeline, Math.max(52, contentHeight - 20), TypedValue.COMPLEX_UNIT_DIP);
             }
 
             for (int i = 0; i < CELL_IDS.length; i++) {
