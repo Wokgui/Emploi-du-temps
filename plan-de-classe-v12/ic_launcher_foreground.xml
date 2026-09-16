@@ -1,0 +1,15 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#F5B85B" android:pathData="M34,19 L74,19 Q78,19 78,23 L78,34 Q78,38 74,38 L34,38 Q30,38 30,34 L30,23 Q30,19 34,19 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M18,48 L40,48 Q43,48 43,51 L43,61 Q43,64 40,64 L18,64 Q15,64 15,61 L15,51 Q15,48 18,48 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M43,48 L65,48 Q68,48 68,51 L68,61 Q68,64 65,64 L43,64 Q40,64 40,61 L40,51 Q40,48 43,48 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M68,48 L90,48 Q93,48 93,51 L93,61 Q93,64 90,64 L68,64 Q65,64 65,61 L65,51 Q65,48 68,48 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M18,71 L40,71 Q43,71 43,74 L43,84 Q43,87 40,87 L18,87 Q15,87 15,84 L15,74 Q15,71 18,71 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M43,71 L65,71 Q68,71 68,74 L68,84 Q68,87 65,87 L43,87 Q40,87 40,84 L40,74 Q40,71 43,71 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M68,71 L90,71 Q93,71 93,74 L93,84 Q93,87 90,87 L68,87 Q65,87 65,84 L65,74 Q65,71 68,71 Z" />
+    <path android:fillColor="#12A082" android:pathData="M23,62 L35,62 Q38,62 38,65 L38,69 Q38,72 35,72 L23,72 Q20,72 20,69 L20,65 Q20,62 23,62 Z" />
+    <path android:fillColor="#12A082" android:pathData="M48,62 L60,62 Q63,62 63,65 L63,69 Q63,72 60,72 L48,72 Q45,72 45,69 L45,65 Q45,62 48,62 Z" />
+    <path android:fillColor="#12A082" android:pathData="M73,62 L85,62 Q88,62 88,65 L88,69 Q88,72 85,72 L73,72 Q70,72 70,69 L70,65 Q70,62 73,62 Z" />
+    <path android:fillColor="#12A082" android:pathData="M23,85 L35,85 Q38,85 38,88 L38,92 Q38,95 35,95 L23,95 Q20,95 20,92 L20,88 Q20,85 23,85 Z" />
+    <path android:fillColor="#12A082" android:pathData="M48,85 L60,85 Q63,85 63,88 L63,92 Q63,95 60,95 L48,95 Q45,95 45,92 L45,88 Q45,85 48,85 Z" />
+    <path android:fillColor="#12A082" android:pathData="M73,85 L85,85 Q88,85 88,88 L88,92 Q88,95 85,95 L73,95 Q70,95 70,92 L70,88 Q70,85 73,85 Z" />
+</vector>
