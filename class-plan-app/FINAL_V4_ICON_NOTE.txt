@@ -1,0 +1,1 @@
+Final v4 build uses the approved green classroom icon as the Android launcher icon.
