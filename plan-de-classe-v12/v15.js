@@ -33,11 +33,36 @@
       item.append(lab,input);grid.appendChild(item);
     });
   }
+  function fillLegend(container){
+    if(!container)return;
+    container.innerHTML='';
+    ['perturbateur','problematique','bavard','silencieux','handicap'].forEach(tag=>{
+      const pair=TAGS.find(x=>x[0]===tag),item=document.createElement('div');item.className='legenditem';
+      const b=document.createElement('span');b.className='tagb on';b.dataset.tag=tag;b.innerHTML=SVG[tag];
+      const t=document.createElement('span');t.textContent=pair?.[1]||tag;item.append(b,t);container.appendChild(item);
+    });
+  }
+  function addStudentLegend(){
+    const view=document.getElementById('v-students');if(!view)return;
+    let card=document.getElementById('studentLegendCardV15');
+    if(!card){
+      card=document.createElement('div');card.id='studentLegendCardV15';card.className='card section student-legend-card';
+      const h=document.createElement('h2');h.textContent='Signification des icônes';
+      const box=document.createElement('div');box.id='studentLegendV15';box.className='statuslegend studentlegend';
+      card.append(h,box);view.appendChild(card);
+    }
+    fillLegend(document.getElementById('studentLegendV15'));
+  }
+  function hideSettingsLegend(){
+    const old=document.getElementById('statusLegend');const card=old?.closest('.card.section');if(card)card.style.display='none';
+  }
   const oldCfg=renderCfg;
-  renderCfg=function(){applyPalette();oldCfg();addPaletteCard()};
+  renderCfg=function(){applyPalette();oldCfg();addPaletteCard();hideSettingsLegend()};
+  const oldStudents=renderStudents;
+  renderStudents=function(){oldStudents();addStudentLegend()};
   const oldRestore=restore;
   restore=function(s){oldRestore(s);applyPalette()};
   applyPalette();
   renderCfg();renderStudents();renderPlan();save();
-  window.__planV15={version:'15.0'};
+  window.__planV15={version:'15.1'};
 })();
