@@ -1,4 +1,4 @@
-name: Build Plan de classe v15.2
+name: Build Plan de classe v15.3
 on:
   push:
     branches: ["plan-de-classe-v12"]
@@ -58,8 +58,8 @@ jobs:
 
           g=Path('plan-de-classe/app/build.gradle')
           b=g.read_text()
-          b=re.sub(r'versionCode\s+\d+','versionCode 24',b)
-          b=re.sub(r"versionName\s+'[^']+'","versionName '15.2'",b)
+          b=re.sub(r'versionCode\s+\d+','versionCode 25',b)
+          b=re.sub(r"versionName\s+'[^']+'","versionName '15.3'",b)
           g.write_text(b)
           PY
 
@@ -67,7 +67,7 @@ jobs:
           cp plan-de-classe-v12/MainActivity.java plan-de-classe/app/src/main/java/fr/wokgui/planclasse/MainActivity.java
           cp plan-de-classe-v12/AndroidManifest.xml plan-de-classe/app/src/main/AndroidManifest.xml
 
-          # Remove the widget completely from the packaged application.
+          # Keep widget completely removed.
           rm -f plan-de-classe/app/src/main/java/fr/wokgui/planclasse/PlanWidgetProvider.java
           find plan-de-classe/app/src/main/res -type f -name 'widget_*' -delete || true
           rm -f plan-de-classe/app/src/main/res/xml/widget_info.xml
@@ -100,7 +100,8 @@ jobs:
           grep -q 'v15.css' plan-de-classe/app/src/main/assets/index.html
           grep -q 'v15.js' plan-de-classe/app/src/main/assets/index.html
           grep -q 'studentLegendCardV15' plan-de-classe/app/src/main/assets/v15.js
-          grep -q 'ATTACHED_LAYOUT_MARK' plan-de-classe/app/src/main/assets/v15.js
+          grep -q 'window.v5OpenStudentEditor' plan-de-classe/app/src/main/assets/v15.js
+          grep -q 'v15-editor-tags' plan-de-classe/app/src/main/assets/v15.css
           ! grep -q 'PlanWidgetProvider' plan-de-classe/app/src/main/AndroidManifest.xml
           test ! -e plan-de-classe/app/src/main/res/xml/widget_info.xml
 
@@ -113,16 +114,16 @@ jobs:
           APK=plan-de-classe/app/build/outputs/apk/debug/app-debug.apk
           test -s "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | tee /tmp/badging.txt
-          grep -q "package: name='fr.wokgui.planclasse' versionCode='24' versionName='15.2'" /tmp/badging.txt
+          grep -q "package: name='fr.wokgui.planclasse' versionCode='25' versionName='15.3'" /tmp/badging.txt
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
           unzip -l "$APK" | grep -q 'assets/v15.js'
           unzip -l "$APK" | grep -q 'assets/v15.css'
           if unzip -l "$APK" | grep -qE 'widget_info|widget_plan|widget_preview|PlanWidgetProvider'; then echo 'Widget trace found'; exit 1; fi
           if "$ANDROID_HOME/build-tools/35.0.0/aapt" dump xmltree "$APK" AndroidManifest.xml | grep -q 'PlanWidgetProvider'; then echo 'Widget receiver found'; exit 1; fi
-          cp "$APK" Plan-de-classe-v15-2.apk
+          cp "$APK" Plan-de-classe-v15-3.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Plan-de-classe-v15-2
-          path: Plan-de-classe-v15-2.apk
+          name: Plan-de-classe-v15-3
+          path: Plan-de-classe-v15-3.apk
           if-no-files-found: error
