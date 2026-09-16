@@ -1,0 +1,89 @@
+/* v12g: reliable native clicks + cleaner classroom tables */
+#v-plan button,#v-config button,.premium-foot .nav{
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+#v-plan button:active,#v-config button:active,.premium-foot .nav:active{
+  transform:scale(.97);
+  filter:brightness(.97);
+}
+#rowCfg button,#objButtons button,#addRow,#rmRow,#mix,#undo,#redo{
+  pointer-events:auto!important;
+  cursor:pointer;
+  user-select:none;
+}
+
+/* One white tile = one physical desk = one pupil. */
+#room .desk{
+  display:block!important;
+  min-width:0!important;
+  height:100%!important;
+  padding:0!important;
+  margin-left:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+#room .seat{
+  position:relative;
+  box-sizing:border-box;
+  width:100%!important;
+  height:100%!important;
+  min-height:26px!important;
+  padding:4px 7px!important;
+  border:1px solid #c7d1d4!important;
+  border-radius:9px!important;
+  background:linear-gradient(180deg,#ffffff 0%,#fbfcfc 100%)!important;
+  box-shadow:0 1px 2px rgba(30,55,60,.10),0 3px 8px rgba(30,55,60,.05)!important;
+  color:#1d2b30!important;
+  overflow:hidden;
+}
+#room .seat.boy,#room .seat.girl{
+  background:linear-gradient(180deg,#ffffff 0%,#fbfcfc 100%)!important;
+}
+#room .seat::before{
+  content:'';
+  position:absolute;
+  left:7px;right:7px;top:3px;
+  height:1px;
+  border-radius:1px;
+  background:rgba(255,255,255,.95);
+  pointer-events:none;
+}
+#room .seat.boy::after,#room .seat.girl::after{
+  content:'';
+  position:absolute;
+  left:8px;right:8px;bottom:2px;
+  height:2px;
+  border-radius:2px;
+  pointer-events:none;
+  opacity:.75;
+}
+#room .seat.boy::after{background:#8fbbe3}
+#room .seat.girl::after{background:#e8a9c4}
+#room .seat.empty::after{display:none}
+#room .seat.pick{
+  outline:2px solid #0b8977!important;
+  outline-offset:1px!important;
+  box-shadow:0 0 0 3px rgba(11,137,119,.12),0 2px 7px rgba(30,55,60,.12)!important;
+}
+#room .seatname{
+  display:block;
+  min-width:0;
+  max-width:100%;
+  flex:1 1 auto;
+  text-align:center;
+  line-height:1.1;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  position:relative;
+  z-index:1;
+}
+#room .seaticons{position:relative;z-index:1}
+#room .tgroup.joined{gap:0!important}
+#room .tgroup.joined .desk:not(:first-child){margin-left:-1px!important}
+#room .tgroup.joined .desk:not(:first-child) .seat{border-top-left-radius:3px!important;border-bottom-left-radius:3px!important}
+#room .tgroup.joined .desk:not(:last-child) .seat{border-top-right-radius:3px!important;border-bottom-right-radius:3px!important}
+#room .tgroup.isolated{gap:clamp(8px,1.7vw,16px)!important}
