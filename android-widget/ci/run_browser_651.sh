@@ -3,8 +3,9 @@ set -euo pipefail
 mkdir -p smoke-browser/classes smoke-browser/chunks
 src=android-widget/app/src/main/java/com/wokgui/schedulewidget
 mapfile -t sources < <(find "$src" -name '*Ui*.java' ! -name UiSettingsStore.java)
-javac -encoding UTF-8 -d smoke-browser/classes "${sources[@]}" "$src/RuntimeRepair644.java" "$src/LegacyChainRepair651.java" android-widget/ci/browser/*.java
+javac -encoding UTF-8 -d smoke-browser/classes "${sources[@]}" "$src/RuntimeRepair644.java" "$src/LegacyChainRepair651.java" "$src/CondensedRowSizing.java" android-widget/ci/browser/*.java
 java -cp smoke-browser/classes com.wokgui.schedulewidget.ExportUi smoke-browser/chunks
+java -cp smoke-browser/classes com.wokgui.schedulewidget.CondensedRowSizingTest
 
 echo 'BROWSER_SUITE|legacy|start'
 EDT_UI_CHUNKS=smoke-browser/chunks timeout 180s node android-widget/ci/browser/verify.cjs

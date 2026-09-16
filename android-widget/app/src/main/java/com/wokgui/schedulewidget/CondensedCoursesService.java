@@ -3,6 +3,8 @@ package com.wokgui.schedulewidget;
 import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
+import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.RemoteViews;
@@ -68,9 +70,9 @@ public final class CondensedCoursesService extends RemoteViewsService {
 
     private static final class Factory implements RemoteViewsFactory {
         private final Context context;
-        @SuppressWarnings("unused")
         private final int widgetId;
         private final List<Item> items = new ArrayList<>();
+        private int widgetHeightDp = 49;
 
         Factory(Context context, int widgetId) {
             this.context = context;
@@ -85,6 +87,7 @@ public final class CondensedCoursesService extends RemoteViewsService {
         private void reload() {
             items.clear();
             ScheduleStore.ensureInitialized(context);
+            widgetHeightDp = resolveWidgetHeightDp();
 
             Calendar now = Calendar.getInstance();
             int nowMin = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
@@ -129,6 +132,13 @@ public final class CondensedCoursesService extends RemoteViewsService {
                 previousEnd = ScheduleData.toMinutes(course.end);
                 firstVisibleCourse = false;
             }
+        }
+
+        private int resolveWidgetHeightDp() {
+            if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return 49;
+            Bundle options = AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId);
+            return options == null ? 49
+                    : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 49);
         }
 
         private Target resolveTarget(Calendar now, int nowMin) {
@@ -221,6 +231,13 @@ public final class CondensedCoursesService extends RemoteViewsService {
             views.setViewVisibility(R.id.rowMiniContent, View.GONE);
             views.setViewVisibility(R.id.rowCondensedLineTop, position == 0 ? View.GONE : View.VISIBLE);
             views.setViewVisibility(R.id.rowCondensedLineBottom, position == items.size() - 1 ? View.GONE : View.VISIBLE);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                int fittedHeight = CondensedRowSizing.rowHeightDp(widgetHeightDp, items.size(), position);
+                views.setViewLayoutHeight(R.id.rowCondensedContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                int halfLine = Math.max(22, fittedHeight / 2);
+                views.setViewLayoutHeight(R.id.rowCondensedLineTop, halfLine, TypedValue.COMPLEX_UNIT_DIP);
+                views.setViewLayoutHeight(R.id.rowCondensedLineBottom, halfLine, TypedValue.COMPLEX_UNIT_DIP);
+            }
 
             String title = item.label;
             if (item.type == Item.COURSE && item.uncertain) title = "⚠ " + title;

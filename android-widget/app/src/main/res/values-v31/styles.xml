@@ -9,5 +9,9 @@
         <item name="android:windowLightNavigationBar">true</item>
         <item name="android:windowActionModeOverlay">true</item>
         <item name="android:windowBackground">@drawable/launch_window</item>
+        <item name="android:windowSplashScreenBackground">#087CC5</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_mark</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">#087CC5</item>
+        <item name="android:windowSplashScreenAnimationDuration">180</item>
     </style>
 </resources>

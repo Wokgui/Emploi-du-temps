@@ -35,7 +35,7 @@ final class ChunkedUiScripts {
         add(out, ActionChainUi651.script());
         add(out, SettingsLunchPolish653Ui.script());
         add(out, LunchBandContinuity656Ui.script());
-        // 6.58 owns the final week colours and per-day lunch position.
+        // The 6.58 layer owns week appearance; 6.59 repairs its settings host.
         add(out, WeekAppearance658Ui.script());
         if (BuildConfig.DEBUG) add(out, HeavyPanelPerformanceUi648.script());
         add(out, UiRuntimeBundle.idleImportScript());
@@ -68,8 +68,9 @@ final class ChunkedUiScripts {
     private static void add(List<String> out, String script) {
         if (script == null || script.trim().isEmpty()) return;
         script = LegacyChainRepair651.repair(UiRuntimeBundle.prepareChunk(script));
-        out.add(script.replace("APP_VERSION='6.45'", "APP_VERSION='6.58'")
-                      .replace("APP_VERSION='6.55'", "APP_VERSION='6.58'")
-                      .replace("APP_VERSION='6.56'", "APP_VERSION='6.58'"));
+        out.add(script.replace("APP_VERSION='6.45'", "APP_VERSION='6.59'")
+                      .replace("APP_VERSION='6.55'", "APP_VERSION='6.59'")
+                      .replace("APP_VERSION='6.56'", "APP_VERSION='6.59'")
+                      .replace("APP_VERSION='6.58'", "APP_VERSION='6.59'"));
     }
 }

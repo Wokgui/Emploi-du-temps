@@ -38,6 +38,7 @@ public class MainActivity extends Activity {
     private static final int PICK_BACKUP = 5202;
     private static final int NOTIFICATION_PERMISSION = 5203;
     private WebView webView;
+    private View startupOverlay;
     private boolean forceWeekOpening = false;
     private boolean pageLoaded = false;
     private boolean uiInjected = false;
@@ -55,6 +56,7 @@ public class MainActivity extends Activity {
         ProfileStore.ensure(this);
         setContentView(R.layout.activity_main);
         webView = findViewById(R.id.webView);
+        startupOverlay = findViewById(R.id.startupOverlay);
         webView.setBackgroundColor(0xFFF6F8FB);
         hideWebViewUntilWeekIsReady();
 
@@ -134,17 +136,35 @@ public class MainActivity extends Activity {
 
     private void hideWebViewUntilWeekIsReady() {
         if (webView == null) return;
+        if (startupOverlay != null) {
+            startupOverlay.animate().cancel();
+            startupOverlay.setAlpha(1f);
+            startupOverlay.setVisibility(View.VISIBLE);
+        }
         webView.setAlpha(0f);
         webView.setVisibility(View.INVISIBLE);
     }
 
+    private void revealWebViewNow() {
+        if (webView == null || !pageLoaded) return;
+        webView.setAlpha(1f);
+        webView.setVisibility(View.VISIBLE);
+        if (startupOverlay == null || startupOverlay.getVisibility() != View.VISIBLE) return;
+        startupOverlay.animate().cancel();
+        startupOverlay.animate()
+                .alpha(0f)
+                .setDuration(140L)
+                .withEndAction(() -> {
+                    if (startupOverlay == null) return;
+                    startupOverlay.setVisibility(View.GONE);
+                    startupOverlay.setAlpha(1f);
+                })
+                .start();
+    }
+
     private void revealWebViewStable() {
         if (webView == null || !pageLoaded) return;
-        webView.postDelayed(() -> {
-            if (webView == null || !pageLoaded) return;
-            webView.setAlpha(1f);
-            webView.setVisibility(View.VISIBLE);
-        }, 70);
+        webView.post(this::revealWebViewNow);
     }
 
     private void reloadForLanguageUi() {
@@ -189,8 +209,7 @@ public class MainActivity extends Activity {
                 webView.evaluateJavascript(script, second -> {
                     primeWeekBadge();
                     if (getIntent() != null) getIntent().removeExtra("open_mode");
-                    webView.setAlpha(1f);
-                    webView.setVisibility(View.VISIBLE);
+                    revealWebViewNow();
                     forceWeekOpening = false;
                 }), 45));
     }
