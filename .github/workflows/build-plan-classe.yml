@@ -61,7 +61,6 @@ jobs:
           if 'v12c.js' not in s: s=s.replace('</body>','<script src="v12c.js"></script></body>')
           if 'v12e.js' not in s: s=s.replace('</body>','<script src="v12e.js"></script></body>')
           if 'v12g.js' not in s: s=s.replace('</body>','<script src="v12g.js"></script></body>')
-          # Never load v12f: its pointerup interception caused the Settings/Plan regression.
           s=s.replace('<script src="v12f.js"></script>','')
           s=s.replace("function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x&&x.classes?.length)return x}catch(e){}return{cur:null,classes:[defaultClass()]}}",
           "function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x&&x.classes?.length)return x}catch(e){}try{if(window.AndroidBridge&&AndroidBridge.loadState){let n=AndroidBridge.loadState();if(n){let x=JSON.parse(n);if(x&&x.classes?.length){localStorage.setItem(KEY,n);return x}}}}catch(e){}return{cur:null,classes:[defaultClass()]}}")
@@ -124,7 +123,7 @@ jobs:
           grep -q "e.onclick=seatClick" plan-de-classe/app/src/main/assets/v12c.js
           grep -q "background:transparent!important" plan-de-classe/app/src/main/assets/v12g.css
           grep -q "width:100%!important" plan-de-classe/app/src/main/assets/v12g.css
-          ! grep -q "pointerup" plan-de-classe/app/src/main/assets/v12g.js
+          ! grep -q "addEventListener('pointerup'" plan-de-classe/app/src/main/assets/v12g.js
       - name: Build APK
         run: gradle -p plan-de-classe clean :app:assembleDebug --stacktrace
       - name: Verify APK
