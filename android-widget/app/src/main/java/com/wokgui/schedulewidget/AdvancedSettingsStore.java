@@ -151,6 +151,32 @@ final class AdvancedSettingsStore {
         return value.isEmpty() ? (fallback == null ? "" : fallback) : value;
     }
 
+    private static JSONObject weekLunchDay(Context context, int day) {
+        JSONObject appearance = json(context).optJSONObject("weekAppearance658");
+        JSONObject days = appearance == null ? null : appearance.optJSONObject("days");
+        JSONObject value = days == null ? null : days.optJSONObject(String.valueOf(day));
+        return value == null ? new JSONObject() : value;
+    }
+
+    static boolean weekLunchEnabled(Context context, int day) {
+        return weekLunchDay(context, day).optBoolean("enabled", true);
+    }
+
+    static int weekLunchStartMinute(Context context, int day) {
+        return clamp(weekLunchDay(context, day).optInt("start", 12 * 60), 0, 23 * 60);
+    }
+
+    static int weekLunchEndMinute(Context context, int day) {
+        int start = weekLunchStartMinute(context, day);
+        return clamp(weekLunchDay(context, day).optInt("end", start + 60), start + 1, 24 * 60);
+    }
+
+    static String weekLunchColor(Context context) {
+        JSONObject appearance = json(context).optJSONObject("weekAppearance658");
+        String value = appearance == null ? "" : appearance.optString("lunch", "").trim();
+        return value.matches("#[0-9A-Fa-f]{6}") ? value.toUpperCase(Locale.ROOT) : "#FFE08A";
+    }
+
     static String widgetCourseLabel(Context context, Calendar date, ScheduleData.Course course) {
         if (course == null) return "";
         String fallback = course.label == null ? "" : course.label;

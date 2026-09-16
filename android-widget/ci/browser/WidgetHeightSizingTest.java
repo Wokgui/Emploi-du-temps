@@ -9,9 +9,9 @@ public final class WidgetHeightSizingTest {
         equal(40, WidgetHeightSizing.resolveHeightDp(0, 0, false, 40), "fallback height");
         equal(99, WidgetHeightSizing.contentHeightDp(51, 102, false, 40, 3, 28), "portrait content");
         equal(72, WidgetHeightSizing.contentHeightDp(40, 40, false, 40, 3, 72), "mini minimum");
-        equal(28, CondensedRowSizing.NATURAL_ROW_DP, "compact row");
+        equal(22, CondensedRowSizing.NATURAL_ROW_DP, "compact row");
         equal(3, CondensedRowSizing.PROGRESS_STRIP_DP, "progress strip");
-        System.out.println("widget_height_and_compact_rows_661=passed");
+        System.out.println("widget_height_and_compact_rows_662=passed");
     }
 
     private static void equal(int expected, int actual, String label) {

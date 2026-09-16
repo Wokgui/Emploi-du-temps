@@ -7,6 +7,7 @@ import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
@@ -31,21 +32,26 @@ public final class CondensedCoursesService extends RemoteViewsService {
     }
 
     private static final class Item {
+        static final int COURSE = 0;
+        static final int LUNCH = 1;
+
         final String label;
         final String sourceLabel;
         final String time;
         final String room;
         final String relative;
         final String colorId;
+        final int type;
         final int order;
         final boolean uncertain;
 
-        Item(String label, String sourceLabel, String time, String room, int order,
+        Item(String label, String sourceLabel, String time, String room, int type, int order,
              String relative, boolean uncertain, String colorId) {
             this.label = label;
             this.sourceLabel = sourceLabel == null ? label : sourceLabel;
             this.time = time;
             this.room = room == null ? "" : room;
+            this.type = type;
             this.order = order;
             this.relative = relative == null ? "" : relative;
             this.uncertain = uncertain;
@@ -94,9 +100,22 @@ public final class CondensedCoursesService extends RemoteViewsService {
 
             boolean futureDay = !sameDay(now, target.date);
             boolean firstVisibleCourse = true;
+            int day = target.date.get(Calendar.DAY_OF_WEEK);
+            int lunchStart = AdvancedSettingsStore.weekLunchStartMinute(context, day);
+            int lunchEnd = AdvancedSettingsStore.weekLunchEndMinute(context, day);
+            boolean lunchVisible = AdvancedSettingsStore.showLunch(context)
+                    && AdvancedSettingsStore.weekLunchEnabled(context, day)
+                    && lunchEnd > lunchStart
+                    && (futureDay || lunchEnd > nowMin)
+                    && !overlaps(courses, lunchStart, lunchEnd);
+            boolean lunchAdded = false;
 
             for (int i = target.firstCourse; i < courses.size(); i++) {
                 ScheduleData.Course course = courses.get(i);
+                if (lunchVisible && !lunchAdded && ScheduleData.toMinutes(course.start) >= lunchEnd) {
+                    addLunch(lunchStart, lunchEnd);
+                    lunchAdded = true;
+                }
                 int order = course.slot > 0 ? course.slot : i + 1;
                 String displayLabel = AdvancedSettingsStore.widgetCourseLabel(context, target.date, course);
                 items.add(new Item(
@@ -104,6 +123,7 @@ public final class CondensedCoursesService extends RemoteViewsService {
                         course.label,
                         course.start + " - " + course.end,
                         course.room,
+                        Item.COURSE,
                         order,
                         relativeLabel(now, target.date, course, futureDay && firstVisibleCourse),
                         course.uncertain,
@@ -111,6 +131,26 @@ public final class CondensedCoursesService extends RemoteViewsService {
                 ));
                 firstVisibleCourse = false;
             }
+            if (lunchVisible && !lunchAdded) addLunch(lunchStart, lunchEnd);
+        }
+
+        private boolean overlaps(List<ScheduleData.Course> courses, int start, int end) {
+            for (ScheduleData.Course course : courses) {
+                if (ScheduleData.toMinutes(course.start) < end && ScheduleData.toMinutes(course.end) > start) return true;
+            }
+            return false;
+        }
+
+        private void addLunch(int start, int end) {
+            String appLabel = ScheduleStore.getLunchLabel(context);
+            if ("Pause de midi".equalsIgnoreCase(appLabel)) appLabel = UiSettingsStore.t(context, "lunch");
+            String label = AdvancedSettingsStore.widgetLunchLabel(context, appLabel);
+            items.add(new Item(label, appLabel, minuteLabel(start) + " - " + minuteLabel(end), "",
+                    Item.LUNCH, 0, "", false, ""));
+        }
+
+        private String minuteLabel(int minute) {
+            return String.format(Locale.US, "%02d:%02d", minute / 60, minute % 60);
         }
 
         private int resolveWidgetHeightDp() {
@@ -153,8 +193,8 @@ public final class CondensedCoursesService extends RemoteViewsService {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
 
             float scale = UiSettingsStore.widgetFontScale(context);
-            views.setTextViewTextSize(R.id.rowCondensedTime, TypedValue.COMPLEX_UNIT_SP, 8f * scale);
-            views.setTextViewTextSize(R.id.rowCondensedTitle, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
+            views.setTextViewTextSize(R.id.rowCondensedTime, TypedValue.COMPLEX_UNIT_SP, 7f * scale);
+            views.setTextViewTextSize(R.id.rowCondensedTitle, TypedValue.COMPLEX_UNIT_SP, 9f * scale);
 
             views.setViewVisibility(R.id.rowContent, View.GONE);
             views.setViewVisibility(R.id.rowCondensedContent, View.VISIBLE);
@@ -165,22 +205,37 @@ public final class CondensedCoursesService extends RemoteViewsService {
                 int fittedHeight = CondensedRowSizing.rowHeightDp(widgetHeightDp, items.size(), position);
                 views.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
                 views.setViewLayoutHeight(R.id.rowCondensedContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
-                int halfLine = Math.max(14, fittedHeight / 2);
+                int halfLine = Math.max(10, fittedHeight / 2);
                 views.setViewLayoutHeight(R.id.rowCondensedLineTop, halfLine, TypedValue.COMPLEX_UNIT_DIP);
                 views.setViewLayoutHeight(R.id.rowCondensedLineBottom, halfLine, TypedValue.COMPLEX_UNIT_DIP);
-                views.setViewLayoutHeight(R.id.rowCondensedAccent, Math.max(18, fittedHeight - 8), TypedValue.COMPLEX_UNIT_DIP);
+                views.setViewLayoutHeight(R.id.rowCondensedAccent, Math.max(14, fittedHeight - 6), TypedValue.COMPLEX_UNIT_DIP);
             }
 
             String title = item.label;
             if (item.uncertain) title = "⚠ " + title;
-            String meta = condensedMeta(item);
+            String meta = item.type == Item.LUNCH ? "" : condensedMeta(item);
             if (!meta.isEmpty()) title += " · " + meta;
             views.setTextViewText(R.id.rowCondensedTitle, title);
             views.setTextViewText(R.id.rowCondensedTime, AdvancedSettingsStore.showTimes(context) ? startTime(item.time) : "");
             views.setTextViewText(R.id.rowCondensedMeta, "");
             views.setViewVisibility(R.id.rowCondensedMeta, View.GONE);
 
-            int accent = WidgetPaletteStore.courseColor(context, item.order, item.sourceLabel, item.colorId);
+            int accent;
+            if (item.type == Item.LUNCH) {
+                int background = WidgetPaletteStore.lunchBackground(context);
+                int text = WidgetPaletteStore.lunchText(context);
+                views.setInt(R.id.rowCondensedContent, "setBackgroundColor", background);
+                views.setTextColor(R.id.rowCondensedTime, text);
+                views.setTextColor(R.id.rowCondensedTitle, text);
+                views.setInt(R.id.rowCondensedTitle, "setGravity", Gravity.CENTER);
+                accent = text;
+            } else {
+                views.setInt(R.id.rowCondensedContent, "setBackgroundColor", 0x00FFFFFF);
+                views.setTextColor(R.id.rowCondensedTime, 0xFF5D6B82);
+                views.setTextColor(R.id.rowCondensedTitle, 0xFF17213A);
+                views.setInt(R.id.rowCondensedTitle, "setGravity", Gravity.START | Gravity.CENTER_VERTICAL);
+                accent = WidgetPaletteStore.courseColor(context, item.order, item.sourceLabel, item.colorId);
+            }
             views.setInt(R.id.rowCondensedAccent, "setBackgroundColor", accent);
 
             Intent fill = new Intent();

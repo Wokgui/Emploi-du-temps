@@ -27,6 +27,17 @@ final class WeekAppearance658Ui {
                   return out;
                 }
                 function nativeRoot(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
+                function scheduleRoot(){try{return JSON.parse(AndroidSchedule.loadSchedule()||'{}')}catch(e){return {}}}
+                function visibleBreakLabel(kind,fallback){
+                  try{
+                    const fn=kind==='lunch'?window.lunchLabelText:window.gapLabelText;
+                    if(typeof fn==='function')return String(fn()||'').split('\u200B').join('').trim().slice(0,28);
+                    const root=scheduleRoot(),value=root&&root._breaks?root._breaks[kind+'Label']:fallback;
+                    return String(value==null?'':value).split('\u200B').join('').trim().slice(0,28);
+                  }catch(e){return fallback}
+                }
+                function lunchLabel(){const value=visibleBreakLabel('lunch',tr('Midi','Lunch','Mittag'));return /^(pause de midi|lunch break|mittagspause)$/i.test(value)?tr('Midi','Lunch','Mittag'):value}
+                function namedGapLabel(){const value=visibleBreakLabel('gap',tr('Trou','Free period','Freistunde')),defaultValue=tr('Trou','Free period','Freistunde');return value&&value.toLocaleLowerCase()!==defaultValue.toLocaleLowerCase()?value:''}
                 function persistNative(settings,root){
                   try{
                     root=root&&typeof root==='object'?root:nativeRoot();root.weekAppearance658=settings;
@@ -52,48 +63,52 @@ final class WeekAppearance658Ui {
                 function gapCell(cell){return !!(cell&&cell.classList.contains('gapCell'))}
                 function cleanInline(element){['background','background-color','box-shadow','outline','border-left','border-right','border-top','border-bottom','border-left-color','border-right-color','border-top-color','border-bottom-color','border-radius','padding','margin','color'].forEach(p=>element.style.removeProperty(p));element.removeAttribute('data-midi-edge-v14')}
                 function cleanCell(cell){
-                  cell.classList.remove('week658Course','week658Free','week658Gap','week658Lunch','week658LunchTop','week658LunchBottom','week658LunchRowTop','week658LunchRowBottom','week658LunchCourseBoundary');
-                  cell.querySelectorAll(':scope > .week658LunchLabel').forEach(x=>x.remove());cleanInline(cell);
+                  cell.classList.remove('week658Course','week658Free','week658Gap','week658Lunch','week658LunchTop','week658LunchBottom','week658LunchRowTop','week658LunchRowBottom','week658LunchCourseBoundary','week662NamedGap');
+                  cell.querySelectorAll(':scope > .week658LunchLabel,:scope > .week662GapLabel').forEach(x=>x.remove());cleanInline(cell);
                 }
                 function courseOverlaps(day,start,end){
                   try{const list=weeks[activeWeek]&&weeks[activeWeek][day]?weeks[activeWeek][day].courses:[];return (list||[]).some(c=>toMin(c.start)<end&&toMin(c.end)>start)}catch(e){return false}
                 }
                 function paint(){
-                  const grid=document.getElementById('weekGrid');if(!grid)return;const settings=load(),data=rowsOf(grid);if(!data.rows.length)return;
+                  const grid=document.getElementById('weekGrid');if(!grid)return;grid.classList.remove('week662LunchLines');grid.style.removeProperty('--week662-lunch-lines');const settings=load(),data=rowsOf(grid);if(!data.rows.length)return;
                   grid.style.setProperty('--week658-free',settings.free);grid.style.setProperty('--week658-course',settings.course);grid.style.setProperty('--week658-lunch',settings.lunch);
-                  data.rows.forEach(row=>{row.time.classList.remove('week658LunchTime','week658LunchTop','week658LunchBottom','week658LunchRowTop','week658LunchRowBottom');cleanInline(row.time);row.cells.forEach(cell=>{cleanCell(cell);if(courseCell(cell))cell.classList.add('week658Course');else{cell.classList.add('week658Free');if(gapCell(cell))cell.classList.add('week658Gap')}})});
+                  const gapText=namedGapLabel();
+                  data.rows.forEach(row=>{row.time.classList.remove('week658LunchTime','week658LunchTop','week658LunchBottom','week658LunchRowTop','week658LunchRowBottom');cleanInline(row.time);row.cells.forEach(cell=>{cleanCell(cell);if(courseCell(cell))cell.classList.add('week658Course');else{cell.classList.add('week658Free');if(gapCell(cell)){cell.classList.add('week658Gap');if(gapText){cell.classList.add('week662NamedGap');const label=document.createElement('span');label.className='week662GapLabel';label.textContent=gapText;cell.appendChild(label)}}}})});
                   data.heads.forEach((head,dayIndex)=>{
                     const day=dayKey(head,dayIndex),cfg=settings.days[day]||{enabled:true,start:720,end:780};if(cfg.enabled===false||courseOverlaps(day,cfg.start,cfg.end))return;
                     const band=data.rows.filter(row=>row.start<cfg.end&&row.end>cfg.start);if(!band.length)return;
                     const painted=[];
                     band.forEach(row=>{const cell=row.cells[dayIndex];if(!cell||courseCell(cell))return;cell.classList.remove('week658Course','week658Free','week658Gap');cell.classList.add('week658Lunch');painted.push(cell)});
                     if(!painted.length)return;painted[0].classList.add('week658LunchTop');painted[painted.length-1].classList.add('week658LunchBottom');
-                    const label=document.createElement('span');label.className='week658LunchLabel';label.textContent=tr('Midi','Lunch','Mittag');painted[0].appendChild(label);
+                    const text=lunchLabel();if(text){const label=document.createElement('span');label.className='week658LunchLabel';label.textContent=text;painted[0].appendChild(label)}
                   });
-                  const flags=data.rows.map(row=>row.cells.some(cell=>cell.classList.contains('week658Lunch')));let index=0;
+                  const flags=data.rows.map(row=>row.cells.some(cell=>cell.classList.contains('week658Lunch'))),lineLayers=[];let index=0;
                   while(index<flags.length){
                     if(!flags[index]){index++;continue}let last=index;while(last+1<flags.length&&flags[last+1])last++;
                     for(let i=index;i<=last;i++)data.rows[i].time.classList.add('week658LunchTime');
                     const top=data.rows[index],bottom=data.rows[last];
                     [top.time,...top.cells].forEach(cell=>cell.classList.add('week658LunchRowTop'));
                     [bottom.time,...bottom.cells].forEach(cell=>cell.classList.add('week658LunchRowBottom'));
+                    const topPx=Math.max(0,Math.round(top.time.offsetTop)),bottomPx=Math.max(0,Math.round(bottom.time.offsetTop+bottom.time.offsetHeight-2));
+                    lineLayers.push('linear-gradient(#D5B84D,#D5B84D) 0 '+topPx+'px / 100% 2px no-repeat','linear-gradient(#D5B84D,#D5B84D) 0 '+bottomPx+'px / 100% 2px no-repeat');
                     index=last+1;
                   }
+                  if(lineLayers.length){grid.style.setProperty('--week662-lunch-lines',lineLayers.join(','));grid.classList.add('week662LunchLines')}
                 }
                 const style=document.createElement('style');style.id='weekAppearance658Style';style.textContent=`
                   html body #viewWeek #weekGrid#weekGrid .wc.week658Free{background:var(--week658-free,#E6F2FF)!important;color:#53627a!important;box-shadow:none!important;border-radius:0!important}
                   html body #viewWeek #weekGrid#weekGrid .wc.week658Gap>*,html body #viewWeek #weekGrid#weekGrid .wc.week658Free:is(.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic)>*{display:none!important;visibility:hidden!important}
+                  html body #viewWeek #weekGrid#weekGrid .wc.week658Gap.week662NamedGap>.week662GapLabel{position:absolute!important;inset:0!important;display:flex!important;visibility:visible!important;align-items:center!important;justify-content:center!important;padding:1px!important;color:#235f76!important;font-weight:800!important;font-size:11px!important;line-height:1!important;text-align:center!important;z-index:10!important}
                   html body #viewWeek #weekGrid#weekGrid .wc.week658Course{background:var(--week658-course,#fff)!important;box-shadow:none!important}
                   html body #viewWeek #weekGrid#weekGrid .wc.week658Lunch{position:relative!important;background:var(--week658-lunch,#FFE08A)!important;color:#59491d!important;box-shadow:none!important;border-left-color:transparent!important;border-right-color:transparent!important;border-radius:0!important;overflow:hidden!important}
                   html body #viewWeek #weekGrid#weekGrid .wc.week658Lunch>:not(.week658LunchLabel){display:none!important;visibility:hidden!important}
                   html body #viewWeek #weekGrid#weekGrid .wc.week658Lunch:before,html body #viewWeek #weekGrid#weekGrid .wc.week658Lunch:after{content:none!important;display:none!important}
                   html body #viewWeek #weekGrid#weekGrid .week658LunchLabel{position:absolute!important;inset:0!important;display:flex!important;visibility:visible!important;align-items:center!important;justify-content:center!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;color:#59491d!important;font-family:inherit!important;font-weight:800!important;font-size:13px!important;line-height:1!important;text-align:center!important;white-space:nowrap!important;z-index:10!important}
                   html body #viewWeek #weekGrid#weekGrid .wh.timecol.week658LunchTime{background:var(--week658-lunch,#FFE08A)!important;color:#59491d!important;border-right-color:transparent!important}
-                  html body #viewWeek #weekGrid#weekGrid .week658LunchRowTop{box-shadow:inset 0 1px 0 #D5B84D!important}
-                  html body #viewWeek #weekGrid#weekGrid .week658LunchRowBottom{box-shadow:inset 0 -1px 0 #D5B84D!important}
-                  html body #viewWeek #weekGrid#weekGrid .week658LunchRowTop.week658LunchRowBottom{box-shadow:inset 0 1px 0 #D5B84D,inset 0 -1px 0 #D5B84D!important}
-                  html body #viewWeek #weekGrid#weekGrid .week658LunchTop{border-top:1px solid #D5B84D!important}
-                  html body #viewWeek #weekGrid#weekGrid .week658LunchBottom{border-bottom:1px solid #D5B84D!important}
+                  html body #viewWeek #weekGrid#weekGrid .week658LunchRowTop,html body #viewWeek #weekGrid#weekGrid .week658LunchRowBottom{box-shadow:none!important}
+                  html body #viewWeek #weekGrid#weekGrid .week658LunchTop{border-top-color:transparent!important}
+                  html body #viewWeek #weekGrid#weekGrid .week658LunchBottom{border-bottom-color:transparent!important}
+                  html body #viewWeek #weekGrid#weekGrid.week662LunchLines:before{content:''!important;position:absolute!important;inset:0!important;display:block!important;background:var(--week662-lunch-lines)!important;pointer-events:none!important;z-index:60!important;border-radius:inherit!important}
                   html body #viewWeek #weekGrid#weekGrid .lunch653Top,html body #viewWeek #weekGrid#weekGrid .lunch653Bottom{border-bottom-color:transparent!important}
                   #week658Settings{margin:8px 0 0!important;padding:10px!important;border:1px solid #dbe3ef!important;border-radius:10px!important;background:#f8fafc!important;position:static!important;inset:auto!important;width:auto!important;height:auto!important;max-width:none!important;box-shadow:none!important;transform:none!important;z-index:auto!important}
                   #week658Settings .w658Title{text-align:center;font-weight:850;margin:4px 0 9px}

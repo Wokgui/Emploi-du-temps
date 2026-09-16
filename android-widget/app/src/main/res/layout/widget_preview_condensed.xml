@@ -8,17 +8,17 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="28dp"
+        android:layout_height="22dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingLeft="2dp"
         android:paddingRight="3dp">
-        <TextView android:layout_width="42dp" android:layout_height="match_parent" android:gravity="center" android:text="08:00" android:textColor="#5D6B82" android:textSize="8sp" android:textStyle="bold" />
-        <TextView android:layout_width="3dp" android:layout_height="18dp" android:background="#F0335D" />
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center_vertical" android:paddingLeft="4dp" android:ellipsize="end" android:maxLines="1" android:text="5G4 ALL · salle 217 · dans 2 h" android:textColor="#17213A" android:textSize="10sp" android:textStyle="bold" />
+        <TextView android:layout_width="36dp" android:layout_height="match_parent" android:gravity="center" android:text="08:00" android:textColor="#5D6B82" android:textSize="7sp" android:textStyle="bold" />
+        <TextView android:layout_width="3dp" android:layout_height="14dp" android:background="#F0335D" />
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center_vertical" android:paddingLeft="3dp" android:ellipsize="end" android:maxLines="1" android:text="5G4 ALL · salle 217 · dans 2 h" android:textColor="#17213A" android:textSize="9sp" android:textStyle="bold" />
     </LinearLayout>
 
-    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E3E8EF" />
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#D5B84D" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -27,10 +27,11 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingLeft="2dp"
-        android:paddingRight="3dp">
-        <TextView android:layout_width="42dp" android:layout_height="match_parent" android:gravity="center" android:text="09:00" android:textColor="#5D6B82" android:textSize="8sp" android:textStyle="bold" />
-        <TextView android:layout_width="3dp" android:layout_height="18dp" android:background="#18B9BE" />
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center_vertical" android:paddingLeft="4dp" android:ellipsize="end" android:maxLines="1" android:text="4G3 ALL · 4G4 ALL · salle 217" android:textColor="#17213A" android:textSize="10sp" android:textStyle="bold" />
+        android:paddingRight="3dp"
+        android:background="#FFE08A">
+        <TextView android:layout_width="36dp" android:layout_height="match_parent" android:gravity="center" android:text="12:00" android:textColor="#59491D" android:textSize="7sp" android:textStyle="bold" />
+        <TextView android:layout_width="3dp" android:layout_height="14dp" android:background="#59491D" />
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:paddingLeft="3dp" android:ellipsize="end" android:maxLines="1" android:text="Midi" android:textColor="#59491D" android:textSize="9sp" android:textStyle="bold" />
     </LinearLayout>
 
     <ProgressBar

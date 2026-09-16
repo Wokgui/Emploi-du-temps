@@ -121,9 +121,7 @@ final class WidgetPaletteStore {
     }
 
     static int lunchBackground(Context context) {
-        JSONObject o = special(context);
-        boolean sync = o.optBoolean("sync", true);
-        return parseOr(o.optString(sync ? "appLunch" : "widgetLunch", "#FFE4A8"), 0xFFFFE4A8);
+        return parseOr(AdvancedSettingsStore.weekLunchColor(context), 0xFFFFE08A);
     }
 
     static int lunchText(Context context) {

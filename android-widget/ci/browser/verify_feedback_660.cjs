@@ -146,8 +146,8 @@ async function verify() {
         tuesdayText: row?.cells[1].innerText.trim() || '',
         wednesdayText: row?.cells[2].innerText.trim() || '',
         wednesdayLunch: !!row?.cells[2].classList.contains('week658Lunch'),
-        topBorder: styles[0]?.borderTopStyle || '',
-        bottomBorder: styles[0]?.borderBottomStyle || '',
+        lineLayers: document.getElementById('weekGrid').style.getPropertyValue('--week662-lunch-lines'),
+        lineBackground: getComputedStyle(document.getElementById('weekGrid'), '::before').backgroundImage,
         gapVisibleTexts,
       };
     });
@@ -158,8 +158,8 @@ async function verify() {
     assert.equal(week.tuesdayText, 'Midi');
     assert.match(week.wednesdayText, /COURS MIDI TEST/);
     assert.equal(week.wednesdayLunch, false, 'lunch must never cover a class');
-    assert.equal(week.topBorder, 'solid');
-    assert.equal(week.bottomBorder, 'solid');
+    assert.match(week.lineLayers, /100% 2px/);
+    assert.notEqual(week.lineBackground, 'none');
     assert.ok(week.gapVisibleTexts.every(text => text === ''), 'free cells must not display “Trou”');
     await page.screenshot({ path: path.join(output, 'week-660-412.png') });
     assert.deepEqual(errors, [], 'JavaScript errors');

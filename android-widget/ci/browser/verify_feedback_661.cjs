@@ -70,10 +70,11 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
       while (node && cells.length < heads.length) { if (node.classList?.contains('wc')) cells.push(node); node = node.nextElementSibling; }
       const row = [time, ...cells];
       return {
-        bottoms: row.map(element => getComputedStyle(element).boxShadow),
         topClasses: row.map(element => element.classList.contains('week658LunchRowTop')),
         bottomClasses: row.map(element => element.classList.contains('week658LunchRowBottom')),
         fontSizes: [...document.querySelectorAll('#weekGrid .week658LunchLabel')].map(element => getComputedStyle(element).fontSize),
+        lineLayers: document.getElementById('weekGrid').style.getPropertyValue('--week662-lunch-lines'),
+        lineBackground: getComputedStyle(document.getElementById('weekGrid'), '::before').backgroundImage,
       };
     }
     return null;
@@ -81,7 +82,8 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   assert.ok(lunch, '12-13 lunch row missing');
   assert.ok(lunch.topClasses.every(Boolean), 'top line must cross the complete row');
   assert.ok(lunch.bottomClasses.every(Boolean), 'bottom line must cross the complete row');
-  assert.ok(lunch.bottoms.every(value => value !== 'none'), 'every column must paint the lunch boundary');
+  assert.match(lunch.lineLayers, /100% 2px/, 'one uninterrupted two-pixel overlay must paint the lunch boundary');
+  assert.notEqual(lunch.lineBackground, 'none', 'the continuous lunch boundary overlay must be visible');
   assert.deepEqual([...new Set(lunch.fontSizes)], ['13px']);
   await page.screenshot({ path: path.join(output, 'week-661-412.png') });
   assert.deepEqual(errors, []);

@@ -10,8 +10,8 @@ android {
         applicationId 'com.wokgui.schedulewidget'
         minSdk 26
         targetSdk 35
-        versionCode 661001
-        versionName '6.61'
+        versionCode 662001
+        versionName '6.62'
     }
 
     buildFeatures {
@@ -36,5 +36,5 @@ dependencies {
     implementation 'com.google.mlkit:translate:17.0.3'
 }
 
-// 6.61: removes duplicate lunch settings, makes lunch boundaries continuous,
-// and packs widget courses into single full-height rows.
+// 6.62: isolates hidden week labels, unifies custom break names, strengthens
+// lunch boundaries, and adds a denser lunch-aware condensed widget.

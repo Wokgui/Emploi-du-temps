@@ -2,7 +2,7 @@ package com.wokgui.schedulewidget;
 
 /** Pure sizing rule shared by the condensed widget renderer and its JVM regression test. */
 final class CondensedRowSizing {
-    static final int NATURAL_ROW_DP = 28;
+    static final int NATURAL_ROW_DP = 22;
     static final int PROGRESS_STRIP_DP = 3;
 
     private CondensedRowSizing() {}
@@ -14,10 +14,6 @@ final class CondensedRowSizing {
     }
 
     static int rowHeightDp(int widgetHeightDp, int itemCount, int position) {
-        int contentHeight = Math.max(NATURAL_ROW_DP, widgetHeightDp - PROGRESS_STRIP_DP);
-        int rows = visibleRows(widgetHeightDp, itemCount);
-        int base = Math.max(NATURAL_ROW_DP, contentHeight / rows);
-        int remainder = Math.max(0, contentHeight - base * rows);
-        return base + (position >= 0 && position < remainder ? 1 : 0);
+        return NATURAL_ROW_DP;
     }
 }
