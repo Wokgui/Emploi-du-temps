@@ -24,8 +24,9 @@ public class PlanWidgetProvider extends AppWidgetProvider {
     private static final int GREEN2 = Color.rgb(11,137,119);
     private static final int INK = Color.rgb(26,35,43);
     private static final int MUTED = Color.rgb(150,159,164);
-    private static final int LINE = Color.rgb(195,202,207);
+    private static final int LINE = Color.rgb(185,203,198);
     private static final int TABLE = Color.WHITE;
+    private static final int FOOT = Color.rgb(184,197,193);
 
     @Override public void onUpdate(Context context, AppWidgetManager manager, int[] ids) { updateAll(context, manager, ids); }
     @Override public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager, int id, Bundle opts) { updateAll(context, manager, new int[]{id}); }
@@ -84,39 +85,58 @@ public class PlanWidgetProvider extends AppWidgetProvider {
         int rowCount = rows==null?0:rows.length();
         if(rowCount==0) return bm;
 
-        float pad=Math.max(8f,3f*d), top=header+pad;
-        boolean roomy=h>=390;
-        float objectH = roomy ? Math.min(52f,h*0.105f) : 0f;
-        if(roomy){
-            p.setTextAlign(Paint.Align.CENTER);p.setFakeBoldText(true);p.setTextSize(clampF(objectH*.38f,14f,23f));
-            p.setColor(GREEN);RectF board=new RectF(w*.28f,top,w*.72f,top+objectH*.72f);c.drawRoundRect(board,8,8,p);p.setColor(Color.WHITE);c.drawText("Tableau",w*.5f,top+objectH*.50f,p);
-            p.setColor(Color.rgb(237,228,207));RectF desk=new RectF(w*.75f,top,w*.96f,top+objectH*.72f);c.drawRoundRect(desk,8,8,p);p.setColor(Color.rgb(70,58,42));c.drawText("Bureau",w*.855f,top+objectH*.50f,p);p.setFakeBoldText(false);
-            top += objectH;
-        }
-        float bottom= h-pad, rowGap=Math.max(4f,1.5f*d), rowH=(bottom-top-rowGap*(rowCount-1))/rowCount;
-        int seatIndex=0;
+        int[] rowOffsets=new int[rowCount];
+        int acc=0;
         for(int r=0;r<rowCount;r++){
+            rowOffsets[r]=acc;
+            JSONArray groups=rows.optJSONArray(r);
+            if(groups!=null)for(int gi=0;gi<groups.length();gi++)acc+=Math.max(1,groups.optInt(gi,1));
+        }
+
+        float pad=Math.max(8f,3f*d), top=header+pad, bottom=h-pad;
+        boolean roomy=h>=390;
+        float objectH = roomy ? Math.min(54f,h*0.105f) : 0f;
+        float planBottom=bottom-objectH;
+        float rowGap=Math.max(4f,1.5f*d), rowH=(planBottom-top-rowGap*(rowCount-1))/rowCount;
+
+        // Same orientation as the app: back rows at the top, row 1 and board at the bottom.
+        for(int visual=0;visual<rowCount;visual++){
+            int r=rowCount-1-visual;
             JSONArray groups=rows.optJSONArray(r); if(groups==null) continue;
             int gcount=groups.length(); int totalTables=0; for(int gi=0;gi<gcount;gi++) totalTables+=Math.max(1,groups.optInt(gi,1));
-            float y=top+r*(rowH+rowGap); float availW=w-2*pad; float groupGap=Math.max(7f,2.2f*d); float usable=availW-groupGap*Math.max(0,gcount-1); float x=pad;
+            float y=top+visual*(rowH+rowGap); float availW=w-2*pad; float groupGap=Math.max(7f,2.2f*d); float usable=availW-groupGap*Math.max(0,gcount-1); float x=pad;
+            int seatIndex=rowOffsets[r];
             for(int gi=0;gi<gcount;gi++){
                 int tables=Math.max(1,groups.optInt(gi,1)); float gw=usable*tables/Math.max(1,totalTables);
                 boolean isolated=false; if(modes!=null){JSONArray mr=modes.optJSONArray(r);if(mr!=null)isolated="isolated".equals(mr.optString(gi,"joined"));}
-                float tableGap=isolated?Math.max(7f,2f*d):1f; float tw=(gw-tableGap*Math.max(0,tables-1))/tables;
+                float tableGap=isolated?Math.max(8f,2f*d):2f; float tw=(gw-tableGap*Math.max(0,tables-1))/tables;
                 for(int t=0;t<tables;t++){
                     float tx=x+t*(tw+tableGap);
-                    RectF sr=new RectF(tx,y,tx+tw,y+rowH);
+                    float footH=Math.max(3f,1.1f*d);
+                    RectF sr=new RectF(tx,y,tx+tw,y+rowH-footH);
                     String sid=seats!=null?seats.optString(seatIndex++,""):"";
                     JSONObject st=smap.get(sid);
-                    p.setColor(TABLE);c.drawRoundRect(sr,6,6,p);
-                    p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(Math.max(1f,d*.5f));p.setColor(LINE);c.drawRoundRect(sr,6,6,p);p.setStyle(Paint.Style.FILL);
+                    p.setColor(Color.rgb(238,244,242));c.drawRoundRect(new RectF(sr.left+1,sr.top+2,sr.right+1,sr.bottom+3),7,7,p);
+                    p.setColor(TABLE);c.drawRoundRect(sr,7,7,p);
+                    p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(Math.max(1f,d*.5f));p.setColor(LINE);c.drawRoundRect(sr,7,7,p);p.setStyle(Paint.Style.FILL);
+                    p.setColor(FOOT);
+                    float fw=Math.max(5f,tw*.10f);
+                    c.drawRoundRect(new RectF(tx+tw*.18f,sr.bottom,tx+tw*.18f+fw,sr.bottom+footH),1.5f,1.5f,p);
+                    c.drawRoundRect(new RectF(tx+tw*.72f-fw,sr.bottom,tx+tw*.72f,sr.bottom+footH),1.5f,1.5f,p);
                     String label=st!=null?st.optString("name",""):"Libre";
                     p.setColor(st!=null?INK:MUTED);p.setTextAlign(Paint.Align.CENTER);p.setFakeBoldText(st!=null);
-                    float fs=clampF(Math.min(rowH*.34f, tw*.18f),11f,25f);p.setTextSize(fs);while(p.measureText(label)>tw-10 && fs>8){fs-=1f;p.setTextSize(fs);}
-                    c.drawText(ellipsize(p,label,tw-10),tx+tw/2f,y+rowH*.60f,p);p.setFakeBoldText(false);
+                    float fs=clampF(Math.min(rowH*.34f, tw*.18f),11f,25f);p.setTextSize(fs);while(p.measureText(label)>tw-12 && fs>8){fs-=1f;p.setTextSize(fs);} 
+                    c.drawText(ellipsize(p,label,tw-12),tx+tw/2f,y+(rowH-footH)*.60f,p);p.setFakeBoldText(false);
                 }
                 x += gw+groupGap;
             }
+        }
+
+        if(roomy){
+            float oy=planBottom+Math.max(5f,1.8f*d);
+            p.setTextAlign(Paint.Align.CENTER);p.setFakeBoldText(true);p.setTextSize(clampF(objectH*.36f,14f,23f));
+            p.setColor(GREEN);RectF board=new RectF(w*.24f,oy,w*.70f,oy+objectH*.66f);c.drawRoundRect(board,8,8,p);p.setColor(Color.WHITE);c.drawText("Tableau",w*.47f,oy+objectH*.46f,p);
+            p.setColor(Color.rgb(245,242,234));RectF desk=new RectF(w*.74f,oy,w*.96f,oy+objectH*.66f);c.drawRoundRect(desk,8,8,p);p.setStyle(Paint.Style.STROKE);p.setColor(Color.rgb(196,185,160));c.drawRoundRect(desk,8,8,p);p.setStyle(Paint.Style.FILL);p.setColor(Color.rgb(73,67,55));c.drawText("Bureau",w*.85f,oy+objectH*.46f,p);p.setFakeBoldText(false);
         }
         return bm;
     }
