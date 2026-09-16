@@ -5,10 +5,10 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId 'fr.wokgui.planclasse.fixed'
+        applicationId 'fr.wokgui.planclasse.v4'
         minSdk 24
-        targetSdk 35
-        versionCode 3
-        versionName '3.0'
+        targetSdk 34
+        versionCode 4
+        versionName '4.0'
     }
 }
