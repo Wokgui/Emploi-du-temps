@@ -24,10 +24,8 @@ public class PlanWidgetProvider extends AppWidgetProvider {
     private static final int GREEN2 = Color.rgb(11,137,119);
     private static final int INK = Color.rgb(26,35,43);
     private static final int MUTED = Color.rgb(150,159,164);
-    private static final int LINE = Color.rgb(205,194,164);
-    private static final int TABLE = Color.rgb(248,245,236);
-    private static final int BOY = Color.rgb(234,244,255);
-    private static final int GIRL = Color.rgb(255,240,246);
+    private static final int LINE = Color.rgb(195,202,207);
+    private static final int TABLE = Color.WHITE;
 
     @Override public void onUpdate(Context context, AppWidgetManager manager, int[] ids) { updateAll(context, manager, ids); }
     @Override public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager, int id, Bundle opts) { updateAll(context, manager, new int[]{id}); }
@@ -106,16 +104,16 @@ public class PlanWidgetProvider extends AppWidgetProvider {
                 boolean isolated=false; if(modes!=null){JSONArray mr=modes.optJSONArray(r);if(mr!=null)isolated="isolated".equals(mr.optString(gi,"joined"));}
                 float tableGap=isolated?Math.max(7f,2f*d):1f; float tw=(gw-tableGap*Math.max(0,tables-1))/tables;
                 for(int t=0;t<tables;t++){
-                    float tx=x+t*(tw+tableGap); RectF table=new RectF(tx,y,tx+tw,y+rowH);
-                    p.setColor(TABLE); c.drawRoundRect(table,6,6,p); p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(Math.max(1.4f,d*.55f));p.setColor(LINE);c.drawRoundRect(table,6,6,p);p.setStyle(Paint.Style.FILL);
-                    float half=tw/2f;
-                    for(int si=0;si<2;si++){
-                        int idx=seatIndex++; String sid=seats!=null?seats.optString(idx,""):""; JSONObject st=smap.get(sid); RectF sr=new RectF(tx+si*half+1,y+1,tx+(si+1)*half-1,y+rowH-1);
-                        int bg=Color.WHITE; if(st!=null){String g=st.optString("gender","");if("boy".equals(g))bg=BOY;else if("girl".equals(g))bg=GIRL;}
-                        p.setColor(bg);c.drawRoundRect(sr,4,4,p);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(Math.max(1f,d*.42f));p.setColor(Color.rgb(190,197,199));c.drawRoundRect(sr,4,4,p);p.setStyle(Paint.Style.FILL);
-                        String label=st!=null?st.optString("name",""):"Libre"; p.setColor(st!=null?INK:MUTED);p.setTextAlign(Paint.Align.CENTER);p.setFakeBoldText(st!=null);
-                        float fs=clampF(Math.min(rowH*.34f,half*.20f),11f,25f);p.setTextSize(fs);while(p.measureText(label)>half-8 && fs>9){fs-=1;p.setTextSize(fs);} c.drawText(ellipsize(p,label,half-8),tx+si*half+half/2f,y+rowH*.60f,p);p.setFakeBoldText(false);
-                    }
+                    float tx=x+t*(tw+tableGap);
+                    RectF sr=new RectF(tx,y,tx+tw,y+rowH);
+                    String sid=seats!=null?seats.optString(seatIndex++,""):"";
+                    JSONObject st=smap.get(sid);
+                    p.setColor(TABLE);c.drawRoundRect(sr,6,6,p);
+                    p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(Math.max(1f,d*.5f));p.setColor(LINE);c.drawRoundRect(sr,6,6,p);p.setStyle(Paint.Style.FILL);
+                    String label=st!=null?st.optString("name",""):"Libre";
+                    p.setColor(st!=null?INK:MUTED);p.setTextAlign(Paint.Align.CENTER);p.setFakeBoldText(st!=null);
+                    float fs=clampF(Math.min(rowH*.34f, tw*.18f),11f,25f);p.setTextSize(fs);while(p.measureText(label)>tw-10 && fs>8){fs-=1f;p.setTextSize(fs);}
+                    c.drawText(ellipsize(p,label,tw-10),tx+tw/2f,y+rowH*.60f,p);p.setFakeBoldText(false);
                 }
                 x += gw+groupGap;
             }
