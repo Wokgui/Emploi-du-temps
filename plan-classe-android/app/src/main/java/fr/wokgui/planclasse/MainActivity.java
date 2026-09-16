@@ -38,7 +38,17 @@ public class MainActivity extends Activity {
                 fileCallback = callback;
                 Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                 i.addCategory(Intent.CATEGORY_OPENABLE);
-                i.setType("image/*");
+                String type = "*/*";
+                String[] accepted = params == null ? null : params.getAcceptTypes();
+                if (accepted != null) {
+                    for (String accept : accepted) {
+                        if (accept == null) continue;
+                        String a = accept.toLowerCase();
+                        if (a.contains("image")) { type = "image/*"; break; }
+                        if (a.contains("json")) type = "application/json";
+                    }
+                }
+                i.setType(type);
                 startActivityForResult(i, FILE_CHOOSER);
                 return true;
             }
