@@ -1,4 +1,4 @@
-name: Build Plan de classe v12g
+name: Build Plan de classe v13
 on:
   push:
     branches: ["plan-de-classe-v12"]
@@ -30,7 +30,7 @@ jobs:
           mkdir -p "$HOME/.android"
           base64 -d plan-de-classe-v12/fixed-debug-keystore.b64 > "$HOME/.android/debug.keystore"
           keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey >/dev/null
-      - name: Restore source and apply v12g
+      - name: Restore source and apply v13
         shell: bash
         run: |
           set -euo pipefail
@@ -40,35 +40,26 @@ jobs:
           mkdir -p plan-de-classe
           unzip -q /tmp/plan.zip -d plan-de-classe
           sed -i 's/android:layout_width="55%"/android:layout_width="180dp"/; s/android:layout_width="30%"/android:layout_width="100dp"/' plan-de-classe/app/src/main/res/layout/widget_preview_layout.xml
-          cp plan-de-classe-v12/v12.css plan-de-classe/app/src/main/assets/v12.css
-          cp plan-de-classe-v12/v12.js plan-de-classe/app/src/main/assets/v12.js
-          cp plan-de-classe-v12/v12b.css plan-de-classe/app/src/main/assets/v12b.css
-          cp plan-de-classe-v12/v12b.js plan-de-classe/app/src/main/assets/v12b.js
-          cp plan-de-classe-v12/v12c.js plan-de-classe/app/src/main/assets/v12c.js
-          cp plan-de-classe-v12/v12e.js plan-de-classe/app/src/main/assets/v12e.js
-          cp plan-de-classe-v12/v12g.css plan-de-classe/app/src/main/assets/v12g.css
-          cp plan-de-classe-v12/v12g.js plan-de-classe/app/src/main/assets/v12g.js
+          cp plan-de-classe-v12/v13.css plan-de-classe/app/src/main/assets/v13.css
+          cp plan-de-classe-v12/v13.js plan-de-classe/app/src/main/assets/v13.js
           python3 - <<'PY'
           from pathlib import Path
           import re
           p=Path('plan-de-classe/app/src/main/assets/index.html')
           s=p.read_text()
-          if 'v12.css' not in s: s=s.replace('</head>','<link rel="stylesheet" href="v12.css"></head>')
-          if 'v12b.css' not in s: s=s.replace('</head>','<link rel="stylesheet" href="v12b.css"></head>')
-          if 'v12g.css' not in s: s=s.replace('</head>','<link rel="stylesheet" href="v12g.css"></head>')
-          if 'v12.js' not in s: s=s.replace('</body>','<script src="v12.js"></script></body>')
-          if 'v12b.js' not in s: s=s.replace('</body>','<script src="v12b.js"></script></body>')
-          if 'v12c.js' not in s: s=s.replace('</body>','<script src="v12c.js"></script></body>')
-          if 'v12e.js' not in s: s=s.replace('</body>','<script src="v12e.js"></script></body>')
-          if 'v12g.js' not in s: s=s.replace('</body>','<script src="v12g.js"></script></body>')
-          s=s.replace('<script src="v12f.js"></script>','')
+          s=re.sub(r'<link[^>]+href=["\']v12[^"\']*\.css["\'][^>]*>','',s)
+          s=re.sub(r'<script[^>]+src=["\']v12[^"\']*\.js["\'][^>]*></script>','',s)
+          s=re.sub(r'<link[^>]+href=["\']v13\.css["\'][^>]*>','',s)
+          s=re.sub(r'<script[^>]+src=["\']v13\.js["\'][^>]*></script>','',s)
+          s=s.replace('</head>','<link rel="stylesheet" href="v13.css"></head>')
+          s=s.replace('</body>','<script src="v13.js"></script></body>')
           s=s.replace("function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x&&x.classes?.length)return x}catch(e){}return{cur:null,classes:[defaultClass()]}}",
           "function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x&&x.classes?.length)return x}catch(e){}try{if(window.AndroidBridge&&AndroidBridge.loadState){let n=AndroidBridge.loadState();if(n){let x=JSON.parse(n);if(x&&x.classes?.length){localStorage.setItem(KEY,n);return x}}}}catch(e){}return{cur:null,classes:[defaultClass()]}}")
           p.write_text(s)
           g=Path('plan-de-classe/app/build.gradle')
           b=g.read_text()
-          b=re.sub(r'versionCode\s+\d+','versionCode 18',b)
-          b=re.sub(r"versionName\s+'[^']+'","versionName '12.6'",b)
+          b=re.sub(r'versionCode\s+\d+','versionCode 19',b)
+          b=re.sub(r"versionName\s+'[^']+'","versionName '13.0'",b)
           g.write_text(b)
           PY
           mkdir -p plan-de-classe/app/src/main/java/fr/wokgui/planclasse
@@ -95,35 +86,39 @@ jobs:
           p=Path('plan-de-classe/app/src/main/res/values/colors.xml')
           if p.exists():
               s=p.read_text()
-              if 'name="icon_bg"' not in s: s=s.replace('</resources>','    <color name="icon_bg">#087163</color>\n</resources>')
-          else: s='<resources>\n    <color name="icon_bg">#087163</color>\n</resources>\n'
+              if 'name="icon_bg"' not in s:s=s.replace('</resources>','    <color name="icon_bg">#087163</color>\n</resources>')
+          else:s='<resources>\n    <color name="icon_bg">#087163</color>\n</resources>\n'
           p.write_text(s)
           p=Path('plan-de-classe/app/src/main/res/values/strings.xml')
           s=p.read_text() if p.exists() else '<resources></resources>'
-          if 'name="widget_name"' not in s: s=s.replace('</resources>','    <string name="widget_name">Plan de classe</string>\n</resources>')
-          if 'name="app_name"' not in s: s=s.replace('</resources>','    <string name="app_name">Plan de classe</string>\n</resources>')
+          if 'name="widget_name"' not in s:s=s.replace('</resources>','    <string name="widget_name">Plan de classe</string>\n</resources>')
+          if 'name="app_name"' not in s:s=s.replace('</resources>','    <string name="app_name">Plan de classe</string>\n</resources>')
           p.write_text(s)
           PY
-          node --check plan-de-classe/app/src/main/assets/v12.js
-          node --check plan-de-classe/app/src/main/assets/v12b.js
-          node --check plan-de-classe/app/src/main/assets/v12c.js
-          node --check plan-de-classe/app/src/main/assets/v12e.js
-          node --check plan-de-classe/app/src/main/assets/v12g.js
-      - name: Regression checks
+          node --check plan-de-classe/app/src/main/assets/v13.js
+      - name: Deep regression checks
         shell: bash
         run: |
           set -euo pipefail
           INDEX=plan-de-classe/app/src/main/assets/index.html
-          grep -q 'v12e.js' "$INDEX"
-          grep -q 'v12g.js' "$INDEX"
-          grep -q 'v12g.css' "$INDEX"
-          ! grep -q 'v12f.js' "$INDEX"
-          grep -q "box.onclick=function" plan-de-classe/app/src/main/assets/v12e.js
-          grep -q "mixBtn.onclick=mix" plan-de-classe/app/src/main/assets/v12g.js
-          grep -q "e.onclick=seatClick" plan-de-classe/app/src/main/assets/v12c.js
-          grep -q "background:transparent!important" plan-de-classe/app/src/main/assets/v12g.css
-          grep -q "width:100%!important" plan-de-classe/app/src/main/assets/v12g.css
-          ! grep -q "addEventListener('pointerup'" plan-de-classe/app/src/main/assets/v12g.js
+          grep -q 'v13.css' "$INDEX"
+          grep -q 'v13.js' "$INDEX"
+          ! grep -Eq 'v12[a-z0-9]*\.(js|css)' "$INDEX"
+          grep -q "seat.onclick=onSeatClick" plan-de-classe/app/src/main/assets/v13.js
+          grep -q "document.getElementById('mix').onclick=mix" plan-de-classe/app/src/main/assets/v13.js
+          grep -q "makeStepButton('−'" plan-de-classe/app/src/main/assets/v13.js
+          grep -q "bj.onclick=" plan-de-classe/app/src/main/assets/v13.js
+          grep -q "bi.onclick=" plan-de-classe/app/src/main/assets/v13.js
+          grep -q "overflow-x:hidden" plan-de-classe/app/src/main/assets/v13.css
+          grep -q "grid-template-columns:minmax(0,1fr) minmax(0,1fr)" plan-de-classe/app/src/main/assets/v13.css
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,collections
+          s=Path('plan-de-classe/app/src/main/assets/index.html').read_text()
+          ids=re.findall(r'\bid="([^"]+)"',s)
+          dup=[k for k,v in collections.Counter(ids).items() if v>1]
+          if dup: raise SystemExit('duplicate ids: '+','.join(dup))
+          PY
       - name: Build APK
         run: gradle -p plan-de-classe clean :app:assembleDebug --stacktrace
       - name: Verify APK
@@ -132,15 +127,15 @@ jobs:
           APK=plan-de-classe/app/build/outputs/apk/debug/app-debug.apk
           test -s "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | tee /tmp/badging.txt
-          grep -q "package: name='fr.wokgui.planclasse' versionCode='18' versionName='12.6'" /tmp/badging.txt
+          grep -q "package: name='fr.wokgui.planclasse' versionCode='19' versionName='13.0'" /tmp/badging.txt
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
-          unzip -l "$APK" | grep -q 'assets/v12g.js'
-          unzip -l "$APK" | grep -q 'assets/v12g.css'
-          unzip -p "$APK" assets/index.html | grep -q 'v12g.js'
-          ! unzip -p "$APK" assets/index.html | grep -q 'v12f.js'
-          cp "$APK" Plan-de-classe-v12g.apk
+          unzip -l "$APK" | grep -q 'assets/v13.js'
+          unzip -l "$APK" | grep -q 'assets/v13.css'
+          unzip -p "$APK" assets/index.html | grep -q 'v13.js'
+          ! unzip -p "$APK" assets/index.html | grep -Eq 'v12[a-z0-9]*\.(js|css)'
+          cp "$APK" Plan-de-classe-v13.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: Plan-de-classe-v12g
-          path: Plan-de-classe-v12g.apk
+          name: Plan-de-classe-v13
+          path: Plan-de-classe-v13.apk
           if-no-files-found: error
