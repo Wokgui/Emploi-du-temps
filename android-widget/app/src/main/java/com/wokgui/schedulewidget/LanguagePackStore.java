@@ -58,6 +58,38 @@ final class LanguagePackStore {
         return out.toString();
     }
 
+    static synchronized String exportJson(Context context) {
+        JSONArray out = new JSONArray();
+        try {
+            for (String key : prefs(context).getAll().keySet()) {
+                if (!key.startsWith("pack_")) continue;
+                String raw = prefs(context).getString(key, "");
+                if (raw != null && !raw.isEmpty()) out.put(new JSONObject(raw));
+            }
+        } catch (Exception ignored) {}
+        return out.toString();
+    }
+
+    static synchronized boolean importJson(Context context, String raw) {
+        try {
+            JSONArray incoming = new JSONArray(raw == null ? "[]" : raw);
+            SharedPreferences.Editor editor = prefs(context).edit().clear();
+            for (int i = 0; i < incoming.length(); i++) {
+                JSONObject pack = incoming.optJSONObject(i);
+                if (pack == null) continue;
+                String code = pack.optString("code", "").trim();
+                String name = pack.optString("name", "").trim();
+                JSONObject strings = pack.optJSONObject("strings");
+                if (!code.matches("[A-Za-z]{2,3}(?:[-_][A-Za-z]{2,4})?") || name.isEmpty() || strings == null || strings.length() == 0) continue;
+                editor.putString("pack_" + code, pack.toString());
+            }
+            editor.apply();
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
     static String widgetText(Context context, String code, String key) {
         try {
             String raw = get(context, code);

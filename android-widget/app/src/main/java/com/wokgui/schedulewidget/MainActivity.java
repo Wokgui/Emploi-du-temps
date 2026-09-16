@@ -31,12 +31,14 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends Activity {
     private static final int PICK_TIMETABLE_PHOTO = 5201;
     private static final int PICK_BACKUP = 5202;
     private static final int NOTIFICATION_PERMISSION = 5203;
+    private static final int CREATE_SETTINGS_EXPORT = 5204;
     private WebView webView;
     private View startupOverlay;
     private boolean forceWeekOpening = false;
@@ -219,6 +221,10 @@ public class MainActivity extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PICK_BACKUP) {
             handleBackupResult(resultCode, data);
+            return;
+        }
+        if (requestCode == CREATE_SETTINGS_EXPORT) {
+            handleSettingsExportResult(resultCode, data);
             return;
         }
         if (requestCode != PICK_TIMETABLE_PHOTO) return;
@@ -489,6 +495,30 @@ public class MainActivity extends Activity {
         startActivityForResult(intent, PICK_BACKUP);
     }
 
+    private void exportAllSettings() {
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/json");
+        String date = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(new java.util.Date());
+        intent.putExtra(Intent.EXTRA_TITLE, "emploi-du-temps-reglages-" + date + ".json");
+        intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        startActivityForResult(intent, CREATE_SETTINGS_EXPORT);
+    }
+
+    private void handleSettingsExportResult(int resultCode, Intent data) {
+        boolean success = false;
+        if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+            try (OutputStream out = getContentResolver().openOutputStream(data.getData())) {
+                if (out != null) {
+                    out.write(BackupStore.exportJson(this).getBytes(StandardCharsets.UTF_8));
+                    out.flush();
+                    success = true;
+                }
+            } catch (Exception ignored) {}
+        }
+        if (webView != null) webView.evaluateJavascript("if(window.applyAllSettingsExported){window.applyAllSettingsExported(" + (success ? "true" : "false") + ");}", null);
+    }
+
     private void handleBackupResult(int resultCode, Intent data) {
         boolean success = false;
         if (resultCode == RESULT_OK && data != null && data.getData() != null) {
@@ -586,5 +616,6 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface public void shareBackup() { runOnUiThread(MainActivity.this::shareBackup); }
         @JavascriptInterface public void pickBackup() { runOnUiThread(MainActivity.this::pickBackup); }
+        @JavascriptInterface public void exportAllSettings() { runOnUiThread(MainActivity.this::exportAllSettings); }
     }
 }

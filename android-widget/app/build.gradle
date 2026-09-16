@@ -10,8 +10,8 @@ android {
         applicationId 'com.wokgui.schedulewidget'
         minSdk 26
         targetSdk 35
-        versionCode 659001
-        versionName '6.59'
+        versionCode 660001
+        versionName '6.60'
     }
 
     buildFeatures {
@@ -36,5 +36,5 @@ dependencies {
     implementation 'com.google.mlkit:translate:17.0.3'
 }
 
-// 6.59: keeps the launch mark visible until the schedule is ready, restores
-// settings to a single readable sheet, and fills condensed widgets vertically.
+// 6.60: stabilizes day/week/settings navigation, unifies gaps and lunch bands,
+// opens on the relevant day, and exports the complete application settings.

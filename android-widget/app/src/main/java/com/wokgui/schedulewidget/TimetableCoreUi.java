@@ -210,7 +210,7 @@ final class TimetableCoreUi {
                 }
                 function wrapTodayKey(){
                   try{
-                    const f=function(){const d=new Date().getDay();return d===0?1:d+1};
+                    const f=function(){const d=new Date().getDay();if(d===0)return isEnabled(1)?1:6;if(d===6)return isEnabled(7)?7:6;return d+1};
                     f.__weekendWrapped=true;window.todayKey=f;
                   }catch(e){}
                 }
@@ -1538,7 +1538,8 @@ final class TimetableCoreUi {
                   for(const d of DAYS)for(const c of state[d].courses)map.set(c.start+'|'+c.end,{start:c.start,end:c.end,type:'course'});
                   const out=[...map.values()];
                   if(DAYS.some(d=>lunchForDay(state[d].courses))){
-                    const b=lunchBounds();out.push({start:clock(b.start),end:clock(b.end),type:'lunchDynamic'});
+                    const b=lunchBounds(),start=clock(b.start),end=clock(b.end);
+                    if(!map.has(start+'|'+end))out.push({start:start,end:end,type:'lunchDynamic'});
                   }
                   return out.sort((a,b)=>min(a.start)-min(b.start)||((a.type==='lunchDynamic')?-1:0)-((b.type==='lunchDynamic')?-1:0)||min(a.end)-min(b.end));
                 }

@@ -10,7 +10,7 @@ const asset=path.resolve(__dirname,'../../app/src/main/assets/index.html');
 fs.mkdirSync(out,{recursive:true});
 
 (async()=>{
-  const browser=await chromium.launch({headless:true});
+  const browser=await chromium.launch({headless:true,...(process.env.EDT_BROWSER_CHANNEL?{channel:process.env.EDT_BROWSER_CHANNEL}:{})});
   const context=await browser.newContext({viewport:{width:412,height:915},isMobile:true,hasTouch:true});
   const page=await context.newPage();
   const errors=[],logs=[];
@@ -115,7 +115,11 @@ fs.mkdirSync(out,{recursive:true});
   await page.locator('#settingsX').tap();
   await page.waitForFunction(()=>!__edtHeavyPanels648.isOpen('settings'));
 
-  await page.evaluate(()=>window.setModeFromAndroid('edit'));
+  await page.evaluate(()=>{
+    const populated=Object.keys(weeks[activeWeek]).find(key=>weeks[activeWeek][key]?.courses?.length);
+    if(populated)selected=Number(populated);
+    window.setModeFromAndroid('edit');
+  });
   await page.waitForTimeout(50);
   const breakBefore=await page.evaluate(()=>__testAndroidCalls.saveSchedule||0);
   await page.locator('#gapLabel').fill('Interclasse');
