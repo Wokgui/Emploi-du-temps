@@ -2,8 +2,6 @@ package fr.wokgui.planclasse;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.appwidget.AppWidgetManager;
-import android.content.ComponentName;
 import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -48,9 +46,6 @@ public class MainActivity extends Activity {
         @JavascriptInterface public void saveState(String json) {
             if (json == null) return;
             app.getSharedPreferences("plan_widget", Context.MODE_PRIVATE).edit().putString("state", json).apply();
-            AppWidgetManager m = AppWidgetManager.getInstance(app);
-            int[] ids = m.getAppWidgetIds(new ComponentName(app, PlanWidgetProvider.class));
-            if (ids != null && ids.length > 0) PlanWidgetProvider.updateAll(app, m, ids);
         }
 
         @JavascriptInterface public String loadState() {
