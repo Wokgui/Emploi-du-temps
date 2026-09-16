@@ -1,0 +1,29 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'fr.wokgui.planclasse'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'fr.wokgui.planclasse.v11'
+        minSdk 26
+        targetSdk 35
+        versionCode 110001
+        versionName '11.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies { }
