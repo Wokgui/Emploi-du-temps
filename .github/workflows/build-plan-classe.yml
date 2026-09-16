@@ -1,4 +1,4 @@
-name: Build Plan de classe v12c
+name: Build Plan de classe v12d
 on:
   push:
     branches: ["plan-de-classe-v12"]
@@ -30,7 +30,7 @@ jobs:
           mkdir -p "$HOME/.android"
           base64 -d plan-de-classe-v12/fixed-debug-keystore.b64 > "$HOME/.android/debug.keystore"
           keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey >/dev/null
-      - name: Restore source and apply v12c
+      - name: Restore source and apply v12d
         shell: bash
         run: |
           set -euo pipefail
@@ -60,8 +60,8 @@ jobs:
           p.write_text(s)
           g=Path('plan-de-classe/app/build.gradle')
           b=g.read_text()
-          b=re.sub(r'versionCode\s+\d+','versionCode 14',b)
-          b=re.sub(r"versionName\s+'[^']+'","versionName '12.2'",b)
+          b=re.sub(r'versionCode\s+\d+','versionCode 15',b)
+          b=re.sub(r"versionName\s+'[^']+'","versionName '12.3'",b)
           g.write_text(b)
           PY
           mkdir -p plan-de-classe/app/src/main/java/fr/wokgui/planclasse
@@ -109,12 +109,12 @@ jobs:
           APK=plan-de-classe/app/build/outputs/apk/debug/app-debug.apk
           test -s "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | tee /tmp/badging.txt
-          grep -q "package: name='fr.wokgui.planclasse' versionCode='14' versionName='12.2'" /tmp/badging.txt
+          grep -q "package: name='fr.wokgui.planclasse' versionCode='15' versionName='12.3'" /tmp/badging.txt
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
           unzip -l "$APK" | grep -q 'assets/v12c.js'
-          cp "$APK" Plan-de-classe-v12c.apk
+          cp "$APK" Plan-de-classe-v12d.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: Plan-de-classe-v12c
-          path: Plan-de-classe-v12c.apk
+          name: Plan-de-classe-v12d
+          path: Plan-de-classe-v12d.apk
           if-no-files-found: error
