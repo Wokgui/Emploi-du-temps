@@ -1,4 +1,4 @@
-name: Build Plan de classe v12
+name: Build Plan de classe v12b
 on:
   push:
     branches: ["plan-de-classe-v12"]
@@ -24,7 +24,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
-      - name: Restore v11 source and apply v12
+      - name: Restore source and apply v12b
         shell: bash
         run: |
           cat plan-de-classe-src/chunk_* > /tmp/plan.b64
@@ -35,32 +35,46 @@ jobs:
           sed -i 's/android:layout_width="55%"/android:layout_width="180dp"/; s/android:layout_width="30%"/android:layout_width="100dp"/' plan-de-classe/app/src/main/res/layout/widget_preview_layout.xml
           cp plan-de-classe-v12/v12.css plan-de-classe/app/src/main/assets/v12.css
           cp plan-de-classe-v12/v12.js plan-de-classe/app/src/main/assets/v12.js
+          cp plan-de-classe-v12/v12b.css plan-de-classe/app/src/main/assets/v12b.css
+          cp plan-de-classe-v12/v12b.js plan-de-classe/app/src/main/assets/v12b.js
           python3 - <<'PY'
           from pathlib import Path
           import re
           p=Path('plan-de-classe/app/src/main/assets/index.html')
           s=p.read_text()
           if 'v12.css' not in s: s=s.replace('</head>','<link rel="stylesheet" href="v12.css"></head>')
+          if 'v12b.css' not in s: s=s.replace('</head>','<link rel="stylesheet" href="v12b.css"></head>')
           if 'v12.js' not in s: s=s.replace('</body>','<script src="v12.js"></script></body>')
+          if 'v12b.js' not in s: s=s.replace('</body>','<script src="v12b.js"></script></body>')
           s=s.replace("function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x&&x.classes?.length)return x}catch(e){}return{cur:null,classes:[defaultClass()]}}",
           "function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x&&x.classes?.length)return x}catch(e){}try{if(window.AndroidBridge&&AndroidBridge.loadState){let n=AndroidBridge.loadState();if(n){let x=JSON.parse(n);if(x&&x.classes?.length){localStorage.setItem(KEY,n);return x}}}}catch(e){}return{cur:null,classes:[defaultClass()]}}")
           p.write_text(s)
           g=Path('plan-de-classe/app/build.gradle')
           b=g.read_text()
-          b=re.sub(r'versionCode\s+\d+','versionCode 12',b)
-          b=re.sub(r"versionName\s+'[^']+'","versionName '12.0'",b)
+          b=re.sub(r'versionCode\s+\d+','versionCode 13',b)
+          b=re.sub(r"versionName\s+'[^']+'","versionName '12.1'",b)
           g.write_text(b)
           PY
           mkdir -p plan-de-classe/app/src/main/java/fr/wokgui/planclasse
           cp plan-de-classe-v12/MainActivity.java plan-de-classe/app/src/main/java/fr/wokgui/planclasse/MainActivity.java
           cp plan-de-classe-v12/PlanWidgetProvider.java plan-de-classe/app/src/main/java/fr/wokgui/planclasse/PlanWidgetProvider.java
           cp plan-de-classe-v12/AndroidManifest.xml plan-de-classe/app/src/main/AndroidManifest.xml
-          mkdir -p plan-de-classe/app/src/main/res/layout plan-de-classe/app/src/main/res/xml plan-de-classe/app/src/main/res/drawable plan-de-classe/app/src/main/res/mipmap-anydpi-v26 plan-de-classe/app/src/main/res/values
+          mkdir -p plan-de-classe/app/src/main/res/layout plan-de-classe/app/src/main/res/xml plan-de-classe/app/src/main/res/drawable plan-de-classe/app/src/main/res/drawable-nodpi plan-de-classe/app/src/main/res/mipmap-anydpi-v26 plan-de-classe/app/src/main/res/values
           cp plan-de-classe-v12/widget_plan.xml plan-de-classe/app/src/main/res/layout/widget_plan.xml
           cp plan-de-classe-v12/widget_info.xml plan-de-classe/app/src/main/res/xml/widget_info.xml
           cp plan-de-classe-v12/ic_launcher_foreground.xml plan-de-classe/app/src/main/res/drawable/ic_launcher_foreground.xml
           cp plan-de-classe-v12/ic_launcher.xml plan-de-classe/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           cp plan-de-classe-v12/ic_launcher.xml plan-de-classe/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          ICON_SRC=plan-de-classe/app/src/main/res/drawable-nodpi/app_icon.webp
+          ICON_DST=plan-de-classe/app/src/main/res/drawable-nodpi/launcher_full.png
+          if command -v magick >/dev/null 2>&1; then
+            magick "$ICON_SRC" -fuzz 8% -trim +repage -resize '132x132^' -gravity center -extent 108x108 "$ICON_DST"
+          elif command -v convert >/dev/null 2>&1; then
+            convert "$ICON_SRC" -fuzz 8% -trim +repage -resize '132x132^' -gravity center -extent 108x108 "$ICON_DST"
+          else
+            cp "$ICON_SRC" plan-de-classe/app/src/main/res/drawable-nodpi/launcher_full.webp
+            sed -i 's/@drawable\/launcher_full/@drawable\/launcher_full/' plan-de-classe/app/src/main/res/drawable/ic_launcher_foreground.xml
+          fi
           python3 - <<'PY'
           from pathlib import Path
           p=Path('plan-de-classe/app/src/main/res/values/colors.xml')
@@ -76,8 +90,9 @@ jobs:
           p.write_text(s)
           PY
           node --check plan-de-classe/app/src/main/assets/v12.js
-          grep -q 'v12.css' plan-de-classe/app/src/main/assets/index.html
-          grep -q 'v12.js' plan-de-classe/app/src/main/assets/index.html
+          node --check plan-de-classe/app/src/main/assets/v12b.js
+          grep -q 'v12b.css' plan-de-classe/app/src/main/assets/index.html
+          grep -q 'v12b.js' plan-de-classe/app/src/main/assets/index.html
       - name: Build APK
         run: gradle -p plan-de-classe clean :app:assembleDebug --stacktrace
       - name: Verify APK
@@ -86,13 +101,13 @@ jobs:
           APK=plan-de-classe/app/build/outputs/apk/debug/app-debug.apk
           test -s "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | tee /tmp/badging.txt
-          grep -q "package: name='fr.wokgui.planclasse' versionCode='12' versionName='12.0'" /tmp/badging.txt
+          grep -q "package: name='fr.wokgui.planclasse' versionCode='13' versionName='12.1'" /tmp/badging.txt
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump xmltree "$APK" AndroidManifest.xml | grep -q 'PlanWidgetProvider'
-          unzip -l "$APK" | grep -q 'assets/v12.js'
-          unzip -l "$APK" | grep -q 'assets/v12.css'
-          cp "$APK" Plan-de-classe-v12.apk
+          unzip -l "$APK" | grep -q 'assets/v12b.js'
+          unzip -l "$APK" | grep -q 'assets/v12b.css'
+          cp "$APK" Plan-de-classe-v12b.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: Plan-de-classe-v12
-          path: Plan-de-classe-v12.apk
+          name: Plan-de-classe-v12b
+          path: Plan-de-classe-v12b.apk
           if-no-files-found: error
