@@ -1,4 +1,4 @@
-name: Build Plan de classe v15
+name: Build Plan de classe v15.1
 on:
   push:
     branches: ["plan-de-classe-v12"]
@@ -55,14 +55,23 @@ jobs:
           p.write_text(s)
           g=Path('plan-de-classe/app/build.gradle')
           b=g.read_text()
-          b=re.sub(r'versionCode\s+\d+','versionCode 22',b)
-          b=re.sub(r"versionName\s+'[^']+'","versionName '15.0'",b)
+          b=re.sub(r'versionCode\s+\d+','versionCode 23',b)
+          b=re.sub(r"versionName\s+'[^']+'","versionName '15.1'",b)
           g.write_text(b)
           PY
           mkdir -p plan-de-classe/app/src/main/java/fr/wokgui/planclasse
           cp plan-de-classe-v12/MainActivity.java plan-de-classe/app/src/main/java/fr/wokgui/planclasse/MainActivity.java
           cp plan-de-classe-v12/PlanWidgetProvider.java plan-de-classe/app/src/main/java/fr/wokgui/planclasse/PlanWidgetProvider.java
           cp plan-de-classe-v12/AndroidManifest.xml plan-de-classe/app/src/main/AndroidManifest.xml
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('plan-de-classe/app/src/main/java/fr/wokgui/planclasse/PlanWidgetProvider.java')
+          s=p.read_text()
+          s=s.replace('clampF(header * 0.38f, 26f, 56f)','clampF(header * 0.46f, 34f, 64f)')
+          s=s.replace('clampF(Math.min(rowH * 0.34f, tw * 0.18f), 12f, 28f)','clampF(Math.min(rowH * 0.48f, tw * 0.24f), 24f, 48f)')
+          s=s.replace('clampF(toolsH * 0.34f, 12f, 24f)','clampF(toolsH * 0.42f, 18f, 32f)')
+          p.write_text(s)
+          PY
           mkdir -p plan-de-classe/app/src/main/res/layout plan-de-classe/app/src/main/res/xml plan-de-classe/app/src/main/res/drawable plan-de-classe/app/src/main/res/drawable-nodpi plan-de-classe/app/src/main/res/mipmap-anydpi-v26 plan-de-classe/app/src/main/res/values
           cp plan-de-classe-v12/widget_plan.xml plan-de-classe/app/src/main/res/layout/widget_plan.xml
           cp plan-de-classe-v12/widget_preview_layout.xml plan-de-classe/app/src/main/res/layout/widget_preview_layout.xml
@@ -82,15 +91,15 @@ jobs:
           p=Path('plan-de-classe/app/src/main/res/values/strings.xml')
           s=p.read_text() if p.exists() else '<resources></resources>'
           if 'name="widget_name"' not in s:s=s.replace('</resources>','    <string name="widget_name">Plan de classe</string>\n</resources>')
-          if 'name="app_name"' not in s:s=s.replace('</resources>','    <string name="app_name">Plan de classe</string>\n</resources>')
+          if 'name="app_name"' not in s:s.replace('</resources>','    <string name="app_name">Plan de classe</string>\n</resources>')
           p.write_text(s)
           PY
           node --check plan-de-classe/app/src/main/assets/v14.js
           node --check plan-de-classe/app/src/main/assets/v15.js
           grep -q 'v15.css' plan-de-classe/app/src/main/assets/index.html
           grep -q 'v15.js' plan-de-classe/app/src/main/assets/index.html
-          grep -q 'previewLayout="@layout/widget_preview_layout"' plan-de-classe/app/src/main/res/xml/widget_info.xml
-          grep -q 'widget_root' plan-de-classe/app/src/main/res/layout/widget_plan.xml
+          grep -q 'targetCellHeight="4"' plan-de-classe/app/src/main/res/xml/widget_info.xml
+          grep -q 'studentLegendCardV15' plan-de-classe/app/src/main/assets/v15.js
           grep -q 'optJSONObject("palette")' plan-de-classe/app/src/main/java/fr/wokgui/planclasse/PlanWidgetProvider.java
       - name: Build APK
         run: gradle -p plan-de-classe clean :app:assembleDebug --stacktrace
@@ -100,14 +109,14 @@ jobs:
           APK=plan-de-classe/app/build/outputs/apk/debug/app-debug.apk
           test -s "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | tee /tmp/badging.txt
-          grep -q "package: name='fr.wokgui.planclasse' versionCode='22' versionName='15.0'" /tmp/badging.txt
+          grep -q "package: name='fr.wokgui.planclasse' versionCode='23' versionName='15.1'" /tmp/badging.txt
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
           unzip -l "$APK" | grep -q 'assets/v15.js'
           unzip -l "$APK" | grep -q 'assets/v15.css'
           unzip -l "$APK" | grep -q 'res/layout/widget_preview_layout.xml'
-          cp "$APK" Plan-de-classe-v15.apk
+          cp "$APK" Plan-de-classe-v15-1.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: Plan-de-classe-v15
-          path: Plan-de-classe-v15.apk
+          name: Plan-de-classe-v15-1
+          path: Plan-de-classe-v15-1.apk
           if-no-files-found: error
