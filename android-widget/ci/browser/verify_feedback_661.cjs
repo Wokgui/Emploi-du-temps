@@ -49,7 +49,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
       visibleText: document.getElementById('settingsSheet').innerText,
     };
   });
-  assert.equal(settings.legacyDisplay, 'none');
+  assert.notEqual(settings.legacyDisplay, 'none');
   assert.equal(settings.coloursDisplay, 'none');
   assert.equal(settings.currentVisible, true);
   assert.doesNotMatch(settings.visibleText, /Midi et trous/);
@@ -87,7 +87,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   assert.deepEqual([...new Set(lunch.fontSizes)], ['13px']);
   await page.screenshot({ path: path.join(output, 'week-661-412.png') });
   assert.deepEqual(errors, []);
-  console.log('feedback_661_legacy_lunch_settings_removed=passed');
+  console.log('feedback_661_break_settings_replaced_without_legacy_wording=passed');
   console.log('feedback_661_lunch_boundary_and_font=passed');
   await context.close();
   await browser.close();

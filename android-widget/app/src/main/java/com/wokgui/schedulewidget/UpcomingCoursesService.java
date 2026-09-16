@@ -117,13 +117,15 @@ public class UpcomingCoursesService extends RemoteViewsService {
             List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, target.date);
             if (courses == null || courses.isEmpty() || target.firstCourse >= courses.size()) return;
 
-            int lunchStart = ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, 4));
-            int lunchEnd = ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, 5));
+            int day = target.date.get(Calendar.DAY_OF_WEEK);
+            int lunchStart = AdvancedSettingsStore.weekLunchStartMinute(context, day);
+            int lunchEnd = AdvancedSettingsStore.weekLunchEndMinute(context, day);
+            if (!AdvancedSettingsStore.weekLunchEnabled(context, day)) lunchEnd = lunchStart;
             boolean futureDay = !sameDay(now, target.date);
             int previousEnd = -1;
             boolean firstVisibleCourse = true;
 
-            if (!compactHeight && !futureDay && target.firstCourse > 0) {
+            if (!futureDay && target.firstCourse > 0) {
                 ScheduleData.Course previous = courses.get(target.firstCourse - 1);
                 ScheduleData.Course next = courses.get(target.firstCourse);
                 int from = ScheduleData.toMinutes(previous.end);
@@ -179,22 +181,20 @@ public class UpcomingCoursesService extends RemoteViewsService {
         }
 
         private void appendBreaks(int from, int to, int lunchStart, int lunchEnd, int cutoffMinute) {
-            if (compactHeight || to <= from) return;
-            boolean lunchValid = lunchEnd > lunchStart;
-            if (!lunchValid || to <= lunchStart || from >= lunchEnd) {
-                addGap(from, to, cutoffMinute);
-                return;
+            for (WidgetBreakSequence.Segment segment : WidgetBreakSequence.between(
+                    from, to, lunchStart, lunchEnd,
+                    AdvancedSettingsStore.showBreaks(context),
+                    AdvancedSettingsStore.showLunch(context), cutoffMinute)) {
+                if (segment.type == WidgetBreakSequence.LUNCH) addLunch(segment.start, segment.end);
+                else addGap(segment.start, segment.end, -1);
             }
-            if (from < lunchStart) addGap(from, Math.min(to, lunchStart), cutoffMinute);
-            if (from <= lunchStart && to >= lunchEnd
-                    && AdvancedSettingsStore.showLunch(context)
-                    && (cutoffMinute < 0 || lunchEnd > cutoffMinute)) {
-                String appLabel = localizedAppBreakLabel(true);
-                String label = AdvancedSettingsStore.widgetLunchLabel(context, appLabel);
-                items.add(new Item(label, appLabel, minuteLabel(lunchStart) + " - " + minuteLabel(lunchEnd), "",
-                        Item.LUNCH, 0, lunchRelative(lunchEnd), false, ""));
-            }
-            if (to > lunchEnd) addGap(Math.max(from, lunchEnd), to, cutoffMinute);
+        }
+
+        private void addLunch(int start, int end) {
+            String appLabel = localizedAppBreakLabel(true);
+            String label = AdvancedSettingsStore.widgetLunchLabel(context, appLabel);
+            items.add(new Item(label, appLabel, minuteLabel(start) + " - " + minuteLabel(end), "",
+                    Item.LUNCH, 0, lunchRelative(end), false, ""));
         }
 
         private void addGap(int start, int end, int cutoffMinute) {

@@ -34,6 +34,7 @@ public final class CondensedCoursesService extends RemoteViewsService {
     private static final class Item {
         static final int COURSE = 0;
         static final int LUNCH = 1;
+        static final int GAP = 2;
 
         final String label;
         final String sourceLabel;
@@ -103,19 +104,21 @@ public final class CondensedCoursesService extends RemoteViewsService {
             int day = target.date.get(Calendar.DAY_OF_WEEK);
             int lunchStart = AdvancedSettingsStore.weekLunchStartMinute(context, day);
             int lunchEnd = AdvancedSettingsStore.weekLunchEndMinute(context, day);
-            boolean lunchVisible = AdvancedSettingsStore.showLunch(context)
-                    && AdvancedSettingsStore.weekLunchEnabled(context, day)
-                    && lunchEnd > lunchStart
-                    && (futureDay || lunchEnd > nowMin)
-                    && !overlaps(courses, lunchStart, lunchEnd);
-            boolean lunchAdded = false;
+            if (!AdvancedSettingsStore.weekLunchEnabled(context, day)) lunchEnd = lunchStart;
+            int previousEnd = -1;
+
+            if (!futureDay && target.firstCourse > 0) {
+                ScheduleData.Course previous = courses.get(target.firstCourse - 1);
+                ScheduleData.Course next = courses.get(target.firstCourse);
+                int from = ScheduleData.toMinutes(previous.end);
+                int to = ScheduleData.toMinutes(next.start);
+                if (nowMin >= from && nowMin < to) appendBreaks(from, to, lunchStart, lunchEnd, nowMin);
+            }
 
             for (int i = target.firstCourse; i < courses.size(); i++) {
                 ScheduleData.Course course = courses.get(i);
-                if (lunchVisible && !lunchAdded && ScheduleData.toMinutes(course.start) >= lunchEnd) {
-                    addLunch(lunchStart, lunchEnd);
-                    lunchAdded = true;
-                }
+                int start = ScheduleData.toMinutes(course.start);
+                if (previousEnd >= 0) appendBreaks(previousEnd, start, lunchStart, lunchEnd, -1);
                 int order = course.slot > 0 ? course.slot : i + 1;
                 String displayLabel = AdvancedSettingsStore.widgetCourseLabel(context, target.date, course);
                 items.add(new Item(
@@ -130,23 +133,30 @@ public final class CondensedCoursesService extends RemoteViewsService {
                         course.color
                 ));
                 firstVisibleCourse = false;
+                previousEnd = ScheduleData.toMinutes(course.end);
             }
-            if (lunchVisible && !lunchAdded) addLunch(lunchStart, lunchEnd);
         }
 
-        private boolean overlaps(List<ScheduleData.Course> courses, int start, int end) {
-            for (ScheduleData.Course course : courses) {
-                if (ScheduleData.toMinutes(course.start) < end && ScheduleData.toMinutes(course.end) > start) return true;
+        private void appendBreaks(int from, int to, int lunchStart, int lunchEnd, int cutoffMinute) {
+            for (WidgetBreakSequence.Segment segment : WidgetBreakSequence.between(
+                    from, to, lunchStart, lunchEnd,
+                    AdvancedSettingsStore.showBreaks(context),
+                    AdvancedSettingsStore.showLunch(context), cutoffMinute)) {
+                if (segment.type == WidgetBreakSequence.LUNCH) addBreak(Item.LUNCH, segment.start, segment.end);
+                else addBreak(Item.GAP, segment.start, segment.end);
             }
-            return false;
         }
 
-        private void addLunch(int start, int end) {
-            String appLabel = ScheduleStore.getLunchLabel(context);
-            if ("Pause de midi".equalsIgnoreCase(appLabel)) appLabel = UiSettingsStore.t(context, "lunch");
-            String label = AdvancedSettingsStore.widgetLunchLabel(context, appLabel);
+        private void addBreak(int type, int start, int end) {
+            boolean lunch = type == Item.LUNCH;
+            String appLabel = lunch ? ScheduleStore.getLunchLabel(context) : ScheduleStore.getGapLabel(context);
+            if (lunch && "Pause de midi".equalsIgnoreCase(appLabel)) appLabel = UiSettingsStore.t(context, "lunch");
+            if (!lunch && "Trou".equalsIgnoreCase(appLabel)) appLabel = UiSettingsStore.t(context, "gap");
+            String label = lunch
+                    ? AdvancedSettingsStore.widgetLunchLabel(context, appLabel)
+                    : AdvancedSettingsStore.widgetGapLabel(context, appLabel);
             items.add(new Item(label, appLabel, minuteLabel(start) + " - " + minuteLabel(end), "",
-                    Item.LUNCH, 0, "", false, ""));
+                    type, 0, "", false, ""));
         }
 
         private String minuteLabel(int minute) {
@@ -213,7 +223,7 @@ public final class CondensedCoursesService extends RemoteViewsService {
 
             String title = item.label;
             if (item.uncertain) title = "⚠ " + title;
-            String meta = item.type == Item.LUNCH ? "" : condensedMeta(item);
+            String meta = item.type == Item.COURSE ? condensedMeta(item) : "";
             if (!meta.isEmpty()) title += " · " + meta;
             views.setTextViewText(R.id.rowCondensedTitle, title);
             views.setTextViewText(R.id.rowCondensedTime, AdvancedSettingsStore.showTimes(context) ? startTime(item.time) : "");
@@ -221,9 +231,11 @@ public final class CondensedCoursesService extends RemoteViewsService {
             views.setViewVisibility(R.id.rowCondensedMeta, View.GONE);
 
             int accent;
-            if (item.type == Item.LUNCH) {
-                int background = WidgetPaletteStore.lunchBackground(context);
-                int text = WidgetPaletteStore.lunchText(context);
+            if (item.type != Item.COURSE) {
+                int background = item.type == Item.LUNCH
+                        ? WidgetPaletteStore.lunchBackground(context) : WidgetPaletteStore.gapBackground(context);
+                int text = item.type == Item.LUNCH
+                        ? WidgetPaletteStore.lunchText(context) : WidgetPaletteStore.gapText(context);
                 views.setInt(R.id.rowCondensedContent, "setBackgroundColor", background);
                 views.setTextColor(R.id.rowCondensedTime, text);
                 views.setTextColor(R.id.rowCondensedTitle, text);
