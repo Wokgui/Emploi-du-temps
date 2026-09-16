@@ -1,0 +1,25 @@
+:root{--topSolid:#087163}
+.top.premium-top{background:var(--topSolid)!important;box-shadow:0 4px 14px #064e4530!important}
+.premium-wave{display:none!important}
+.brand{min-height:34px!important}.bt{font-size:22px!important;text-shadow:none!important}
+.class-choice{margin-top:8px!important}.class-choice .selwrap{width:min(76vw,370px)!important}
+.selwrap small{left:0!important;right:0!important;top:5px!important;transform:none!important;text-align:center!important;width:100%!important}
+.selwrap:after{content:'⌄';position:absolute;right:15px;top:50%;transform:translateY(-43%);font-size:18px;color:#66757a;pointer-events:none;font-weight:700;z-index:3}
+.sel{appearance:none!important;-webkit-appearance:none!important;text-align:center!important;text-align-last:center!important;padding:18px 46px 4px!important;font-size:14px!important;line-height:1!important}
+.sel option{text-align:center}
+.quick-actions .ib{height:50px!important}.quick-actions .qicon{font-size:18px!important}
+#v-students>.section>h2,#v-config>.section>h2{text-align:center!important}
+.stu{padding:8px 8px 9px!important}.stuhead{position:relative;justify-content:center!important}.stuhead input{text-align:center!important;font-size:12px!important;padding:5px 34px!important}.stuhead .x{position:absolute;right:0;top:0}
+.stuctrl{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:7px!important;flex-wrap:nowrap!important}
+.genderdots,.tagset{display:flex!important;justify-content:center!important;align-items:center!important;gap:6px!important;flex-wrap:nowrap!important;width:100%!important}
+.genderdots .dot,.tagset .tagb,.editgenders .gbtn,.edittags .tagb{width:58px!important;height:40px!important;border-radius:10px!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:5px!important;flex:0 0 58px!important}
+.genderdots .dot{font-size:9px!important}.tagset .tagb svg,.edittags .tagb svg{width:23px!important;height:23px!important}
+.editmodal{width:min(420px,100%)!important}.editmodal h3{text-align:center!important}.editgenders{display:flex!important;justify-content:center!important;gap:6px!important}.edittags{display:flex!important;justify-content:center!important;gap:6px!important;flex-wrap:nowrap!important}
+.editlabel{text-align:center!important}.editblock{display:flex!important;flex-direction:column!important;align-items:center!important}
+.navico.plan-nav-svg svg{width:25px;height:25px;display:block;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.rowcfg{padding:10px 0!important}.rowcfgtop{grid-template-columns:1fr auto!important}.rowcfgtop b{font-size:12px}.v12-colcount{display:flex;align-items:center;gap:6px}.v12-colcount>span{font-size:10px;color:var(--mut);font-weight:750}
+.v12-columns{display:flex;flex-direction:column;gap:7px;margin-top:8px}.v12-column{border:1px solid #e1e8e8;background:#fbfdfc;border-radius:11px;padding:7px}.v12-coltop{display:flex;align-items:center;justify-content:space-between;gap:7px}.v12-colname{font-size:10px;font-weight:850}.v12-mode{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px}.v12-mode button{height:30px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:9px;font-weight:800;padding:0 7px}.v12-mode button.on{background:var(--mint);border-color:#7bcbb9;color:#05604f}.v12-tables{display:flex;align-items:center;justify-content:space-between;gap:7px;margin-top:6px;font-size:9px;color:var(--mut)}.v12-tables .step{margin-left:auto}.v12-tables .step span{min-width:64px}
+.tgroup.joined{gap:0!important}.tgroup.joined .desk:not(:first-child){margin-left:-1px}.tgroup.joined .desk{border-radius:4px}.tgroup.isolated{gap:clamp(7px,1.5vw,14px)!important}
+.statuslegend{grid-template-columns:repeat(2,minmax(0,1fr))!important;column-gap:18px!important;row-gap:8px!important;max-width:350px;margin:9px auto 0!important}.statuslegend .legenditem{justify-content:flex-start!important;width:auto!important}.statuslegend .legenditem .tagb{margin-left:0!important}.statuslegend .legenditem span:last-child{margin-right:0!important}.statuslegend .legenditem:last-child{grid-column:1/-1;justify-self:center!important}
+.foot.premium-foot{min-height:60px!important}.premium-foot .nav{border-radius:20px!important;margin:5px 8px!important}.premium-foot .nav.on{background:#d5f5eb!important;box-shadow:inset 0 0 0 1px #a6e0d2!important}
+@media(max-width:370px){.genderdots .dot,.tagset .tagb,.editgenders .gbtn,.edittags .tagb{width:52px!important;flex-basis:52px!important}.edittags,.tagset{gap:4px!important}}
