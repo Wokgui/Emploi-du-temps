@@ -1,0 +1,1 @@
+Launcher icon source: exact icon crop approved in chat. Binary launcher resource is stored under res/mipmap-xxxhdpi/ic_launcher.png.
