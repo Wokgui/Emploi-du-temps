@@ -1,0 +1,131 @@
+name: Build Plan de classe v15.6
+on:
+  push:
+    branches: ["plan-de-classe-v12"]
+    paths:
+      - 'plan-de-classe-v12/v156.js'
+      - 'plan-de-classe-v12/v156.css'
+      - 'plan-de-classe-v12/MainActivity.java'
+      - '.github/workflows/build-plan-classe-v156.yml'
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Prepare Android SDK
+        shell: bash
+        run: |
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
+          yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null || true
+          /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+      - name: Install stable signing key
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.android"
+          base64 -d plan-de-classe-v12/fixed-debug-keystore.b64 > "$HOME/.android/debug.keystore"
+          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey >/dev/null
+      - name: Restore and patch app
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat plan-de-classe-src/chunk_* > /tmp/plan.b64
+          base64 -d /tmp/plan.b64 > /tmp/plan.zip
+          rm -rf plan-de-classe && mkdir plan-de-classe
+          unzip -q /tmp/plan.zip -d plan-de-classe
+
+          cp plan-de-classe-v12/v14.css plan-de-classe/app/src/main/assets/v14.css
+          cp plan-de-classe-v12/v14b.css plan-de-classe/app/src/main/assets/v14b.css
+          cp plan-de-classe-v12/v14.js plan-de-classe/app/src/main/assets/v14.js
+          cp plan-de-classe-v12/v15.css plan-de-classe/app/src/main/assets/v15.css
+          cp plan-de-classe-v12/v15.js plan-de-classe/app/src/main/assets/v15.js
+          cp plan-de-classe-v12/v155.css plan-de-classe/app/src/main/assets/v155.css
+          cp plan-de-classe-v12/v155.js plan-de-classe/app/src/main/assets/v155.js
+          cp plan-de-classe-v12/v156.css plan-de-classe/app/src/main/assets/v156.css
+          cp plan-de-classe-v12/v156.js plan-de-classe/app/src/main/assets/v156.js
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('plan-de-classe/app/src/main/assets/index.html')
+          s=p.read_text()
+          s=re.sub(r'<link[^>]+href=["\']v(?:12|13|14|15|154|155|156)[^"\']*\.css["\'][^>]*>','',s)
+          s=re.sub(r'<script[^>]+src=["\']v(?:12|13|14|15|154|155|156)[^"\']*\.js["\'][^>]*></script>','',s)
+          s=s.replace('</head>','<link rel="stylesheet" href="v14.css"><link rel="stylesheet" href="v14b.css"><link rel="stylesheet" href="v15.css"><link rel="stylesheet" href="v155.css"><link rel="stylesheet" href="v156.css"></head>')
+          s=s.replace('</body>','<script src="v14.js"></script><script src="v15.js"></script><script src="v155.js"></script><script src="v156.js"></script></body>')
+          s=s.replace("function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x&&x.classes?.length)return x}catch(e){}return{cur:null,classes:[defaultClass()]}}",
+          "function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x&&x.classes?.length)return x}catch(e){}try{if(window.AndroidBridge&&AndroidBridge.loadState){let n=AndroidBridge.loadState();if(n){let x=JSON.parse(n);if(x&&x.classes?.length){localStorage.setItem(KEY,n);return x}}}}catch(e){}return{cur:null,classes:[defaultClass()]}}")
+          p.write_text(s)
+          g=Path('plan-de-classe/app/build.gradle')
+          b=g.read_text()
+          b=re.sub(r'versionCode\s+\d+','versionCode 28',b)
+          b=re.sub(r"versionName\s+'[^']+'","versionName '15.6'",b)
+          g.write_text(b)
+          PY
+
+          mkdir -p plan-de-classe/app/src/main/java/fr/wokgui/planclasse
+          cp plan-de-classe-v12/MainActivity.java plan-de-classe/app/src/main/java/fr/wokgui/planclasse/MainActivity.java
+          cp plan-de-classe-v12/AndroidManifest.xml plan-de-classe/app/src/main/AndroidManifest.xml
+          rm -f plan-de-classe/app/src/main/java/fr/wokgui/planclasse/PlanWidgetProvider.java
+          find plan-de-classe/app/src/main/res -type f -name 'widget_*' -delete || true
+          rm -f plan-de-classe/app/src/main/res/xml/widget_info.xml
+
+          mkdir -p plan-de-classe/app/src/main/res/drawable plan-de-classe/app/src/main/res/drawable-nodpi plan-de-classe/app/src/main/res/mipmap-anydpi-v26 plan-de-classe/app/src/main/res/values
+          cp plan-de-classe-v12/ic_launcher_foreground.xml plan-de-classe/app/src/main/res/drawable/ic_launcher_foreground.xml
+          cp plan-de-classe-v12/ic_launcher.xml plan-de-classe/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          cp plan-de-classe-v12/ic_launcher.xml plan-de-classe/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          ICON_SRC=plan-de-classe/app/src/main/res/drawable-nodpi/app_icon.webp
+          ICON_DST=plan-de-classe/app/src/main/res/drawable-nodpi/launcher_full.png
+          if command -v convert >/dev/null 2>&1; then convert "$ICON_SRC" -fuzz 8% -trim +repage -resize '118x118^' -gravity center -extent 108x108 "$ICON_DST"; else cp "$ICON_SRC" plan-de-classe/app/src/main/res/drawable-nodpi/launcher_full.webp; fi
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('plan-de-classe/app/src/main/res/values/colors.xml')
+          s=p.read_text() if p.exists() else '<resources></resources>'
+          if 'name="icon_bg"' not in s:s=s.replace('</resources>','    <color name="icon_bg">#0b6b57</color>\n</resources>')
+          p.write_text(s)
+          p=Path('plan-de-classe/app/src/main/res/values/strings.xml')
+          s=p.read_text() if p.exists() else '<resources></resources>'
+          s=re.sub(r'\s*<string\s+name="widget_name"[^>]*>.*?</string>\s*','\n',s,flags=re.S)
+          if 'name="app_name"' not in s:s=s.replace('</resources>','    <string name="app_name">Plan de classe</string>\n</resources>')
+          p.write_text(s)
+          PY
+
+          node --check plan-de-classe/app/src/main/assets/v14.js
+          node --check plan-de-classe/app/src/main/assets/v15.js
+          node --check plan-de-classe/app/src/main/assets/v155.js
+          node --check plan-de-classe/app/src/main/assets/v156.js
+          grep -q 'v156.js' plan-de-classe/app/src/main/assets/index.html
+          grep -q 'themeColorV156' plan-de-classe/app/src/main/assets/v156.js
+          grep -q 'setThemeColor' plan-de-classe/app/src/main/java/fr/wokgui/planclasse/MainActivity.java
+          ! grep -q 'PlanWidgetProvider' plan-de-classe/app/src/main/AndroidManifest.xml
+          test ! -e plan-de-classe/app/src/main/res/xml/widget_info.xml
+
+      - name: Build APK
+        run: gradle -p plan-de-classe clean :app:assembleDebug --stacktrace
+      - name: Verify APK
+        shell: bash
+        run: |
+          APK=plan-de-classe/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | tee /tmp/badging.txt
+          grep -q "package: name='fr.wokgui.planclasse' versionCode='28' versionName='15.6'" /tmp/badging.txt
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
+          unzip -l "$APK" | grep -q 'assets/v156.js'
+          unzip -l "$APK" | grep -q 'assets/v156.css'
+          if unzip -l "$APK" | grep -qE 'widget_info|widget_plan|widget_preview|PlanWidgetProvider'; then echo 'Widget trace found'; exit 1; fi
+          cp "$APK" Plan-de-classe-v15-6.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Plan-de-classe-v15-6
+          path: Plan-de-classe-v15-6.apk
+          if-no-files-found: error
