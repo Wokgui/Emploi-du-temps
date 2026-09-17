@@ -17,7 +17,7 @@ public class MainActivity extends Activity {
     @SuppressLint("SetJavaScriptEnabled")
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        getWindow().setStatusBarColor(Color.rgb(8,113,99));
+        getWindow().setStatusBarColor(Color.rgb(4,75,61));
         getWindow().setNavigationBarColor(Color.WHITE);
         webView = new WebView(this);
         webView.setBackgroundColor(Color.rgb(245,247,248));
@@ -40,8 +40,13 @@ public class MainActivity extends Activity {
     }
 
     public static final class AndroidBridge {
+        private final MainActivity activity;
         private final Context app;
-        AndroidBridge(Context c) { app = c.getApplicationContext(); }
+
+        AndroidBridge(MainActivity a) {
+            activity = a;
+            app = a.getApplicationContext();
+        }
 
         @JavascriptInterface public void saveState(String json) {
             if (json == null) return;
@@ -50,6 +55,15 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface public String loadState() {
             return app.getSharedPreferences("plan_widget", Context.MODE_PRIVATE).getString("state", "");
+        }
+
+        @JavascriptInterface public void setThemeColor(String hex) {
+            if (hex == null) return;
+            activity.runOnUiThread(() -> {
+                try {
+                    activity.getWindow().setStatusBarColor(Color.parseColor(hex));
+                } catch (Exception ignored) {}
+            });
         }
     }
 }
