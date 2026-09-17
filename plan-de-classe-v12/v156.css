@@ -1,0 +1,81 @@
+/* v15.6 — Forest Premium header + recolorable theme, without extra settings cards */
+:root{
+  --theme-base:#0b6b57;
+  --theme-dark:#064b3d;
+  --theme-light:#17846b;
+  --theme-leaf:#b9dfca;
+  --theme-glow:#5ca68d;
+  --theme-soft:#dff4ec;
+}
+
+/* Exact visual direction requested: premium green gradient + botanical silhouettes. */
+.top.premium-top{
+  position:relative!important;
+  overflow:hidden!important;
+  isolation:isolate!important;
+  background:
+    radial-gradient(90% 120% at 48% -18%,color-mix(in srgb,var(--theme-light) 74%,white 26%) 0%,transparent 58%),
+    linear-gradient(180deg,var(--theme-light) 0%,var(--theme-base) 52%,var(--theme-dark) 100%)!important;
+  box-shadow:0 5px 16px color-mix(in srgb,var(--theme-dark) 42%,transparent)!important;
+}
+.top.premium-top::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  opacity:.34;
+  background:var(--theme-leaf);
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 360'%3E%3Cg fill='black'%3E%3Cpath d='M0 78C92 11 170 0 251 28c-71 21-119 56-151 110C64 124 30 105 0 78Z'/%3E%3Cpath d='M45 0c29 48 30 92 6 132C22 96 11 52 16 0Z'/%3E%3Cpath d='M955 0c-29 48-30 92-6 132 29-36 40-80 35-132Z'/%3E%3Cpath d='M1000 78c-92-67-170-78-251-50 71 21 119 56 151 110 36-14 70-33 100-60Z'/%3E%3Cellipse cx='98' cy='44' rx='54' ry='18' transform='rotate(-28 98 44)'/%3E%3Cellipse cx='154' cy='78' rx='51' ry='17' transform='rotate(-16 154 78)'/%3E%3Cellipse cx='206' cy='30' rx='46' ry='15' transform='rotate(18 206 30)'/%3E%3Cellipse cx='902' cy='44' rx='54' ry='18' transform='rotate(28 902 44)'/%3E%3Cellipse cx='846' cy='78' rx='51' ry='17' transform='rotate(16 846 78)'/%3E%3Cellipse cx='794' cy='30' rx='46' ry='15' transform='rotate(-18 794 30)'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 360'%3E%3Cg fill='black'%3E%3Cpath d='M0 78C92 11 170 0 251 28c-71 21-119 56-151 110C64 124 30 105 0 78Z'/%3E%3Cpath d='M45 0c29 48 30 92 6 132C22 96 11 52 16 0Z'/%3E%3Cpath d='M955 0c-29 48-30 92-6 132 29-36 40-80 35-132Z'/%3E%3Cpath d='M1000 78c-92-67-170-78-251-50 71 21 119 56 151 110 36-14 70-33 100-60Z'/%3E%3Cellipse cx='98' cy='44' rx='54' ry='18' transform='rotate(-28 98 44)'/%3E%3Cellipse cx='154' cy='78' rx='51' ry='17' transform='rotate(-16 154 78)'/%3E%3Cellipse cx='206' cy='30' rx='46' ry='15' transform='rotate(18 206 30)'/%3E%3Cellipse cx='902' cy='44' rx='54' ry='18' transform='rotate(28 902 44)'/%3E%3Cellipse cx='846' cy='78' rx='51' ry='17' transform='rotate(16 846 78)'/%3E%3Cellipse cx='794' cy='30' rx='46' ry='15' transform='rotate(-18 794 30)'/%3E%3C/g%3E%3C/svg%3E");
+  mask-size:100% 100%;mask-repeat:no-repeat;
+}
+.top.premium-top::after{
+  content:'';
+  position:absolute;
+  left:0;right:0;bottom:-1px;height:46%;
+  z-index:0;
+  pointer-events:none;
+  opacity:.48;
+  background:color-mix(in srgb,var(--theme-dark) 86%,black 14%);
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 180'%3E%3Cg fill='black'%3E%3Cpath d='M0 180V124l28-52 14 30 22-52 20 42 20-72 24 69 16-37 25 59 18-31 20 45v55Z'/%3E%3Cpath d='M1000 180V124l-28-52-14 30-22-52-20 42-20-72-24 69-16-37-25 59-18-31-20 45v55Z'/%3E%3Cpath d='M0 180V158c120-24 224-23 344 4v18ZM1000 180v-22c-120-24-224-23-344 4v18Z'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-size:100% 100%;-webkit-mask-repeat:no-repeat;
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 180'%3E%3Cg fill='black'%3E%3Cpath d='M0 180V124l28-52 14 30 22-52 20 42 20-72 24 69 16-37 25 59 18-31 20 45v55Z'/%3E%3Cpath d='M1000 180V124l-28-52-14 30-22-52-20 42-20-72-24 69-16-37-25 59-18-31-20 45v55Z'/%3E%3Cpath d='M0 180V158c120-24 224-23 344 4v18ZM1000 180v-22c-120-24-224-23-344 4v18Z'/%3E%3C/g%3E%3C/svg%3E");
+  mask-size:100% 100%;mask-repeat:no-repeat;
+}
+.top.premium-top>*{position:relative;z-index:2}
+.bt{color:#fff!important;text-shadow:0 1px 2px rgba(0,0,0,.13)!important}
+
+/* Theme color lives inside the existing Disposition panel — no extra settings card. */
+.v156-theme-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  align-items:center;
+  gap:8px;
+  margin:11px 0 2px;
+  padding-top:10px;
+  border-top:1px solid color-mix(in srgb,var(--theme-base) 16%,#dce6e3 84%);
+}
+.v156-theme-label{text-align:left;font-size:10px;font-weight:850;color:var(--mut)}
+.v156-theme-color{
+  appearance:none;-webkit-appearance:none;
+  width:46px;height:34px;padding:2px;
+  border:1px solid #cbd7d4;border-radius:10px;background:#fff;
+}
+.v156-theme-color::-webkit-color-swatch-wrapper{padding:0}
+.v156-theme-color::-webkit-color-swatch{border:0;border-radius:7px}
+.v156-theme-reset{height:34px!important;min-width:72px!important;padding:0 10px!important;border-radius:10px!important;font-size:9px!important}
+.v156-theme-note{grid-column:1/-1;text-align:center;font-size:8.5px;color:var(--mut);line-height:1.25;margin-top:-1px}
+
+/* Harmonise selected controls with whatever header color the user chooses. */
+.premium-foot .nav.on{background:var(--theme-soft)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--theme-base) 34%,white 66%)!important;color:var(--theme-dark)!important}
+.v14-modes button.on{background:var(--theme-soft)!important;border-color:color-mix(in srgb,var(--theme-base) 48%,white 52%)!important;color:var(--theme-dark)!important}
+.pb{background:var(--theme-base)!important;border-color:var(--theme-base)!important}
+.seat.pick{outline-color:var(--theme-base)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--theme-base) 16%,transparent),0 2px 6px rgba(35,70,62,.10)!important}
+
+@media(max-width:390px){
+  .v156-theme-row{grid-template-columns:1fr 44px 68px;gap:6px}
+  .v156-theme-reset{min-width:68px!important;padding:0 7px!important}
+}
