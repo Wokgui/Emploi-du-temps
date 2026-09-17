@@ -1,0 +1,27 @@
+/* v15.5 — stable seat press, direct seat deletion, centered layout title */
+#room .seat,#room .seat *{
+  -webkit-touch-callout:none!important;
+  -webkit-user-select:none!important;
+  user-select:none!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+#room .seat{touch-action:none!important}
+#v-config>.section:first-child>h2,
+#v-config .v14-quick>h3{
+  width:100%!important;
+  text-align:center!important;
+  justify-content:center!important;
+}
+.v155-delete-seat{
+  display:block;
+  width:100%;
+  min-height:42px;
+  margin-top:10px;
+  border:1px solid #efb5b5;
+  border-radius:12px;
+  background:#fff4f4;
+  color:#b3261e;
+  font-weight:850;
+  font-size:11px;
+}
+.v155-delete-seat:active{transform:scale(.985);background:#ffe9e9}
