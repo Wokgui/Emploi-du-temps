@@ -6,6 +6,7 @@ final class CondensedRowSizing {
     static final int NATURAL_ROW_DP = 22;
     static final int COMFORTABLE_ROW_DP = 28;
     static final int PROGRESS_STRIP_DP = 3;
+    static final int PROGRESS_CHROME_DP = PROGRESS_STRIP_DP * 2;
     static final int MANUAL_MIN_ROW_DP = 14;
     static final int MANUAL_MAX_ROW_DP = 30;
     static final int AUTO_MIN_ROW_DP = 1;
@@ -18,7 +19,7 @@ final class CondensedRowSizing {
 
     static int visibleRows(int widgetHeightDp, int itemCount, String density) {
         int rowHeight = rowHeightForDensity(density);
-        int contentHeight = Math.max(rowHeight, widgetHeightDp - PROGRESS_STRIP_DP);
+        int contentHeight = Math.max(rowHeight, widgetHeightDp - PROGRESS_CHROME_DP);
         int naturalCapacity = Math.max(1, contentHeight / rowHeight);
         return Math.max(1, Math.min(Math.max(1, itemCount), naturalCapacity));
     }
@@ -48,8 +49,12 @@ final class CondensedRowSizing {
     }
 
     static int autoRowHeightDp(int widgetHeightDp, int itemCount, int position) {
+        return autoRowHeightDp(widgetHeightDp, itemCount, position, PROGRESS_CHROME_DP);
+    }
+
+    static int autoRowHeightDp(int widgetHeightDp, int itemCount, int position, int progressChromeDp) {
         int count = Math.max(1, itemCount);
-        int available = Math.max(AUTO_MIN_ROW_DP, widgetHeightDp - PROGRESS_STRIP_DP);
+        int available = Math.max(AUTO_MIN_ROW_DP, widgetHeightDp - Math.max(0, progressChromeDp));
         int base = available / count;
         if (base < AUTO_MIN_ROW_DP) return AUTO_MIN_ROW_DP;
         int remainder = available % count;

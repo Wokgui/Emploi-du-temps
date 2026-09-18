@@ -144,7 +144,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   assert.match(condensed, /widgetAutoDensity\(context\)/);
   assert.ok((otherWidgets.match(/widgetAutoDensity\(context\)/g) || []).length >= 2);
   assert.match(sizing, /available % count/);
-  assert.match(otherWidgets, /autoRowHeightDp\(sizingHeight, items\.size\(\), position\)/);
+  assert.match(otherWidgets, /autoRowHeightDp\(sizingHeight, items\.size\(\), position,\s*AdvancedSettingsStore\.widgetBarChromeDp\(context\)\)/);
 
   assert.deepEqual(errors, []);
   console.log('feedback_667_week_lunch_persistent=passed');

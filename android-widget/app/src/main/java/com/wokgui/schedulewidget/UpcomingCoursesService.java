@@ -318,7 +318,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             int sizingHeight = adaptiveHost
                     ? WidgetHeightSizing.adaptiveEstimateHeightDp(widgetHeightDp) : widgetHeightDp;
             int fittedHeight = automaticDensity
-                    ? CondensedRowSizing.autoRowHeightDp(sizingHeight, items.size(), position)
+                    ? CondensedRowSizing.autoRowHeightDp(sizingHeight, items.size(), position, AdvancedSettingsStore.widgetBarChromeDp(context))
                     : 54;
             float scale = UiSettingsStore.widgetFontScale(context);
             float automaticScale = automaticDensity
@@ -579,7 +579,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 int minHeight = options == null ? 0 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0);
                 int maxHeight = options == null ? 0 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0);
                 int contentHeight = WidgetHeightSizing.contentHeightDp(minHeight, maxHeight, landscape,
-                        108, CondensedRowSizing.PROGRESS_STRIP_DP, 72);
+                        108, AdvancedSettingsStore.widgetBarChromeDp(context), 72);
                 v.setViewLayoutHeight(R.id.rowRoot, contentHeight, TypedValue.COMPLEX_UNIT_DIP);
                 v.setViewLayoutHeight(R.id.rowMiniContent, contentHeight, TypedValue.COMPLEX_UNIT_DIP);
                 v.setViewLayoutHeight(R.id.rowMiniHeader, 20, TypedValue.COMPLEX_UNIT_DIP);

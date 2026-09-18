@@ -13,7 +13,7 @@ public final class CondensedRowSizingTest {
                     used += row;
                 }
                 int available = Math.max(CondensedRowSizing.NATURAL_ROW_DP,
-                        widgetHeight - CondensedRowSizing.PROGRESS_STRIP_DP);
+                        widgetHeight - CondensedRowSizing.PROGRESS_CHROME_DP);
                 if (used > available) throw new AssertionError("visible rows overflow the widget");
                 if (itemCount > visible && available - used >= CondensedRowSizing.NATURAL_ROW_DP)
                     throw new AssertionError("another dense row should be visible");
@@ -30,7 +30,7 @@ public final class CondensedRowSizingTest {
             int row = CondensedRowSizing.rowHeightDp(108, 7, 0, density);
             if (row != expected[i]) throw new AssertionError("density not applied: " + density);
             int visible = CondensedRowSizing.visibleRows(108, 9, density);
-            if (visible != Math.min(9, (108 - CondensedRowSizing.PROGRESS_STRIP_DP) / expected[i]))
+            if (visible != Math.min(9, (108 - CondensedRowSizing.PROGRESS_CHROME_DP) / expected[i]))
                 throw new AssertionError("density capacity is wrong: " + density);
         }
         if (CondensedRowSizing.visibleRows(108, 9, "compact")
@@ -48,7 +48,7 @@ public final class CondensedRowSizingTest {
         for (int height = 40; height <= 300; height++) {
             for (int count = 1; count <= 18; count++) {
                 int available = Math.max(CondensedRowSizing.AUTO_MIN_ROW_DP,
-                        height - CondensedRowSizing.PROGRESS_STRIP_DP);
+                        height - CondensedRowSizing.PROGRESS_CHROME_DP);
                 int used = 0;
                 for (int position = 0; position < count; position++) {
                     int row = CondensedRowSizing.autoRowHeightDp(height, count, position);
@@ -60,7 +60,20 @@ public final class CondensedRowSizingTest {
                     throw new AssertionError("automatic rows leave blank widget space");
             }
         }
-        System.out.println("full_height_automatic_widget_density_667=passed");
+        for (int chrome : new int[]{0, CondensedRowSizing.PROGRESS_STRIP_DP, CondensedRowSizing.PROGRESS_CHROME_DP}) {
+            for (int height = 40; height <= 300; height++) {
+                for (int count = 1; count <= 18; count++) {
+                    int available = Math.max(CondensedRowSizing.AUTO_MIN_ROW_DP, height - chrome);
+                    int used = 0;
+                    for (int position = 0; position < count; position++) {
+                        used += CondensedRowSizing.autoRowHeightDp(height, count, position, chrome);
+                    }
+                    if (available / count >= CondensedRowSizing.AUTO_MIN_ROW_DP && used != available)
+                        throw new AssertionError("bar chrome leaves blank widget space: " + chrome);
+                }
+            }
+        }
+        System.out.println("configurable_widget_bar_chrome_672=passed");        System.out.println("full_height_automatic_widget_density_667=passed");
         System.out.println("continuous_and_automatic_widget_density_666=passed");
         System.out.println("condensed_widget_density_665=passed");
     }

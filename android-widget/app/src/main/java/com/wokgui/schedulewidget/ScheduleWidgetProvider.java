@@ -40,7 +40,11 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         views.setInt(R.id.widgetRoot,"setBackgroundColor",surface);views.setInt(R.id.widgetBody,"setBackgroundColor",surface);views.setInt(R.id.emptyUpcoming,"setBackgroundColor",surface);
         views.setTextColor(R.id.emptyUpcoming,0xFF64748B);
         views.setTextViewText(R.id.emptyUpcoming,UiSettingsStore.t(context,"noCourse"));
-        views.setProgressBar(R.id.dayProgress,1000,dayProgress(context),false);
+        int dayProgressValue=dayProgress(context);
+        configureEdgeBar(views,R.id.widgetTopBar,R.id.dayProgressTop,R.id.dayColorTop,
+                AdvancedSettingsStore.widgetTopBarMode(context),AdvancedSettingsStore.widgetTopBarColor(context),dayProgressValue);
+        configureEdgeBar(views,R.id.widgetBottomBar,R.id.dayProgress,R.id.dayColorBottom,
+                AdvancedSettingsStore.widgetBottomBarMode(context),AdvancedSettingsStore.widgetBottomBarColor(context),dayProgressValue);
         boolean adaptiveRows = AdvancedSettingsStore.widgetAutoDensity(context)
                 && format != WidgetLayoutStore.FORMAT_MINI;
         views.removeAllViews(R.id.adaptiveDayRows);
@@ -68,6 +72,15 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         if (!adaptiveRows) manager.notifyAppWidgetViewDataChanged(widgetId,R.id.upcomingList);
     }
 
+    private static void configureEdgeBar(RemoteViews views,int containerId,int progressId,int colorId,
+                                         String mode,int color,int progress){
+        boolean hidden="none".equals(mode),solid="color".equals(mode);
+        views.setViewVisibility(containerId,hidden?View.GONE:View.VISIBLE);
+        views.setViewVisibility(progressId,!hidden&&!solid?View.VISIBLE:View.GONE);
+        views.setViewVisibility(colorId,!hidden&&solid?View.VISIBLE:View.GONE);
+        if(!hidden&&!solid)views.setProgressBar(progressId,1000,progress,false);
+        if(!hidden&&solid)views.setInt(colorId,"setBackgroundColor",color);
+    }
     private static int dayProgress(Context context){Calendar now=Calendar.getInstance();int n=now.get(Calendar.HOUR_OF_DAY)*60+now.get(Calendar.MINUTE),s=ScheduleData.toMinutes(ScheduleStore.getSlotStart(context,1)),e=ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context,9));if(e<=s||n<=s)return 0;if(n>=e)return 1000;return Math.max(0,Math.min(1000,Math.round((n-s)*1000f/(e-s))));}
     private static void scheduleNextBoundary(Context context){AlarmManager alarm=(AlarmManager)context.getSystemService(Context.ALARM_SERVICE);if(alarm==null)return;long nowMs=System.currentTimeMillis(),next=nowMs+15L*60L*1000L;Calendar now=Calendar.getInstance(),mid=(Calendar)now.clone();mid.add(Calendar.DAY_OF_YEAR,1);mid.set(Calendar.HOUR_OF_DAY,0);mid.set(Calendar.MINUTE,0);mid.set(Calendar.SECOND,2);mid.set(Calendar.MILLISECOND,0);next=Math.min(next,mid.getTimeInMillis());Calendar cursor=(Calendar)now.clone();for(int day=0;day<2;day++){List<ScheduleData.Course> courses=ScheduleStore.getCourses(context,cursor);if(courses!=null)for(ScheduleData.Course c:courses){long s=boundaryMillis(cursor,c.start),e=boundaryMillis(cursor,c.end);if(s>nowMs+1000L)next=Math.min(next,s+1000L);if(e>nowMs+1000L)next=Math.min(next,e+1000L);}cursor.add(Calendar.DAY_OF_YEAR,1);}PendingIntent p=boundaryPendingIntent(context);try{if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S&&!alarm.canScheduleExactAlarms())alarm.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,next,p);else alarm.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,next,p);}catch(Exception ignored){try{alarm.set(AlarmManager.RTC_WAKEUP,next,p);}catch(Exception ignoredAgain){}}}
     private static long boundaryMillis(Calendar date,String hhmm){int m=ScheduleData.toMinutes(hhmm);Calendar c=(Calendar)date.clone();c.set(Calendar.HOUR_OF_DAY,m/60);c.set(Calendar.MINUTE,m%60);c.set(Calendar.SECOND,0);c.set(Calendar.MILLISECOND,0);return c.getTimeInMillis();}

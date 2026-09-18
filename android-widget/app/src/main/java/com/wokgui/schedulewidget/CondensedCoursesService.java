@@ -228,8 +228,10 @@ public final class CondensedCoursesService extends RemoteViewsService {
             boolean automaticDensity = AdvancedSettingsStore.widgetAutoDensity(context);
             int sizingHeight = adaptiveHost
                     ? WidgetHeightSizing.adaptiveEstimateHeightDp(widgetHeightDp) : widgetHeightDp;
-            int fittedHeight = CondensedRowSizing.rowHeightDp(
-                    sizingHeight, items.size(), position, densityPercent, automaticDensity);
+            int fittedHeight = automaticDensity
+                    ? CondensedRowSizing.autoRowHeightDp(sizingHeight, items.size(), position,
+                            AdvancedSettingsStore.widgetBarChromeDp(context))
+                    : CondensedRowSizing.rowHeightForPercent(densityPercent);
             float scale = UiSettingsStore.widgetFontScale(context);
             float densityScale = CondensedRowSizing.textScaleForRow(fittedHeight);
             views.setTextViewTextSize(R.id.rowCondensedTime, TypedValue.COMPLEX_UNIT_SP, 7f * scale * densityScale);

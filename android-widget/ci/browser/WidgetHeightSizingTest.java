@@ -12,6 +12,7 @@ public final class WidgetHeightSizingTest {
         equal(72, WidgetHeightSizing.contentHeightDp(40, 40, false, 40, 3, 72), "mini minimum");
         equal(22, CondensedRowSizing.NATURAL_ROW_DP, "compact row");
         equal(3, CondensedRowSizing.PROGRESS_STRIP_DP, "progress strip");
+        equal(6, CondensedRowSizing.PROGRESS_CHROME_DP, "top and bottom progress chrome");
         System.out.println("widget_height_and_compact_rows_662=passed");
     }
 

@@ -2,6 +2,7 @@ package com.wokgui.schedulewidget;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -33,6 +34,10 @@ final class AdvancedSettingsStore {
             o.put("showRemaining", true);
             o.put("showPercent", true);
             o.put("showProgress", true);
+            o.put("widgetTopBarMode", "progress");
+            o.put("widgetTopBarColor", "#1677E8");
+            o.put("widgetBottomBarMode", "progress");
+            o.put("widgetBottomBarColor", "#1677E8");
             o.put("showBreaks", true);
             o.put("showLunch", true);
             o.put("showWeekInfo", true);
@@ -111,6 +116,10 @@ final class AdvancedSettingsStore {
         merged.put("density", density);
         merged.put("widgetDensityPercent", clamp(merged.optInt("widgetDensityPercent", 50), 0, 100));
         merged.put("widgetAutoDensity", merged.optBoolean("widgetAutoDensity", false));
+        merged.put("widgetTopBarMode", normalizedBarMode(merged.optString("widgetTopBarMode", "progress")));
+        merged.put("widgetTopBarColor", normalizedBarColor(merged.optString("widgetTopBarColor", "#1677E8")));
+        merged.put("widgetBottomBarMode", normalizedBarMode(merged.optString("widgetBottomBarMode", "progress")));
+        merged.put("widgetBottomBarColor", normalizedBarColor(merged.optString("widgetBottomBarColor", "#1677E8")));
         String format = merged.optString("widgetFormat", "timeline");
         if (!"compact".equals(format)) format = "timeline";
         merged.put("widgetFormat", format);
@@ -131,6 +140,26 @@ final class AdvancedSettingsStore {
     static String density(Context context) { return json(context).optString("density", "normal"); }
     static int widgetDensityPercent(Context context) { return clamp(json(context).optInt("widgetDensityPercent", 50), 0, 100); }
     static boolean widgetAutoDensity(Context context) { return json(context).optBoolean("widgetAutoDensity", false); }
+    static String widgetTopBarMode(Context context) { return normalizedBarMode(json(context).optString("widgetTopBarMode", "progress")); }
+    static int widgetTopBarColor(Context context) { return parsedBarColor(json(context).optString("widgetTopBarColor", "#1677E8")); }
+    static String widgetBottomBarMode(Context context) { return normalizedBarMode(json(context).optString("widgetBottomBarMode", "progress")); }
+    static int widgetBottomBarColor(Context context) { return parsedBarColor(json(context).optString("widgetBottomBarColor", "#1677E8")); }
+    static int widgetBarChromeDp(Context context) {
+        int count = "none".equals(widgetTopBarMode(context)) ? 0 : 1;
+        if (!"none".equals(widgetBottomBarMode(context))) count++;
+        return count * CondensedRowSizing.PROGRESS_STRIP_DP;
+    }
+    private static String normalizedBarMode(String value) {
+        return "color".equals(value) || "none".equals(value) ? value : "progress";
+    }
+    private static String normalizedBarColor(String value) {
+        String color = value == null ? "" : value.trim();
+        return color.matches("#[0-9a-fA-F]{6}") ? color.toUpperCase(Locale.ROOT) : "#1677E8";
+    }
+    private static int parsedBarColor(String value) {
+        try { return Color.parseColor(normalizedBarColor(value)); }
+        catch (Exception ignored) { return 0xFF1677E8; }
+    }
     static int upcomingCount(Context context) { return clamp(json(context).optInt("upcomingCount", 0), 0, 6); }
     static String widgetFormat(Context context) { return json(context).optString("widgetFormat", "timeline"); }
     static boolean showRoom(Context context) { return json(context).optBoolean("showRoom", true); }
