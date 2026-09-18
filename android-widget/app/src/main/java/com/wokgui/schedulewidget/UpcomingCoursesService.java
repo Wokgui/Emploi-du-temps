@@ -78,7 +78,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
         private final Integer forcedHeightDp;
         private final Calendar forcedNow;
         private final List<Item> items = new ArrayList<>();
-        private boolean compactHeight;
+        private int widgetHeightDp = 120;
 
         Factory(Context context, int widgetId) {
             this(context, widgetId, null, null);
@@ -96,18 +96,24 @@ public class UpcomingCoursesService extends RemoteViewsService {
         @Override public void onDestroy() { items.clear(); }
         @Override public int getCount() { return items.size(); }
 
-        private boolean isCompactHeight() {
-            if (forcedHeightDp != null) return forcedHeightDp > 0 && forcedHeightDp <= 145;
-            if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return false;
+        private int resolveWidgetHeightDp() {
+            if (forcedHeightDp != null) return Math.max(1, forcedHeightDp);
+            if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return 120;
             Bundle options = AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId);
-            int h = options == null ? 120 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 120);
-            return h > 0 && h <= 145;
+            if (options == null) return 120;
+            boolean landscape = context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
+            return WidgetHeightSizing.resolveHeightDp(
+                    options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0),
+                    options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0),
+                    landscape,
+                    120
+            );
         }
 
         private void reload() {
             items.clear();
             ScheduleStore.ensureInitialized(context);
-            compactHeight = isCompactHeight();
+            widgetHeightDp = resolveWidgetHeightDp();
 
             Calendar now = forcedNow == null ? Calendar.getInstance() : (Calendar) forcedNow.clone();
             int nowMin = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
@@ -296,10 +302,21 @@ public class UpcomingCoursesService extends RemoteViewsService {
             Item item = items.get(position);
             RemoteViews v = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
 
+            boolean automaticDensity = AdvancedSettingsStore.widgetAutoDensity(context);
+            int fittedHeight = automaticDensity
+                    ? CondensedRowSizing.autoRowHeightDp(widgetHeightDp, items.size())
+                    : 54;
             float scale = UiSettingsStore.widgetFontScale(context);
-            v.setTextViewTextSize(R.id.rowTitle, TypedValue.COMPLEX_UNIT_SP, 13f * scale);
-            v.setTextViewTextSize(R.id.rowMeta, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
-            v.setTextViewTextSize(R.id.rowRelative, TypedValue.COMPLEX_UNIT_SP, 9f * scale);
+            float automaticScale = automaticDensity
+                    ? Math.max(0.62f, Math.min(1f, fittedHeight / 54f))
+                    : 1f;
+            v.setTextViewTextSize(R.id.rowTitle, TypedValue.COMPLEX_UNIT_SP, 13f * scale * automaticScale);
+            v.setTextViewTextSize(R.id.rowMeta, TypedValue.COMPLEX_UNIT_SP, 10f * scale * automaticScale);
+            v.setTextViewTextSize(R.id.rowRelative, TypedValue.COMPLEX_UNIT_SP, 9f * scale * automaticScale);
+            if (automaticDensity && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                v.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                v.setViewLayoutHeight(R.id.rowContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+            }
 
             v.setViewVisibility(R.id.rowIndex, View.GONE);
             v.setViewVisibility(R.id.rowDot, View.GONE);
@@ -333,6 +350,10 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 v.setTextColor(R.id.rowTitle, ink);
                 v.setTextColor(R.id.rowMeta, muted);
                 v.setTextColor(R.id.rowRelative, darken(bg));
+            }
+            if (automaticDensity && fittedHeight < 30) {
+                v.setViewVisibility(R.id.rowMeta, View.GONE);
+                v.setViewVisibility(R.id.rowRelative, View.GONE);
             }
 
             Intent fill = new Intent();
@@ -521,7 +542,9 @@ public class UpcomingCoursesService extends RemoteViewsService {
             v.setTextViewTextSize(R.id.rowMiniTitle, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
             v.setTextViewTextSize(R.id.rowMiniDate, TypedValue.COMPLEX_UNIT_SP, 8f * scale);
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && widgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+            if (AdvancedSettingsStore.widgetAutoDensity(context)
+                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                    && widgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
                 Bundle options = AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId);
                 boolean landscape = context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
                 int minHeight = options == null ? 0 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0);

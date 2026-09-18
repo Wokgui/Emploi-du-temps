@@ -6,6 +6,9 @@ final class CondensedRowSizing {
     static final int NATURAL_ROW_DP = 22;
     static final int COMFORTABLE_ROW_DP = 28;
     static final int PROGRESS_STRIP_DP = 3;
+    static final int MANUAL_MIN_ROW_DP = 14;
+    static final int MANUAL_MAX_ROW_DP = 30;
+    static final int AUTO_MIN_ROW_DP = 8;
 
     private CondensedRowSizing() {}
 
@@ -26,6 +29,28 @@ final class CondensedRowSizing {
 
     static int rowHeightDp(int widgetHeightDp, int itemCount, int position, String density) {
         return rowHeightForDensity(density);
+    }
+
+    static int rowHeightDp(int widgetHeightDp, int itemCount, int position,
+                           int densityPercent, boolean automatic) {
+        return automatic ? autoRowHeightDp(widgetHeightDp, itemCount)
+                : rowHeightForPercent(densityPercent);
+    }
+
+    static int rowHeightForPercent(int densityPercent) {
+        int percent = Math.max(0, Math.min(100, densityPercent));
+        return Math.round(MANUAL_MIN_ROW_DP
+                + (MANUAL_MAX_ROW_DP - MANUAL_MIN_ROW_DP) * (percent / 100f));
+    }
+
+    static int autoRowHeightDp(int widgetHeightDp, int itemCount) {
+        int count = Math.max(1, itemCount);
+        int available = Math.max(AUTO_MIN_ROW_DP, widgetHeightDp - PROGRESS_STRIP_DP);
+        return Math.max(AUTO_MIN_ROW_DP, Math.min(MANUAL_MAX_ROW_DP, available / count));
+    }
+
+    static float textScaleForRow(int rowHeightDp) {
+        return Math.max(0.62f, Math.min(1.20f, rowHeightDp / (float) NATURAL_ROW_DP));
     }
 
     static int rowHeightForDensity(String density) {

@@ -212,9 +212,12 @@ public final class CondensedCoursesService extends RemoteViewsService {
             Item item = items.get(position);
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
 
-            String density = AdvancedSettingsStore.density(context);
+            int densityPercent = AdvancedSettingsStore.widgetDensityPercent(context);
+            boolean automaticDensity = AdvancedSettingsStore.widgetAutoDensity(context);
+            int fittedHeight = CondensedRowSizing.rowHeightDp(
+                    widgetHeightDp, items.size(), position, densityPercent, automaticDensity);
             float scale = UiSettingsStore.widgetFontScale(context);
-            float densityScale = "compact".equals(density) ? 0.88f : ("comfortable".equals(density) ? 1.12f : 1f);
+            float densityScale = CondensedRowSizing.textScaleForRow(fittedHeight);
             views.setTextViewTextSize(R.id.rowCondensedTime, TypedValue.COMPLEX_UNIT_SP, 7f * scale * densityScale);
             views.setTextViewTextSize(R.id.rowCondensedTitle, TypedValue.COMPLEX_UNIT_SP, 9f * scale * densityScale);
 
@@ -224,13 +227,12 @@ public final class CondensedCoursesService extends RemoteViewsService {
             views.setViewVisibility(R.id.rowCondensedLineTop, position == 0 ? View.GONE : View.VISIBLE);
             views.setViewVisibility(R.id.rowCondensedLineBottom, position == items.size() - 1 ? View.GONE : View.VISIBLE);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                int fittedHeight = CondensedRowSizing.rowHeightDp(widgetHeightDp, items.size(), position, density);
                 views.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
                 views.setViewLayoutHeight(R.id.rowCondensedContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
-                int halfLine = Math.max(10, fittedHeight / 2);
+                int halfLine = Math.max(4, fittedHeight / 2);
                 views.setViewLayoutHeight(R.id.rowCondensedLineTop, halfLine, TypedValue.COMPLEX_UNIT_DIP);
                 views.setViewLayoutHeight(R.id.rowCondensedLineBottom, halfLine, TypedValue.COMPLEX_UNIT_DIP);
-                views.setViewLayoutHeight(R.id.rowCondensedAccent, Math.max(12, fittedHeight - 5), TypedValue.COMPLEX_UNIT_DIP);
+                views.setViewLayoutHeight(R.id.rowCondensedAccent, Math.max(5, fittedHeight - 3), TypedValue.COMPLEX_UNIT_DIP);
             }
 
             boolean showCourseProgress = item.progress >= 0 && AdvancedSettingsStore.showProgress(context);

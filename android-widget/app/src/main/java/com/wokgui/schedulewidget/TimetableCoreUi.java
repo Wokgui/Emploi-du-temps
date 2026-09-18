@@ -876,7 +876,8 @@ final class TimetableCoreUi {
                   body.largeAppText .weekTab{flex:1 1 0;min-width:0!important;padding:5px 3px!important;white-space:normal;line-height:1.05}
                   body.threeWeekCycle:not(.largeAppText) .weekTabs{flex:1;min-width:0}
                   body.threeWeekCycle:not(.largeAppText) .weekTab{padding-left:5px;padding-right:5px}
-                  #schoolCalendarBlock{margin-top:9px;padding-top:8px;border-top:1px solid #edf0f4}
+                  #schoolCalendarSetting{margin:7px 0!important}
+                  #schoolCalendarBlock{margin-top:0;padding-top:0;border-top:0}
                   #schoolCalendarBlock .schoolTitle{font-size:.72rem;font-weight:850;color:var(--set-dark);margin-bottom:6px}
                   #schoolCalendarBlock .schoolEnable{display:flex;align-items:center;gap:7px;font-size:.76rem;margin-bottom:7px}
                   #schoolCalendarBlock .schoolEnable input{width:17px;height:17px;accent-color:var(--set-accent)}
@@ -952,9 +953,10 @@ final class TimetableCoreUi {
                 function ensureSchoolControls(){
                   if(document.getElementById('schoolCalendarBlock')){syncSchoolControls();return}
                   const title=document.getElementById('advCalendarTitle');const box=title?title.closest('.settingBox'):null;if(!box)return;
+                  const schoolBox=document.createElement('div');schoolBox.id='schoolCalendarSetting';schoolBox.className='settingBox';
                   const block=document.createElement('div');block.id='schoolCalendarBlock';
                   block.innerHTML='<div id="schoolTitle" class="schoolTitle"></div><label class="schoolEnable"><input id="schoolEnabled" type="checkbox"><span id="schoolEnableLabel"></span></label><div class="schoolGrid"><select id="schoolYear"><option value="2025-2026">2025–2026</option><option value="2026-2027">2026–2027</option><option value="2027-2028">2027–2028</option></select><select id="schoolZone"><option value="A">Zone A</option><option value="B">Zone B</option><option value="C">Zone C</option></select></div><div id="schoolHint" class="schoolHint"></div>';
-                  box.insertBefore(block,box.querySelector('#advRangeTitle'));
+                  schoolBox.appendChild(block);box.parentNode.insertBefore(schoolBox,box);
                   document.getElementById('schoolEnabled').onchange=applySchoolCalendar;document.getElementById('schoolYear').onchange=applySchoolCalendar;document.getElementById('schoolZone').onchange=applySchoolCalendar;
                   syncSchoolControls();
                 }

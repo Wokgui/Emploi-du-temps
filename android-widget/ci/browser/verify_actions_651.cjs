@@ -47,6 +47,7 @@ fs.mkdirSync(out,{recursive:true});
   const weekStress=await page.evaluate(()=>{
     const calls=__testAndroidCalls,chain=__edtActionChains651,nav=__edtNavigationCacheV2;
     const beforeSave=calls.saveSchedule||0,beforeListeners=window.__edtHeavyPerfPrelude648?__edtHeavyPerfPrelude648.counters.listenerAdds:0;
+    const warm=document.querySelector('#weekTabs .weekTab[data-week=A]');chain.runClick(warm,{type:'test'},warm.onclick);
     const nodesBefore=document.getElementsByTagName('*').length,samples=[];
     for(let i=0;i<300;i++){
       const letter=i%2?'A':'B',el=document.querySelector('#weekTabs .weekTab[data-week="'+letter+'"]');
@@ -60,7 +61,7 @@ fs.mkdirSync(out,{recursive:true});
   });
   assert.equal(weekStress.saveDelta,0,'display-week switching must not persist the timetable');
   assert.equal(weekStress.listenerDelta,0,'week switching must not add listeners');
-  assert.ok(weekStress.nodeDelta<=0,'week switching must not accumulate DOM nodes');
+  assert.ok(weekStress.nodeDelta<=0,'week switching must not accumulate DOM nodes '+JSON.stringify(weekStress));
   assert.ok(weekStress.tailP50<=Math.max(weekStress.headP50*1.8,weekStress.headP50+2),'week switching must not progressively slow down');
 
   const currentWeek=await page.evaluate(()=>{

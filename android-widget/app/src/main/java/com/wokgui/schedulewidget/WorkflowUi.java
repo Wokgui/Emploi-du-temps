@@ -112,7 +112,10 @@ final class WorkflowUi {
                     ['advReminderTitle','advCalendarTitle','advExceptionsTitle','advProfilesTitle','advBackupTitle'].forEach(id=>{
                       const t=document.getElementById(id),box=t&&t.closest?t.closest('.settingBox'):null;if(box&&box!==details&&box.parentNode!==content)content.appendChild(box);
                     });
-                    const school=document.getElementById('schoolCalendarBlock');if(school&&school.parentNode!==content)content.appendChild(school);
+                    const calendarTitle=document.getElementById('advCalendarTitle'),calendarBox=calendarTitle&&calendarTitle.closest?calendarTitle.closest('.settingBox'):null;
+                    const school=document.getElementById('schoolCalendarSetting')||document.getElementById('schoolCalendarBlock');
+                    if(school&&school.parentNode!==content)content.insertBefore(school,calendarBox&&calendarBox.parentNode===content?calendarBox:null);
+                    else if(school&&calendarBox&&school.nextSibling!==calendarBox)content.insertBefore(school,calendarBox);
 
                     const dl=document.getElementById('languageDownloadBtn81'),panel=document.getElementById('languagePackPanel81');
                     if(dl||panel){

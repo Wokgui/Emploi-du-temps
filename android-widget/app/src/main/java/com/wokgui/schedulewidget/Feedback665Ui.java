@@ -23,12 +23,16 @@ final class Feedback665Ui {
                   #widgetDensity664 .feedback665DensityScale span:nth-child(2){text-align:center}
                   #widgetDensity664 .feedback665DensityScale span:last-child{text-align:right}
                   #widgetDensity664 .feedback665DensityValue{grid-column:1/-1;justify-self:center;min-width:112px;padding:5px 12px;border-radius:999px;background:#edf6ff;color:#0877c9;text-align:center;font-size:.75rem;font-weight:850}
+                  #widgetDensity664 .feedback665DensityAuto{display:flex;align-items:center;justify-content:center;gap:8px;margin:9px auto 0;color:#586579;font-size:.73rem;font-weight:750;text-align:center}
+                  #widgetDensity664 .feedback665DensityAuto input{width:18px;height:18px;accent-color:#1689e8}
                 `;document.head.appendChild(style);
 
                 function language(){const value=document.getElementById('languageSelect')?.value||'fr';return value==='en'||value==='de'?value:'fr'}
-                function labels(){const l=language();return l==='de'?['Kompakt','Normal','Komfortabel']:(l==='en'?['Compact','Normal','Comfortable']:['Compact','Normal','Confortable'])}
-                function densityIndex(value){return value==='compact'?0:(value==='comfortable'?2:1)}
-                function densityValue(index){return Number(index)<=0?'compact':(Number(index)>=2?'comfortable':'normal')}
+                function labels(){const l=language();return l==='de'?['Sehr kompakt','Normal','Luftig']:(l==='en'?['Very compact','Normal','Spacious']:['Très condensé','Normal','Aéré'])}
+                function legacyPercent(value){return value==='compact'?20:(value==='comfortable'?80:50)}
+                function densityValue(percent){return Number(percent)<34?'compact':(Number(percent)>66?'comfortable':'normal')}
+                function clampPercent(value){return Math.max(0,Math.min(100,Math.round(Number(value)||0)))}
+                function autoLabel(){const l=language();return l==='de'?'Automatisch an die Widget-Größe anpassen, um den ganzen Tag anzuzeigen':(l==='en'?'Automatically adapt to widget size to show the whole day':'Adapter automatiquement à la taille du widget pour afficher toute la journée')}
                 function advanced(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
 
                 function applyWeekVisibilityBeforePaint(){
@@ -42,17 +46,28 @@ final class Feedback665Ui {
                   let control=document.getElementById('advDensityControl665');
                   if(!control){
                     control=document.createElement('div');control.id='advDensityControl665';control.className='feedback665DensityControl';
-                    control.innerHTML='<input id="advDensitySlider665" type="range" min="0" max="2" step="1"><div class="feedback665DensityScale"><span></span><span></span><span></span></div><output id="advDensityValue665" class="feedback665DensityValue"></output>';
+                    control.innerHTML='<input id="advDensitySlider665" type="range" min="0" max="100" step="1"><div class="feedback665DensityScale"><span></span><span></span><span></span></div><output id="advDensityValue665" class="feedback665DensityValue"></output>';
                     row.appendChild(control);
                   }
-                  const slider=document.getElementById('advDensitySlider665'),output=document.getElementById('advDensityValue665'),words=labels(),ticks=control.querySelectorAll('.feedback665DensityScale span');
+                  let auto=document.getElementById('advDensityAutoRow665');
+                  if(!auto){
+                    auto=document.createElement('label');auto.id='advDensityAutoRow665';auto.className='feedback665DensityAuto';
+                    auto.innerHTML='<input id="advDensityAuto665" type="checkbox"><span></span>';
+                    row.appendChild(auto);
+                  }
+                  const slider=document.getElementById('advDensitySlider665'),output=document.getElementById('advDensityValue665'),autoInput=document.getElementById('advDensityAuto665'),words=labels(),ticks=control.querySelectorAll('.feedback665DensityScale span');
+                  slider.min='0';slider.max='100';slider.step='1';
                   ticks.forEach((tick,index)=>tick.textContent=words[index]);
-                  const sync=()=>{const index=densityIndex(select.value);slider.value=String(index);output.textContent=words[index];slider.setAttribute('aria-valuetext',words[index])};
+                  auto.querySelector('span').textContent=autoLabel();
+                  const paint=()=>{const percent=clampPercent(slider.value);output.textContent=percent+' %';output.setAttribute('aria-label',percent+' %');slider.setAttribute('aria-valuetext',percent+' %');slider.disabled=autoInput.checked;output.textContent=autoInput.checked?(language()==='de'?'Automatisch':(language()==='en'?'Automatic':'Automatique')):percent+' %'};
+                  const persist=()=>{const a=advanced(),percent=clampPercent(slider.value);a.widgetDensityPercent=percent;a.widgetAutoDensity=autoInput.checked;a.density=densityValue(percent);select.value=a.density;try{AndroidSchedule.saveAdvancedSettings(JSON.stringify(a))}catch(e){}paint()};
+                  const sync=()=>{const a=advanced(),percent=Number.isFinite(Number(a.widgetDensityPercent))?clampPercent(a.widgetDensityPercent):legacyPercent(select.value);slider.value=String(percent);autoInput.checked=a.widgetAutoDensity===true;paint()};
                   if(!slider.__feedback665){
                     slider.__feedback665=true;
                     slider.setAttribute('aria-label',language()==='de'?'Widget-Kompaktheit':(language()==='en'?'Widget compactness':'Condensation du widget'));
-                    slider.addEventListener('input',()=>{const current=labels(),index=Number(slider.value);output.textContent=current[index];slider.setAttribute('aria-valuetext',current[index])});
-                    slider.addEventListener('change',()=>{const value=densityValue(slider.value);if(select.value!==value)select.value=value;select.dispatchEvent(new Event('change',{bubbles:true}))});
+                    slider.addEventListener('input',paint);
+                    slider.addEventListener('change',persist);
+                    autoInput.addEventListener('change',persist);
                     select.addEventListener('change',()=>queueMicrotask(sync));
                   }
                   sync();

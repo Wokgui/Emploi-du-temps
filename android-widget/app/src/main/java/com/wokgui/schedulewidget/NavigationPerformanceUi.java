@@ -77,12 +77,15 @@ final class NavigationPerformanceUi {
                   button.__edtZeroRenderOwned=true;
                   button.onclick=function(){
                     const target=button.dataset.mode,n=++cache.navs,started=performance.now();
-                    activate(target,button);
                     console.log('EDT_NAV_INPUT|'+target+'|n='+n);
                     const token=++cache.token;
+                    // Build a dirty destination while it is still hidden, then expose the
+                    // complete frame in one commit. Activating on pointer-down previously
+                    // revealed the stale edit view for one frame on the first visit.
+                    const outcome=renderTarget(target);
+                    if(token!==cache.token){cache.cancelled++;stats(n,performance.now()-started);return false}
+                    activate(target,button);
                     requestAnimationFrame(function(){
-                      if(token!==cache.token){cache.cancelled++;stats(n,performance.now()-started);return}
-                      const outcome=renderTarget(target);
                       requestAnimationFrame(function(){
                         const elapsed=performance.now()-started;
                         if(n%50===0)console.log('EDT_NAV_SETTLE|n='+n+'|target='+target+'|outcome='+outcome+'|ms='+Math.round(elapsed));
@@ -110,7 +113,9 @@ final class NavigationPerformanceUi {
 
                 document.addEventListener('pointerdown',function(e){
                   const button=e.target&&e.target.closest?e.target.closest('.nav'):null;
-                  if(button&&button.dataset&&['today','week','edit'].includes(button.dataset.mode))activate(button.dataset.mode,button);
+                  // Keep the current complete view visible until the click handler has built
+                  // the destination. The active state changes together with the view.
+                  if(button&&button.dataset&&['today','week','edit'].includes(button.dataset.mode))return;
                 },{capture:true,passive:true});
 
                 try{cache.dirty[currentMode()]=false}catch(e){}

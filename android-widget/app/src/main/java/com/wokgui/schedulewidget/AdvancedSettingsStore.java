@@ -24,6 +24,8 @@ final class AdvancedSettingsStore {
         JSONObject o = new JSONObject();
         try {
             o.put("density", "normal");
+            o.put("widgetDensityPercent", 50);
+            o.put("widgetAutoDensity", false);
             o.put("upcomingCount", 0);
             o.put("widgetFormat", "timeline");
             o.put("showRoom", true);
@@ -107,6 +109,8 @@ final class AdvancedSettingsStore {
         String density = merged.optString("density", "normal");
         if (!"compact".equals(density) && !"comfortable".equals(density)) density = "normal";
         merged.put("density", density);
+        merged.put("widgetDensityPercent", clamp(merged.optInt("widgetDensityPercent", 50), 0, 100));
+        merged.put("widgetAutoDensity", merged.optBoolean("widgetAutoDensity", false));
         String format = merged.optString("widgetFormat", "timeline");
         if (!"compact".equals(format)) format = "timeline";
         merged.put("widgetFormat", format);
@@ -125,6 +129,8 @@ final class AdvancedSettingsStore {
 
     static int cycleLength(Context context) { return clamp(json(context).optInt("cycleLength", 2), 2, 4); }
     static String density(Context context) { return json(context).optString("density", "normal"); }
+    static int widgetDensityPercent(Context context) { return clamp(json(context).optInt("widgetDensityPercent", 50), 0, 100); }
+    static boolean widgetAutoDensity(Context context) { return json(context).optBoolean("widgetAutoDensity", false); }
     static int upcomingCount(Context context) { return clamp(json(context).optInt("upcomingCount", 0), 0, 6); }
     static String widgetFormat(Context context) { return json(context).optString("widgetFormat", "timeline"); }
     static boolean showRoom(Context context) { return json(context).optBoolean("showRoom", true); }

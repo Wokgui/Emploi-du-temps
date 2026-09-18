@@ -36,6 +36,27 @@ public final class CondensedRowSizingTest {
         if (CondensedRowSizing.visibleRows(108, 9, "compact")
                 <= CondensedRowSizing.visibleRows(108, 9, "comfortable"))
             throw new AssertionError("compact mode must expose more rows");
+        int previousContinuous = -1;
+        int distinctHeights = 0;
+        for (int percent = 0; percent <= 100; percent++) {
+            int row = CondensedRowSizing.rowHeightForPercent(percent);
+            if (row < previousContinuous) throw new AssertionError("continuous density went backwards");
+            if (row != previousContinuous) distinctHeights++;
+            previousContinuous = row;
+        }
+        if (distinctHeights < 10) throw new AssertionError("density is still a three-state selector");
+        for (int height = 40; height <= 300; height++) {
+            for (int count = 1; count <= 18; count++) {
+                int row = CondensedRowSizing.autoRowHeightDp(height, count);
+                int available = Math.max(CondensedRowSizing.AUTO_MIN_ROW_DP,
+                        height - CondensedRowSizing.PROGRESS_STRIP_DP);
+                if (row < CondensedRowSizing.AUTO_MIN_ROW_DP)
+                    throw new AssertionError("automatic row became unreadably small");
+                if (available / count >= CondensedRowSizing.AUTO_MIN_ROW_DP && row * count > available)
+                    throw new AssertionError("automatic rows do not fit the widget");
+            }
+        }
+        System.out.println("continuous_and_automatic_widget_density_666=passed");
         System.out.println("condensed_widget_density_665=passed");
     }
 }
