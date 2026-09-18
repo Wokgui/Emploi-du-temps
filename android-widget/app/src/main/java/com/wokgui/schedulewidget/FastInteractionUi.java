@@ -54,8 +54,9 @@ final class FastInteractionUi {
                     const m=document.getElementById('settingsModal');if(m)m.classList.add('show');return;
                   }
                   if(el.classList&&el.classList.contains('weekTab')&&el.dataset.week){
-                    document.querySelectorAll('.weekTab').forEach(function(x){x.classList.toggle('active',x===el)});
-                    const l=document.getElementById('weekTitleLetter');if(l)l.textContent=el.dataset.week;return;
+                    // Keep the old week fully coherent until ActionChainUi651 replaces
+                    // the active tab, title and grid together in its single commit.
+                    return;
                   }
                   if(el.classList&&el.classList.contains('dayTab')&&!el.classList.contains('weekendAdd')){
                     document.querySelectorAll('.dayTab:not(.weekendAdd)').forEach(function(x){x.classList.toggle('active',x===el)});
