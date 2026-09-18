@@ -29,4 +29,5 @@ EDT_UI_CHUNKS=smoke-browser/chunks timeout 120s node android-widget/ci/browser/v
 EDT_UI_CHUNKS=smoke-browser/chunks timeout 120s node android-widget/ci/browser/verify_feedback_662.cjs
 EDT_UI_CHUNKS=smoke-browser/chunks timeout 120s node android-widget/ci/browser/verify_feedback_663.cjs
 EDT_UI_CHUNKS=smoke-browser/chunks timeout 120s node android-widget/ci/browser/verify_feedback_664.cjs
+EDT_UI_CHUNKS=smoke-browser/chunks timeout 120s node android-widget/ci/browser/verify_feedback_665.cjs
 echo 'BROWSER_SUITE|feedback661|passed'

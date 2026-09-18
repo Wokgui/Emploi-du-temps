@@ -19,6 +19,23 @@ public final class CondensedRowSizingTest {
                     throw new AssertionError("another dense row should be visible");
             }
         }
-        System.out.println("condensed_widget_dense_rows_662=passed");
+        String[] densities = {"compact", "normal", "comfortable"};
+        int[] expected = {
+                CondensedRowSizing.COMPACT_ROW_DP,
+                CondensedRowSizing.NATURAL_ROW_DP,
+                CondensedRowSizing.COMFORTABLE_ROW_DP
+        };
+        for (int i = 0; i < densities.length; i++) {
+            String density = densities[i];
+            int row = CondensedRowSizing.rowHeightDp(108, 7, 0, density);
+            if (row != expected[i]) throw new AssertionError("density not applied: " + density);
+            int visible = CondensedRowSizing.visibleRows(108, 9, density);
+            if (visible != Math.min(9, (108 - CondensedRowSizing.PROGRESS_STRIP_DP) / expected[i]))
+                throw new AssertionError("density capacity is wrong: " + density);
+        }
+        if (CondensedRowSizing.visibleRows(108, 9, "compact")
+                <= CondensedRowSizing.visibleRows(108, 9, "comfortable"))
+            throw new AssertionError("compact mode must expose more rows");
+        System.out.println("condensed_widget_density_665=passed");
     }
 }

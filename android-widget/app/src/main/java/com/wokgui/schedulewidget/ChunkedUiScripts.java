@@ -35,13 +35,14 @@ final class ChunkedUiScripts {
         add(out, ActionChainUi651.script());
         add(out, SettingsLunchPolish653Ui.script());
         add(out, LunchBandContinuity656Ui.script());
-        // The legacy-named layer remains the final week appearance owner through 6.64.
+        // The legacy-named layer remains the final week appearance owner through 6.65.
         add(out, WeekAppearance658Ui.script());
         add(out, Feedback660Ui.script());
         add(out, Feedback661Ui.script());
         add(out, Feedback662Ui.script());
         add(out, Feedback663Ui.script());
         add(out, Feedback664Ui.script());
+        add(out, Feedback665Ui.script());
         if (BuildConfig.DEBUG) add(out, HeavyPanelPerformanceUi648.script());
         add(out, UiRuntimeBundle.idleImportScript());
         return out.toArray(new String[0]);
@@ -73,14 +74,15 @@ final class ChunkedUiScripts {
     private static void add(List<String> out, String script) {
         if (script == null || script.trim().isEmpty()) return;
         script = LegacyChainRepair651.repair(UiRuntimeBundle.prepareChunk(script));
-        out.add(script.replace("APP_VERSION='6.45'", "APP_VERSION='6.64'")
-                      .replace("APP_VERSION='6.55'", "APP_VERSION='6.64'")
-                      .replace("APP_VERSION='6.56'", "APP_VERSION='6.64'")
-                      .replace("APP_VERSION='6.58'", "APP_VERSION='6.64'")
-                      .replace("APP_VERSION='6.59'", "APP_VERSION='6.64'")
-                      .replace("APP_VERSION='6.60'", "APP_VERSION='6.64'")
-                      .replace("APP_VERSION='6.61'", "APP_VERSION='6.64'")
-                      .replace("APP_VERSION='6.62'", "APP_VERSION='6.64'")
-                      .replace("APP_VERSION='6.63'", "APP_VERSION='6.64'"));
+        out.add(script.replace("APP_VERSION='6.45'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.55'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.56'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.58'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.59'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.60'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.61'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.62'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.63'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.64'", "APP_VERSION='6.65'"));
     }
 }

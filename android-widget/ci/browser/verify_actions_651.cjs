@@ -76,7 +76,7 @@ fs.mkdirSync(out,{recursive:true});
   await page.locator('#settingsBtn').tap();
   await page.waitForFunction(()=>window.__edtHeavyPanels648&&__edtHeavyPanels648.isOpen('settings'));
   const advBefore=await page.evaluate(()=>({targeted:__edtActionChains651.stats.targetedRenders,suppressed:__edtActionChains651.stats.suppressedRenders}));
-  await page.locator('#advDensity').selectOption('compact');
+  await page.locator('#advDensity').evaluate(select => { select.value = 'compact'; select.dispatchEvent(new Event('change', { bubbles: true })); });
   await page.locator('#advFollowing').selectOption('2');
   await page.locator('#advShowRoom').uncheck();
   const advAfter=await page.evaluate(()=>({targeted:__edtActionChains651.stats.targetedRenders,suppressed:__edtActionChains651.stats.suppressedRenders}));

@@ -5,6 +5,8 @@ import android.app.Activity;
 import android.app.job.JobScheduler;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
@@ -18,6 +20,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebChromeClient;
 import android.webkit.WebViewClient;
+import android.widget.ImageView;
 
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.text.Text;
@@ -41,6 +44,8 @@ public class MainActivity extends Activity {
     private static final int CREATE_SETTINGS_EXPORT = 5204;
     private WebView webView;
     private View startupOverlay;
+    private ImageView resumeSnapshotView;
+    private Bitmap resumeSnapshot;
     private boolean forceWeekOpening = false;
     private boolean pageLoaded = false;
     private boolean uiInjected = false;
@@ -59,6 +64,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         webView = findViewById(R.id.webView);
         startupOverlay = findViewById(R.id.startupOverlay);
+        resumeSnapshotView = findViewById(R.id.resumeSnapshot);
         webView.setBackgroundColor(0xFFF6F8FB);
         hideWebViewUntilWeekIsReady();
 
@@ -118,6 +124,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        showResumeSnapshot();
         if (skipNextResumeRefresh) {
             skipNextResumeRefresh = false;
             return;
@@ -127,8 +134,17 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onPause() {
+        captureResumeSnapshot();
+        super.onPause();
+    }
+
+    @Override
     protected void onDestroy() {
         textRecognizer.close();
+        if (resumeSnapshotView != null) resumeSnapshotView.setImageDrawable(null);
+        if (resumeSnapshot != null && !resumeSnapshot.isRecycled()) resumeSnapshot.recycle();
+        resumeSnapshot = null;
         super.onDestroy();
     }
 
@@ -151,6 +167,7 @@ public class MainActivity extends Activity {
         if (webView == null || !pageLoaded) return;
         webView.setAlpha(1f);
         webView.setVisibility(View.VISIBLE);
+        hideResumeSnapshotAfterStableFrame();
         if (startupOverlay == null || startupOverlay.getVisibility() != View.VISIBLE) return;
         startupOverlay.animate().cancel();
         startupOverlay.animate()
@@ -162,6 +179,46 @@ public class MainActivity extends Activity {
                     startupOverlay.setAlpha(1f);
                 })
                 .start();
+    }
+
+    private void captureResumeSnapshot() {
+        if (webView == null || !pageLoaded || webView.getWidth() <= 0 || webView.getHeight() <= 0) return;
+        try {
+            Bitmap next = Bitmap.createBitmap(webView.getWidth(), webView.getHeight(), Bitmap.Config.RGB_565);
+            webView.draw(new Canvas(next));
+            if (resumeSnapshotView != null) {
+                resumeSnapshotView.animate().cancel();
+                resumeSnapshotView.setImageDrawable(null);
+                resumeSnapshotView.setVisibility(View.GONE);
+            }
+            if (resumeSnapshot != null && resumeSnapshot != next && !resumeSnapshot.isRecycled()) resumeSnapshot.recycle();
+            resumeSnapshot = next;
+        } catch (Throwable ignored) {}
+    }
+
+    private void showResumeSnapshot() {
+        if (resumeSnapshotView == null || resumeSnapshot == null || resumeSnapshot.isRecycled()) return;
+        resumeSnapshotView.animate().cancel();
+        resumeSnapshotView.setAlpha(1f);
+        resumeSnapshotView.setImageBitmap(resumeSnapshot);
+        resumeSnapshotView.setVisibility(View.VISIBLE);
+    }
+
+    private void hideResumeSnapshotAfterStableFrame() {
+        if (resumeSnapshotView == null || resumeSnapshotView.getVisibility() != View.VISIBLE || webView == null) return;
+        final Bitmap shownSnapshot = resumeSnapshot;
+        webView.postOnAnimation(() -> webView.postOnAnimation(() -> {
+            if (resumeSnapshotView == null) return;
+            resumeSnapshotView.animate().cancel();
+            resumeSnapshotView.animate().alpha(0f).setDuration(90L).withEndAction(() -> {
+                if (resumeSnapshotView == null) return;
+                resumeSnapshotView.setVisibility(View.GONE);
+                resumeSnapshotView.setImageDrawable(null);
+                resumeSnapshotView.setAlpha(1f);
+                if (shownSnapshot != null && !shownSnapshot.isRecycled()) shownSnapshot.recycle();
+                if (resumeSnapshot == shownSnapshot) resumeSnapshot = null;
+            }).start();
+        }));
     }
 
     private void revealWebViewStable() {

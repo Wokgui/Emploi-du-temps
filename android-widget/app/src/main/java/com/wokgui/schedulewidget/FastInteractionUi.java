@@ -50,8 +50,10 @@ final class FastInteractionUi {
                 function visualFor(el){
                   if(!el)return;
                   if(el.id==='settingsBtn'){
-                    if(window.__edtHeavyPanels648){window.__edtHeavyPanels648.openSettings();return}
-                    const m=document.getElementById('settingsModal');if(m)m.classList.add('show');return;
+                    // Prepare the complete settings DOM while it is still hidden. Showing the
+                    // modal here used to expose one unfinished frame before the real click.
+                    try{if(window.prepareSettingsOpen665)window.prepareSettingsOpen665()}catch(e){}
+                    return;
                   }
                   if(el.classList&&el.classList.contains('weekTab')&&el.dataset.week){
                     // Keep the old week fully coherent until ActionChainUi651 replaces

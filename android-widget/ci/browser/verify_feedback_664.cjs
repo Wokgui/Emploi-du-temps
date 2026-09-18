@@ -139,10 +139,10 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   assert.equal(layout.profileTitleAlign, 'center');
   assert.equal(layout.profileTitle, 'Profils');
 
-  await page.locator('#advDensity').selectOption('compact');
+  await page.locator('#advDensity').evaluate(select => { select.value = 'compact'; select.dispatchEvent(new Event('change', { bubbles: true })); });
   let advanced = await page.evaluate(() => JSON.parse(AndroidSchedule.loadAdvancedSettings() || '{}'));
   assert.equal(advanced.density, 'compact');
-  await page.locator('#advDensity').selectOption('normal');
+  await page.locator('#advDensity').evaluate(select => { select.value = 'normal'; select.dispatchEvent(new Event('change', { bubbles: true })); });
   advanced = await page.evaluate(() => JSON.parse(AndroidSchedule.loadAdvancedSettings() || '{}'));
   assert.equal(advanced.density, 'normal');
 

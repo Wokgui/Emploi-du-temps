@@ -158,6 +158,19 @@
                 android:textColor="#64748B"
                 android:textSize="9sp" />
         </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/rowCondensedCourseProgress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="48dp"
+            android:layout_height="5dp"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="6dp"
+            android:visibility="gone"
+            android:max="1000"
+            android:progress="0"
+            android:progressTint="#1677E8"
+            android:progressBackgroundTint="#D8E0EA" />
     </LinearLayout>
 
     <!-- Format 4: mini planning horizontal. Une seule ligne est fournie par son service. -->

@@ -8,6 +8,17 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <!-- Holds the last fully rendered WebView frame while Android recreates its
+         rendering surface after returning to the app. -->
+    <ImageView
+        android:id="@+id/resumeSnapshot"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:scaleType="fitXY"
+        android:contentDescription="@null"
+        android:background="#F6F8FB" />
+
     <!-- Kept visible until the real timetable is fully assembled. This replaces the
          previous blank native mask with a stable, branded launch surface. -->
     <FrameLayout

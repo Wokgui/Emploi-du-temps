@@ -44,16 +44,18 @@ public final class CondensedCoursesService extends RemoteViewsService {
         final String colorId;
         final int type;
         final int order;
+        final int progress;
         final boolean uncertain;
 
         Item(String label, String sourceLabel, String time, String room, int type, int order,
-             String relative, boolean uncertain, String colorId) {
+             int progress, String relative, boolean uncertain, String colorId) {
             this.label = label;
             this.sourceLabel = sourceLabel == null ? label : sourceLabel;
             this.time = time;
             this.room = room == null ? "" : room;
             this.type = type;
             this.order = order;
+            this.progress = progress;
             this.relative = relative == null ? "" : relative;
             this.uncertain = uncertain;
             this.colorId = colorId == null ? "" : colorId;
@@ -128,6 +130,7 @@ public final class CondensedCoursesService extends RemoteViewsService {
                         course.room,
                         Item.COURSE,
                         order,
+                        courseProgress(now, target.date, start, ScheduleData.toMinutes(course.end)),
                         relativeLabel(now, target.date, course, futureDay && firstVisibleCourse),
                         course.uncertain,
                         course.color
@@ -156,7 +159,14 @@ public final class CondensedCoursesService extends RemoteViewsService {
                     ? AdvancedSettingsStore.widgetLunchLabel(context, appLabel)
                     : AdvancedSettingsStore.widgetGapLabel(context, appLabel);
             items.add(new Item(label, appLabel, minuteLabel(start) + " - " + minuteLabel(end), "",
-                    type, 0, "", false, ""));
+                    type, 0, -1, "", false, ""));
+        }
+
+        private int courseProgress(Calendar now, Calendar date, int start, int end) {
+            if (!sameDay(now, date) || end <= start) return -1;
+            int minute = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
+            if (minute < start || minute >= end) return -1;
+            return Math.max(0, Math.min(1000, Math.round((minute - start) * 1000f / (end - start))));
         }
 
         private String minuteLabel(int minute) {
@@ -202,9 +212,11 @@ public final class CondensedCoursesService extends RemoteViewsService {
             Item item = items.get(position);
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
 
+            String density = AdvancedSettingsStore.density(context);
             float scale = UiSettingsStore.widgetFontScale(context);
-            views.setTextViewTextSize(R.id.rowCondensedTime, TypedValue.COMPLEX_UNIT_SP, 7f * scale);
-            views.setTextViewTextSize(R.id.rowCondensedTitle, TypedValue.COMPLEX_UNIT_SP, 9f * scale);
+            float densityScale = "compact".equals(density) ? 0.88f : ("comfortable".equals(density) ? 1.12f : 1f);
+            views.setTextViewTextSize(R.id.rowCondensedTime, TypedValue.COMPLEX_UNIT_SP, 7f * scale * densityScale);
+            views.setTextViewTextSize(R.id.rowCondensedTitle, TypedValue.COMPLEX_UNIT_SP, 9f * scale * densityScale);
 
             views.setViewVisibility(R.id.rowContent, View.GONE);
             views.setViewVisibility(R.id.rowCondensedContent, View.VISIBLE);
@@ -212,14 +224,18 @@ public final class CondensedCoursesService extends RemoteViewsService {
             views.setViewVisibility(R.id.rowCondensedLineTop, position == 0 ? View.GONE : View.VISIBLE);
             views.setViewVisibility(R.id.rowCondensedLineBottom, position == items.size() - 1 ? View.GONE : View.VISIBLE);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                int fittedHeight = CondensedRowSizing.rowHeightDp(widgetHeightDp, items.size(), position);
+                int fittedHeight = CondensedRowSizing.rowHeightDp(widgetHeightDp, items.size(), position, density);
                 views.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
                 views.setViewLayoutHeight(R.id.rowCondensedContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
                 int halfLine = Math.max(10, fittedHeight / 2);
                 views.setViewLayoutHeight(R.id.rowCondensedLineTop, halfLine, TypedValue.COMPLEX_UNIT_DIP);
                 views.setViewLayoutHeight(R.id.rowCondensedLineBottom, halfLine, TypedValue.COMPLEX_UNIT_DIP);
-                views.setViewLayoutHeight(R.id.rowCondensedAccent, Math.max(14, fittedHeight - 6), TypedValue.COMPLEX_UNIT_DIP);
+                views.setViewLayoutHeight(R.id.rowCondensedAccent, Math.max(12, fittedHeight - 5), TypedValue.COMPLEX_UNIT_DIP);
             }
+
+            boolean showCourseProgress = item.progress >= 0 && AdvancedSettingsStore.showProgress(context);
+            views.setViewVisibility(R.id.rowCondensedCourseProgress, showCourseProgress ? View.VISIBLE : View.GONE);
+            if (showCourseProgress) views.setProgressBar(R.id.rowCondensedCourseProgress, 1000, item.progress, false);
 
             String title = item.label;
             if (item.uncertain) title = "⚠ " + title;
