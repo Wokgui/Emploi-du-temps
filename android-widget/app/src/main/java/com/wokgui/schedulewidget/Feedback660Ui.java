@@ -47,8 +47,8 @@ final class Feedback660Ui {
                   return view.classList.contains('active')&&getComputedStyle(view).visibility!=='hidden';
                 }
                 function schedule(target){if(valid(target))requested=target;if(raf)return;raf=requestAnimationFrame(()=>repair(requested))}
-                document.addEventListener('pointerdown',event=>{const nav=event.target&&event.target.closest?event.target.closest('.nav[data-mode]'):null;if(nav)schedule(nav.dataset.mode)},true);
-                document.addEventListener('click',event=>{const nav=event.target&&event.target.closest?event.target.closest('.nav[data-mode]'):null;if(nav)schedule(nav.dataset.mode)},true);
+                document.addEventListener('pointerdown',event=>{const nav=event.target&&event.target.closest?event.target.closest('.nav[data-mode]'):null;if(nav&&!window.__edtNavigationCacheV2)schedule(nav.dataset.mode)},true);
+                document.addEventListener('click',event=>{const nav=event.target&&event.target.closest?event.target.closest('.nav[data-mode]'):null;if(nav&&!window.__edtNavigationCacheV2)schedule(nav.dataset.mode)},true);
                 document.querySelectorAll('main.wrap>.view').forEach(view=>new MutationObserver(()=>schedule()).observe(view,{attributes:true,attributeFilter:['class']}));
                 const settings=document.getElementById('settingsModal');
                 if(settings){

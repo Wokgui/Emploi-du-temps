@@ -67,6 +67,14 @@ final class NavigationPerformanceUi {
                   cache.hits++;
                   return 'hit';
                 }
+                function fitBeforeReveal(target){
+                  try{
+                    const instant=window.__edtInstantViews647;if(!instant)return;
+                    const view=instant.views&&instant.views[target],height=view?(view.offsetHeight||0):0;
+                    if(height>0&&instant.heights)instant.heights[target]=height;
+                    if(typeof instant.fit==='function')instant.fit(target);
+                  }catch(e){}
+                }
                 function stats(n,settle){
                   if(n%50!==0)return;
                   console.log('EDT_NAV_STATS|navs='+cache.navs+'|hits='+cache.hits+'|renderToday='+cache.renders.today+'|renderWeek='+cache.renders.week+'|renderEdit='+cache.renders.edit+'|cancelled='+cache.cancelled+'|external='+cache.externalRenders+'|fastWrapped=0|dirtyToday='+(cache.dirty.today?1:0)+'|dirtyWeek='+(cache.dirty.week?1:0)+'|dirtyEdit='+(cache.dirty.edit?1:0)+'|settleMs='+Math.round(settle||0));
@@ -84,14 +92,22 @@ final class NavigationPerformanceUi {
                     // revealed the stale edit view for one frame on the first visit.
                     const outcome=renderTarget(target);
                     if(token!==cache.token){cache.cancelled++;stats(n,performance.now()-started);return false}
-                    activate(target,button);
-                    requestAnimationFrame(function(){
+                    const reveal=function(){
+                      if(token!==cache.token){cache.cancelled++;stats(n,performance.now()-started);return}
+                      fitBeforeReveal(target);
+                      activate(target,button);
+                      fitBeforeReveal(target);
                       requestAnimationFrame(function(){
-                        const elapsed=performance.now()-started;
-                        if(n%50===0)console.log('EDT_NAV_SETTLE|n='+n+'|target='+target+'|outcome='+outcome+'|ms='+Math.round(elapsed));
-                        stats(n,elapsed);
+                        requestAnimationFrame(function(){
+                          const elapsed=performance.now()-started;
+                          if(n%50===0)console.log('EDT_NAV_SETTLE|n='+n+'|target='+target+'|outcome='+outcome+'|ms='+Math.round(elapsed));
+                          stats(n,elapsed);
+                        });
                       });
-                    });
+                    };
+                    // Edit receives one complete pre-paint cycle while the previous tab
+                    // remains visible, so Android never exposes its transitional frame.
+                    if(target==='edit')requestAnimationFrame(reveal);else reveal();
                     return false;
                   };
                 }

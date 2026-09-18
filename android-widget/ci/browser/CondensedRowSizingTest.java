@@ -47,15 +47,20 @@ public final class CondensedRowSizingTest {
         if (distinctHeights < 10) throw new AssertionError("density is still a three-state selector");
         for (int height = 40; height <= 300; height++) {
             for (int count = 1; count <= 18; count++) {
-                int row = CondensedRowSizing.autoRowHeightDp(height, count);
                 int available = Math.max(CondensedRowSizing.AUTO_MIN_ROW_DP,
                         height - CondensedRowSizing.PROGRESS_STRIP_DP);
-                if (row < CondensedRowSizing.AUTO_MIN_ROW_DP)
-                    throw new AssertionError("automatic row became unreadably small");
-                if (available / count >= CondensedRowSizing.AUTO_MIN_ROW_DP && row * count > available)
-                    throw new AssertionError("automatic rows do not fit the widget");
+                int used = 0;
+                for (int position = 0; position < count; position++) {
+                    int row = CondensedRowSizing.autoRowHeightDp(height, count, position);
+                    if (row < CondensedRowSizing.AUTO_MIN_ROW_DP)
+                        throw new AssertionError("automatic row became unreadably small");
+                    used += row;
+                }
+                if (available / count >= CondensedRowSizing.AUTO_MIN_ROW_DP && used != available)
+                    throw new AssertionError("automatic rows leave blank widget space");
             }
         }
+        System.out.println("full_height_automatic_widget_density_667=passed");
         System.out.println("continuous_and_automatic_widget_density_666=passed");
         System.out.println("condensed_widget_density_665=passed");
     }

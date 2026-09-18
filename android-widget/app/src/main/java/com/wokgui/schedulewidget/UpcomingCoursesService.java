@@ -304,7 +304,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
 
             boolean automaticDensity = AdvancedSettingsStore.widgetAutoDensity(context);
             int fittedHeight = automaticDensity
-                    ? CondensedRowSizing.autoRowHeightDp(widgetHeightDp, items.size())
+                    ? CondensedRowSizing.autoRowHeightDp(widgetHeightDp, items.size(), position)
                     : 54;
             float scale = UiSettingsStore.widgetFontScale(context);
             float automaticScale = automaticDensity
