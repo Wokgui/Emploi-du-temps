@@ -1275,31 +1275,37 @@ final class TimetableCoreUi {
                 const GAP_BG='#FFFFFF',GAP_BORDER='#DDE4EC',GAP_INK='#22283A';
 
                 function language(){
+                  const select=document.getElementById('languageSelect'),value=select?String(select.value||'fr'):'';
+                  if(value==='en'||value==='de')return value;
+                  if(select)return 'fr';
                   try{const raw=window.AndroidSchedule&&AndroidSchedule.loadUiSettings?AndroidSchedule.loadUiSettings():null;if(raw){const o=JSON.parse(raw);if(o.language==='en'||o.language==='de')return o.language}}catch(e){}
                   return 'fr';
                 }
+                let cachedWidgetPalette=null,cachedAppPalette=null,cachedPaletteSync=null;
                 function currentWidget(){
-                  try{if(window.AndroidSchedule&&AndroidSchedule.loadWidgetPalette){const v=AndroidSchedule.loadWidgetPalette();if(WIDGET_PALETTES[v])return v}}catch(e){}
-                  const v=localStorage.getItem(WIDGET_KEY);return WIDGET_PALETTES[v]?v:'vivid';
+                  if(cachedWidgetPalette&&WIDGET_PALETTES[cachedWidgetPalette])return cachedWidgetPalette;
+                  try{if(window.AndroidSchedule&&AndroidSchedule.loadWidgetPalette){const v=AndroidSchedule.loadWidgetPalette();if(WIDGET_PALETTES[v]){cachedWidgetPalette=v;localStorage.setItem(WIDGET_KEY,v);return v}}}catch(e){}
+                  const v=localStorage.getItem(WIDGET_KEY);cachedWidgetPalette=WIDGET_PALETTES[v]?v:'vivid';return cachedWidgetPalette;
                 }
                 function currentApp(){
+                  if(cachedAppPalette&&WIDGET_PALETTES[cachedAppPalette])return cachedAppPalette;
                   const stored=localStorage.getItem(APP_KEY);
-                  if(WIDGET_PALETTES[stored])return stored;
-                  const initial=currentWidget();localStorage.setItem(APP_KEY,initial);return initial;
+                  if(WIDGET_PALETTES[stored]){cachedAppPalette=stored;return stored}
+                  cachedAppPalette=currentWidget();localStorage.setItem(APP_KEY,cachedAppPalette);return cachedAppPalette;
                 }
-                function palettesSynced(){return localStorage.getItem(SYNC_KEY)!=='0'}
+                function palettesSynced(){if(cachedPaletteSync===null)cachedPaletteSync=localStorage.getItem(SYNC_KEY)!=='0';return cachedPaletteSync}
                 function saveWidget(id){
                   if(!WIDGET_PALETTES[id])id='vivid';
                   try{if(window.AndroidSchedule&&AndroidSchedule.saveWidgetPalette)AndroidSchedule.saveWidgetPalette(id)}catch(e){}
-                  localStorage.setItem(WIDGET_KEY,id);
+                  cachedWidgetPalette=id;localStorage.setItem(WIDGET_KEY,id);
                 }
                 function saveApp(id){
                   if(!WIDGET_PALETTES[id])id='vivid';
-                  localStorage.setItem(APP_KEY,id);
+                  cachedAppPalette=id;localStorage.setItem(APP_KEY,id);
                   if(palettesSynced())saveWidget(id);
                 }
                 function setPaletteSync(value){
-                  localStorage.setItem(SYNC_KEY,value?'1':'0');
+                  cachedPaletteSync=!!value;localStorage.setItem(SYNC_KEY,value?'1':'0');
                   if(value)saveWidget(currentApp());
                 }
                 function appPalette(){return WIDGET_PALETTES[currentApp()]||WIDGET_PALETTES.vivid}

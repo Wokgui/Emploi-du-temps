@@ -35,6 +35,9 @@ final class ScheduleDisplayUi {
                 let customTone=0;
 
                 function lang(){
+                  const select=document.getElementById('languageSelect'),value=select?String(select.value||'fr'):'';
+                  if(value==='en'||value==='de')return value;
+                  if(select)return 'fr';
                   try{const o=JSON.parse(AndroidSchedule.loadUiSettings()||'{}');return o.language==='en'||o.language==='de'?o.language:'fr'}catch(e){return 'fr'}
                 }
                 function tr(fr,en,de){const l=lang();return l==='en'?en:(l==='de'?de:fr)}
@@ -1136,6 +1139,9 @@ final class ScheduleDisplayUi {
                 }
 
                 function lang(){
+                  const select=document.getElementById('languageSelect'),value=select?String(select.value||'fr'):'';
+                  if(value==='en'||value==='de')return value;
+                  if(select)return 'fr';
                   try{const o=JSON.parse(AndroidSchedule.loadUiSettings()||'{}');return o.language==='en'||o.language==='de'?o.language:'fr'}catch(e){return 'fr'}
                 }
 
@@ -1528,6 +1534,9 @@ final class ScheduleDisplayUi {
                 let arranging=false;
 
                 function lang(){
+                  const select=document.getElementById('languageSelect'),value=select?String(select.value||'fr'):'';
+                  if(value==='en'||value==='de')return value;
+                  if(select)return 'fr';
                   try{const o=JSON.parse(AndroidSchedule.loadUiSettings()||'{}');return o.language==='en'||o.language==='de'?o.language:'fr'}catch(e){return 'fr'}
                 }
                 function tr(fr,en,de){const l=lang();return l==='en'?en:(l==='de'?de:fr)}

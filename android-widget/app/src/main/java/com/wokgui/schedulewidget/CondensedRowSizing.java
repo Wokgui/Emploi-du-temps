@@ -8,7 +8,7 @@ final class CondensedRowSizing {
     static final int PROGRESS_STRIP_DP = 3;
     static final int MANUAL_MIN_ROW_DP = 14;
     static final int MANUAL_MAX_ROW_DP = 30;
-    static final int AUTO_MIN_ROW_DP = 8;
+    static final int AUTO_MIN_ROW_DP = 1;
 
     private CondensedRowSizing() {}
 
@@ -57,7 +57,7 @@ final class CondensedRowSizing {
     }
 
     static float textScaleForRow(int rowHeightDp) {
-        return Math.max(0.62f, Math.min(1.20f, rowHeightDp / (float) NATURAL_ROW_DP));
+        return Math.max(0.34f, Math.min(1.20f, rowHeightDp / (float) NATURAL_ROW_DP));
     }
 
     static int rowHeightForDensity(String density) {

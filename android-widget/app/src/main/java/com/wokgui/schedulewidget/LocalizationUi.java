@@ -321,36 +321,13 @@ final class LocalizationUi {
                 document.head.appendChild(style);
 
                 function ensureBreakNames(){
-                  const card=document.querySelector('#viewEdit .breakSettings');
                   const gap=document.getElementById('gapLabel'),lunch=document.getElementById('lunchLabel');
-                  if(!card||!gap||!lunch)return;
-
-                  let appTitle=document.getElementById('breakNamesApp78');
-                  if(!appTitle){appTitle=document.createElement('div');appTitle.id='breakNamesApp78';appTitle.className='breakNamesScope78';card.insertBefore(appTitle,card.firstChild)}
-                  appTitle.textContent=tr('Application','Application','App');
-
-                  let widgetTitle=document.getElementById('breakNamesWidget78');
-                  if(!widgetTitle){widgetTitle=document.createElement('div');widgetTitle.id='breakNamesWidget78';widgetTitle.className='breakNamesScope78';card.appendChild(widgetTitle)}
-                  widgetTitle.textContent='Widget';
-
-                  function ensureRow(id,labelText,inputId){
-                    let row=document.getElementById(id),input=document.getElementById(inputId);
-                    if(!row){row=document.createElement('div');row.id=id;row.className='breakRow breakWidgetRow78';const name=document.createElement('div');name.className='breakName';row.appendChild(name);input=document.createElement('input');input.id=inputId;input.type='text';input.maxLength=35;row.appendChild(input);card.appendChild(row)}
-                    const name=row.querySelector('.breakName');if(name)name.textContent=labelText;
-                    return input;
-                  }
-                  const wg=ensureRow('widgetGapRow78',tr('Trou','Free period','Freistunde'),'widgetGapLabel78');
-                  const wl=ensureRow('widgetLunchRow78','Midi','widgetLunchLabel78');
-                  const a=loadAdv();
-                  if(document.activeElement!==wg)wg.value=(a.gapWidgetLabel||'').trim()||gap.value||tr('Trou','Free period','Freistunde');
-                  if(document.activeElement!==wl)wl.value=(a.lunchWidgetLabel||'').trim()||lunch.value||'Midi';
-                  if(!wg.__bound78){wg.__bound78=true;wg.addEventListener('change',()=>{const n=loadAdv();n.gapWidgetLabel=wg.value.trim();saveAdv(n)})}
-                  if(!wl.__bound78){wl.__bound78=true;wl.addEventListener('change',()=>{const n=loadAdv();n.lunchWidgetLabel=wl.value.trim();saveAdv(n)})}
-
-                  const appGapName=gap.closest('.breakRow')?.querySelector('.breakName');if(appGapName)appGapName.textContent=tr('Trou','Free period','Freistunde');
-                  const appLunchName=lunch.closest('.breakRow')?.querySelector('.breakName');if(appLunchName)appLunchName.textContent='Midi';
+                  if(!gap||!lunch)return;
+                  const appGapName=gap.closest('.breakRow')?.querySelector('.breakName');
+                  const appLunchName=lunch.closest('.breakRow')?.querySelector('.breakName');
+                  if(appGapName)appGapName.textContent=tr('Trou','Free period','Freistunde');
+                  if(appLunchName)appLunchName.textContent='Midi';
                 }
-
                 function ensureNineSlots(){
                   try{
                     if(typeof slots!=='undefined'&&Array.isArray(slots)&&slots.length<9){

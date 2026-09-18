@@ -1,6 +1,6 @@
 package com.wokgui.schedulewidget;
 
-/** 6.66 pass: atomic timetable frames and final advanced-settings ordering. */
+/** 6.68 pass: off-screen week composition and final advanced-settings ordering. */
 final class Feedback666Ui {
     private Feedback666Ui() {}
 
@@ -35,30 +35,54 @@ final class Feedback666Ui {
                   if(typeof old!=='function'||old.__feedback666)return;
                   let rendering=false;
                   const wrapped=function(){
-                    const grid=document.getElementById('weekGrid');
-                    if(rendering||!grid)return old.apply(this,arguments);
-                    rendering=true;
-                    const previousHtml=grid.innerHTML;
+                    const live=document.getElementById('weekGrid');
+                    if(rendering||!live||!live.parentNode)return old.apply(this,arguments);
                     const title=document.getElementById('weekTitleLetter');
                     const previousTitle=title?title.textContent:'';
+                    const candidate=live.cloneNode(false);
+                    const width=Math.max(1,Math.round(live.getBoundingClientRect().width||live.offsetWidth||1));
+                    const originalStyle={
+                      position:candidate.style.position,left:candidate.style.left,top:candidate.style.top,
+                      width:candidate.style.width,visibility:candidate.style.visibility,
+                      pointerEvents:candidate.style.pointerEvents,zIndex:candidate.style.zIndex
+                    };
+                    live.id='weekGridStable668';
+                    candidate.id='weekGrid';
+                    candidate.setAttribute('aria-hidden','true');
+                    candidate.style.position='fixed';candidate.style.left='-10000px';candidate.style.top='0';
+                    candidate.style.width=width+'px';candidate.style.visibility='hidden';
+                    candidate.style.pointerEvents='none';candidate.style.zIndex='-1';
+                    live.parentNode.insertBefore(candidate,live.nextSibling);
+                    rendering=true;
                     try{
                       const result=old.apply(this,arguments);
-                      const current=document.getElementById('weekGrid');
-                      const valid=current===grid&&grid.children.length>=6&&grid.querySelectorAll('.wh.day').length>0;
+                      const valid=candidate.children.length>=6&&candidate.querySelectorAll('.wh.day').length>0;
                       if(!valid){
-                        grid.innerHTML=previousHtml;
                         if(title)title.textContent=previousTitle;
-                      }else{
-                        if(window.refreshLunchBreakUi)window.refreshLunchBreakUi();
-                        if(window.refreshDoubleLunchUi)window.refreshDoubleLunchUi();
-                        if(window.paintWeek69)window.paintWeek69();
+                        return result;
                       }
+                      candidate.style.position=originalStyle.position;candidate.style.left=originalStyle.left;
+                      candidate.style.top=originalStyle.top;candidate.style.width=originalStyle.width;
+                      candidate.style.visibility=originalStyle.visibility;candidate.style.pointerEvents=originalStyle.pointerEvents;
+                      candidate.style.zIndex=originalStyle.zIndex;candidate.removeAttribute('aria-hidden');
+                      const nextClass=candidate.className;
+                      const nextStyle=candidate.getAttribute('style');
+                      const children=Array.from(candidate.childNodes);
+                      candidate.remove();
+                      live.id='weekGrid';
+                      live.className=nextClass;
+                      if(nextStyle===null||nextStyle==='')live.removeAttribute('style');else live.setAttribute('style',nextStyle);
+                      live.replaceChildren(...children);
+                      if(window.refreshLunchBreakUi)window.refreshLunchBreakUi();
+                      if(window.refreshDoubleLunchUi)window.refreshDoubleLunchUi();
+                      if(window.paintWeek69)window.paintWeek69();
                       return result;
                     }catch(error){
-                      grid.innerHTML=previousHtml;
                       if(title)title.textContent=previousTitle;
                       throw error;
                     }finally{
+                      if(candidate.isConnected)candidate.remove();
+                      live.id='weekGrid';
                       rendering=false;
                     }
                   };

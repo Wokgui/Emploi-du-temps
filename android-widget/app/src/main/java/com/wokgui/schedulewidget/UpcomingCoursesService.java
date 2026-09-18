@@ -121,7 +121,9 @@ public class UpcomingCoursesService extends RemoteViewsService {
             if (target == null) return;
 
             List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, target.date);
-            if (courses == null || courses.isEmpty() || target.firstCourse >= courses.size()) return;
+            boolean automaticDensity = AdvancedSettingsStore.widgetAutoDensity(context);
+            int firstCourse = automaticDensity ? 0 : target.firstCourse;
+            if (courses == null || courses.isEmpty() || firstCourse >= courses.size()) return;
 
             int day = target.date.get(Calendar.DAY_OF_WEEK);
             int lunchStart = AdvancedSettingsStore.weekLunchStartMinute(context, day);
@@ -131,7 +133,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             int previousEnd = -1;
             boolean firstVisibleCourse = true;
 
-            if (!futureDay && target.firstCourse > 0) {
+            if (!automaticDensity && !futureDay && target.firstCourse > 0) {
                 ScheduleData.Course previous = courses.get(target.firstCourse - 1);
                 ScheduleData.Course next = courses.get(target.firstCourse);
                 int from = ScheduleData.toMinutes(previous.end);
@@ -139,7 +141,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 if (nowMin >= from && nowMin < to) appendBreaks(from, to, lunchStart, lunchEnd, nowMin);
             }
 
-            for (int i = target.firstCourse; i < courses.size(); i++) {
+            for (int i = firstCourse; i < courses.size(); i++) {
                 ScheduleData.Course c = courses.get(i);
                 int start = ScheduleData.toMinutes(c.start);
                 if (previousEnd >= 0) appendBreaks(previousEnd, start, lunchStart, lunchEnd);
@@ -308,7 +310,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
                     : 54;
             float scale = UiSettingsStore.widgetFontScale(context);
             float automaticScale = automaticDensity
-                    ? Math.max(0.62f, Math.min(1f, fittedHeight / 54f))
+                    ? WidgetAutoLayoutSizing.classicTextScale(fittedHeight)
                     : 1f;
             v.setTextViewTextSize(R.id.rowTitle, TypedValue.COMPLEX_UNIT_SP, 13f * scale * automaticScale);
             v.setTextViewTextSize(R.id.rowMeta, TypedValue.COMPLEX_UNIT_SP, 10f * scale * automaticScale);
@@ -316,6 +318,10 @@ public class UpcomingCoursesService extends RemoteViewsService {
             if (automaticDensity && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 v.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
                 v.setViewLayoutHeight(R.id.rowContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                v.setViewPadding(R.id.rowTextBlock, 0, 0, 0, 0);
+                v.setViewLayoutHeight(R.id.rowRelative, WidgetAutoLayoutSizing.pillHeightDp(fittedHeight), TypedValue.COMPLEX_UNIT_DIP);
+                v.setViewLayoutWidth(R.id.rowRelative, WidgetAutoLayoutSizing.pillWidthDp(fittedHeight), TypedValue.COMPLEX_UNIT_DIP);
+                v.setViewLayoutWidth(R.id.rowRelativeBox, WidgetAutoLayoutSizing.pillBoxWidthDp(fittedHeight), TypedValue.COMPLEX_UNIT_DIP);
             }
 
             v.setViewVisibility(R.id.rowIndex, View.GONE);
@@ -351,10 +357,13 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 v.setTextColor(R.id.rowMeta, muted);
                 v.setTextColor(R.id.rowRelative, darken(bg));
             }
-            if (automaticDensity && fittedHeight < 30) {
+            if (automaticDensity && !WidgetAutoLayoutSizing.showMeta(fittedHeight)) {
                 v.setViewVisibility(R.id.rowMeta, View.GONE);
-                v.setViewVisibility(R.id.rowRelative, View.GONE);
             }
+            boolean showRelative = !relative.isEmpty()
+                    && (!automaticDensity || WidgetAutoLayoutSizing.showPill(fittedHeight));
+            v.setViewVisibility(R.id.rowRelative, showRelative ? View.VISIBLE : View.GONE);
+            v.setViewVisibility(R.id.rowRelativeBox, showRelative ? View.VISIBLE : View.GONE);
 
             Intent fill = new Intent();
             fill.putExtra("open_mode", "week");
@@ -362,6 +371,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             v.setOnClickFillInIntent(R.id.rowContent, fill);
             v.setOnClickFillInIntent(R.id.rowTitle, fill);
             v.setOnClickFillInIntent(R.id.rowMeta, fill);
+            v.setOnClickFillInIntent(R.id.rowRelativeBox, fill);
             v.setOnClickFillInIntent(R.id.rowRelative, fill);
             return v;
         }

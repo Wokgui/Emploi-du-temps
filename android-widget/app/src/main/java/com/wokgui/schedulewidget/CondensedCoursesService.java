@@ -99,7 +99,9 @@ public final class CondensedCoursesService extends RemoteViewsService {
             if (target == null) return;
 
             List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, target.date);
-            if (courses == null || courses.isEmpty() || target.firstCourse >= courses.size()) return;
+            boolean automaticDensity = AdvancedSettingsStore.widgetAutoDensity(context);
+            int firstCourse = automaticDensity ? 0 : target.firstCourse;
+            if (courses == null || courses.isEmpty() || firstCourse >= courses.size()) return;
 
             boolean futureDay = !sameDay(now, target.date);
             boolean firstVisibleCourse = true;
@@ -109,7 +111,7 @@ public final class CondensedCoursesService extends RemoteViewsService {
             if (!AdvancedSettingsStore.weekLunchEnabled(context, day)) lunchEnd = lunchStart;
             int previousEnd = -1;
 
-            if (!futureDay && target.firstCourse > 0) {
+            if (!automaticDensity && !futureDay && target.firstCourse > 0) {
                 ScheduleData.Course previous = courses.get(target.firstCourse - 1);
                 ScheduleData.Course next = courses.get(target.firstCourse);
                 int from = ScheduleData.toMinutes(previous.end);
@@ -117,7 +119,7 @@ public final class CondensedCoursesService extends RemoteViewsService {
                 if (nowMin >= from && nowMin < to) appendBreaks(from, to, lunchStart, lunchEnd, nowMin);
             }
 
-            for (int i = target.firstCourse; i < courses.size(); i++) {
+            for (int i = firstCourse; i < courses.size(); i++) {
                 ScheduleData.Course course = courses.get(i);
                 int start = ScheduleData.toMinutes(course.start);
                 if (previousEnd >= 0) appendBreaks(previousEnd, start, lunchStart, lunchEnd, -1);
@@ -229,10 +231,11 @@ public final class CondensedCoursesService extends RemoteViewsService {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 views.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
                 views.setViewLayoutHeight(R.id.rowCondensedContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
-                int halfLine = Math.max(4, fittedHeight / 2);
+                int halfLine = Math.max(1, (fittedHeight + 1) / 2);
                 views.setViewLayoutHeight(R.id.rowCondensedLineTop, halfLine, TypedValue.COMPLEX_UNIT_DIP);
                 views.setViewLayoutHeight(R.id.rowCondensedLineBottom, halfLine, TypedValue.COMPLEX_UNIT_DIP);
-                views.setViewLayoutHeight(R.id.rowCondensedAccent, Math.max(5, fittedHeight - 3), TypedValue.COMPLEX_UNIT_DIP);
+                views.setViewLayoutHeight(R.id.rowCondensedAccent, Math.max(1, fittedHeight - 3), TypedValue.COMPLEX_UNIT_DIP);
+                views.setViewLayoutHeight(R.id.rowCondensedCourseProgress, Math.max(1, Math.min(5, fittedHeight - 1)), TypedValue.COMPLEX_UNIT_DIP);
             }
 
             boolean showCourseProgress = item.progress >= 0 && AdvancedSettingsStore.showProgress(context);
