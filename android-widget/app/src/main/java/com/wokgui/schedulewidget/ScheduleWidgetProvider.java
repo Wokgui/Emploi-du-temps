@@ -39,12 +39,33 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         int surface=0xFFF7F9FC;
         views.setInt(R.id.widgetRoot,"setBackgroundColor",surface);views.setInt(R.id.widgetBody,"setBackgroundColor",surface);views.setInt(R.id.emptyUpcoming,"setBackgroundColor",surface);
         views.setTextColor(R.id.emptyUpcoming,0xFF64748B);
+        views.setTextViewText(R.id.emptyUpcoming,UiSettingsStore.t(context,"noCourse"));
         views.setProgressBar(R.id.dayProgress,1000,dayProgress(context),false);
-        if(AdvancedSettingsStore.widgetAutoDensity(context))views.setScrollPosition(R.id.upcomingList,0);
-        Intent listIntent=new Intent(context,UpcomingCoursesService.class);listIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,widgetId);listIntent.setData(Uri.parse("edt://widget/"+widgetId+"/courses"));views.setRemoteAdapter(R.id.upcomingList,listIntent);views.setEmptyView(R.id.upcomingList,R.id.emptyUpcoming);views.setTextViewText(R.id.emptyUpcoming,UiSettingsStore.t(context,"noCourse"));
-        Intent openIntent=new Intent(context,MainActivity.class);openIntent.putExtra("open_mode","week");PendingIntent openPending=PendingIntent.getActivity(context,100+widgetId,openIntent,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);views.setOnClickPendingIntent(R.id.widgetRoot,openPending);views.setOnClickPendingIntent(R.id.emptyUpcoming,openPending);
-        Intent rowIntent=new Intent(context,MainActivity.class);rowIntent.putExtra("open_mode","week");PendingIntent rowPending=PendingIntent.getActivity(context,4000+widgetId,rowIntent,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);views.setPendingIntentTemplate(R.id.upcomingList,rowPending);
-        manager.updateAppWidget(widgetId,views);manager.notifyAppWidgetViewDataChanged(widgetId,R.id.upcomingList);
+        boolean adaptiveRows = AdvancedSettingsStore.widgetAutoDensity(context)
+                && format != WidgetLayoutStore.FORMAT_MINI;
+        views.removeAllViews(R.id.adaptiveDayRows);
+        views.setViewVisibility(R.id.upcomingList, adaptiveRows ? View.GONE : View.VISIBLE);
+        views.setViewVisibility(R.id.adaptiveDayRows, adaptiveRows ? View.VISIBLE : View.GONE);
+
+        if (adaptiveRows) {
+            List<RemoteViews> rows = format == WidgetLayoutStore.FORMAT_CONDENSED
+                    ? CondensedCoursesService.buildAdaptiveRows(context, widgetId)
+                    : UpcomingCoursesService.buildAdaptiveRows(context, widgetId);
+            boolean empty = rows.isEmpty();
+            views.setViewVisibility(R.id.adaptiveDayRows, empty ? View.GONE : View.VISIBLE);
+            views.setViewVisibility(R.id.emptyUpcoming, empty ? View.VISIBLE : View.GONE);
+            for (RemoteViews row : rows) views.addView(R.id.adaptiveDayRows, row);
+        } else {
+            Intent listIntent=new Intent(context,UpcomingCoursesService.class);listIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,widgetId);listIntent.setData(Uri.parse("edt://widget/"+widgetId+"/courses"));views.setRemoteAdapter(R.id.upcomingList,listIntent);views.setEmptyView(R.id.upcomingList,R.id.emptyUpcoming);
+            views.setViewVisibility(R.id.emptyUpcoming, View.VISIBLE);
+        }
+
+        Intent openIntent=new Intent(context,MainActivity.class);openIntent.putExtra("open_mode","week");PendingIntent openPending=PendingIntent.getActivity(context,100+widgetId,openIntent,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);views.setOnClickPendingIntent(R.id.widgetRoot,openPending);views.setOnClickPendingIntent(R.id.emptyUpcoming,openPending);views.setOnClickPendingIntent(R.id.adaptiveDayRows,openPending);
+        if (!adaptiveRows) {
+            Intent rowIntent=new Intent(context,MainActivity.class);rowIntent.putExtra("open_mode","week");PendingIntent rowPending=PendingIntent.getActivity(context,4000+widgetId,rowIntent,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);views.setPendingIntentTemplate(R.id.upcomingList,rowPending);
+        }
+        manager.updateAppWidget(widgetId,views);
+        if (!adaptiveRows) manager.notifyAppWidgetViewDataChanged(widgetId,R.id.upcomingList);
     }
 
     private static int dayProgress(Context context){Calendar now=Calendar.getInstance();int n=now.get(Calendar.HOUR_OF_DAY)*60+now.get(Calendar.MINUTE),s=ScheduleData.toMinutes(ScheduleStore.getSlotStart(context,1)),e=ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context,9));if(e<=s||n<=s)return 0;if(n>=e)return 1000;return Math.max(0,Math.min(1000,Math.round((n-s)*1000f/(e-s))));}

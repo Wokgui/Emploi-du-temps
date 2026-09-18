@@ -60,6 +60,16 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
       });
     }).observe(window.__weekGridRef668, { childList: true, subtree: true });
     window.__coverAdds669 = 0;
+    window.__swapSnapshots670 = [];
+    window.__nativeAppendChild670 = Element.prototype.appendChild;
+    Element.prototype.appendChild = function(node) {
+      const result = window.__nativeAppendChild670.call(this, node);
+      if (node && node.nodeType === 1 && node.classList.contains('weekSwapCover669')) {
+        const gap = node.querySelector('.gapCell>.cellLabel');
+        window.__swapSnapshots670.push({ id: node.id, gapDisplay: gap ? getComputedStyle(gap).display : 'missing' });
+      }
+      return result;
+    };
     new MutationObserver(records => {
       for (const record of records) for (const node of record.addedNodes) {
         if (node.nodeType === 1 && node.classList.contains('weekSwapCover669')) window.__coverAdds669++;
@@ -88,14 +98,20 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
     assert.ok(frame.lunch > 0);
     assert.ok(frame.title === 'A' ? frame.text.includes('TYPE-A') && !frame.text.includes('TYPE-B') : frame.text.includes('TYPE-B') && !frame.text.includes('TYPE-A'));
   }
-  const coverState = await page.evaluate(() => ({
+  const coverState = await page.evaluate(() => {
+    Element.prototype.appendChild = window.__nativeAppendChild670;
+    return {
+    snapshots: window.__swapSnapshots670,
     additions: window.__coverAdds669,
     remaining: document.querySelectorAll('.weekSwapCover669').length,
     stableId: document.getElementById('weekGrid') === window.__weekGridRef668
-  }));
+    };
+  });
   assert.ok(coverState.additions >= 75, JSON.stringify(coverState));
   assert.equal(coverState.remaining, 0);
-  assert.equal(coverState.stableId, true);  const mutations = await page.evaluate(() => window.__weekMutations668);
+  assert.equal(coverState.stableId, true);
+  assert.ok(coverState.snapshots.length >= 75, JSON.stringify(coverState));
+  assert.ok(coverState.snapshots.every(frame => frame.id === 'weekGrid' && frame.gapDisplay === 'none'), JSON.stringify(coverState.snapshots));  const mutations = await page.evaluate(() => window.__weekMutations668);
   assert.ok(mutations.length > 0);
   assert.ok(mutations.every(frame => frame.children > 6 && frame.stableId === 'weekGrid' && frame.visible), JSON.stringify(mutations));
 
@@ -104,6 +120,8 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   const sizing = fs.readFileSync(path.resolve(__dirname, '../../app/src/main/java/com/wokgui/schedulewidget/CondensedRowSizing.java'), 'utf8');
   const bubble = fs.readFileSync(path.resolve(__dirname, '../../app/src/main/java/com/wokgui/schedulewidget/WidgetAutoLayoutSizing.java'), 'utf8');
   const row = fs.readFileSync(path.resolve(__dirname, '../../app/src/main/res/layout/widget_course_row.xml'), 'utf8');
+  const adaptiveRow = fs.readFileSync(path.resolve(__dirname, '../../app/src/main/res/layout/widget_adaptive_course_row.xml'), 'utf8');
+  const widgetLayout = fs.readFileSync(path.resolve(__dirname, '../../app/src/main/res/layout/widget_schedule.xml'), 'utf8');
   const mainActivity = fs.readFileSync(path.resolve(__dirname, '../../app/src/main/java/com/wokgui/schedulewidget/MainActivity.java'), 'utf8');
   const provider = fs.readFileSync(path.resolve(__dirname, '../../app/src/main/java/com/wokgui/schedulewidget/ScheduleWidgetProvider.java'), 'utf8');
   const weekCover = fs.readFileSync(path.resolve(__dirname, '../../app/src/main/java/com/wokgui/schedulewidget/Feedback666Ui.java'), 'utf8');  for (const source of [standard, condensed]) {
@@ -122,10 +140,15 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   assert.match(provider, /views\.addView\(R\.id\.adaptiveDayRows, row\)/);
   assert.match(provider, /buildAdaptiveRows\(context, widgetId\)/);
   assert.match(weekCover, /weekSwapCover669/);
-  assert.doesNotMatch(weekCover, /weekGridStable668/);  assert.deepEqual(errors, []);
-  console.log('feedback_669_immediate_widget_refresh=passed');
-  console.log('feedback_669_full_day_adaptive_refresh=passed');
-  console.log('feedback_669_covered_week_swap=passed');
+  assert.doesNotMatch(weekCover, /weekGridStable668/);
+  assert.match(adaptiveRow, /android:layout_height="0dp"/);
+  assert.match(adaptiveRow, /android:layout_weight="1"/);
+  assert.match(widgetLayout, /android:id="@\+id\/adaptiveDayRows"/);
+  assert.match(weekCover, /queueMicrotask/);
+  assert.doesNotMatch(weekCover, /cover\.removeAttribute\('id'\)/);  assert.deepEqual(errors, []);
+  console.log('feedback_670_weighted_widget_rows=passed');
+  console.log('feedback_670_launcher_independent_height=passed');
+  console.log('feedback_670_same_frame_week_swap=passed');
   await context.close();
   await browser.close();
 })().catch(error => { console.error(error); process.exitCode = 1; });

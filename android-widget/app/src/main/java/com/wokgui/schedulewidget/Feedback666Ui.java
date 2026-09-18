@@ -1,6 +1,6 @@
 package com.wokgui.schedulewidget;
 
-/** 6.69 pass: covered in-place week composition and final advanced-settings ordering. */
+/** 6.70 pass: same-task atomic week composition and final advanced-settings ordering. */
 final class Feedback666Ui {
     private Feedback666Ui() {}
 
@@ -41,14 +41,14 @@ final class Feedback666Ui {
                     const parent=live.parentNode,rect=live.getBoundingClientRect(),parentRect=parent.getBoundingClientRect();
                     removeCovers();
                     const cover=live.cloneNode(true),token=++coverToken;
-                    cover.removeAttribute('id');cover.classList.add('weekSwapCover669');cover.setAttribute('aria-hidden','true');
+                    cover.classList.add('weekSwapCover669');cover.setAttribute('aria-hidden','true');
                     cover.style.position='absolute';cover.style.left=(rect.left-parentRect.left+parent.scrollLeft)+'px';
                     cover.style.top=(rect.top-parentRect.top+parent.scrollTop)+'px';cover.style.width=Math.max(1,Math.round(rect.width))+'px';
                     cover.style.height=Math.max(1,Math.round(rect.height))+'px';cover.style.margin='0';cover.style.pointerEvents='none';
                     cover.style.visibility='visible';cover.style.opacity='1';cover.style.zIndex='30';cover.style.background=getComputedStyle(live).backgroundColor||'#f7f9fc';
                     if(getComputedStyle(parent).position==='static')parent.style.position='relative';
                     parent.appendChild(cover);
-                    requestAnimationFrame(()=>requestAnimationFrame(()=>{if(token===coverToken)cover.remove()}));
+                    queueMicrotask(()=>{if(token===coverToken)cover.remove()});
                     return cover;
                   };
                   window.beginWeekSwap669=beginSwap;

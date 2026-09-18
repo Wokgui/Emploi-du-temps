@@ -67,7 +67,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   }
   const weekFrames = await page.evaluate(() => window.__weekFrames667);
   assert.equal(weekFrames.length, 60);
-  assert.ok(weekFrames.every(frame => frame.grids === 2 && frame.covers === 1 && frame.sameGrid && frame.children > 6), JSON.stringify(weekFrames));
+  assert.ok(weekFrames.every(frame => frame.grids === 1 && frame.covers === 0 && frame.sameGrid && frame.children > 6), JSON.stringify(weekFrames));
   assert.ok(weekFrames.every(frame => frame.lunchCells > 0), JSON.stringify(weekFrames));
   assert.ok(weekFrames.every(frame => frame.title === 'A' ? frame.text.includes('AAA') && !frame.text.includes('BBB') : frame.text.includes('BBB') && !frame.text.includes('AAA')), JSON.stringify(weekFrames));
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -144,7 +144,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   assert.match(condensed, /widgetAutoDensity\(context\)/);
   assert.ok((otherWidgets.match(/widgetAutoDensity\(context\)/g) || []).length >= 2);
   assert.match(sizing, /available % count/);
-  assert.match(otherWidgets, /autoRowHeightDp\(widgetHeightDp, items\.size\(\), position\)/);
+  assert.match(otherWidgets, /autoRowHeightDp\(sizingHeight, items\.size\(\), position\)/);
 
   assert.deepEqual(errors, []);
   console.log('feedback_667_week_lunch_persistent=passed');

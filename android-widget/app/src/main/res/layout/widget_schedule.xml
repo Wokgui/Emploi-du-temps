@@ -21,6 +21,7 @@
         <TextView android:id="@+id/tvProgressPercent" android:layout_width="0dp" android:layout_height="0dp" />
     </LinearLayout>
     <FrameLayout android:id="@+id/widgetBody" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:background="#F7F9FC">
+        <LinearLayout android:id="@+id/adaptiveDayRows" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:visibility="gone" />
         <ListView android:id="@+id/upcomingList" android:layout_width="match_parent" android:layout_height="match_parent" android:padding="0dp" android:clipToPadding="false" android:cacheColorHint="#F7F9FC" android:divider="@android:color/transparent" android:dividerHeight="0dp" android:scrollbars="vertical" android:scrollbarStyle="insideOverlay" android:fadingEdge="none" android:overScrollMode="never" />
         <TextView android:id="@+id/emptyUpcoming" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:padding="8dp" android:background="#F7F9FC" android:text="Aucun cours programmé" android:textColor="#64748B" android:textSize="11sp" />
     </FrameLayout>

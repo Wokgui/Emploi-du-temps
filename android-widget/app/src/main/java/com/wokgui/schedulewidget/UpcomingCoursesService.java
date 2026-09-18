@@ -33,6 +33,13 @@ public class UpcomingCoursesService extends RemoteViewsService {
         return new Factory(getApplicationContext(), widgetId);
     }
 
+    static List<RemoteViews> buildAdaptiveRows(Context context, int widgetId) {
+        Factory factory = new Factory(context.getApplicationContext(), widgetId);
+        factory.reload();
+        List<RemoteViews> rows = new ArrayList<>();
+        for (int i = 0; i < factory.items.size(); i++) rows.add(factory.createViewAt(i, true));
+        return rows;
+    }
     private static final class Item {
         static final int COURSE = 0;
         static final int LUNCH = 1;
@@ -299,14 +306,19 @@ public class UpcomingCoursesService extends RemoteViewsService {
         }
 
         @Override
-        public RemoteViews getViewAt(int position) {
+        public RemoteViews getViewAt(int position) { return createViewAt(position, false); }
+
+        private RemoteViews createViewAt(int position, boolean adaptiveHost) {
             if (position < 0 || position >= items.size()) return null;
             Item item = items.get(position);
-            RemoteViews v = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
+            RemoteViews v = new RemoteViews(context.getPackageName(), adaptiveHost
+                    ? R.layout.widget_adaptive_course_row : R.layout.widget_course_row);
 
             boolean automaticDensity = AdvancedSettingsStore.widgetAutoDensity(context);
+            int sizingHeight = adaptiveHost
+                    ? WidgetHeightSizing.adaptiveEstimateHeightDp(widgetHeightDp) : widgetHeightDp;
             int fittedHeight = automaticDensity
-                    ? CondensedRowSizing.autoRowHeightDp(widgetHeightDp, items.size(), position)
+                    ? CondensedRowSizing.autoRowHeightDp(sizingHeight, items.size(), position)
                     : 54;
             float scale = UiSettingsStore.widgetFontScale(context);
             float automaticScale = automaticDensity
@@ -316,8 +328,13 @@ public class UpcomingCoursesService extends RemoteViewsService {
             v.setTextViewTextSize(R.id.rowMeta, TypedValue.COMPLEX_UNIT_SP, 10f * scale * automaticScale);
             v.setTextViewTextSize(R.id.rowRelative, TypedValue.COMPLEX_UNIT_SP, 9f * scale * automaticScale);
             if (automaticDensity && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                v.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
-                v.setViewLayoutHeight(R.id.rowContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                if (adaptiveHost) {
+                    v.setViewLayoutHeight(R.id.rowRoot, -1, TypedValue.COMPLEX_UNIT_PX);
+                    v.setViewLayoutHeight(R.id.rowContent, -1, TypedValue.COMPLEX_UNIT_PX);
+                } else {
+                    v.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                    v.setViewLayoutHeight(R.id.rowContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                }
                 v.setViewPadding(R.id.rowTextBlock, 0, 0, 0, 0);
                 v.setViewLayoutHeight(R.id.rowRelative, WidgetAutoLayoutSizing.pillHeightDp(fittedHeight), TypedValue.COMPLEX_UNIT_DIP);
                 v.setViewLayoutWidth(R.id.rowRelative, WidgetAutoLayoutSizing.pillWidthDp(fittedHeight), TypedValue.COMPLEX_UNIT_DIP);
@@ -365,14 +382,16 @@ public class UpcomingCoursesService extends RemoteViewsService {
             v.setViewVisibility(R.id.rowRelative, showRelative ? View.VISIBLE : View.GONE);
             v.setViewVisibility(R.id.rowRelativeBox, showRelative ? View.VISIBLE : View.GONE);
 
-            Intent fill = new Intent();
-            fill.putExtra("open_mode", "week");
-            v.setOnClickFillInIntent(R.id.rowRoot, fill);
-            v.setOnClickFillInIntent(R.id.rowContent, fill);
-            v.setOnClickFillInIntent(R.id.rowTitle, fill);
-            v.setOnClickFillInIntent(R.id.rowMeta, fill);
-            v.setOnClickFillInIntent(R.id.rowRelativeBox, fill);
-            v.setOnClickFillInIntent(R.id.rowRelative, fill);
+            if (!adaptiveHost) {
+                Intent fill = new Intent();
+                fill.putExtra("open_mode", "week");
+                v.setOnClickFillInIntent(R.id.rowRoot, fill);
+                v.setOnClickFillInIntent(R.id.rowContent, fill);
+                v.setOnClickFillInIntent(R.id.rowTitle, fill);
+                v.setOnClickFillInIntent(R.id.rowMeta, fill);
+                v.setOnClickFillInIntent(R.id.rowRelativeBox, fill);
+                v.setOnClickFillInIntent(R.id.rowRelative, fill);
+            }
             return v;
         }
 

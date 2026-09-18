@@ -24,6 +24,13 @@ public final class CondensedCoursesService extends RemoteViewsService {
         return new Factory(context.getApplicationContext(), widgetId);
     }
 
+    static List<RemoteViews> buildAdaptiveRows(Context context, int widgetId) {
+        Factory factory = new Factory(context.getApplicationContext(), widgetId);
+        factory.reload();
+        List<RemoteViews> rows = new ArrayList<>();
+        for (int i = 0; i < factory.items.size(); i++) rows.add(factory.createViewAt(i, true));
+        return rows;
+    }
     @Override
     public RemoteViewsFactory onGetViewFactory(Intent intent) {
         int widgetId = intent == null ? AppWidgetManager.INVALID_APPWIDGET_ID
@@ -209,15 +216,20 @@ public final class CondensedCoursesService extends RemoteViewsService {
         }
 
         @Override
-        public RemoteViews getViewAt(int position) {
+        public RemoteViews getViewAt(int position) { return createViewAt(position, false); }
+
+        private RemoteViews createViewAt(int position, boolean adaptiveHost) {
             if (position < 0 || position >= items.size()) return null;
             Item item = items.get(position);
-            RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
+            RemoteViews views = new RemoteViews(context.getPackageName(), adaptiveHost
+                    ? R.layout.widget_adaptive_course_row : R.layout.widget_course_row);
 
             int densityPercent = AdvancedSettingsStore.widgetDensityPercent(context);
             boolean automaticDensity = AdvancedSettingsStore.widgetAutoDensity(context);
+            int sizingHeight = adaptiveHost
+                    ? WidgetHeightSizing.adaptiveEstimateHeightDp(widgetHeightDp) : widgetHeightDp;
             int fittedHeight = CondensedRowSizing.rowHeightDp(
-                    widgetHeightDp, items.size(), position, densityPercent, automaticDensity);
+                    sizingHeight, items.size(), position, densityPercent, automaticDensity);
             float scale = UiSettingsStore.widgetFontScale(context);
             float densityScale = CondensedRowSizing.textScaleForRow(fittedHeight);
             views.setTextViewTextSize(R.id.rowCondensedTime, TypedValue.COMPLEX_UNIT_SP, 7f * scale * densityScale);
@@ -229,8 +241,13 @@ public final class CondensedCoursesService extends RemoteViewsService {
             views.setViewVisibility(R.id.rowCondensedLineTop, position == 0 ? View.GONE : View.VISIBLE);
             views.setViewVisibility(R.id.rowCondensedLineBottom, position == items.size() - 1 ? View.GONE : View.VISIBLE);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                views.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
-                views.setViewLayoutHeight(R.id.rowCondensedContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                if (adaptiveHost) {
+                    views.setViewLayoutHeight(R.id.rowRoot, -1, TypedValue.COMPLEX_UNIT_PX);
+                    views.setViewLayoutHeight(R.id.rowCondensedContent, -1, TypedValue.COMPLEX_UNIT_PX);
+                } else {
+                    views.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                    views.setViewLayoutHeight(R.id.rowCondensedContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                }
                 int halfLine = Math.max(1, (fittedHeight + 1) / 2);
                 views.setViewLayoutHeight(R.id.rowCondensedLineTop, halfLine, TypedValue.COMPLEX_UNIT_DIP);
                 views.setViewLayoutHeight(R.id.rowCondensedLineBottom, halfLine, TypedValue.COMPLEX_UNIT_DIP);
@@ -271,13 +288,15 @@ public final class CondensedCoursesService extends RemoteViewsService {
             }
             views.setInt(R.id.rowCondensedAccent, "setBackgroundColor", accent);
 
-            Intent fill = new Intent();
-            fill.putExtra("open_mode", "week");
-            views.setOnClickFillInIntent(R.id.rowRoot, fill);
-            views.setOnClickFillInIntent(R.id.rowCondensedContent, fill);
-            views.setOnClickFillInIntent(R.id.rowCondensedTime, fill);
-            views.setOnClickFillInIntent(R.id.rowCondensedTitle, fill);
-            views.setOnClickFillInIntent(R.id.rowCondensedMeta, fill);
+            if (!adaptiveHost) {
+                Intent fill = new Intent();
+                fill.putExtra("open_mode", "week");
+                views.setOnClickFillInIntent(R.id.rowRoot, fill);
+                views.setOnClickFillInIntent(R.id.rowCondensedContent, fill);
+                views.setOnClickFillInIntent(R.id.rowCondensedTime, fill);
+                views.setOnClickFillInIntent(R.id.rowCondensedTitle, fill);
+                views.setOnClickFillInIntent(R.id.rowCondensedMeta, fill);
+            }
             return views;
         }
 
