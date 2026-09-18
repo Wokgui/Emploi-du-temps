@@ -144,6 +144,7 @@ final class ActionChainUi651 {
                 }
                 function selectWeek(letter){
                   const letters=weekLetters();if(!letters.includes(letter))return true;
+                  try{if(typeof activeWeek!=='undefined'&&activeWeek!==letter&&window.beginWeekSwap669)window.beginWeekSwap669()}catch(e){}
                   return run('select-week',function(){
                     if(typeof activeWeek!=='undefined'&&activeWeek===letter)return;
                     try{activeWeek=letter}catch(e){}

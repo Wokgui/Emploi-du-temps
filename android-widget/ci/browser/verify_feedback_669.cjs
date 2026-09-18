@@ -59,7 +59,12 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
         visible: getComputedStyle(grid).visibility !== 'hidden'
       });
     }).observe(window.__weekGridRef668, { childList: true, subtree: true });
-  });
+    window.__coverAdds669 = 0;
+    new MutationObserver(records => {
+      for (const record of records) for (const node of record.addedNodes) {
+        if (node.nodeType === 1 && node.classList.contains('weekSwapCover669')) window.__coverAdds669++;
+      }
+    }).observe(window.__weekGridRef668.parentNode, { childList: true });  });
   for (let i = 0; i < 80; i++) {
     const letter = i % 2 ? 'A' : 'B';
     await page.locator('#weekTabs .weekTab[data-week="' + letter + '"]').tap();
@@ -83,7 +88,14 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
     assert.ok(frame.lunch > 0);
     assert.ok(frame.title === 'A' ? frame.text.includes('TYPE-A') && !frame.text.includes('TYPE-B') : frame.text.includes('TYPE-B') && !frame.text.includes('TYPE-A'));
   }
-  const mutations = await page.evaluate(() => window.__weekMutations668);
+  const coverState = await page.evaluate(() => ({
+    additions: window.__coverAdds669,
+    remaining: document.querySelectorAll('.weekSwapCover669').length,
+    stableId: document.getElementById('weekGrid') === window.__weekGridRef668
+  }));
+  assert.ok(coverState.additions >= 75, JSON.stringify(coverState));
+  assert.equal(coverState.remaining, 0);
+  assert.equal(coverState.stableId, true);  const mutations = await page.evaluate(() => window.__weekMutations668);
   assert.ok(mutations.length > 0);
   assert.ok(mutations.every(frame => frame.children > 6 && frame.stableId === 'weekGrid' && frame.visible), JSON.stringify(mutations));
 
@@ -92,7 +104,9 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   const sizing = fs.readFileSync(path.resolve(__dirname, '../../app/src/main/java/com/wokgui/schedulewidget/CondensedRowSizing.java'), 'utf8');
   const bubble = fs.readFileSync(path.resolve(__dirname, '../../app/src/main/java/com/wokgui/schedulewidget/WidgetAutoLayoutSizing.java'), 'utf8');
   const row = fs.readFileSync(path.resolve(__dirname, '../../app/src/main/res/layout/widget_course_row.xml'), 'utf8');
-  for (const source of [standard, condensed]) {
+  const mainActivity = fs.readFileSync(path.resolve(__dirname, '../../app/src/main/java/com/wokgui/schedulewidget/MainActivity.java'), 'utf8');
+  const provider = fs.readFileSync(path.resolve(__dirname, '../../app/src/main/java/com/wokgui/schedulewidget/ScheduleWidgetProvider.java'), 'utf8');
+  const weekCover = fs.readFileSync(path.resolve(__dirname, '../../app/src/main/java/com/wokgui/schedulewidget/Feedback666Ui.java'), 'utf8');  for (const source of [standard, condensed]) {
     assert.match(source, /int firstCourse = automaticDensity \? 0 : target\.firstCourse/);
     assert.match(source, /for \(int i = firstCourse; i < courses\.size\(\); i\+\+\)/);
   }
@@ -103,10 +117,14 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   assert.match(row, /android:id="@\+id\/rowTextBlock"/);
   assert.match(row, /android:id="@\+id\/rowRelativeBox"/);
   assert.doesNotMatch(row, /android:minWidth="60dp"/);
-  assert.deepEqual(errors, []);
-  console.log('feedback_668_full_day_widget_sources=passed');
-  console.log('feedback_668_adaptive_bubbles=passed');
-  console.log('feedback_668_atomic_week_frames=passed');
+  assert.ok((mainActivity.match(/ScheduleWidgetProvider\.refreshAll\(MainActivity\.this\)/g) || []).length >= 4);
+  assert.match(mainActivity, /protected void onResume\(\)[\s\S]*ScheduleWidgetProvider\.refreshAll\(this\)/);
+  assert.match(provider, /widgetAutoDensity\(context\)\)views\.setScrollPosition\(R\.id\.upcomingList,0\)/);
+  assert.match(weekCover, /weekSwapCover669/);
+  assert.doesNotMatch(weekCover, /weekGridStable668/);  assert.deepEqual(errors, []);
+  console.log('feedback_669_immediate_widget_refresh=passed');
+  console.log('feedback_669_full_day_scroll_reset=passed');
+  console.log('feedback_669_covered_week_swap=passed');
   await context.close();
   await browser.close();
 })().catch(error => { console.error(error); process.exitCode = 1; });

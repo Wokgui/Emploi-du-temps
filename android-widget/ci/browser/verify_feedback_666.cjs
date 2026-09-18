@@ -48,7 +48,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
     window.__sampleWeek666 = () => {
       const title = document.getElementById('weekTitleLetter').textContent.trim();
       const text = document.getElementById('weekGrid').innerText;
-      window.__weekFrames666.push({ title, text, grids: document.querySelectorAll('.weekGrid').length });
+      window.__weekFrames666.push({ title, text, grids: document.querySelectorAll('.weekGrid').length, covers: document.querySelectorAll('.weekSwapCover669').length });
     };
   });
   for (let i = 0; i < 60; i++) {
@@ -58,8 +58,10 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   }
   const weekFrames = await page.evaluate(() => window.__weekFrames666);
   assert.equal(weekFrames.length, 60);
-  assert.ok(weekFrames.every(frame => frame.grids === 1));
+  assert.ok(weekFrames.every(frame => frame.grids === 2 && frame.covers === 1), JSON.stringify(weekFrames));
   assert.ok(weekFrames.every(frame => frame.title === 'A' ? frame.text.includes('AAA') && !frame.text.includes('BBB') : frame.text.includes('BBB') && !frame.text.includes('AAA')), JSON.stringify(weekFrames));
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert.equal(await page.locator('.weekSwapCover669').count(), 0);
   assert.equal(await page.locator('#weekGridStable666').count(), 0);
   assert.equal(await page.evaluate(() => window.__feedback666 === true), true);
 

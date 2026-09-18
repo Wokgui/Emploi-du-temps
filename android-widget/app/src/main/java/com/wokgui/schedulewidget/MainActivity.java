@@ -124,6 +124,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        ScheduleWidgetProvider.refreshAll(this);
         showResumeSnapshot();
         if (skipNextResumeRefresh) {
             skipNextResumeRefresh = false;
@@ -643,6 +644,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface public String loadAdvancedSettings() { return AdvancedSettingsStore.exportJson(MainActivity.this); }
         @JavascriptInterface public void saveAdvancedSettings(String json) {
             AdvancedSettingsStore.importJson(MainActivity.this, json);
+            runOnUiThread(() -> ScheduleWidgetProvider.refreshAll(MainActivity.this));
             if (AdvancedSettingsStore.remindersEnabled(MainActivity.this)) runOnUiThread(MainActivity.this::maybeRequestNotificationPermission);
         }
         @JavascriptInterface public void setCurrentWeek(String letter) { ScheduleStore.setCurrentWeekLetter(MainActivity.this, letter); }
