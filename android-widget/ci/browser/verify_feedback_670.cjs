@@ -78,7 +78,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   for (let i = 0; i < 80; i++) {
     const letter = i % 2 ? 'A' : 'B';
     await page.locator('#weekTabs .weekTab[data-week="' + letter + '"]').tap();
-    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve)))));
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve)))))));
     const frame = await page.evaluate(() => {
       const grid = document.getElementById('weekGrid');
       return {
@@ -144,7 +144,9 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   assert.match(adaptiveRow, /android:layout_height="0dp"/);
   assert.match(adaptiveRow, /android:layout_weight="1"/);
   assert.match(widgetLayout, /android:id="@\+id\/adaptiveDayRows"/);
-  assert.match(weekCover, /queueMicrotask/);
+  assert.match(weekCover, /window\.finishWeekSwap671=finishSwap/);
+  assert.match(weekCover, /setTimeout\(\(\)=>requestAnimationFrame\(\(\)=>requestAnimationFrame/);
+  assert.doesNotMatch(weekCover, /queueMicrotask/);
   assert.doesNotMatch(weekCover, /cover\.removeAttribute\('id'\)/);  assert.deepEqual(errors, []);
   console.log('feedback_670_weighted_widget_rows=passed');
   console.log('feedback_670_launcher_independent_height=passed');

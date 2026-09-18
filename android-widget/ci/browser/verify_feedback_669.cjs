@@ -68,7 +68,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   for (let i = 0; i < 80; i++) {
     const letter = i % 2 ? 'A' : 'B';
     await page.locator('#weekTabs .weekTab[data-week="' + letter + '"]').tap();
-    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve)))));
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve)))))));
     const frame = await page.evaluate(() => {
       const grid = document.getElementById('weekGrid');
       return {

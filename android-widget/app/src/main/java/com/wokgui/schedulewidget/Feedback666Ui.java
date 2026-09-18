@@ -1,6 +1,6 @@
 package com.wokgui.schedulewidget;
 
-/** 6.70 pass: same-task atomic week composition and final advanced-settings ordering. */
+/** 6.71 pass: keep the previous week visible until the final replacement paint. */
 final class Feedback666Ui {
     private Feedback666Ui() {}
 
@@ -35,6 +35,13 @@ final class Feedback666Ui {
                   if(typeof old!=='function'||old.__feedback666)return;
                   let rendering=false,coverToken=0;
                   const removeCovers=()=>document.querySelectorAll('.weekSwapCover669').forEach(node=>node.remove());
+                  const finishSwap=cover=>{
+                    if(!cover||!cover.isConnected)return;
+                    const token=Number(cover.dataset.weekSwapToken671||0);
+                    setTimeout(()=>requestAnimationFrame(()=>requestAnimationFrame(()=>{
+                      if(token===coverToken&&cover.isConnected)cover.remove();
+                    })),0);
+                  };
                   const beginSwap=()=>{
                     const live=document.getElementById('weekGrid');
                     if(!live||!live.parentNode)return null;
@@ -42,16 +49,17 @@ final class Feedback666Ui {
                     removeCovers();
                     const cover=live.cloneNode(true),token=++coverToken;
                     cover.classList.add('weekSwapCover669');cover.setAttribute('aria-hidden','true');
+                    cover.dataset.weekSwapToken671=String(token);
                     cover.style.position='absolute';cover.style.left=(rect.left-parentRect.left+parent.scrollLeft)+'px';
                     cover.style.top=(rect.top-parentRect.top+parent.scrollTop)+'px';cover.style.width=Math.max(1,Math.round(rect.width))+'px';
                     cover.style.height=Math.max(1,Math.round(rect.height))+'px';cover.style.margin='0';cover.style.pointerEvents='none';
                     cover.style.visibility='visible';cover.style.opacity='1';cover.style.zIndex='30';cover.style.background=getComputedStyle(live).backgroundColor||'#f7f9fc';
                     if(getComputedStyle(parent).position==='static')parent.style.position='relative';
                     parent.appendChild(cover);
-                    queueMicrotask(()=>{if(token===coverToken)cover.remove()});
                     return cover;
                   };
                   window.beginWeekSwap669=beginSwap;
+                  window.finishWeekSwap671=finishSwap;
                   const wrapped=function(){
                     if(rendering)return old.apply(this,arguments);
                     const cover=beginSwap();
@@ -63,7 +71,7 @@ final class Feedback666Ui {
                       if(window.paintWeek69)window.paintWeek69();
                       return result;
                     }catch(error){if(cover)cover.remove();throw error}
-                    finally{rendering=false}
+                    finally{rendering=false;if(cover)finishSwap(cover)}
                   };
                   wrapped.__feedback666=true;
                   wrapped.__feedback666Original=old;

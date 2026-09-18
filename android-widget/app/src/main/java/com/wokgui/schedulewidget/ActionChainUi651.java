@@ -144,12 +144,15 @@ final class ActionChainUi651 {
                 }
                 function selectWeek(letter){
                   const letters=weekLetters();if(!letters.includes(letter))return true;
-                  try{if(typeof activeWeek!=='undefined'&&activeWeek!==letter&&window.beginWeekSwap669)window.beginWeekSwap669()}catch(e){}
-                  return run('select-week',function(){
+                  let cover=null,changing=false;
+                  try{changing=typeof activeWeek!=='undefined'&&activeWeek!==letter;if(changing&&window.beginWeekSwap669)cover=window.beginWeekSwap669()}catch(e){}
+                  run('select-week',function(){
                     if(typeof activeWeek!=='undefined'&&activeWeek===letter)return;
                     try{activeWeek=letter}catch(e){}
                     stats.weekSelections++;mark(['week','edit'],true,modeNow()==='edit');markSyncContext();
-                  },{}),true;
+                  },{});
+                  try{if(changing&&cover&&window.finishWeekSwap671)window.finishWeekSwap671(cover)}catch(e){}
+                  return true;
                 }
                 function advanceCurrentWeek(){
                   const letters=weekLetters();if(letters.length<2)return true;
