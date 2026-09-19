@@ -71,7 +71,11 @@ final class WeekAppearance658Ui {
                 }
                 function paint(){
                   const grid=document.getElementById('weekGrid');if(!grid)return;grid.classList.remove('week662LunchLines');grid.style.removeProperty('--week662-lunch-lines');const settings=load(),data=rowsOf(grid);if(!data.rows.length)return;
-                  grid.style.setProperty('--week658-free',settings.free);grid.style.setProperty('--week658-course',settings.course);grid.style.setProperty('--week658-lunch',settings.lunch);
+                  grid.style.setProperty('--week658-free',settings.free);
+                  grid.style.setProperty('--week658-course',settings.course);
+                  grid.style.setProperty('--week658-lunch',settings.lunch);
+                  // Week view has one authoritative lunch colour. Legacy lunch renderers inherit this local value.
+                  grid.style.setProperty('--ft-midi',settings.lunch,'important');
                   const gapText=namedGapLabel();
                   data.rows.forEach(row=>{row.time.classList.remove('week658LunchTime','week658LunchTop','week658LunchBottom','week658LunchRowTop','week658LunchRowBottom');cleanInline(row.time);row.cells.forEach(cell=>{cleanCell(cell);if(courseCell(cell))cell.classList.add('week658Course');else{cell.classList.add('week658Free');if(gapCell(cell)){cell.classList.add('week658Gap');if(gapText){cell.classList.add('week662NamedGap');const label=document.createElement('span');label.className='week662GapLabel';label.textContent=gapText;cell.appendChild(label)}}}})});
                   data.heads.forEach((head,dayIndex)=>{
