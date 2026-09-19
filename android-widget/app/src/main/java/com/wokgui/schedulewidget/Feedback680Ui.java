@@ -61,7 +61,10 @@ final class Feedback680Ui {
                     background-color:transparent!important;background-image:none!important
                   }
 
-                  html body #slotSettings .slotRemove{display:flex!important;align-items:center!important;justify-content:center!important}
+                  html body #slotSettings .slotRow{grid-template-columns:112px minmax(0,1fr) minmax(0,1fr)!important}
+                  html body #slotSettings .slotLead{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:5px!important;min-width:0!important}
+                  html body #slotSettings .slotRemove{display:flex!important;align-items:center!important;justify-content:center!important;width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important;padding:0!important;font-size:15px!important}
+                  @media(max-width:420px){html body #slotSettings .slotRow{grid-template-columns:100px minmax(0,1fr) minmax(0,1fr)!important}}
                 `;
                 document.head.appendChild(style);
 
@@ -77,7 +80,31 @@ final class Feedback680Ui {
                   if(add.parentNode!==row)row.appendChild(add);
                   const bulk=document.getElementById('addBulkCourses');if(bulk&&bulk.parentNode!==row)row.appendChild(bulk);
                 }
-                function refresh(){relabelHours();arrangeActions()}
+                function stableLunchColour(){
+                  const grid=document.getElementById('weekGrid');if(!grid)return;
+                  const computed=getComputedStyle(grid);
+                  const colour=(computed.getPropertyValue('--week658-lunch')||'').trim()||'#FFE08A';
+                  grid.style.setProperty('--feedback680-lunch',colour);
+                  const selector='.wh.timecol.week658LunchTime,.wc.week658Lunch,.wc.lunchCell,.wc.dynamicLunchCell,.wc.nativeLunchCell,.wc.finalLunchCell,.wc.lunch655Synthetic';
+                  grid.querySelectorAll(selector).forEach(cell=>{
+                    cell.style.setProperty('background',colour,'important');
+                    cell.style.setProperty('background-color',colour,'important');
+                    cell.style.setProperty('background-image','none','important');
+                    cell.style.setProperty('opacity','1','important');
+                    cell.style.setProperty('filter','none','important');
+                  });
+                }
+                function settleLunch(){
+                  requestAnimationFrame(()=>requestAnimationFrame(stableLunchColour));
+                }
+                const originalRenderWeek=window.renderWeek;
+                if(typeof originalRenderWeek==='function'&&!originalRenderWeek.__feedback680StableLunch){
+                  const wrapped=function(){const out=originalRenderWeek.apply(this,arguments);settleLunch();return out};
+                  wrapped.__feedback680StableLunch=true;wrapped.__feedback680Original=originalRenderWeek;
+                  window.renderWeek=wrapped;try{renderWeek=wrapped}catch(e){}
+                }
+                document.addEventListener('pointerdown',e=>{const nav=e.target&&e.target.closest?e.target.closest('.nav[data-mode="week"]'):null;if(nav)settleLunch()},true);
+                function refresh(){relabelHours();arrangeActions();stableLunchColour()}
                 window.refreshFeedback680=refresh;
                 refresh();
                 requestAnimationFrame(refresh);
