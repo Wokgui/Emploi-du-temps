@@ -26,6 +26,7 @@ final class ScheduleStore {
     private static final String SHOW_GAP_BADGE = "show_gap_badge";
     private static final String SHOW_LUNCH_BADGE = "show_lunch_badge";
     private static final String SLOT_COUNT = "slot_count";
+    private static final String SLOT_IDS = "slot_ids";
     private static final String[] LETTERS = {"A", "B", "C", "D"};
     private static final int[] ALL_DAYS = {Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY, Calendar.THURSDAY, Calendar.FRIDAY, Calendar.SATURDAY, Calendar.SUNDAY};
 
@@ -56,9 +57,18 @@ final class ScheduleStore {
 
         int slotCount = Math.max(1, Math.min(10, p.getInt(SLOT_COUNT, 9)));
         if (!p.contains(SLOT_COUNT)) e.putInt(SLOT_COUNT, slotCount);
-        for (int i = 0; i < slotCount; i++) {
-            if (!p.contains("slot_" + (i + 1) + "_start")) e.putString("slot_" + (i + 1) + "_start", DEFAULT_START[i]);
-            if (!p.contains("slot_" + (i + 1) + "_end")) e.putString("slot_" + (i + 1) + "_end", DEFAULT_END[i]);
+        if (!p.contains(SLOT_IDS)) {
+            StringBuilder ids = new StringBuilder();
+            for (int i = 1; i <= slotCount; i++) {
+                if (ids.length() > 0) ids.append(',');
+                ids.append(i);
+            }
+            e.putString(SLOT_IDS, ids.toString());
+        }
+        for (int id : activeSlotIds(p, slotCount)) {
+            int i = Math.max(1, Math.min(10, id)) - 1;
+            if (!p.contains("slot_" + id + "_start")) e.putString("slot_" + id + "_start", DEFAULT_START[i]);
+            if (!p.contains("slot_" + id + "_end")) e.putString("slot_" + id + "_end", DEFAULT_END[i]);
         }
         if (!p.contains(GAP_LABEL)) e.putString(GAP_LABEL, "Trou");
         if (!p.contains(LUNCH_LABEL)) e.putString(LUNCH_LABEL, "Midi");
@@ -107,7 +117,7 @@ final class ScheduleStore {
 
     static int getSlotCount(Context context) {
         ensureInitialized(context);
-        return Math.max(1, Math.min(10, prefs(context).getInt(SLOT_COUNT, 9)));
+        return activeSlotIds(prefs(context), prefs(context).getInt(SLOT_COUNT, 9)).size();
     }
 
     static String getSlotStart(Context context, int slot) {
@@ -187,11 +197,12 @@ final class ScheduleStore {
         try {
             JSONObject root = new JSONObject();
             JSONArray slots = new JSONArray();
-            int slotCount = getSlotCount(context);
-            for (int i = 1; i <= slotCount; i++) {
+            List<Integer> slotIds = activeSlotIds(prefs(context), prefs(context).getInt(SLOT_COUNT, 9));
+            for (int id : slotIds) {
                 JSONObject slot = new JSONObject();
-                slot.put("start", getSlotStart(context, i));
-                slot.put("end", getSlotEnd(context, i));
+                slot.put("n", id);
+                slot.put("start", getSlotStart(context, id));
+                slot.put("end", getSlotEnd(context, id));
                 slots.put(slot);
             }
             root.put("_slots", slots);
@@ -246,18 +257,27 @@ final class ScheduleStore {
             SharedPreferences.Editor editor = prefs(context).edit();
 
             JSONArray slots = root.optJSONArray("_slots");
-            if (slots != null) {
-                int count = Math.max(1, Math.min(10, slots.length()));
-                editor.putInt(SLOT_COUNT, count);
-                for (int i = 0; i < count; i++) {
+            if (slots != null && slots.length() > 0) {
+                List<Integer> ids = new ArrayList<>();
+                for (int i = 0; i < Math.min(10, slots.length()); i++) {
                     JSONObject slot = slots.optJSONObject(i);
                     if (slot == null) continue;
-                    editor.putString("slot_" + (i + 1) + "_start", slot.optString("start", DEFAULT_START[i]));
-                    editor.putString("slot_" + (i + 1) + "_end", slot.optString("end", DEFAULT_END[i]));
+                    int id = Math.max(1, Math.min(10, slot.optInt("n", i + 1)));
+                    if (ids.contains(id)) continue;
+                    ids.add(id);
+                    int def = id - 1;
+                    editor.putString("slot_" + id + "_start", slot.optString("start", DEFAULT_START[def]));
+                    editor.putString("slot_" + id + "_end", slot.optString("end", DEFAULT_END[def]));
                 }
-                for (int i = count; i < 10; i++) {
-                    editor.remove("slot_" + (i + 1) + "_start");
-                    editor.remove("slot_" + (i + 1) + "_end");
+                if (!ids.isEmpty()) {
+                    Collections.sort(ids);
+                    StringBuilder rawIds = new StringBuilder();
+                    for (int id : ids) {
+                        if (rawIds.length() > 0) rawIds.append(',');
+                        rawIds.append(id);
+                    }
+                    editor.putString(SLOT_IDS, rawIds.toString());
+                    editor.putInt(SLOT_COUNT, ids.size());
                 }
             }
 
@@ -370,6 +390,25 @@ final class ScheduleStore {
             }
         } catch (Exception ignored) {}
         return out;
+    }
+
+    private static List<Integer> activeSlotIds(SharedPreferences p, int fallbackCount) {
+        List<Integer> ids = new ArrayList<>();
+        String raw = p.getString(SLOT_IDS, "");
+        if (raw != null && !raw.trim().isEmpty()) {
+            for (String part : raw.split(",")) {
+                try {
+                    int id = Integer.parseInt(part.trim());
+                    if (id >= 1 && id <= 10 && !ids.contains(id)) ids.add(id);
+                } catch (Exception ignored) {}
+            }
+        }
+        if (ids.isEmpty()) {
+            int count = Math.max(1, Math.min(10, fallbackCount));
+            for (int i = 1; i <= count; i++) ids.add(i);
+        }
+        Collections.sort(ids);
+        return ids;
     }
 
     private static String safeWeek(String week) {
