@@ -37,29 +37,53 @@ final class HeavyPanelUi648 {
                 // their native focus, scrolling and form behaviour.
                 return node.id==='settingsModal'||node.id==='modal'?node:null;
               }
-              let pendingClick=null;
+              let pendingClick=null,pendingCourse=null;
+              inputOwner.scrollClicksBlocked=0;
+              const isScrollableCourse=target=>!!(target&&target.matches&&target.matches('.editCourse,.todayCourse,.wc'));
               const nativeAdd=EventTarget.prototype.addEventListener;
               nativeAdd.call(document,'pointerdown',function(event){
                 pendingClick=null;
                 const target=inputTarget(event.target);if(!target||!inputOwner.route)return;
                 if(event.isPrimary===false||event.button>0||target.disabled)return;
-                pendingClick=target;
+                if(isScrollableCourse(target)&&event.pointerType!=='mouse'){
+                  pendingCourse={target:target,id:event.pointerId,x:event.clientX,y:event.clientY,started:performance.now(),duration:0,moved:false};
+                  return;
+                }
+                pendingCourse=null;pendingClick=target;
                 const started=performance.now();if(inputOwner.metric)inputOwner.metric(event,started);
                 inputOwner.lastPanel=(target.id&&target.id.startsWith('settings'))?'settings':(target.id==='settingsModal'?'settings':'course');inputOwner.lastAt=started;
                 logInput(target);
                 inputOwner.route(target,event);event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
               },{capture:true,passive:false});
+              nativeAdd.call(document,'pointermove',function(event){
+                const gesture=pendingCourse;if(!gesture||gesture.id!==event.pointerId)return;
+                if(Math.abs(event.clientX-gesture.x)>8||Math.abs(event.clientY-gesture.y)>8)gesture.moved=true;
+              },{capture:true,passive:true});
               nativeAdd.call(document,'pointerup',function(event){
+                const gesture=pendingCourse;
+                if(gesture&&gesture.id===event.pointerId){
+                  gesture.duration=performance.now()-gesture.started;
+                  setTimeout(()=>{if(pendingCourse===gesture)pendingCourse=null},800);
+                  return;
+                }
                 if(pendingClick){event.preventDefault();event.stopPropagation();event.stopImmediatePropagation()}
               },true);
-              nativeAdd.call(document,'pointercancel',function(){pendingClick=null},true);
+              nativeAdd.call(document,'pointercancel',function(){pendingClick=null;pendingCourse=null},true);
               nativeAdd.call(document,'click',function(event){
+                const target=inputTarget(event.target);
+                if(pendingCourse&&target===pendingCourse.target){
+                  const gesture=pendingCourse,blocked=gesture.moved||gesture.duration>320||performance.now()-gesture.started>320;
+                  pendingCourse=null;
+                  if(blocked){inputOwner.scrollClicksBlocked++;event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();return}
+                  if(!target.disabled&&inputOwner.route){if(inputOwner.metric)inputOwner.metric(event,performance.now());logInput(target);inputOwner.route(target,event)}
+                  event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();return;
+                }
                 // A sheet closes on pointer-down. Its matching browser click can land on
                 // the timetable underneath; consume that same gesture before any router.
-                if(pendingClick&&(event.detail>0||event.pointerType||inputTarget(event.target)===pendingClick)){
+                if(pendingClick&&(event.detail>0||event.pointerType||target===pendingClick)){
                   pendingClick=null;event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();return;
                 }
-                const target=inputTarget(event.target);if(!target)return;
+                if(!target)return;
                 if(!target.disabled&&inputOwner.route){if(inputOwner.metric)inputOwner.metric(event,performance.now());logInput(target);inputOwner.route(target,event)}
                 event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
               },true);

@@ -67,6 +67,14 @@ final class NavigationPerformanceUi {
                   cache.hits++;
                   return 'hit';
                 }
+                function fitBeforeReveal(target){
+                  try{
+                    const instant=window.__edtInstantViews647;if(!instant)return;
+                    const view=instant.views&&instant.views[target],height=view?(view.offsetHeight||0):0;
+                    if(height>0&&instant.heights)instant.heights[target]=height;
+                    if(typeof instant.fit==='function')instant.fit(target);
+                  }catch(e){}
+                }
                 function stats(n,settle){
                   if(n%50!==0)return;
                   console.log('EDT_NAV_STATS|navs='+cache.navs+'|hits='+cache.hits+'|renderToday='+cache.renders.today+'|renderWeek='+cache.renders.week+'|renderEdit='+cache.renders.edit+'|cancelled='+cache.cancelled+'|external='+cache.externalRenders+'|fastWrapped=0|dirtyToday='+(cache.dirty.today?1:0)+'|dirtyWeek='+(cache.dirty.week?1:0)+'|dirtyEdit='+(cache.dirty.edit?1:0)+'|settleMs='+Math.round(settle||0));
@@ -77,18 +85,29 @@ final class NavigationPerformanceUi {
                   button.__edtZeroRenderOwned=true;
                   button.onclick=function(){
                     const target=button.dataset.mode,n=++cache.navs,started=performance.now();
-                    activate(target,button);
                     console.log('EDT_NAV_INPUT|'+target+'|n='+n);
                     const token=++cache.token;
-                    requestAnimationFrame(function(){
+                    // Build a dirty destination while it is still hidden, then expose the
+                    // complete frame in one commit. Activating on pointer-down previously
+                    // revealed the stale edit view for one frame on the first visit.
+                    const outcome=renderTarget(target);
+                    if(token!==cache.token){cache.cancelled++;stats(n,performance.now()-started);return false}
+                    const reveal=function(){
                       if(token!==cache.token){cache.cancelled++;stats(n,performance.now()-started);return}
-                      const outcome=renderTarget(target);
+                      fitBeforeReveal(target);
+                      activate(target,button);
+                      fitBeforeReveal(target);
                       requestAnimationFrame(function(){
-                        const elapsed=performance.now()-started;
-                        if(n%50===0)console.log('EDT_NAV_SETTLE|n='+n+'|target='+target+'|outcome='+outcome+'|ms='+Math.round(elapsed));
-                        stats(n,elapsed);
+                        requestAnimationFrame(function(){
+                          const elapsed=performance.now()-started;
+                          if(n%50===0)console.log('EDT_NAV_SETTLE|n='+n+'|target='+target+'|outcome='+outcome+'|ms='+Math.round(elapsed));
+                          stats(n,elapsed);
+                        });
                       });
-                    });
+                    };
+                    // Edit receives one complete pre-paint cycle while the previous tab
+                    // remains visible, so Android never exposes its transitional frame.
+                    if(target==='edit')requestAnimationFrame(reveal);else reveal();
                     return false;
                   };
                 }
@@ -110,7 +129,9 @@ final class NavigationPerformanceUi {
 
                 document.addEventListener('pointerdown',function(e){
                   const button=e.target&&e.target.closest?e.target.closest('.nav'):null;
-                  if(button&&button.dataset&&['today','week','edit'].includes(button.dataset.mode))activate(button.dataset.mode,button);
+                  // Keep the current complete view visible until the click handler has built
+                  // the destination. The active state changes together with the view.
+                  if(button&&button.dataset&&['today','week','edit'].includes(button.dataset.mode))return;
                 },{capture:true,passive:true});
 
                 try{cache.dirty[currentMode()]=false}catch(e){}

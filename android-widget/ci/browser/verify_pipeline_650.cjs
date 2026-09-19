@@ -10,18 +10,19 @@ const asset=path.resolve(__dirname,'../../app/src/main/assets/index.html');
 fs.mkdirSync(out,{recursive:true});
 
 (async()=>{
-  const browser=await chromium.launch({headless:true});
+  const browser=await chromium.launch({headless:true,...(process.env.EDT_BROWSER_CHANNEL?{channel:process.env.EDT_BROWSER_CHANNEL}:{})});
   const context=await browser.newContext({viewport:{width:412,height:915},isMobile:true,hasTouch:true});
   const page=await context.newPage();
   const errors=[],logs=[];
   page.on('pageerror',e=>errors.push(String(e)));
   page.on('console',m=>{logs.push(m.text());if(m.type()==='error')errors.push(m.text())});
   await page.addInitScript(()=>{
-    const data={},calls={};window.__testAndroidData=data;window.__testAndroidCalls=calls;
+    const data={},calls={};window.__testAndroidData=data;window.__testAndroidCalls=calls;window.__testSaveStacks=[];
     window.AndroidSchedule=new Proxy({}, {get(target,key){
       if(typeof key!=='string')return;
       return (...args)=>{
         calls[key]=(calls[key]||0)+1;
+        if(key==='saveSchedule')window.__testSaveStacks.push(String(new Error('saveSchedule').stack||''));
         if(key.startsWith('save')){data[key.slice(4)]=args[0];return true}
         if(key==='loadSchedule')return data.Schedule||'';
         if(key==='loadUiSettings')return data.UiSettings||'{"language":"fr","theme":"light"}';
@@ -32,11 +33,15 @@ fs.mkdirSync(out,{recursive:true});
   });
   await page.goto(pathToFileURL(asset).href);
   for(const file of fs.readdirSync(chunks).sort()){
-    await page.evaluate(fs.readFileSync(path.join(chunks,file),'utf8'));
+    await page.evaluate(fs.readFileSync(path.join(chunks,file),'utf8')+'\n//# sourceURL='+file);
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(resolve)));
   }
   await page.waitForFunction(()=>window.__edtRenderPipeline650&&window.__edtHeavyPanels648);
-  await page.evaluate(()=>window.setModeFromAndroid('edit'));
+  await page.evaluate(()=>{
+    const populated=Object.keys(weeks[activeWeek]).find(key=>weeks[activeWeek][key]?.courses?.length);
+    if(populated)selected=Number(populated);
+    window.setModeFromAndroid('edit');
+  });
   await page.waitForTimeout(600);
 
   await page.locator('#editList .editCourse').first().tap();
@@ -55,6 +60,7 @@ fs.mkdirSync(out,{recursive:true});
     executions:__edtRenderPipeline650.stats.saveExecutions,
     coalesced:__edtRenderPipeline650.stats.coalescedSaves
   }));
+  console.log('EDT_PIPELINE_SAVE_TRACE',JSON.stringify(await page.evaluate(()=>({calls:__testAndroidCalls.saveSchedule||0,stacks:__testSaveStacks.slice(-4)}))));
   assert.equal(afterSubmit.native-beforeSubmit.native,1,'one course submit must write the schedule once');
   assert.equal(afterSubmit.executions-beforeSubmit.executions,1,'one course submit must execute one save');
 

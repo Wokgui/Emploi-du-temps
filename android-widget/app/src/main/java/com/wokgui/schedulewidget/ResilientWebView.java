@@ -19,8 +19,11 @@ import android.webkit.WebViewClient;
  */
 public final class ResilientWebView extends WebView {
     private static final String CHUNK_TAG = "EDT_UI_CHUNK";
-    private static final long INITIAL_CHUNK_DELAY_MS = 120L;
-    private static final long CHUNK_YIELD_MS = 16L;
+    // The branded native overlay now owns cold-start presentation. Start assembling the
+    // real UI immediately and keep a short event-loop yield between layers instead of
+    // adding more than a second of fixed frame delays across roughly sixty chunks.
+    private static final long INITIAL_CHUNK_DELAY_MS = 0L;
+    private static final long CHUNK_YIELD_MS = 4L;
     private static final long INPUT_PRIORITY_WINDOW_MS = 420L;
     private static final int STARTUP_MASK_COLOR = 0xFFF6F8FB;
     private long lastUserInteractionAt = 0L;

@@ -3,6 +3,8 @@ package com.wokgui.schedulewidget;
 import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -21,9 +23,23 @@ public class UpcomingCoursesService extends RemoteViewsService {
     public RemoteViewsFactory onGetViewFactory(Intent intent) {
         int widgetId = intent == null ? AppWidgetManager.INVALID_APPWIDGET_ID
                 : intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
+        int format = WidgetLayoutStore.get(getApplicationContext(), widgetId);
+        if (format == WidgetLayoutStore.FORMAT_CONDENSED) {
+            return CondensedCoursesService.createFactory(getApplicationContext(), widgetId);
+        }
+        if (format == WidgetLayoutStore.FORMAT_MINI) {
+            return new MiniFactory(getApplicationContext(), widgetId);
+        }
         return new Factory(getApplicationContext(), widgetId);
     }
 
+    static List<RemoteViews> buildAdaptiveRows(Context context, int widgetId) {
+        Factory factory = new Factory(context.getApplicationContext(), widgetId);
+        factory.reload();
+        List<RemoteViews> rows = new ArrayList<>();
+        for (int i = 0; i < factory.items.size(); i++) rows.add(factory.createViewAt(i, true));
+        return rows;
+    }
     private static final class Item {
         static final int COURSE = 0;
         static final int LUNCH = 1;
@@ -69,13 +85,12 @@ public class UpcomingCoursesService extends RemoteViewsService {
         private final Integer forcedHeightDp;
         private final Calendar forcedNow;
         private final List<Item> items = new ArrayList<>();
-        private boolean compactHeight;
+        private int widgetHeightDp = 120;
 
         Factory(Context context, int widgetId) {
             this(context, widgetId, null, null);
         }
 
-        /** Debug preview uses this overload through reflection; production always uses the constructor above. */
         Factory(Context context, int widgetId, Integer forcedHeightDp, Calendar forcedNow) {
             this.context = context;
             this.widgetId = widgetId;
@@ -88,23 +103,24 @@ public class UpcomingCoursesService extends RemoteViewsService {
         @Override public void onDestroy() { items.clear(); }
         @Override public int getCount() { return items.size(); }
 
-        /**
-         * At the minimum widget height (108 dp) two 54 dp course rows fit exactly.
-         * In that configuration breaks are intentionally omitted so the visible pair
-         * is always the current/next course pair rather than a gap taking the second row.
-         */
-        private boolean isCompactHeight() {
-            if (forcedHeightDp != null) return forcedHeightDp > 0 && forcedHeightDp <= 145;
-            if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return false;
+        private int resolveWidgetHeightDp() {
+            if (forcedHeightDp != null) return Math.max(1, forcedHeightDp);
+            if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return 120;
             Bundle options = AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId);
-            int h = options == null ? 120 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 120);
-            return h > 0 && h <= 145;
+            if (options == null) return 120;
+            boolean landscape = context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
+            return WidgetHeightSizing.resolveHeightDp(
+                    options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0),
+                    options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0),
+                    landscape,
+                    120
+            );
         }
 
         private void reload() {
             items.clear();
             ScheduleStore.ensureInitialized(context);
-            compactHeight = isCompactHeight();
+            widgetHeightDp = resolveWidgetHeightDp();
 
             Calendar now = forcedNow == null ? Calendar.getInstance() : (Calendar) forcedNow.clone();
             int nowMin = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
@@ -112,17 +128,19 @@ public class UpcomingCoursesService extends RemoteViewsService {
             if (target == null) return;
 
             List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, target.date);
-            if (courses == null || courses.isEmpty() || target.firstCourse >= courses.size()) return;
+            boolean automaticDensity = AdvancedSettingsStore.widgetAutoDensity(context);
+            int firstCourse = automaticDensity ? 0 : target.firstCourse;
+            if (courses == null || courses.isEmpty() || firstCourse >= courses.size()) return;
 
-            int lunchStart = ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, 4));
-            int lunchEnd = ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, 5));
+            int day = target.date.get(Calendar.DAY_OF_WEEK);
+            int lunchStart = AdvancedSettingsStore.weekLunchStartMinute(context, day);
+            int lunchEnd = AdvancedSettingsStore.weekLunchEndMinute(context, day);
+            if (!AdvancedSettingsStore.weekLunchEnabled(context, day)) lunchEnd = lunchStart;
             boolean futureDay = !sameDay(now, target.date);
             int previousEnd = -1;
             boolean firstVisibleCourse = true;
 
-            // In an expanded widget, keep the break that is actually in progress at the
-            // top of the list. Previously the target jumped straight to the next course.
-            if (!compactHeight && !futureDay && target.firstCourse > 0) {
+            if (!automaticDensity && !futureDay && target.firstCourse > 0) {
                 ScheduleData.Course previous = courses.get(target.firstCourse - 1);
                 ScheduleData.Course next = courses.get(target.firstCourse);
                 int from = ScheduleData.toMinutes(previous.end);
@@ -130,7 +148,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 if (nowMin >= from && nowMin < to) appendBreaks(from, to, lunchStart, lunchEnd, nowMin);
             }
 
-            for (int i = target.firstCourse; i < courses.size(); i++) {
+            for (int i = firstCourse; i < courses.size(); i++) {
                 ScheduleData.Course c = courses.get(i);
                 int start = ScheduleData.toMinutes(c.start);
                 if (previousEnd >= 0) appendBreaks(previousEnd, start, lunchStart, lunchEnd);
@@ -178,31 +196,20 @@ public class UpcomingCoursesService extends RemoteViewsService {
         }
 
         private void appendBreaks(int from, int to, int lunchStart, int lunchEnd, int cutoffMinute) {
-            if (compactHeight || to <= from) return;
-            boolean lunchValid = lunchEnd > lunchStart;
-            if (!lunchValid || to <= lunchStart || from >= lunchEnd) {
-                addGap(from, to, cutoffMinute);
-                return;
+            for (WidgetBreakSequence.Segment segment : WidgetBreakSequence.between(
+                    from, to, lunchStart, lunchEnd,
+                    AdvancedSettingsStore.showBreaks(context),
+                    AdvancedSettingsStore.showLunch(context), cutoffMinute)) {
+                if (segment.type == WidgetBreakSequence.LUNCH) addLunch(segment.start, segment.end);
+                else addGap(segment.start, segment.end, -1);
             }
-            if (from < lunchStart) addGap(from, Math.min(to, lunchStart), cutoffMinute);
-            if (from <= lunchStart && to >= lunchEnd
-                    && AdvancedSettingsStore.showLunch(context)
-                    && (cutoffMinute < 0 || lunchEnd > cutoffMinute)) {
-                String appLabel = localizedAppBreakLabel(true);
-                String label = AdvancedSettingsStore.widgetLunchLabel(context, appLabel);
-                items.add(new Item(
-                        label,
-                        appLabel,
-                        minuteLabel(lunchStart) + " - " + minuteLabel(lunchEnd),
-                        "",
-                        Item.LUNCH,
-                        0,
-                        lunchRelative(lunchEnd),
-                        false,
-                        ""
-                ));
-            }
-            if (to > lunchEnd) addGap(Math.max(from, lunchEnd), to, cutoffMinute);
+        }
+
+        private void addLunch(int start, int end) {
+            String appLabel = localizedAppBreakLabel(true);
+            String label = AdvancedSettingsStore.widgetLunchLabel(context, appLabel);
+            items.add(new Item(label, appLabel, minuteLabel(start) + " - " + minuteLabel(end), "",
+                    Item.LUNCH, 0, lunchRelative(end), false, ""));
         }
 
         private void addGap(int start, int end, int cutoffMinute) {
@@ -210,17 +217,8 @@ public class UpcomingCoursesService extends RemoteViewsService {
             if (cutoffMinute >= 0 && end <= cutoffMinute) return;
             String appLabel = localizedAppBreakLabel(false);
             String label = AdvancedSettingsStore.widgetGapLabel(context, appLabel);
-            items.add(new Item(
-                    label,
-                    appLabel,
-                    minuteLabel(start) + " - " + minuteLabel(end),
-                    "",
-                    Item.GAP,
-                    0,
-                    gapRelative(start, end),
-                    false,
-                    ""
-            ));
+            items.add(new Item(label, appLabel, minuteLabel(start) + " - " + minuteLabel(end), "",
+                    Item.GAP, 0, gapRelative(start, end), false, ""));
         }
 
         private String localizedAppBreakLabel(boolean lunch) {
@@ -256,24 +254,26 @@ public class UpcomingCoursesService extends RemoteViewsService {
             Calendar start = atMinute(targetDate, ScheduleData.toMinutes(course.start));
             Calendar end = atMinute(targetDate, ScheduleData.toMinutes(course.end));
             long nowMs = now.getTimeInMillis();
-
             if (nowMs >= start.getTimeInMillis() && nowMs < end.getTimeInMillis()) {
                 long rem = Math.max(1L, (end.getTimeInMillis() - nowMs + 59999L) / 60000L);
                 return rem + " min";
             }
-
             long diff = Math.max(0L, (start.getTimeInMillis() - nowMs) / 60000L);
             if (diff <= 0) return "";
-
             String base;
             if (diff < 60) base = UiSettingsStore.t(context, "in") + " " + diff + " min";
-            else {
-                long hours = Math.max(1L, Math.round(diff / 60.0));
-                base = UiSettingsStore.t(context, "in") + " " + hours + " h";
-            }
-
-            if (includeDate) base += dateSuffix(targetDate);
+            else base = UiSettingsStore.t(context, "in") + " " + Math.max(1L, Math.round(diff / 60.0)) + " h";
+            if (includeDate) return compactFutureLabel(targetDate, base);
             return base;
+        }
+
+        private String compactFutureLabel(Calendar date, String base) {
+            String lang = UiSettingsStore.language(context);
+            Locale locale = "de".equals(lang) ? Locale.GERMANY : ("en".equals(lang) ? Locale.UK : Locale.FRANCE);
+            String day = new SimpleDateFormat("EEE d", locale).format(date.getTime()).replace(".", "");
+            String prefix = UiSettingsStore.t(context, "in") + " ";
+            String duration = base.startsWith(prefix) ? base.substring(prefix.length()) : base;
+            return day + " · " + duration;
         }
 
         private Calendar atMinute(Calendar date, int minute) {
@@ -306,24 +306,54 @@ public class UpcomingCoursesService extends RemoteViewsService {
         }
 
         private String courseMeta(Item item) {
-            boolean times = AdvancedSettingsStore.showTimes(context);
             boolean room = AdvancedSettingsStore.showRoom(context);
-            if (times && room) return item.time + " · " + UiSettingsStore.t(context, "room") + " " + (item.room.isEmpty() ? "—" : item.room);
-            if (times) return item.time;
             if (room) return UiSettingsStore.t(context, "room") + " " + (item.room.isEmpty() ? "—" : item.room);
             return "";
         }
 
+        private String startTime(String range) {
+            int cut = range == null ? -1 : range.indexOf(" - ");
+            return cut > 0 ? range.substring(0, cut) : (range == null ? "" : range);
+        }
+
         @Override
-        public RemoteViews getViewAt(int position) {
+        public RemoteViews getViewAt(int position) { return createViewAt(position, false); }
+
+        private RemoteViews createViewAt(int position, boolean adaptiveHost) {
             if (position < 0 || position >= items.size()) return null;
             Item item = items.get(position);
-            RemoteViews v = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
+            RemoteViews v = new RemoteViews(context.getPackageName(), adaptiveHost
+                    ? R.layout.widget_adaptive_course_row : R.layout.widget_course_row);
 
+            boolean automaticDensity = AdvancedSettingsStore.widgetAutoDensity(context);
+            int sizingHeight = adaptiveHost
+                    ? WidgetHeightSizing.adaptiveEstimateHeightDp(widgetHeightDp) : widgetHeightDp;
+            int fittedHeight = automaticDensity
+                    ? CondensedRowSizing.autoRowHeightDp(sizingHeight, items.size(), position, AdvancedSettingsStore.widgetBarChromeDp(context))
+                    : 54;
             float scale = UiSettingsStore.widgetFontScale(context);
-            v.setTextViewTextSize(R.id.rowTitle, TypedValue.COMPLEX_UNIT_SP, 13f * scale);
-            v.setTextViewTextSize(R.id.rowMeta, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
-            v.setTextViewTextSize(R.id.rowRelative, TypedValue.COMPLEX_UNIT_SP, 9f * scale);
+            float automaticScale = automaticDensity
+                    ? WidgetAutoLayoutSizing.classicTextScale(fittedHeight)
+                    : 1f;
+            float pillScale = automaticDensity ? WidgetAutoLayoutSizing.pillTextScale(fittedHeight) : 1f;
+            v.setTextViewTextSize(R.id.rowTitle, TypedValue.COMPLEX_UNIT_SP, 13f * scale * automaticScale);
+            v.setTextViewTextSize(R.id.rowStartTime, TypedValue.COMPLEX_UNIT_SP, 10f * scale * automaticScale);
+            v.setTextViewTextSize(R.id.rowMeta, TypedValue.COMPLEX_UNIT_SP, 10f * scale * automaticScale);
+            v.setTextViewTextSize(R.id.rowRelative, TypedValue.COMPLEX_UNIT_SP, 8f * scale * pillScale);
+            if (automaticDensity && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (adaptiveHost) {
+                    v.setViewLayoutHeight(R.id.adaptiveRowSlot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                    v.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                    v.setViewLayoutHeight(R.id.rowContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                } else {
+                    v.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                    v.setViewLayoutHeight(R.id.rowContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                }
+                v.setViewPadding(R.id.rowTextBlock, 0, 0, 0, 0);
+                v.setViewLayoutHeight(R.id.rowRelative, WidgetAutoLayoutSizing.pillHeightDp(fittedHeight), TypedValue.COMPLEX_UNIT_DIP);
+                v.setViewLayoutWidth(R.id.rowRelative, WidgetAutoLayoutSizing.pillWidthDp(fittedHeight), TypedValue.COMPLEX_UNIT_DIP);
+                v.setViewLayoutWidth(R.id.rowRelativeBox, WidgetAutoLayoutSizing.pillBoxWidthDp(fittedHeight), TypedValue.COMPLEX_UNIT_DIP);
+            }
 
             v.setViewVisibility(R.id.rowIndex, View.GONE);
             v.setViewVisibility(R.id.rowDot, View.GONE);
@@ -333,6 +363,9 @@ public class UpcomingCoursesService extends RemoteViewsService {
             String title = item.label;
             if (item.type == Item.COURSE && item.uncertain) title = "⚠ " + title;
             v.setTextViewText(R.id.rowTitle, title);
+            boolean showStartTime = AdvancedSettingsStore.showTimes(context);
+            v.setTextViewText(R.id.rowStartTime, showStartTime ? startTime(item.time) : "");
+            v.setViewVisibility(R.id.rowStartTime, showStartTime ? View.VISIBLE : View.GONE);
             String relative = AdvancedSettingsStore.showRemaining(context) ? item.relative : "";
             v.setTextViewText(R.id.rowRelative, relative);
             v.setViewVisibility(R.id.rowRelative, relative.isEmpty() ? View.GONE : View.VISIBLE);
@@ -355,26 +388,38 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 v.setTextViewText(R.id.rowMeta, meta);
                 v.setViewVisibility(R.id.rowMeta, meta.isEmpty() ? View.GONE : View.VISIBLE);
                 v.setTextColor(R.id.rowTitle, ink);
+                v.setTextColor(R.id.rowStartTime, ink);
                 v.setTextColor(R.id.rowMeta, muted);
                 v.setTextColor(R.id.rowRelative, darken(bg));
             }
+            if (automaticDensity && !WidgetAutoLayoutSizing.showMeta(fittedHeight)) {
+                v.setViewVisibility(R.id.rowMeta, View.GONE);
+            }
+            boolean showRelative = !relative.isEmpty()
+                    && (!automaticDensity || WidgetAutoLayoutSizing.showPill(fittedHeight));
+            v.setViewVisibility(R.id.rowRelative, showRelative ? View.VISIBLE : View.GONE);
+            v.setViewVisibility(R.id.rowRelativeBox, showRelative ? View.VISIBLE : View.GONE);
 
-            Intent fill = new Intent();
-            fill.putExtra("open_mode", "week");
-            v.setOnClickFillInIntent(R.id.rowRoot, fill);
-            v.setOnClickFillInIntent(R.id.rowContent, fill);
-            v.setOnClickFillInIntent(R.id.rowTitle, fill);
-            v.setOnClickFillInIntent(R.id.rowMeta, fill);
-            v.setOnClickFillInIntent(R.id.rowRelative, fill);
+            if (!adaptiveHost) {
+                Intent fill = new Intent();
+                fill.putExtra("open_mode", "week");
+                v.setOnClickFillInIntent(R.id.rowRoot, fill);
+                v.setOnClickFillInIntent(R.id.rowContent, fill);
+                v.setOnClickFillInIntent(R.id.rowTitle, fill);
+                v.setOnClickFillInIntent(R.id.rowStartTime, fill);
+                v.setOnClickFillInIntent(R.id.rowMeta, fill);
+                v.setOnClickFillInIntent(R.id.rowRelativeBox, fill);
+                v.setOnClickFillInIntent(R.id.rowRelative, fill);
+            }
             return v;
         }
 
         private void applyBreakRow(RemoteViews v, Item item, int background, int ink, int pillInk, String relative) {
             v.setInt(R.id.rowContent, "setBackgroundColor", background);
-            String meta = AdvancedSettingsStore.showTimes(context) ? item.time : "";
-            v.setTextViewText(R.id.rowMeta, meta);
-            v.setViewVisibility(R.id.rowMeta, meta.isEmpty() ? View.GONE : View.VISIBLE);
+            v.setTextViewText(R.id.rowMeta, "");
+            v.setViewVisibility(R.id.rowMeta, View.GONE);
             v.setTextColor(R.id.rowTitle, ink);
+            v.setTextColor(R.id.rowStartTime, ink);
             v.setTextColor(R.id.rowMeta, ink);
             v.setTextViewText(R.id.rowRelative, relative);
             v.setViewVisibility(R.id.rowRelative, relative.isEmpty() ? View.GONE : View.VISIBLE);
@@ -394,6 +439,237 @@ public class UpcomingCoursesService extends RemoteViewsService {
         @Override public RemoteViews getLoadingView() { return null; }
         @Override public int getViewTypeCount() { return 1; }
         @Override public long getItemId(int position) { return position; }
+        @Override public boolean hasStableIds() { return true; }
+    }
+
+    private static final class MiniFactory implements RemoteViewsFactory {
+        private static final int[] CELL_IDS = {
+                R.id.miniCell1, R.id.miniCell2, R.id.miniCell3, R.id.miniCell4,
+                R.id.miniCell5, R.id.miniCell6, R.id.miniCell7, R.id.miniCell8,
+                R.id.miniCell9, R.id.miniCell10, R.id.miniCell11
+        };
+
+        private static final class Segment {
+            final int start;
+            final String label;
+            final String room;
+            final int background;
+            final int ink;
+            final boolean course;
+            final boolean visible;
+
+            Segment(int start, String label, String room, int background, int ink, boolean course, boolean visible) {
+                this.start = start;
+                this.label = label == null ? "" : label;
+                this.room = room == null ? "" : room;
+                this.background = background;
+                this.ink = ink;
+                this.course = course;
+                this.visible = visible;
+            }
+        }
+
+        private final Context context;
+        private final int widgetId;
+        private final List<Segment> segments = new ArrayList<>();
+        private Calendar targetDate;
+
+        MiniFactory(Context context, int widgetId) {
+            this.context = context;
+            this.widgetId = widgetId;
+        }
+
+        @Override public void onCreate() { reload(); }
+        @Override public void onDataSetChanged() { reload(); }
+        @Override public void onDestroy() { segments.clear(); targetDate = null; }
+        @Override public int getCount() { return targetDate == null ? 0 : 1; }
+
+        private void reload() {
+            segments.clear();
+            ScheduleStore.ensureInitialized(context);
+            targetDate = resolveTargetDate();
+            if (targetDate == null) return;
+            List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, targetDate);
+            if (courses == null || courses.isEmpty()) { targetDate = null; return; }
+
+            for (int slot = 1; slot <= 4; slot++) addSlot(courses, slot);
+            addBreak(courses, 4, 5, true);
+            addSlot(courses, 5);
+            addSlot(courses, 6);
+            addBreak(courses, 6, 7, false);
+            addSlot(courses, 7);
+            addSlot(courses, 8);
+            addSlot(courses, 9);
+
+            int lastCourse = -1;
+            for (int i = 0; i < segments.size(); i++) if (segments.get(i).course) lastCourse = i;
+            for (int i = lastCourse + 1; i < segments.size(); i++) {
+                Segment s = segments.get(i);
+                segments.set(i, new Segment(s.start, s.label, s.room, s.background, s.ink, false, false));
+            }
+        }
+
+        private Calendar resolveTargetDate() {
+            Calendar now = Calendar.getInstance();
+            int nowMinute = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
+            List<ScheduleData.Course> today = ScheduleStore.getCourses(context, now);
+            if (today != null && !today.isEmpty()) {
+                int lastEnd = 0;
+                for (ScheduleData.Course c : today) lastEnd = Math.max(lastEnd, ScheduleData.toMinutes(c.end));
+                if (nowMinute < lastEnd) return (Calendar) now.clone();
+            }
+            Calendar cursor = (Calendar) now.clone();
+            cursor.add(Calendar.DAY_OF_YEAR, 1);
+            for (int i = 0; i < 21; i++) {
+                List<ScheduleData.Course> list = ScheduleStore.getCourses(context, cursor);
+                if (list != null && !list.isEmpty()) return (Calendar) cursor.clone();
+                cursor.add(Calendar.DAY_OF_YEAR, 1);
+            }
+            return null;
+        }
+
+        private void addSlot(List<ScheduleData.Course> courses, int slot) {
+            int start = ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, slot));
+            int end = ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, slot));
+            segments.add(segment(courses, start, end, slot, false));
+        }
+
+        private void addBreak(List<ScheduleData.Course> courses, int beforeSlot, int afterSlot, boolean lunch) {
+            int start = ScheduleData.toMinutes(ScheduleStore.getSlotEnd(context, beforeSlot));
+            int end = ScheduleData.toMinutes(ScheduleStore.getSlotStart(context, afterSlot));
+            if (end <= start) {
+                segments.add(new Segment(start, "", "", 0xFFF7F9FC, 0xFF64748B, false, false));
+                return;
+            }
+            segments.add(segment(courses, start, end, 0, lunch));
+        }
+
+        private Segment segment(List<ScheduleData.Course> courses, int start, int end, int slot, boolean lunch) {
+            ScheduleData.Course found = null;
+            for (ScheduleData.Course c : courses) {
+                if (slot > 0 && c.slot == slot) { found = c; break; }
+            }
+            if (found == null) {
+                for (ScheduleData.Course c : courses) {
+                    if (ScheduleData.toMinutes(c.start) < end && ScheduleData.toMinutes(c.end) > start) { found = c; break; }
+                }
+            }
+            if (found != null) {
+                int order = found.slot > 0 ? found.slot : Math.max(1, slot);
+                int bg = WidgetPaletteStore.courseColor(context, order, found.label, found.color);
+                boolean dark = WidgetPaletteStore.useDarkText(context, order, found.label, found.color);
+                return new Segment(start, AdvancedSettingsStore.widgetCourseLabel(context, targetDate, found), found.room, bg,
+                        dark ? 0xFF17213A : 0xFFFFFFFF, true, true);
+            }
+            if (lunch && AdvancedSettingsStore.showLunch(context)) {
+                String label = ScheduleStore.getLunchLabel(context);
+                if ("Pause de midi".equalsIgnoreCase(label)) label = "Midi";
+                return new Segment(start, AdvancedSettingsStore.widgetLunchLabel(context, label), "",
+                        WidgetPaletteStore.lunchBackground(context), WidgetPaletteStore.lunchText(context), false, true);
+            }
+            if (AdvancedSettingsStore.showBreaks(context)) {
+                String label = ScheduleStore.getGapLabel(context);
+                if ("Trou".equalsIgnoreCase(label)) label = UiSettingsStore.t(context, "gap");
+                return new Segment(start, AdvancedSettingsStore.widgetGapLabel(context, label), "",
+                        WidgetPaletteStore.gapBackground(context), WidgetPaletteStore.gapText(context), false, true);
+            }
+            return new Segment(start, "", "", 0xFFF7F9FC, 0xFF64748B, false, true);
+        }
+
+        @Override
+        public RemoteViews getViewAt(int position) {
+            if (position != 0 || targetDate == null) return null;
+            RemoteViews v = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
+            v.setViewVisibility(R.id.rowContent, View.GONE);
+            v.setViewVisibility(R.id.rowCondensedContent, View.GONE);
+            v.setViewVisibility(R.id.rowMiniContent, View.VISIBLE);
+            v.setTextViewText(R.id.rowMiniTitle, "Emploi du temps");
+
+            float scale = UiSettingsStore.widgetFontScale(context);
+            Bundle options = widgetId == AppWidgetManager.INVALID_APPWIDGET_ID ? null
+                    : AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId);
+            boolean landscape = context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
+            int minWidth = options == null ? 0 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0);
+            int maxWidth = options == null ? 0 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0);
+            int widgetWidth = landscape ? Math.max(minWidth, maxWidth) : (minWidth > 0 ? minWidth : maxWidth);
+            boolean narrowHeader = widgetWidth > 0 && widgetWidth <= 140;
+            boolean compactHeader = widgetWidth > 0 && widgetWidth <= 190;
+            v.setTextViewText(R.id.rowMiniDate, narrowHeader ? compactDateLabel(targetDate) : dateLabel(targetDate));
+            v.setTextViewTextSize(R.id.rowMiniTitle, TypedValue.COMPLEX_UNIT_SP,
+                    (narrowHeader ? 7f : (compactHeader ? 8f : 10f)) * scale);
+            v.setTextViewTextSize(R.id.rowMiniDate, TypedValue.COMPLEX_UNIT_SP,
+                    (narrowHeader ? 6f : (compactHeader ? 7f : 8f)) * scale);
+
+            if (AdvancedSettingsStore.widgetAutoDensity(context)
+                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                    && widgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+                int minHeight = options == null ? 0 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0);
+                int maxHeight = options == null ? 0 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0);
+                int contentHeight = WidgetHeightSizing.contentHeightDp(minHeight, maxHeight, landscape,
+                        108, AdvancedSettingsStore.widgetBarChromeDp(context), 72);
+                v.setViewLayoutHeight(R.id.rowRoot, contentHeight, TypedValue.COMPLEX_UNIT_DIP);
+                v.setViewLayoutHeight(R.id.rowMiniContent, contentHeight, TypedValue.COMPLEX_UNIT_DIP);
+                v.setViewLayoutHeight(R.id.rowMiniHeader, 20, TypedValue.COMPLEX_UNIT_DIP);
+                v.setViewLayoutHeight(R.id.rowMiniTimeline, Math.max(52, contentHeight - 20), TypedValue.COMPLEX_UNIT_DIP);
+            }
+
+            for (int i = 0; i < CELL_IDS.length; i++) {
+                int id = CELL_IDS[i];
+                if (i >= segments.size() || !segments.get(i).visible) {
+                    v.setViewVisibility(id, View.GONE);
+                    continue;
+                }
+                Segment s = segments.get(i);
+                v.setViewVisibility(id, View.VISIBLE);
+                String text = hourLabel(s.start);
+                if (!s.label.isEmpty()) text += "\n" + shortLabel(s.label);
+                if (s.course && AdvancedSettingsStore.showRoom(context) && !s.room.isEmpty()) text += "\n" + shortRoom(s.room);
+                v.setTextViewText(id, text);
+                v.setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_SP, 7f * scale);
+                v.setInt(id, "setBackgroundColor", s.background);
+                v.setTextColor(id, s.ink);
+            }
+
+            Intent fill = new Intent();
+            fill.putExtra("open_mode", "week");
+            v.setOnClickFillInIntent(R.id.rowRoot, fill);
+            v.setOnClickFillInIntent(R.id.rowMiniContent, fill);
+            for (int id : CELL_IDS) v.setOnClickFillInIntent(id, fill);
+            return v;
+        }
+
+        private String shortLabel(String value) {
+            String text = value == null ? "" : value.trim();
+            while (text.contains("  ")) text = text.replace("  ", " ");
+            return text.length() <= 8 ? text : text.substring(0, 7).trim() + ".";
+        }
+
+        private String shortRoom(String value) {
+            String text = value == null ? "" : value.trim();
+            return text.length() <= 8 ? text : text.substring(0, 8).trim();
+        }
+
+        private String hourLabel(int minute) {
+            if (minute < 0) return "";
+            int h = minute / 60, m = minute % 60;
+            return m == 0 ? h + "h" : String.format(Locale.FRANCE, "%d:%02d", h, m);
+        }
+
+        private String dateLabel(Calendar date) {
+            String lang = UiSettingsStore.language(context);
+            Locale locale = "de".equals(lang) ? Locale.GERMANY : ("en".equals(lang) ? Locale.UK : Locale.FRANCE);
+            String pattern = "de".equals(lang) ? "EEE d. MMM" : "EEE d MMM";
+            return new SimpleDateFormat(pattern, locale).format(date.getTime()) + " - " + ScheduleStore.getWeekLetter(context, date);
+        }
+
+        private String compactDateLabel(Calendar date) {
+            return new SimpleDateFormat("dd/MM", Locale.FRANCE).format(date.getTime())
+                    + " · " + ScheduleStore.getWeekLetter(context, date);
+        }
+
+        @Override public RemoteViews getLoadingView() { return null; }
+        @Override public int getViewTypeCount() { return 1; }
+        @Override public long getItemId(int position) { return widgetId; }
         @Override public boolean hasStableIds() { return true; }
     }
 }

@@ -9,12 +9,11 @@ final class ChunkedUiScripts {
     private ChunkedUiScripts() {}
 
     static String[] all() {
-        List<String> out = new ArrayList<>(57);
+        List<String> out = new ArrayList<>(60);
         add(out, HeavyPanelUi648.prelude());
         if (BuildConfig.DEBUG) add(out, HeavyPanelPerformanceUi648.prelude());
         add(out, UiRuntimeBundle.domSafetyPrelude());
         addLayers(out, BaseSettingsUi.class, 1);
-        // One delegated router handles all clickable controls for the whole session.
         add(out, FastInteractionUi.script());
         add(out, LazyImportBootstrapUi.script());
         addLayers(out, TimetableCoreUi.class, 10);
@@ -27,19 +26,30 @@ final class ChunkedUiScripts {
         add(out, StartupViewRecoveryUi.script());
         add(out, LunchIconCleanupUi.script());
         add(out, Polish644Ui.script());
-        // Bottom navigation owns state changes; 6.47 then keeps all three views laid out.
         add(out, NavigationPerformanceUi.script());
         add(out, InstantViewUi647.script());
         add(out, HeavyPanelUi648.script());
-        // 6.52 keeps the prepared layout but removes the repeated full-viewport clip-path paint.
         add(out, HeavyPanelExposureUi652.script());
-        // 6.50 keeps heavy panels and course editing to one save/render transaction.
         add(out, RenderPipelineUi650.script());
         add(out, RenderBurstUi650.script());
-        // 6.51 is final so all legacy click/change handlers flow through one action commit.
         add(out, ActionChainUi651.script());
-        // Final presentation of lunch/free-period controls and week lunch edges.
         add(out, SettingsLunchPolish653Ui.script());
+        add(out, LunchBandContinuity656Ui.script());
+        // The legacy-named layer remains the final week appearance owner through 6.65.
+        add(out, WeekAppearance658Ui.script());
+        add(out, Feedback660Ui.script());
+        add(out, Feedback661Ui.script());
+        add(out, Feedback662Ui.script());
+        add(out, Feedback663Ui.script());
+        add(out, Feedback664Ui.script());
+        add(out, Feedback665Ui.script());
+        add(out, Feedback666Ui.script());
+        add(out, Feedback672Ui.script());
+        add(out, Feedback673Ui.script());
+        add(out, Feedback674Ui.script());
+        add(out, Feedback675Ui.script());
+        add(out, Feedback676Ui.script());
+        add(out, Feedback678Ui.script());
         if (BuildConfig.DEBUG) add(out, HeavyPanelPerformanceUi648.script());
         add(out, UiRuntimeBundle.idleImportScript());
         return out.toArray(new String[0]);
@@ -71,6 +81,28 @@ final class ChunkedUiScripts {
     private static void add(List<String> out, String script) {
         if (script == null || script.trim().isEmpty()) return;
         script = LegacyChainRepair651.repair(UiRuntimeBundle.prepareChunk(script));
-        out.add(script.replace("APP_VERSION='6.45'", "APP_VERSION='6.54'"));
+        out.add(script.replace("APP_VERSION='6.45'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.55'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.56'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.58'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.59'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.60'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.61'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.62'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.63'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.64'", "APP_VERSION='6.65'")
+                      .replace("APP_VERSION='6.65'", "APP_VERSION='6.66'")
+                      .replace("APP_VERSION='6.66'", "APP_VERSION='6.67'")
+                      .replace("APP_VERSION='6.67'", "APP_VERSION='6.68'")
+                      .replace("APP_VERSION='6.68'", "APP_VERSION='6.69'")
+                      .replace("APP_VERSION='6.69'", "APP_VERSION='6.71'")
+                      .replace("APP_VERSION='6.70'", "APP_VERSION='6.71'")
+                      .replace("APP_VERSION='6.71'", "APP_VERSION='6.72'")
+                      .replace("APP_VERSION='6.72'", "APP_VERSION='6.73'")
+                      .replace("APP_VERSION='6.73'", "APP_VERSION='6.74'")
+                      .replace("APP_VERSION='6.74'", "APP_VERSION='6.75'")
+                      .replace("APP_VERSION='6.75'", "APP_VERSION='6.76'")
+                      .replace("APP_VERSION='6.76'", "APP_VERSION='6.77'")
+                      .replace("APP_VERSION='6.77'", "APP_VERSION='6.78'"));
     }
 }

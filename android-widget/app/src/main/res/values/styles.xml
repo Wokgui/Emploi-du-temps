@@ -8,5 +8,6 @@
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">true</item>
         <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowBackground">@drawable/launch_window</item>
     </style>
 </resources>

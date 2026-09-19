@@ -5,6 +5,8 @@ import android.app.Activity;
 import android.app.job.JobScheduler;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
@@ -18,6 +20,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebChromeClient;
 import android.webkit.WebViewClient;
+import android.widget.ImageView;
 
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.text.Text;
@@ -31,13 +34,18 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends Activity {
     private static final int PICK_TIMETABLE_PHOTO = 5201;
     private static final int PICK_BACKUP = 5202;
     private static final int NOTIFICATION_PERMISSION = 5203;
+    private static final int CREATE_SETTINGS_EXPORT = 5204;
     private WebView webView;
+    private View startupOverlay;
+    private ImageView resumeSnapshotView;
+    private Bitmap resumeSnapshot;
     private boolean forceWeekOpening = false;
     private boolean pageLoaded = false;
     private boolean uiInjected = false;
@@ -55,6 +63,8 @@ public class MainActivity extends Activity {
         ProfileStore.ensure(this);
         setContentView(R.layout.activity_main);
         webView = findViewById(R.id.webView);
+        startupOverlay = findViewById(R.id.startupOverlay);
+        resumeSnapshotView = findViewById(R.id.resumeSnapshot);
         webView.setBackgroundColor(0xFFF6F8FB);
         hideWebViewUntilWeekIsReady();
 
@@ -114,6 +124,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        ScheduleWidgetProvider.refreshAll(this);
+        showResumeSnapshot();
         if (skipNextResumeRefresh) {
             skipNextResumeRefresh = false;
             return;
@@ -123,8 +135,17 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onPause() {
+        captureResumeSnapshot();
+        super.onPause();
+    }
+
+    @Override
     protected void onDestroy() {
         textRecognizer.close();
+        if (resumeSnapshotView != null) resumeSnapshotView.setImageDrawable(null);
+        if (resumeSnapshot != null && !resumeSnapshot.isRecycled()) resumeSnapshot.recycle();
+        resumeSnapshot = null;
         super.onDestroy();
     }
 
@@ -134,17 +155,76 @@ public class MainActivity extends Activity {
 
     private void hideWebViewUntilWeekIsReady() {
         if (webView == null) return;
+        if (startupOverlay != null) {
+            startupOverlay.animate().cancel();
+            startupOverlay.setAlpha(1f);
+            startupOverlay.setVisibility(View.VISIBLE);
+        }
         webView.setAlpha(0f);
         webView.setVisibility(View.INVISIBLE);
     }
 
+    private void revealWebViewNow() {
+        if (webView == null || !pageLoaded) return;
+        webView.setAlpha(1f);
+        webView.setVisibility(View.VISIBLE);
+        hideResumeSnapshotAfterStableFrame();
+        if (startupOverlay == null || startupOverlay.getVisibility() != View.VISIBLE) return;
+        startupOverlay.animate().cancel();
+        startupOverlay.animate()
+                .alpha(0f)
+                .setDuration(140L)
+                .withEndAction(() -> {
+                    if (startupOverlay == null) return;
+                    startupOverlay.setVisibility(View.GONE);
+                    startupOverlay.setAlpha(1f);
+                })
+                .start();
+    }
+
+    private void captureResumeSnapshot() {
+        if (webView == null || !pageLoaded || webView.getWidth() <= 0 || webView.getHeight() <= 0) return;
+        try {
+            Bitmap next = Bitmap.createBitmap(webView.getWidth(), webView.getHeight(), Bitmap.Config.RGB_565);
+            webView.draw(new Canvas(next));
+            if (resumeSnapshotView != null) {
+                resumeSnapshotView.animate().cancel();
+                resumeSnapshotView.setImageDrawable(null);
+                resumeSnapshotView.setVisibility(View.GONE);
+            }
+            if (resumeSnapshot != null && resumeSnapshot != next && !resumeSnapshot.isRecycled()) resumeSnapshot.recycle();
+            resumeSnapshot = next;
+        } catch (Throwable ignored) {}
+    }
+
+    private void showResumeSnapshot() {
+        if (resumeSnapshotView == null || resumeSnapshot == null || resumeSnapshot.isRecycled()) return;
+        resumeSnapshotView.animate().cancel();
+        resumeSnapshotView.setAlpha(1f);
+        resumeSnapshotView.setImageBitmap(resumeSnapshot);
+        resumeSnapshotView.setVisibility(View.VISIBLE);
+    }
+
+    private void hideResumeSnapshotAfterStableFrame() {
+        if (resumeSnapshotView == null || resumeSnapshotView.getVisibility() != View.VISIBLE || webView == null) return;
+        final Bitmap shownSnapshot = resumeSnapshot;
+        webView.postOnAnimation(() -> webView.postOnAnimation(() -> {
+            if (resumeSnapshotView == null) return;
+            resumeSnapshotView.animate().cancel();
+            resumeSnapshotView.animate().alpha(0f).setDuration(90L).withEndAction(() -> {
+                if (resumeSnapshotView == null) return;
+                resumeSnapshotView.setVisibility(View.GONE);
+                resumeSnapshotView.setImageDrawable(null);
+                resumeSnapshotView.setAlpha(1f);
+                if (shownSnapshot != null && !shownSnapshot.isRecycled()) shownSnapshot.recycle();
+                if (resumeSnapshot == shownSnapshot) resumeSnapshot = null;
+            }).start();
+        }));
+    }
+
     private void revealWebViewStable() {
         if (webView == null || !pageLoaded) return;
-        webView.postDelayed(() -> {
-            if (webView == null || !pageLoaded) return;
-            webView.setAlpha(1f);
-            webView.setVisibility(View.VISIBLE);
-        }, 70);
+        webView.post(this::revealWebViewNow);
     }
 
     private void reloadForLanguageUi() {
@@ -189,8 +269,7 @@ public class MainActivity extends Activity {
                 webView.evaluateJavascript(script, second -> {
                     primeWeekBadge();
                     if (getIntent() != null) getIntent().removeExtra("open_mode");
-                    webView.setAlpha(1f);
-                    webView.setVisibility(View.VISIBLE);
+                    revealWebViewNow();
                     forceWeekOpening = false;
                 }), 45));
     }
@@ -200,6 +279,10 @@ public class MainActivity extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PICK_BACKUP) {
             handleBackupResult(resultCode, data);
+            return;
+        }
+        if (requestCode == CREATE_SETTINGS_EXPORT) {
+            handleSettingsExportResult(resultCode, data);
             return;
         }
         if (requestCode != PICK_TIMETABLE_PHOTO) return;
@@ -470,6 +553,30 @@ public class MainActivity extends Activity {
         startActivityForResult(intent, PICK_BACKUP);
     }
 
+    private void exportAllSettings() {
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/json");
+        String date = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(new java.util.Date());
+        intent.putExtra(Intent.EXTRA_TITLE, "emploi-du-temps-reglages-" + date + ".json");
+        intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        startActivityForResult(intent, CREATE_SETTINGS_EXPORT);
+    }
+
+    private void handleSettingsExportResult(int resultCode, Intent data) {
+        boolean success = false;
+        if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+            try (OutputStream out = getContentResolver().openOutputStream(data.getData())) {
+                if (out != null) {
+                    out.write(BackupStore.exportJson(this).getBytes(StandardCharsets.UTF_8));
+                    out.flush();
+                    success = true;
+                }
+            } catch (Exception ignored) {}
+        }
+        if (webView != null) webView.evaluateJavascript("if(window.applyAllSettingsExported){window.applyAllSettingsExported(" + (success ? "true" : "false") + ");}", null);
+    }
+
     private void handleBackupResult(int resultCode, Intent data) {
         boolean success = false;
         if (resultCode == RESULT_OK && data != null && data.getData() != null) {
@@ -537,6 +644,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface public String loadAdvancedSettings() { return AdvancedSettingsStore.exportJson(MainActivity.this); }
         @JavascriptInterface public void saveAdvancedSettings(String json) {
             AdvancedSettingsStore.importJson(MainActivity.this, json);
+            runOnUiThread(() -> ScheduleWidgetProvider.refreshAll(MainActivity.this));
             if (AdvancedSettingsStore.remindersEnabled(MainActivity.this)) runOnUiThread(MainActivity.this::maybeRequestNotificationPermission);
         }
         @JavascriptInterface public void setCurrentWeek(String letter) { ScheduleStore.setCurrentWeekLetter(MainActivity.this, letter); }
@@ -567,5 +675,6 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface public void shareBackup() { runOnUiThread(MainActivity.this::shareBackup); }
         @JavascriptInterface public void pickBackup() { runOnUiThread(MainActivity.this::pickBackup); }
+        @JavascriptInterface public void exportAllSettings() { runOnUiThread(MainActivity.this::exportAllSettings); }
     }
 }

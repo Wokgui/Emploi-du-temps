@@ -102,10 +102,26 @@ final class WidgetPaletteStore {
         } catch (Exception ignored) {}
     }
 
+    static synchronized String exportJson(Context context) {
+        JSONObject out = new JSONObject();
+        try {
+            out.put("palette", getPalette(context));
+            out.put("special", special(context));
+        } catch (Exception ignored) {}
+        return out.toString();
+    }
+
+    static synchronized void importJson(Context context, String raw) {
+        try {
+            JSONObject incoming = new JSONObject(raw == null ? "{}" : raw);
+            setPalette(context, incoming.optString("palette", DEFAULT));
+            JSONObject colors = incoming.optJSONObject("special");
+            if (colors != null) saveSpecialColorsJson(context, colors.toString());
+        } catch (Exception ignored) {}
+    }
+
     static int lunchBackground(Context context) {
-        JSONObject o = special(context);
-        boolean sync = o.optBoolean("sync", true);
-        return parseOr(o.optString(sync ? "appLunch" : "widgetLunch", "#FFE4A8"), 0xFFFFE4A8);
+        return parseOr(AdvancedSettingsStore.weekLunchColor(context), 0xFFFFE08A);
     }
 
     static int lunchText(Context context) {

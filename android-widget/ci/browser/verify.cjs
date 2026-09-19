@@ -35,9 +35,15 @@ async function openApp(name) {
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(resolve)));
   }
   await page.waitForFunction(()=>window.__edtHeavyPanels648&&window.__edtLazyImportReady);
-  await page.evaluate(()=>window.setModeFromAndroid('edit'));
   // Let startup-only legacy callbacks finish, independently of panel interactions.
   await page.waitForTimeout(1200);
+  // The app now deliberately opens on Today; this editor suite opts into Modify.
+  await page.evaluate(()=>{
+    const populated=Object.keys(weeks[activeWeek]).find(key=>weeks[activeWeek][key]?.courses?.length);
+    if(populated) selected=Number(populated);
+    window.setModeFromAndroid('edit');
+  });
+  await page.waitForFunction(()=>document.getElementById('viewEdit').classList.contains('active'));
   return {page,async close(){
     fs.writeFileSync(path.join(out,name+'.log'),logs.join('\n'));
     await context.close();assert.deepEqual(errors,[],name+': JavaScript errors');

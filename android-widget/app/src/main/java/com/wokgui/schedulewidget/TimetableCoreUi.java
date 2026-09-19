@@ -210,7 +210,7 @@ final class TimetableCoreUi {
                 }
                 function wrapTodayKey(){
                   try{
-                    const f=function(){const d=new Date().getDay();return d===0?1:d+1};
+                    const f=function(){const d=new Date().getDay();if(d===0)return isEnabled(1)?1:6;if(d===6)return isEnabled(7)?7:6;return d+1};
                     f.__weekendWrapped=true;window.todayKey=f;
                   }catch(e){}
                 }
@@ -876,7 +876,8 @@ final class TimetableCoreUi {
                   body.largeAppText .weekTab{flex:1 1 0;min-width:0!important;padding:5px 3px!important;white-space:normal;line-height:1.05}
                   body.threeWeekCycle:not(.largeAppText) .weekTabs{flex:1;min-width:0}
                   body.threeWeekCycle:not(.largeAppText) .weekTab{padding-left:5px;padding-right:5px}
-                  #schoolCalendarBlock{margin-top:9px;padding-top:8px;border-top:1px solid #edf0f4}
+                  #schoolCalendarSetting{margin:7px 0!important}
+                  #schoolCalendarBlock{margin-top:0;padding-top:0;border-top:0}
                   #schoolCalendarBlock .schoolTitle{font-size:.72rem;font-weight:850;color:var(--set-dark);margin-bottom:6px}
                   #schoolCalendarBlock .schoolEnable{display:flex;align-items:center;gap:7px;font-size:.76rem;margin-bottom:7px}
                   #schoolCalendarBlock .schoolEnable input{width:17px;height:17px;accent-color:var(--set-accent)}
@@ -952,9 +953,10 @@ final class TimetableCoreUi {
                 function ensureSchoolControls(){
                   if(document.getElementById('schoolCalendarBlock')){syncSchoolControls();return}
                   const title=document.getElementById('advCalendarTitle');const box=title?title.closest('.settingBox'):null;if(!box)return;
+                  const schoolBox=document.createElement('div');schoolBox.id='schoolCalendarSetting';schoolBox.className='settingBox';
                   const block=document.createElement('div');block.id='schoolCalendarBlock';
                   block.innerHTML='<div id="schoolTitle" class="schoolTitle"></div><label class="schoolEnable"><input id="schoolEnabled" type="checkbox"><span id="schoolEnableLabel"></span></label><div class="schoolGrid"><select id="schoolYear"><option value="2025-2026">2025–2026</option><option value="2026-2027">2026–2027</option><option value="2027-2028">2027–2028</option></select><select id="schoolZone"><option value="A">Zone A</option><option value="B">Zone B</option><option value="C">Zone C</option></select></div><div id="schoolHint" class="schoolHint"></div>';
-                  box.insertBefore(block,box.querySelector('#advRangeTitle'));
+                  schoolBox.appendChild(block);box.parentNode.insertBefore(schoolBox,box);
                   document.getElementById('schoolEnabled').onchange=applySchoolCalendar;document.getElementById('schoolYear').onchange=applySchoolCalendar;document.getElementById('schoolZone').onchange=applySchoolCalendar;
                   syncSchoolControls();
                 }
@@ -1273,31 +1275,37 @@ final class TimetableCoreUi {
                 const GAP_BG='#FFFFFF',GAP_BORDER='#DDE4EC',GAP_INK='#22283A';
 
                 function language(){
+                  const select=document.getElementById('languageSelect'),value=select?String(select.value||'fr'):'';
+                  if(value==='en'||value==='de')return value;
+                  if(select)return 'fr';
                   try{const raw=window.AndroidSchedule&&AndroidSchedule.loadUiSettings?AndroidSchedule.loadUiSettings():null;if(raw){const o=JSON.parse(raw);if(o.language==='en'||o.language==='de')return o.language}}catch(e){}
                   return 'fr';
                 }
+                let cachedWidgetPalette=null,cachedAppPalette=null,cachedPaletteSync=null;
                 function currentWidget(){
-                  try{if(window.AndroidSchedule&&AndroidSchedule.loadWidgetPalette){const v=AndroidSchedule.loadWidgetPalette();if(WIDGET_PALETTES[v])return v}}catch(e){}
-                  const v=localStorage.getItem(WIDGET_KEY);return WIDGET_PALETTES[v]?v:'vivid';
+                  if(cachedWidgetPalette&&WIDGET_PALETTES[cachedWidgetPalette])return cachedWidgetPalette;
+                  try{if(window.AndroidSchedule&&AndroidSchedule.loadWidgetPalette){const v=AndroidSchedule.loadWidgetPalette();if(WIDGET_PALETTES[v]){cachedWidgetPalette=v;localStorage.setItem(WIDGET_KEY,v);return v}}}catch(e){}
+                  const v=localStorage.getItem(WIDGET_KEY);cachedWidgetPalette=WIDGET_PALETTES[v]?v:'vivid';return cachedWidgetPalette;
                 }
                 function currentApp(){
+                  if(cachedAppPalette&&WIDGET_PALETTES[cachedAppPalette])return cachedAppPalette;
                   const stored=localStorage.getItem(APP_KEY);
-                  if(WIDGET_PALETTES[stored])return stored;
-                  const initial=currentWidget();localStorage.setItem(APP_KEY,initial);return initial;
+                  if(WIDGET_PALETTES[stored]){cachedAppPalette=stored;return stored}
+                  cachedAppPalette=currentWidget();localStorage.setItem(APP_KEY,cachedAppPalette);return cachedAppPalette;
                 }
-                function palettesSynced(){return localStorage.getItem(SYNC_KEY)!=='0'}
+                function palettesSynced(){if(cachedPaletteSync===null)cachedPaletteSync=localStorage.getItem(SYNC_KEY)!=='0';return cachedPaletteSync}
                 function saveWidget(id){
                   if(!WIDGET_PALETTES[id])id='vivid';
                   try{if(window.AndroidSchedule&&AndroidSchedule.saveWidgetPalette)AndroidSchedule.saveWidgetPalette(id)}catch(e){}
-                  localStorage.setItem(WIDGET_KEY,id);
+                  cachedWidgetPalette=id;localStorage.setItem(WIDGET_KEY,id);
                 }
                 function saveApp(id){
                   if(!WIDGET_PALETTES[id])id='vivid';
-                  localStorage.setItem(APP_KEY,id);
+                  cachedAppPalette=id;localStorage.setItem(APP_KEY,id);
                   if(palettesSynced())saveWidget(id);
                 }
                 function setPaletteSync(value){
-                  localStorage.setItem(SYNC_KEY,value?'1':'0');
+                  cachedPaletteSync=!!value;localStorage.setItem(SYNC_KEY,value?'1':'0');
                   if(value)saveWidget(currentApp());
                 }
                 function appPalette(){return WIDGET_PALETTES[currentApp()]||WIDGET_PALETTES.vivid}
@@ -1538,7 +1546,8 @@ final class TimetableCoreUi {
                   for(const d of DAYS)for(const c of state[d].courses)map.set(c.start+'|'+c.end,{start:c.start,end:c.end,type:'course'});
                   const out=[...map.values()];
                   if(DAYS.some(d=>lunchForDay(state[d].courses))){
-                    const b=lunchBounds();out.push({start:clock(b.start),end:clock(b.end),type:'lunchDynamic'});
+                    const b=lunchBounds(),start=clock(b.start),end=clock(b.end);
+                    if(!map.has(start+'|'+end))out.push({start:start,end:end,type:'lunchDynamic'});
                   }
                   return out.sort((a,b)=>min(a.start)-min(b.start)||((a.type==='lunchDynamic')?-1:0)-((b.type==='lunchDynamic')?-1:0)||min(a.end)-min(b.end));
                 }

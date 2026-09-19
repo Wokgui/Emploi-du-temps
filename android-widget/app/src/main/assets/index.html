@@ -45,7 +45,7 @@ button,input,select{font:inherit}button{touch-action:manipulation;-webkit-tap-hi
   <div id="weekTabs" class="weekTabs"><button class="weekTab" data-week="A">Semaine A</button><button class="weekTab" data-week="B">Semaine B</button></div>
 </div>
 <main class="wrap">
-  <section id="viewToday" class="view">
+  <section id="viewToday" class="view active">
     <div class="dayTitle"><h2 id="todayTitle">Aujourd’hui</h2><div id="todayDate" class="date"></div></div>
     <section class="card timelineCard"><div class="timelineHead"><strong>Avancement</strong><span id="todayClock" class="timelineClock"></span></div><div class="timeline"><span id="todayProgress"></span></div><div class="timelineScale"><span id="scaleStart"></span><span id="scaleEnd"></span></div></section>
     <section id="todayList" class="card todayList"></section>
@@ -56,7 +56,7 @@ button,input,select{font:inherit}button{touch-action:manipulation;-webkit-tap-hi
     <div class="weekScroller"><div id="weekGrid" class="weekGrid"></div></div>
   </section>
 
-  <section id="viewEdit" class="view active">
+  <section id="viewEdit" class="view">
     <button id="importPhoto" class="importBtn" type="button">Importer une photo d’emploi du temps</button>
     <div id="importStatus" class="importStatus"></div>
     <div class="editTop"><div id="dayTabs" class="dayTabs"></div></div>
@@ -74,9 +74,9 @@ button,input,select{font:inherit}button{touch-action:manipulation;-webkit-tap-hi
 </main>
 
 <nav class="bottom">
-  <button class="nav" data-mode="today"><span>▣</span>Aujourd’hui</button>
+  <button class="nav active" data-mode="today"><span>▣</span>Aujourd’hui</button>
   <button class="nav" data-mode="week"><span>▦</span>Semaine</button>
-  <button class="nav active" data-mode="edit"><span>✎</span>Modifier</button>
+  <button class="nav" data-mode="edit"><span>✎</span>Modifier</button>
 </nav>
 
 <div id="modal" class="modal" role="dialog" aria-modal="true">
@@ -102,7 +102,8 @@ const DEFAULTS={
 };
 for(const d of DAYS)DEFAULTS[d].courses=DEFAULTS[d].courses.map(c=>({start:c[0],end:c[1],label:c[2],room:c[3],slot:c[4]}));
 const clone=o=>JSON.parse(JSON.stringify(o));
-let weeks={A:clone(DEFAULTS),B:clone(DEFAULTS)},state=weeks.A,slots=clone(DEFAULT_SLOTS),breaks={gapLabel:'Trou',lunchLabel:'Pause de midi',showGapBadge:true,showLunchBadge:true},mode='edit',selected=5,editing=null,newPrefill=null,currentWeek='A',activeWeek='A';
+const OPENING_DAY=(()=>{const d=new Date().getDay();return d>=1&&d<=5?d+1:6})();
+let weeks={A:clone(DEFAULTS),B:clone(DEFAULTS)},state=weeks.A,slots=clone(DEFAULT_SLOTS),breaks={gapLabel:'Trou',lunchLabel:'Pause de midi',showGapBadge:true,showLunchBadge:true},mode='today',selected=OPENING_DAY,editing=null,newPrefill=null,currentWeek='A',activeWeek='A';
 const $=id=>document.getElementById(id),min=t=>{const [h,m]=(t||'00:00').split(':').map(Number);return h*60+m},clock=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 function normalizeWeek(obj){
@@ -130,7 +131,7 @@ function load(){
 window.reloadSchedule=load;
 function exportState(){const root={_slots:slots.map(s=>({start:s.start,end:s.end})),_breaks:{...breaks},_currentWeek:currentWeek,_weeks:{}};for(const w of ['A','B','C','D']){if(!weeks[w])continue;root._weeks[w]={};for(const d of DAYS)root._weeks[w][d]={enabled:true,courses:weeks[w][d]?.courses||[]}}const current=weeks[currentWeek];for(const d of DAYS)root[d]={enabled:true,courses:current[d].courses};return root}
 function save(){normalize();const raw=JSON.stringify(exportState());try{if(window.AndroidSchedule&&AndroidSchedule.saveSchedule)AndroidSchedule.saveSchedule(raw);else localStorage.setItem('edt',raw)}catch(e){}render()}
-function todayKey(){const d=new Date().getDay();return d>=1&&d<=5?d+1:2}
+function todayKey(){const d=new Date().getDay();return d>=1&&d<=5?d+1:6}
 function currentCourse(day){const now=new Date(),m=now.getHours()*60+now.getMinutes();if(day!==now.getDay()+1)return null;return weeks[currentWeek][day].courses.find(c=>m>=min(c.start)&&m<min(c.end))||null}
 function lunch(){const start=slots[3].end,end=slots[4].start;return min(end)>min(start)?{start,end}:null}
 function gapSegments(list){const out=[],l=lunch(),ls=l?min(l.start):-1,le=l?min(l.end):-1;for(let i=0;i<list.length-1;i++){let a=min(list[i].end),b=min(list[i+1].start);if(b<=a)continue;if(!l||b<=ls||a>=le)out.push({start:a,end:b});else{if(a<ls)out.push({start:a,end:Math.min(b,ls)});if(b>le)out.push({start:Math.max(a,le),end:b})}}return out.filter(g=>g.end>g.start)}

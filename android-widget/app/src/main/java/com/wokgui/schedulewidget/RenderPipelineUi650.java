@@ -20,7 +20,7 @@ final class RenderPipelineUi650 {
                   courseSubmitTransactions:0,saveRequests:0,saveExecutions:0,coalescedSaves:0,
                   fastDaySwitches:0,slotEdits:0,suppressedRenders:0,editListBuilds:0
                 };
-                let submitTransaction=false,pendingSave=false,suppressRender=false;
+                let submitDepth=0,pendingSave=false,suppressRender=false;
                 const nativeSave=window.save;
                 const nativeRender=window.render;
                 if(typeof nativeSave!=='function'||typeof nativeRender!=='function')return;
@@ -39,7 +39,7 @@ final class RenderPipelineUi650 {
 
                 function wrappedSave(){
                   stats.saveRequests++;
-                  if(submitTransaction){pendingSave=true;stats.coalescedSaves++;return}
+                  if(submitDepth>0){pendingSave=true;stats.coalescedSaves++;return}
                   stats.saveExecutions++;
                   return nativeSave.apply(this,arguments);
                 }
@@ -113,20 +113,28 @@ final class RenderPipelineUi650 {
                 }
                 bindDayTabs();
 
-                const courseForm=document.getElementById('courseForm');
-                if(courseForm&&typeof courseForm.onsubmit==='function'){
-                  const nativeSubmit=courseForm.onsubmit;
-                  courseForm.onsubmit=function(event){
-                    stats.courseSubmitTransactions++;submitTransaction=true;pendingSave=false;
-                    let result;
-                    try{result=nativeSubmit.call(this,event)}
-                    finally{
-                      submitTransaction=false;
+                function runCourseSubmit(fn,receiver,event){
+                  if(typeof fn!=='function')return;
+                  const outer=submitDepth===0;
+                  if(outer){stats.courseSubmitTransactions++;pendingSave=false}
+                  submitDepth++;
+                  let result,error;
+                  try{result=fn.call(receiver,event)}catch(e){error=e}
+                  finally{
+                    submitDepth=Math.max(0,submitDepth-1);
+                    if(outer){
                       if(pendingSave){pendingSave=false;stats.saveExecutions++;nativeSave()}
                       if(stats.courseSubmitTransactions<=4||stats.courseSubmitTransactions%25===0)console.log('EDT_PIPELINE_SUBMIT|n='+stats.courseSubmitTransactions+'|saveRequests='+stats.saveRequests+'|saveExecutions='+stats.saveExecutions+'|coalesced='+stats.coalescedSaves);
                     }
-                    return result;
-                  };
+                  }
+                  if(error)throw error;
+                  return result;
+                }
+
+                const courseForm=document.getElementById('courseForm');
+                if(courseForm&&typeof courseForm.onsubmit==='function'){
+                  const nativeSubmit=courseForm.onsubmit;
+                  courseForm.onsubmit=function(event){return runCourseSubmit(nativeSubmit,this,event)};
                   courseForm.onsubmit.__edtPipeline650=true;
                 }
 
@@ -145,7 +153,7 @@ final class RenderPipelineUi650 {
                   console.log('EDT_PIPELINE_SLOT|n='+stats.slotEdits+'|slot='+(index+1)+'|suppressedRenders='+stats.suppressedRenders);
                 },true);
 
-                window.__edtRenderPipeline650={stats:stats,fastSwitchDay:fastSwitchDay,buildEditList:buildEditList};
+                window.__edtRenderPipeline650={stats:stats,fastSwitchDay:fastSwitchDay,buildEditList:buildEditList,runCourseSubmit:runCourseSubmit};
                 console.log('EDT_PIPELINE|ready|version=6.50');
               }catch(error){console.error('RenderPipelineUi650',error)}
             })();

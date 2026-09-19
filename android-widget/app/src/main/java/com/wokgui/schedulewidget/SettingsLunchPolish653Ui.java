@@ -1,6 +1,6 @@
 package com.wokgui.schedulewidget;
 
-/** Final presentation pass for lunch/free-period settings and full-width week lunch boundaries. */
+/** Final presentation pass for lunch/free-period settings and week lunch rendering. */
 final class SettingsLunchPolish653Ui {
     private SettingsLunchPolish653Ui() {}
 
@@ -78,7 +78,7 @@ final class SettingsLunchPolish653Ui {
                     white-space:nowrap!important
                   }
 
-                  /* Lunch boundaries must run from the time column through the last displayed day. */
+                  /* 6.55: strong lunch limits cover day cells only; never the hour column. */
                   #weekGrid .lunch653Top{
                     border-bottom-width:var(--week-strong-line,2px)!important;
                     border-bottom-style:solid!important;
@@ -89,6 +89,34 @@ final class SettingsLunchPolish653Ui {
                     border-bottom-style:solid!important;
                     border-bottom-color:var(--ft-midi-border,#C7AA62)!important
                   }
+
+                  /* An empty weekday still shows Midi in the same lunch band as the other days. */
+                  #weekGrid .wc.lunch655Synthetic{
+                    background:var(--ft-midi)!important;
+                    color:var(--ft-midi-ink)!important;
+                    border-radius:0!important;
+                    box-shadow:inset 0 0 0 1px var(--ft-midi-border)!important;
+                    display:flex!important;
+                    align-items:center!important;
+                    justify-content:center!important
+                  }
+                  #weekGrid .wc.lunch655Synthetic *{color:var(--ft-midi-ink)!important}
+                  #weekGrid .lunch655Label{
+                    display:inline-flex!important;
+                    align-items:center!important;
+                    justify-content:center!important;
+                    gap:3px!important;
+                    font-weight:850!important;
+                    text-align:center!important;
+                    width:100%!important
+                  }
+                  #weekGrid .lunch655Label:before{
+                    content:'🍴';
+                    display:inline-block;
+                    font-size:.72em;
+                    vertical-align:middle
+                  }
+
                   @media(max-width:390px){
                     html body #breakVisibility70{grid-template-columns:94px minmax(0,1fr) minmax(0,1fr)!important}
                     html body #breakVisibility70 #breakWidget70 label{font-size:.64rem!important;gap:3px!important}
@@ -136,10 +164,9 @@ final class SettingsLunchPolish653Ui {
                 }
 
                 function rowsOf(grid){
-                  const rows=[];if(!grid)return {rows,heads:[],headerTime:null};
+                  const rows=[];if(!grid)return {rows,heads:[]};
                   const heads=[...grid.querySelectorAll(':scope > .wh.day')];
                   const timeColumns=[...grid.querySelectorAll(':scope > .wh.timecol')];
-                  const headerTime=timeColumns.find(x=>((x.textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[]).length<2)||null;
                   const dayCount=heads.length||5;
                   for(const time of timeColumns){
                     const found=(time.textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[];
@@ -149,7 +176,7 @@ final class SettingsLunchPolish653Ui {
                     if(cells.length===dayCount)rows.push({time,start:toMin(found[0]),end:toMin(found[1]),cells});
                   }
                   rows.sort((a,b)=>a.time.offsetTop-b.time.offsetTop);
-                  return {rows,heads,headerTime};
+                  return {rows,heads};
                 }
 
                 function isLunchCell(cell){
@@ -161,20 +188,44 @@ final class SettingsLunchPolish653Ui {
                   ));
                 }
 
+                function clearSyntheticLunch(grid){
+                  grid.querySelectorAll('.lunch655Label').forEach(x=>x.remove());
+                  grid.querySelectorAll('.lunch655Synthetic').forEach(x=>x.classList.remove('lunch655Synthetic'));
+                }
+
+                function completeEmptyDays(rows,first,last){
+                  if(first<0||last<first||!rows[first])return;
+                  const dayCount=rows[first].cells.length;
+                  for(let day=0;day<dayCount;day++){
+                    const band=[];
+                    for(let r=first;r<=last;r++)if(rows[r]&&rows[r].cells[day])band.push(rows[r].cells[day]);
+                    if(!band.length)continue;
+                    if(band.some(isLunchCell))continue;
+                    if(band.some(cell=>String(cell.textContent||'').trim()!==''))continue;
+                    band.forEach(cell=>cell.classList.add('lunch655Synthetic'));
+                    const label=document.createElement('span');
+                    label.className='cellLabel lunch655Label';
+                    label.textContent=tr('Midi','Lunch','Mittag');
+                    band[0].appendChild(label);
+                  }
+                }
+
                 function paintFullWidthLunchBoundary(){
                   const grid=document.getElementById('weekGrid');if(!grid)return;
                   grid.querySelectorAll('.lunch653Top,.lunch653Bottom').forEach(x=>x.classList.remove('lunch653Top','lunch653Bottom'));
+                  clearSyntheticLunch(grid);
                   if(grid.classList.contains('hideWeekLunch70'))return;
-                  const data=rowsOf(grid),rows=data.rows,heads=data.heads,headerTime=data.headerTime;
+                  const data=rowsOf(grid),rows=data.rows,heads=data.heads;
                   if(!rows.length)return;
                   const flags=rows.map(row=>row.cells.some(isLunchCell));
                   let i=0;
                   while(i<flags.length){
                     if(!flags[i]){i++;continue}
                     let j=i;while(j+1<flags.length&&flags[j+1])j++;
-                    const topCells=i>0?[rows[i-1].time,...rows[i-1].cells]:[headerTime,...heads];
+                    completeEmptyDays(rows,i,j);
+                    const topCells=i>0?rows[i-1].cells:heads;
                     topCells.forEach(cell=>cell&&cell.classList.add('lunch653Top'));
-                    [rows[j].time,...rows[j].cells].forEach(cell=>cell&&cell.classList.add('lunch653Bottom'));
+                    rows[j].cells.forEach(cell=>cell&&cell.classList.add('lunch653Bottom'));
                     i=j+1;
                   }
                 }
