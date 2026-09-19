@@ -101,11 +101,12 @@ final class Feedback680Ui {
                   });
                 }
                 function settleLunch(){
-                  requestAnimationFrame(()=>requestAnimationFrame(stableLunchColour));
+                  stableLunchColour();
+                  requestAnimationFrame(stableLunchColour);
                 }
                 const originalRenderWeek=window.renderWeek;
                 if(typeof originalRenderWeek==='function'&&!originalRenderWeek.__feedback680StableLunch){
-                  const wrapped=function(){const out=originalRenderWeek.apply(this,arguments);settleLunch();return out};
+                  const wrapped=function(){const out=originalRenderWeek.apply(this,arguments);stableLunchColour();requestAnimationFrame(stableLunchColour);return out};
                   wrapped.__feedback680StableLunch=true;wrapped.__feedback680Original=originalRenderWeek;
                   window.renderWeek=wrapped;try{renderWeek=wrapped}catch(e){}
                 }
