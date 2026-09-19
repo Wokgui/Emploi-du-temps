@@ -36,7 +36,7 @@ final class Feedback675Ui {
                   scroller.style.removeProperty('height');week.style.removeProperty('height');
                 }
                 function fit(){
-                  raf=0;
+                  raf=0;if(window.__feedback676)return;
                   if(!active()){
                     if(lastMode==='week'){
                       clearSizing();lastMode='';scrollTo(0,0);

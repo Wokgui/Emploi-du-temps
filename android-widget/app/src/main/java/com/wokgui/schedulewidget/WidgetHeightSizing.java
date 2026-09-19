@@ -13,7 +13,7 @@ final class WidgetHeightSizing {
     }
 
     static int adaptiveEstimateHeightDp(int launcherHeightDp) {
-        return Math.max(1, launcherHeightDp - 24);
+        return Math.max(1, launcherHeightDp - 8);
     }
     static int contentHeightDp(int minHeightDp, int maxHeightDp, boolean landscape,
                                int fallbackDp, int fixedChromeDp, int minimumContentDp) {

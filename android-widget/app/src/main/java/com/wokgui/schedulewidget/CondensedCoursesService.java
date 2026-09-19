@@ -244,8 +244,9 @@ public final class CondensedCoursesService extends RemoteViewsService {
             views.setViewVisibility(R.id.rowCondensedLineBottom, position == items.size() - 1 ? View.GONE : View.VISIBLE);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (adaptiveHost) {
-                    views.setViewLayoutHeight(R.id.rowRoot, -1, TypedValue.COMPLEX_UNIT_PX);
-                    views.setViewLayoutHeight(R.id.rowCondensedContent, -1, TypedValue.COMPLEX_UNIT_PX);
+                    views.setViewLayoutHeight(R.id.adaptiveRowSlot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                    views.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                    views.setViewLayoutHeight(R.id.rowCondensedContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
                 } else {
                     views.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
                     views.setViewLayoutHeight(R.id.rowCondensedContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);

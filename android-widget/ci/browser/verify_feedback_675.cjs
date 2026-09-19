@@ -36,25 +36,25 @@ const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
     await page.evaluate(fs.readFileSync(path.join(chunks, file), 'utf8') + '\n//# sourceURL=' + file);
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
   }
-  await page.waitForFunction(() => window.__feedback675 && typeof window.fitActiveWeek675 === 'function');
+  await page.waitForFunction(() => window.__feedback676 && typeof window.fitActiveWeek676 === 'function');
   await page.locator('.nav[data-mode="week"]').tap();
   await page.waitForFunction(() => document.getElementById('viewWeek').classList.contains('active'));
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve)))));
   const fit = await page.evaluate(() => {
-    window.fitActiveWeek675();
+    window.fitActiveWeek676();
     const grid = document.getElementById('weekGrid'), scroller = document.querySelector('#viewWeek .weekScroller');
     const bottom = document.querySelector('.bottom'), stage = document.querySelector('main.wrap');
     return {
       scrollY,
-      rootLocked: document.documentElement.classList.contains('edtWeekLocked675'),
-      bodyLocked: document.body.classList.contains('edtWeekLocked675'),
-      stageFit: stage.classList.contains('edtWeekScreen675'),
+      rootLocked: document.documentElement.classList.contains('edtWeekFill676'),
+      bodyLocked: document.body.classList.contains('edtWeekFill676'),
+      stageFit: stage.classList.contains('edtWeekScreen676'),
       bodyOverflow: getComputedStyle(document.body).overflowY,
       rootOverflow: getComputedStyle(document.documentElement).overflowY,
       gridBottom: grid.getBoundingClientRect().bottom,
       scrollerBottom: scroller.getBoundingClientRect().bottom,
       navTop: bottom.getBoundingClientRect().top,
-      rowHeight: grid.style.getPropertyValue('--week675-row-height'),
+      rowHeight: grid.style.getPropertyValue('--week676-grid-height'),
       stagePaddingBottom: parseFloat(getComputedStyle(stage).paddingBottom) || 0,
       documentHeight: Math.max(document.body.scrollHeight, document.documentElement.scrollHeight),
       viewport: innerHeight
@@ -77,19 +77,19 @@ const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
   const miniPreview = read('app/src/main/res/layout/widget_preview_mini.xml');
   const condensedPreview = read('app/src/main/res/layout/widget_preview_condensed.xml');
   const service = read('app/src/main/java/com/wokgui/schedulewidget/UpcomingCoursesService.java');
-  const feedback = read('app/src/main/java/com/wokgui/schedulewidget/Feedback675Ui.java');
+  const feedback = read('app/src/main/java/com/wokgui/schedulewidget/Feedback676Ui.java');
   const gradle = read('app/build.gradle');
   assert.match(rowXml, /rowMiniTitle[\s\S]*android:singleLine="true"[\s\S]*android:ellipsize="end"/);
   assert.match(miniPreview, /android:text="Emploi du temps"[\s\S]*android:textSize="7sp"/);
   assert.match(miniPreview, /android:text="14\/09 · A"/);
   assert.match(service, /widgetWidth > 0 && widgetWidth <= 140/);
   assert.match(service, /compactDateLabel\(targetDate\)/);
-  assert.equal((condensedPreview.match(/android:layout_height="0dp"\s+android:layout_weight="1"\s+android:orientation="horizontal"/g) || []).length, 3);
+  assert.equal((condensedPreview.match(/android:layout_height="0dp"\s+android:layout_weight="1"\s+android:orientation="horizontal"/g) || []).length, 7);
   assert.doesNotMatch(condensedPreview, /android:gravity="center_vertical"\s+android:padding="0dp"/);
   assert.match(feedback, /overflow-y:hidden!important/);
-  assert.match(feedback, /--week675-row-height/);
-  assert.match(gradle, /versionCode 675001/);
-  assert.match(gradle, /versionName '6\.75'/);
+  assert.match(feedback, /--week676-grid-height/);
+  assert.match(gradle, /versionCode 676001/);
+  assert.match(gradle, /versionName '6\.76'/);
   assert.deepEqual(errors, []);
   console.log('feedback_675_mini_header_adapts=passed');
   console.log('feedback_675_condensed_preview_fills_height=passed');

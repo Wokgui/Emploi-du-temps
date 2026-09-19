@@ -12,9 +12,11 @@ public final class WidgetAutoLayoutSizingTest {
             if (pillHeight > row) throw new AssertionError("pill exceeds row at " + row);
             if (pillHeight < previousHeight) throw new AssertionError("pill height went backwards");
             if (pillWidth < previousWidth) throw new AssertionError("pill width went backwards");
-            if (boxWidth < pillWidth || boxWidth > 118) throw new AssertionError("invalid pill box width");
+            if (boxWidth < pillWidth || boxWidth > 86) throw new AssertionError("invalid pill box width");
             float scale = WidgetAutoLayoutSizing.classicTextScale(row);
+            float pillScale = WidgetAutoLayoutSizing.pillTextScale(row);
             if (scale < 0.34f || scale > 1f) throw new AssertionError("invalid text scale");
+            if (pillScale < 0.72f || pillScale > 1f) throw new AssertionError("invalid pill text scale");
             previousHeight = pillHeight;
             previousWidth = pillWidth;
         }
@@ -22,6 +24,8 @@ public final class WidgetAutoLayoutSizingTest {
             throw new AssertionError("small rows did not shrink the pill");
         if (WidgetAutoLayoutSizing.pillWidthDp(22) >= WidgetAutoLayoutSizing.pillWidthDp(54))
             throw new AssertionError("small rows did not narrow the pill");
+        if (WidgetAutoLayoutSizing.pillHeightDp(80) != 26) throw new AssertionError("pill height cap changed");
+        if (WidgetAutoLayoutSizing.pillWidthDp(80) > 78) throw new AssertionError("pill width cap changed");
         if (WidgetAutoLayoutSizing.showMeta(20)) throw new AssertionError("metadata must hide in tiny rows");
         if (WidgetAutoLayoutSizing.showPill(10)) throw new AssertionError("pill must hide before it can fit");
         if (!WidgetAutoLayoutSizing.showPill(22)) throw new AssertionError("pill should fit in a normal compact row");

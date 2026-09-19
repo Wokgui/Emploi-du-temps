@@ -263,8 +263,17 @@ public class UpcomingCoursesService extends RemoteViewsService {
             String base;
             if (diff < 60) base = UiSettingsStore.t(context, "in") + " " + diff + " min";
             else base = UiSettingsStore.t(context, "in") + " " + Math.max(1L, Math.round(diff / 60.0)) + " h";
-            if (includeDate) base += dateSuffix(targetDate);
+            if (includeDate) return compactFutureLabel(targetDate, base);
             return base;
+        }
+
+        private String compactFutureLabel(Calendar date, String base) {
+            String lang = UiSettingsStore.language(context);
+            Locale locale = "de".equals(lang) ? Locale.GERMANY : ("en".equals(lang) ? Locale.UK : Locale.FRANCE);
+            String day = new SimpleDateFormat("EEE d", locale).format(date.getTime()).replace(".", "");
+            String prefix = UiSettingsStore.t(context, "in") + " ";
+            String duration = base.startsWith(prefix) ? base.substring(prefix.length()) : base;
+            return day + " · " + duration;
         }
 
         private Calendar atMinute(Calendar date, int minute) {
@@ -326,14 +335,16 @@ public class UpcomingCoursesService extends RemoteViewsService {
             float automaticScale = automaticDensity
                     ? WidgetAutoLayoutSizing.classicTextScale(fittedHeight)
                     : 1f;
+            float pillScale = automaticDensity ? WidgetAutoLayoutSizing.pillTextScale(fittedHeight) : 1f;
             v.setTextViewTextSize(R.id.rowTitle, TypedValue.COMPLEX_UNIT_SP, 13f * scale * automaticScale);
             v.setTextViewTextSize(R.id.rowStartTime, TypedValue.COMPLEX_UNIT_SP, 10f * scale * automaticScale);
             v.setTextViewTextSize(R.id.rowMeta, TypedValue.COMPLEX_UNIT_SP, 10f * scale * automaticScale);
-            v.setTextViewTextSize(R.id.rowRelative, TypedValue.COMPLEX_UNIT_SP, 9f * scale * automaticScale);
+            v.setTextViewTextSize(R.id.rowRelative, TypedValue.COMPLEX_UNIT_SP, 8f * scale * pillScale);
             if (automaticDensity && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (adaptiveHost) {
-                    v.setViewLayoutHeight(R.id.rowRoot, -1, TypedValue.COMPLEX_UNIT_PX);
-                    v.setViewLayoutHeight(R.id.rowContent, -1, TypedValue.COMPLEX_UNIT_PX);
+                    v.setViewLayoutHeight(R.id.adaptiveRowSlot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                    v.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                    v.setViewLayoutHeight(R.id.rowContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
                 } else {
                     v.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
                     v.setViewLayoutHeight(R.id.rowContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
