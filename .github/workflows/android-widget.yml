@@ -52,13 +52,13 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with: {gradle-version: '8.10.2'}
       - run: gradle clean :app:assembleDebug --stacktrace
-      - name: Verify and package 6.80
+      - name: Verify and package 6.81
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='680001' versionName='6.80'" app/build/outputs/apk/debug/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/emploi-du-temps-widget-6.80.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='681001' versionName='6.81'" app/build/outputs/apk/debug/badging.txt
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/emploi-du-temps-widget-6.81.apk
       - uses: actions/upload-artifact@v4
         with:
           name: emploi-du-temps-widget-apk
-          path: android-widget/app/build/outputs/apk/debug/emploi-du-temps-widget-6.80.apk
+          path: android-widget/app/build/outputs/apk/debug/emploi-du-temps-widget-6.81.apk
           if-no-files-found: error
