@@ -321,10 +321,12 @@ final class TimetableCoreUi {
                   #weekModeBar{margin:0 0 7px!important;padding:6px 7px!important;display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;align-items:center!important}
                   #weekModeBar .weekModeChoices{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:4px!important}
                   #weekModeBar .weekModeChoice{min-width:0!important;padding:6px 2px!important;font-size:.64rem!important}
-                  #importPhoto{width:min(78%,380px)!important;min-height:38px!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;margin:0 auto 8px!important;padding:7px 14px!important;border-radius:11px!important;background:#fff!important;border:1px solid #b9cbe0!important;box-shadow:0 1px 3px #1522380d!important}
+                  html body #viewEdit>#importPhoto{width:min(78%,380px)!important;min-height:38px!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;margin-left:auto!important;margin-right:auto!important;margin-bottom:8px!important;padding:7px 14px!important;border-radius:11px!important;background:#fff!important;border:1px solid #b9cbe0!important;box-shadow:0 1px 3px #1522380d!important}
 
-                  /* Compact, centered edit actions. */
-                  #addCourse,#addBulkCourses{display:block!important;width:min(84%,420px)!important;min-height:38px!important;margin:7px auto 0!important;padding:7px 14px!important;border:1.25px solid var(--blue,#0877f9)!important;border-radius:11px!important;background:#f5f9ff!important;color:var(--blue,#0877f9)!important;font-size:.82rem!important;font-weight:820!important;line-height:1.15!important;box-shadow:0 1px 3px #1522380d!important}
+                  /* Two balanced edit actions on one row. */
+                  #editActionRow680{display:flex!important;align-items:stretch!important;justify-content:center!important;gap:8px!important;width:100%!important;margin:7px auto 0!important}
+                  #editActionRow680>#addCourse,#editActionRow680>#addBulkCourses{display:flex!important;flex:1 1 0!important;width:auto!important;min-width:0!important;min-height:46px!important;margin:0!important;padding:7px 8px!important;align-items:center!important;justify-content:center!important;text-align:center!important;border:1.25px solid var(--blue,#0877f9)!important;border-radius:11px!important;background:#f5f9ff!important;color:var(--blue,#0877f9)!important;font-size:.74rem!important;font-weight:820!important;line-height:1.15!important;box-shadow:0 1px 3px #1522380d!important}
+                  #courseColorHint{display:none!important}
 
                   /* Settings: clearer cards and centered category titles. */
                   #settingsSheet>.settingBox{border:1.5px solid #cbd6e2!important;box-shadow:0 1px 3px #15223810!important}
@@ -360,13 +362,10 @@ final class TimetableCoreUi {
 
                 function ensureNineSlots(){
                   try{
-                    if(typeof slots==='undefined'||!Array.isArray(slots))return;
-                    const defaults=[['17:00','18:00'],['18:00','19:00']];
-                    while(slots.length<9){const i=slots.length-7,p=defaults[Math.max(0,Math.min(1,i))];slots.push({n:slots.length+1,start:p[0],end:p[1]})}
-                    if(slots.length>9)slots.splice(9);
+                    if(typeof slots==='undefined'||!Array.isArray(slots)||!slots.length)return;
+                    if(slots.length>10)slots.splice(10);
                     slots.forEach((s,i)=>s.n=i+1);
-                    const head=document.querySelector('#viewEdit .sectionHead h3');
-                    document.querySelectorAll('#viewEdit .sectionHead h3').forEach(h=>{if(/Horaires|period times|Zeiten/i.test(h.textContent||''))h.textContent=tr('Horaires des 9 heures','9 period times','Zeiten der 9 Stunden')});
+                    document.querySelectorAll('#viewEdit .sectionHead h3').forEach(h=>{if(/Horaires|period times|Zeiten/i.test(h.textContent||''))h.textContent=tr('Horaires des cours','Course times','Unterrichtszeiten')});
                   }catch(e){}
                 }
 
@@ -414,6 +413,14 @@ final class TimetableCoreUi {
                   const o=ui(),a=Number(o.appFontScale)||1,w=Number(o.widgetFontScale)||1;
                   document.documentElement.style.setProperty('--preview-app-scale',Math.max(.8,Math.min(1.4,a)));
                   document.documentElement.style.setProperty('--preview-widget-scale',Math.max(.8,Math.min(1.4,w)));
+                }
+
+                function arrangeEditActions(){
+                  const view=document.getElementById('viewEdit'),list=document.getElementById('editList'),add=document.getElementById('addCourse');if(!view||!list||!add)return;
+                  let row=document.getElementById('editActionRow680');
+                  if(!row){row=document.createElement('div');row.id='editActionRow680';list.insertAdjacentElement('afterend',row)}
+                  if(add.parentNode!==row)row.appendChild(add);
+                  const bulk=document.getElementById('addBulkCourses');if(bulk&&bulk.parentNode!==row)row.appendChild(bulk);
                 }
 
                 function reorderSettings(){
@@ -502,7 +509,7 @@ final class TimetableCoreUi {
                 function refresh(){
                   if(refreshing)return;refreshing=true;
                   try{
-                    ensureNineSlots();wrapSlots();wrapWeekRender();installCycleBar();reorderSettings();prettySlotRows();updatePreviews();paintWeek();
+                    ensureNineSlots();wrapSlots();wrapWeekRender();installCycleBar();arrangeEditActions();reorderSettings();prettySlotRows();updatePreviews();paintWeek();
                     if(window.refreshWeekendUi)window.refreshWeekendUi();
                   }catch(e){}finally{refreshing=false}
                 }
@@ -2160,7 +2167,7 @@ final class TimetableCoreUi {
                 function syncOne(root){ensureWeek(root,'A');root._weeks.B=deep(root._weeks.A);root._weeks.C=deep(root._weeks.A);root._weeks.D=deep(root._weeks.A);root._currentWeek='A';return root}
                 function activeWeek(root){if(oneWeek())return 'A';const b=document.querySelector('#weekTabs .weekTab.active');return b?.dataset?.week||root._currentWeek||'A'}
                 function selDay(){try{if([2,3,4,5,6].includes(Number(selected)))return Number(selected)}catch(e){};return 2}
-                function slots(root){return Array.isArray(root._slots)&&root._slots.length?root._slots:[{start:'08:00',end:'09:00'},{start:'09:00',end:'10:00'},{start:'10:00',end:'11:00'},{start:'11:00',end:'12:00'},{start:'13:00',end:'14:00'},{start:'14:00',end:'15:00'},{start:'16:00',end:'17:00'}]}
+                function slots(root){return Array.isArray(root._slots)&&root._slots.length?root._slots:[{start:'08:00',end:'09:00'},{start:'09:00',end:'10:00'},{start:'10:00',end:'11:00'},{start:'11:00',end:'12:00'},{start:'13:00',end:'14:00'},{start:'14:00',end:'15:00'},{start:'16:00',end:'17:00'},{start:'17:00',end:'18:00'},{start:'18:00',end:'19:00'},{start:'19:00',end:'20:00'}]}
                 function mins(t){const p=String(t||'0:0').split(':').map(Number);return p[0]*60+p[1]}
                 function firstFree(root,w,d){ensureWeek(root,w);const used=new Set(root._weeks[w][String(d)].courses.map(c=>Number(c.slot)).filter(Boolean));for(let i=1;i<=slots(root).length;i++)if(!used.has(i))return i;return 1}
 
