@@ -13,7 +13,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.webkit.CookieManager;
 import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
@@ -52,7 +51,7 @@ public class MainActivity extends Activity {
     private boolean uiInjectionInFlight = false;
     private boolean skipNextResumeRefresh = false;
     private boolean heavyPanelBenchmarkStarted = false;
-    private final TextRecognizer textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+    private TextRecognizer textRecognizer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -142,7 +141,10 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        textRecognizer.close();
+        if (textRecognizer != null) {
+            textRecognizer.close();
+            textRecognizer = null;
+        }
         if (resumeSnapshotView != null) resumeSnapshotView.setImageDrawable(null);
         if (resumeSnapshot != null && !resumeSnapshot.isRecycled()) resumeSnapshot.recycle();
         resumeSnapshot = null;
@@ -299,12 +301,19 @@ public class MainActivity extends Activity {
                 catch (Exception ignored) {}
             }
             InputImage image = InputImage.fromFilePath(this, uri);
-            textRecognizer.process(image)
+            getTextRecognizer().process(image)
                     .addOnSuccessListener(this::sendRecognizedSchedule)
                     .addOnFailureListener(error -> sendOcrError("Impossible de lire cette photo. Essaie une image plus nette et prise bien de face."));
         } catch (Exception e) {
             sendOcrError("Impossible d’ouvrir cette photo.");
         }
+    }
+
+    private TextRecognizer getTextRecognizer() {
+        if (textRecognizer == null) {
+            textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+        }
+        return textRecognizer;
     }
 
     private void pickTimetablePhoto() {
@@ -365,10 +374,6 @@ public class MainActivity extends Activity {
         try {
             JobScheduler scheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
             scheduler.cancel(4101); scheduler.cancel(4102);
-        } catch (Exception ignored) {}
-        try {
-            CookieManager.getInstance().removeAllCookies(null);
-            CookieManager.getInstance().flush();
         } catch (Exception ignored) {}
     }
 
