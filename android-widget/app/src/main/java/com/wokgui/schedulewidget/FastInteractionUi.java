@@ -10,9 +10,33 @@ final class FastInteractionUi {
               try{
                 if(window.__edtFastInteractionV3)return;
 
-                const state={tokens:Object.create(null),scheduled:0,executed:0,cancelled:0,clicks:0,submits:0};
+                const state={tokens:Object.create(null),scheduled:0,executed:0,cancelled:0,clicks:0,submits:0,scrollClicksBlocked:0};
                 const selector='button,.todayCourse,.editCourse,.wc';
-                let pointerHandled=null,pointerHandledAt=0;
+                let pointerHandled=null,pointerHandledAt=0,courseGesture=null;
+                const courseSelector='.todayCourse,.editCourse,.wc';
+                function isCourseControl(el){return !!(el&&el.matches&&el.matches(courseSelector))}
+                function beginCourseGesture(event,el){
+                  if(!isCourseControl(el)||event.pointerType==='mouse')return;
+                  courseGesture={el:el,id:event.pointerId,x:event.clientX,y:event.clientY,started:performance.now(),duration:0,moved:false};
+                }
+                function moveCourseGesture(event){
+                  const g=courseGesture;if(!g||g.id!==event.pointerId)return;
+                  if(Math.abs(event.clientX-g.x)>8||Math.abs(event.clientY-g.y)>8)g.moved=true
+                }
+                function endCourseGesture(event){
+                  const g=courseGesture;if(!g||g.id!==event.pointerId)return;
+                  g.duration=performance.now()-g.started;
+                  setTimeout(()=>{if(courseGesture===g)courseGesture=null},800);
+                }
+                function blockCourseClick(event,el){
+                  if(!isCourseControl(el))return false;
+                  const g=courseGesture;if(!g||g.el!==el)return false;
+                  const blocked=g.moved||g.duration>320||performance.now()-g.started>320;
+                  courseGesture=null;if(!blocked)return false;
+                  state.scrollClicksBlocked++;
+                  try{event.preventDefault();event.stopPropagation();event.stopImmediatePropagation()}catch(ignore){}
+                  return true;
+                }
 
                 function afterPaint(key,fn){
                   const token=key?((state.tokens[key]||0)+1):0;
@@ -89,7 +113,8 @@ final class FastInteractionUi {
                 if(!document.getElementById('edtFastInteractionStyle')){
                   const style=document.createElement('style');style.id='edtFastInteractionStyle';
                   style.textContent=`
-                    button,.todayCourse,.editCourse,.wc{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+                    button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+                    .todayCourse,.editCourse,.wc{touch-action:pan-y pinch-zoom;-webkit-tap-highlight-color:transparent}
                     button:active,.todayCourse:active,.editCourse:active,.wc:active{filter:brightness(.96)!important}
                     button:active{opacity:.84!important}
                   `;
@@ -99,6 +124,7 @@ final class FastInteractionUi {
                 document.addEventListener('pointerdown',function(e){
                   const el=controlFrom(e.target);if(!el)return;
                   if(el.classList&&el.classList.contains('nav'))return;
+                  beginCourseGesture(e,el);
                   visualFor(el);
 
                   // Settings is special: showing its full-screen modal on pointer-down can
@@ -112,9 +138,13 @@ final class FastInteractionUi {
                     afterPaint('',function(){invokeClick(el,e,fn);logSettle('click','settings',n,started)});
                   }
                 },{capture:true,passive:true});
+                document.addEventListener('pointermove',moveCourseGesture,{capture:true,passive:true});
+                document.addEventListener('pointerup',endCourseGesture,{capture:true,passive:true});
+                document.addEventListener('pointercancel',()=>{courseGesture=null},{capture:true,passive:true});
                 document.addEventListener('click',function(e){
                   const el=controlFrom(e.target);if(!el)return;
                   if(el.classList&&el.classList.contains('nav'))return;
+                  if(blockCourseClick(e,el))return;
                   // Stability73 is the single physical owner of the week-cycle strip. Its
                   // pointer-up route is repaired to call the 6.51 coordinator directly. Do not
                   // add a second click route here or WebView can execute the same mode twice.

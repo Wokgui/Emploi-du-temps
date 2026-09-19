@@ -31,7 +31,7 @@ final class Feedback673Ui {
                   cover.style.position='absolute';cover.style.left=(rect.left-parentRect.left+parent.scrollLeft)+'px';
                   cover.style.top=(rect.top-parentRect.top+parent.scrollTop)+'px';cover.style.width=Math.max(1,Math.round(rect.width))+'px';
                   cover.style.height=Math.max(1,Math.round(rect.height))+'px';cover.style.margin='0';cover.style.pointerEvents='none';
-                  cover.style.visibility='visible';cover.style.display='block';cover.style.opacity='1';cover.style.zIndex='35';
+                  cover.style.visibility='visible';cover.style.display='block';cover.style.opacity='1';cover.style.zIndex='11';
                   cover.style.overflow='hidden';cover.style.background=getComputedStyle(live).backgroundColor||'#f7f9fc';
                   if(getComputedStyle(parent).position==='static')parent.style.position='relative';
                   parent.appendChild(cover);

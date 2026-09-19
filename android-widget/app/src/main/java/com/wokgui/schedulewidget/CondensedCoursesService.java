@@ -83,7 +83,7 @@ public final class CondensedCoursesService extends RemoteViewsService {
         private final Context context;
         private final int widgetId;
         private final List<Item> items = new ArrayList<>();
-        private int widgetHeightDp = 49;
+        private int widgetHeightDp = 180;
 
         Factory(Context context, int widgetId) {
             this.context = context;
@@ -183,15 +183,15 @@ public final class CondensedCoursesService extends RemoteViewsService {
         }
 
         private int resolveWidgetHeightDp() {
-            if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return 49;
+            if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return 180;
             Bundle options = AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId);
-            if (options == null) return 49;
+            if (options == null) return 180;
             boolean landscape = context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
             return WidgetHeightSizing.resolveHeightDp(
                     options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0),
                     options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0),
                     landscape,
-                    49
+                    180
             );
         }
 

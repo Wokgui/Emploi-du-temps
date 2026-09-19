@@ -297,12 +297,14 @@ public class UpcomingCoursesService extends RemoteViewsService {
         }
 
         private String courseMeta(Item item) {
-            boolean times = AdvancedSettingsStore.showTimes(context);
             boolean room = AdvancedSettingsStore.showRoom(context);
-            if (times && room) return item.time + " · " + UiSettingsStore.t(context, "room") + " " + (item.room.isEmpty() ? "—" : item.room);
-            if (times) return item.time;
             if (room) return UiSettingsStore.t(context, "room") + " " + (item.room.isEmpty() ? "—" : item.room);
             return "";
+        }
+
+        private String startTime(String range) {
+            int cut = range == null ? -1 : range.indexOf(" - ");
+            return cut > 0 ? range.substring(0, cut) : (range == null ? "" : range);
         }
 
         @Override
@@ -325,6 +327,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
                     ? WidgetAutoLayoutSizing.classicTextScale(fittedHeight)
                     : 1f;
             v.setTextViewTextSize(R.id.rowTitle, TypedValue.COMPLEX_UNIT_SP, 13f * scale * automaticScale);
+            v.setTextViewTextSize(R.id.rowStartTime, TypedValue.COMPLEX_UNIT_SP, 10f * scale * automaticScale);
             v.setTextViewTextSize(R.id.rowMeta, TypedValue.COMPLEX_UNIT_SP, 10f * scale * automaticScale);
             v.setTextViewTextSize(R.id.rowRelative, TypedValue.COMPLEX_UNIT_SP, 9f * scale * automaticScale);
             if (automaticDensity && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -349,6 +352,9 @@ public class UpcomingCoursesService extends RemoteViewsService {
             String title = item.label;
             if (item.type == Item.COURSE && item.uncertain) title = "⚠ " + title;
             v.setTextViewText(R.id.rowTitle, title);
+            boolean showStartTime = AdvancedSettingsStore.showTimes(context);
+            v.setTextViewText(R.id.rowStartTime, showStartTime ? startTime(item.time) : "");
+            v.setViewVisibility(R.id.rowStartTime, showStartTime ? View.VISIBLE : View.GONE);
             String relative = AdvancedSettingsStore.showRemaining(context) ? item.relative : "";
             v.setTextViewText(R.id.rowRelative, relative);
             v.setViewVisibility(R.id.rowRelative, relative.isEmpty() ? View.GONE : View.VISIBLE);
@@ -371,6 +377,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 v.setTextViewText(R.id.rowMeta, meta);
                 v.setViewVisibility(R.id.rowMeta, meta.isEmpty() ? View.GONE : View.VISIBLE);
                 v.setTextColor(R.id.rowTitle, ink);
+                v.setTextColor(R.id.rowStartTime, ink);
                 v.setTextColor(R.id.rowMeta, muted);
                 v.setTextColor(R.id.rowRelative, darken(bg));
             }
@@ -388,6 +395,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 v.setOnClickFillInIntent(R.id.rowRoot, fill);
                 v.setOnClickFillInIntent(R.id.rowContent, fill);
                 v.setOnClickFillInIntent(R.id.rowTitle, fill);
+                v.setOnClickFillInIntent(R.id.rowStartTime, fill);
                 v.setOnClickFillInIntent(R.id.rowMeta, fill);
                 v.setOnClickFillInIntent(R.id.rowRelativeBox, fill);
                 v.setOnClickFillInIntent(R.id.rowRelative, fill);
@@ -397,10 +405,10 @@ public class UpcomingCoursesService extends RemoteViewsService {
 
         private void applyBreakRow(RemoteViews v, Item item, int background, int ink, int pillInk, String relative) {
             v.setInt(R.id.rowContent, "setBackgroundColor", background);
-            String meta = AdvancedSettingsStore.showTimes(context) ? item.time : "";
-            v.setTextViewText(R.id.rowMeta, meta);
-            v.setViewVisibility(R.id.rowMeta, meta.isEmpty() ? View.GONE : View.VISIBLE);
+            v.setTextViewText(R.id.rowMeta, "");
+            v.setViewVisibility(R.id.rowMeta, View.GONE);
             v.setTextColor(R.id.rowTitle, ink);
+            v.setTextColor(R.id.rowStartTime, ink);
             v.setTextColor(R.id.rowMeta, ink);
             v.setTextViewText(R.id.rowRelative, relative);
             v.setViewVisibility(R.id.rowRelative, relative.isEmpty() ? View.GONE : View.VISIBLE);
