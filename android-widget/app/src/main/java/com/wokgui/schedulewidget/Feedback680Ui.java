@@ -54,12 +54,17 @@ final class Feedback680Ui {
                     background-color:var(--week658-lunch,#FFE08A)!important;
                     background-image:none!important;opacity:1!important;filter:none!important
                   }
-                  html body #viewWeek #weekGrid#weekGrid .wc.week658Lunch *,
-                  html body #viewWeek #weekGrid#weekGrid .wc.lunchCell .dynamicLunchOverlay,
-                  html body #viewWeek #weekGrid#weekGrid .wc.dynamicLunchCell .dynamicLunchOverlay,
-                  html body #viewWeek #weekGrid#weekGrid .wc.nativeLunchCell .nativeLunchLabel,
-                  html body #viewWeek #weekGrid#weekGrid .wc.finalLunchCell .dynamicLunchOverlay{
-                    background-color:transparent!important;background-image:none!important
+                  html body #viewWeek #weekGrid#weekGrid .wc:is(.week658Lunch,.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic)>*{
+                    background:transparent!important;background-color:transparent!important;background-image:none!important;
+                    box-shadow:none!important;filter:none!important;opacity:1!important
+                  }
+                  html body #viewWeek #weekGrid#weekGrid .wc:is(.week658Lunch,.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic)::before,
+                  html body #viewWeek #weekGrid#weekGrid .wc:is(.week658Lunch,.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic)::after{
+                    content:none!important;display:none!important;background:none!important;background-color:transparent!important;
+                    background-image:none!important;box-shadow:none!important;filter:none!important;opacity:0!important
+                  }
+                  html body #viewWeek #weekGrid#weekGrid .wc:is(.week658Lunch,.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic){
+                    box-shadow:none!important;outline:0!important;background-blend-mode:normal!important
                   }
 
                   html body #slotSettings .slotRow{grid-template-columns:112px minmax(0,1fr) minmax(0,1fr)!important}
