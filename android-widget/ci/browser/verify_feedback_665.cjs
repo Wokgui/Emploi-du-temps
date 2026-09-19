@@ -37,7 +37,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   }
   await page.waitForFunction(() => window.__feedback665 && window.prepareSettingsOpen665);
 
-  await page.locator('.nav[data-mode="week"]').evaluate(el => el.click());
+  await page.locator('.nav[data-mode="week"]').tap();
   await page.waitForFunction(() => document.getElementById('viewWeek').classList.contains('active'));
   await page.evaluate(() => {
     const make = label => ({ enabled: true, courses: [
@@ -80,7 +80,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
     new MutationObserver(() => snapshot('mutation')).observe(modal, { attributes: true, attributeFilter: ['class', 'data-edt-open'] });
     let count = 0; const sample = () => { snapshot('frame'); if (++count < 6) requestAnimationFrame(sample); }; requestAnimationFrame(sample);
   });
-  await page.locator('#settingsBtn').evaluate(el => el.click());
+  await page.locator('#settingsBtn').tap();
   await page.waitForFunction(() => window.__edtHeavyPanels648.isOpen('settings'));
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   const settingsFrames = await page.evaluate(() => window.__settingsFrames665);
