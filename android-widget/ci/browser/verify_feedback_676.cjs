@@ -67,8 +67,10 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
   assert.ok(Number.parseFloat(first.newSizing) > 0, JSON.stringify(first));
 
   const heights = [];
+  await page.locator('#settingsBtn').tap();
+  await page.waitForFunction(() => document.getElementById('settingsModal').getAttribute('data-edt-open') === 'true' || document.getElementById('settingsModal').classList.contains('show'));
   for (let i = 0; i < 20; i++) {
-    await page.locator(`#weekTabs .weekTab[data-week="${i % 2 ? 'A' : 'B'}"]`).tap();
+    await page.locator(`.weekCurrentChoice678[data-week="${i % 2 ? 'A' : 'B'}"]`).tap();
     await settle(page);
     heights.push(await page.evaluate(() => {
       fitActiveWeek676();
@@ -88,6 +90,8 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
       };
     }));
   }
+  await page.locator('#settingsDone').tap();
+  await settle(page);
   assert.equal(new Set(heights.map(value => value.height)).size, 1, JSON.stringify(heights));
   heights.forEach(value => {
     assert.ok(value.topLines <= 1, JSON.stringify(value));
@@ -121,8 +125,8 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
   assert.match(sizing, /Math\.min\(78,/);
   assert.match(feedback, /grid-auto-rows:minmax\(0,1fr\)/);
   assert.match(feedback, /refreshWeekAppearance658/);
-  assert.match(gradle, /versionCode 677001/);
-  assert.match(gradle, /versionName '6\.77'/);
+  assert.match(gradle, /versionCode 678001/);
+  assert.match(gradle, /versionName '6\.78'/);
   assert.deepEqual(errors, []);
   console.log('feedback_676_condensed_preview_is_really_compact=passed');
   console.log('feedback_676_classic_auto_density_keeps_full_day=passed');

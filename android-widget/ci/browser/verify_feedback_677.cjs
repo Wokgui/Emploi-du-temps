@@ -31,8 +31,8 @@ assert.equal((condensed.match(/android:layout_height="0dp" android:layout_weight
 assert.match(condensedInfo, /android:minHeight="180dp"/);
 assert.match(condensedInfo, /android:targetCellHeight="3"/);
 
-assert.match(gradle, /versionCode 677001/);
-assert.match(gradle, /versionName '6\.77'/);
+assert.match(gradle, /versionCode 678001/);
+assert.match(gradle, /versionName '6\.78'/);
 assert.match(chunks, /APP_VERSION='6\.76'[^\n]*APP_VERSION='6\.77'/);
 console.log('feedback_677_preview_only_scope=passed');
 console.log('feedback_677_mini_preview_is_horizontal=passed');
