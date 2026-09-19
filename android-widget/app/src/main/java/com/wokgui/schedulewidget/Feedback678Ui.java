@@ -33,21 +33,24 @@ final class Feedback678Ui {
                   html body .contextBar,html body #contextBar{display:none!important}
                   html body #viewEdit #weekModeBar{display:none!important}
                   html body #settingsSheet .settingBox:has(#advCycleTitle){display:none!important}
-                  #settingsWeekCycle678{display:block!important;margin:0 0 9px!important;padding:10px!important;border:1.5px solid #cbd6e2!important;border-radius:9px!important;background:#fff!important;box-shadow:0 1px 3px #15223810!important}
-                  #settingsWeekCycle678 .settingTitle{text-align:center!important;font-size:.86rem!important;font-weight:900!important;margin:0 0 8px!important}
-                  .weekCycleChoices678{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important;width:100%!important}
-                  .weekCurrentChoices678{display:flex!important;justify-content:center!important;align-items:center!important;flex-wrap:wrap!important;gap:7px!important;width:100%!important}
-                  .weekCurrentChoice678{flex:0 0 54px!important}
-                  .weekCycleChoice678,.weekCurrentChoice678{min-width:0!important;min-height:32px!important;border:1px solid #cfd9e5!important;border-radius:999px!important;background:#fff!important;color:#4d5667!important;padding:5px 3px!important;font-size:.68rem!important;font-weight:850!important;line-height:1.05!important;white-space:nowrap!important;touch-action:manipulation!important}
+                  #settingsWeekCycle678{display:block!important;margin:0 0 7px!important;padding:8px 9px!important;border:1px solid #d4dde8!important;border-radius:10px!important;background:#fff!important;box-shadow:0 1px 2px #1522380d!important}
+                  #settingsWeekCycle678 .settingTitle{text-align:center!important;font-size:.79rem!important;font-weight:850!important;margin:0 0 6px!important}
+                  .weekCycleChoices678{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:4px!important;width:100%!important}
+                  .weekCurrentChoices678{display:flex!important;justify-content:center!important;align-items:center!important;flex-wrap:wrap!important;gap:5px!important;width:100%!important}
+                  .weekCurrentChoice678{flex:0 0 44px!important}
+                  .weekCycleChoice678,.weekCurrentChoice678{min-width:0!important;min-height:27px!important;border:1px solid #d4dde8!important;border-radius:999px!important;background:#fff!important;color:#4d5667!important;padding:3px 4px!important;font-size:.62rem!important;font-weight:820!important;line-height:1!important;white-space:nowrap!important;touch-action:manipulation!important}
                   .weekCycleChoice678.active,.weekCurrentChoice678.active{background:var(--set-accent,var(--blue,#0877f9))!important;border-color:var(--set-accent,var(--blue,#0877f9))!important;color:#fff!important}
-                  .weekCurrentSettings678{margin-top:10px!important;padding-top:9px!important;border-top:1px solid #edf0f4!important}
-                  .weekCurrentLabel678{text-align:center!important;font-size:.72rem!important;font-weight:850!important;margin:0 0 6px!important;color:var(--ink,#111936)!important}
+                  .weekCurrentSettings678{margin-top:7px!important;padding-top:6px!important;border-top:1px solid #edf0f4!important}
+                  .weekCurrentLabel678{text-align:center!important;font-size:.66rem!important;font-weight:820!important;margin:0 0 5px!important;color:var(--ink,#111936)!important}
                   html.singleWeek678 .weekCurrentSettings678{display:none!important}
                   html body .bottom,html body .bottom .nav{pointer-events:auto!important;touch-action:manipulation!important}
                   html body #edtImportReview:not(.show),html body #ocrPreview86:not(.show){pointer-events:none!important}
                   html body #viewToday .dayTitle h2{white-space:nowrap!important}
                   html body #viewWeek .weekTop{display:none!important;margin:0!important;height:0!important;min-height:0!important}
-                  html body #viewEdit{padding-bottom:88px!important}
+                  html body #viewEdit{padding-bottom:clamp(8px,2vh,18px)!important}
+                  html body #viewEdit>#importPhoto{display:flex!important;width:min(78%,380px)!important;margin-left:auto!important;margin-right:auto!important;justify-content:center!important}
+                  html body #editActionRow680{display:flex!important;gap:8px!important;align-items:stretch!important}
+                  html body #editActionRow680>#addCourse,html body #editActionRow680>#addBulkCourses{flex:1 1 0!important;width:auto!important;min-width:0!important;margin:0!important}
                 `;document.head.appendChild(style);
 
                 function ensureSettings(){
