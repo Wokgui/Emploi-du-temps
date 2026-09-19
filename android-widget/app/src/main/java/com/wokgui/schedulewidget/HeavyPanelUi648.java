@@ -270,6 +270,14 @@ final class HeavyPanelUi648 {
                   else if(target.id==='settingsX'||target.id==='settingsDone'||target.id==='settingsModal')result=closeSettings();
                   else if(target.id==='cancelEdit'||target.id==='modal'){closeCourse();editing=null;newPrefill=null;result=false}
                   else if(target.id==='addCourse')result=openCourse(null);
+                  else if(target.classList&&target.classList.contains('slotRemove')){
+                    const index=Number(target.dataset.slotIndex);
+                    if(typeof window.removeSlotAt680==='function'&&Number.isInteger(index))window.removeSlotAt680(index);
+                    result=false;
+                  }
+                  else if(target.classList&&target.classList.contains('slotAdd')){
+                    if(typeof target.onclick==='function')result=target.onclick.call(target,event);
+                  }
                   else if(typeof target.onclick==='function')result=target.onclick.call(target,event);
                   if(before){
                     const totals=window.__edtHeavyDirectWork648||(window.__edtHeavyDirectWork648={transitions:0,bridgeCalls:0,storageReads:0,storageWrites:0,listenerAdds:0,observerDelta:0,resizeObserverDelta:0});
