@@ -116,14 +116,15 @@ function normalizeWeek(obj){
 }
 function normalize(){
   if(!Array.isArray(slots)||!slots.length)slots=clone(DEFAULT_SLOTS);
-  slots=slots.slice(0,10).map((s,i)=>{const fallback=DEFAULT_SLOTS[Math.min(i,DEFAULT_SLOTS.length-1)];return {n:i+1,start:s?.start||fallback.start,end:s?.end||fallback.end}});
+  const seenSlots=new Set();
+  slots=slots.slice(0,10).map((s,i)=>{const n=Math.max(1,Math.min(10,Number(s?.n)||i+1)),fallback=DEFAULT_SLOTS.find(x=>x.n===n)||DEFAULT_SLOTS[Math.min(i,DEFAULT_SLOTS.length-1)];return {n,start:s?.start||fallback.start,end:s?.end||fallback.end}}).filter(s=>!seenSlots.has(s.n)&&(seenSlots.add(s.n),true));
   breaks.gapLabel=(breaks.gapLabel||'Trou').trim()||'Trou';breaks.lunchLabel=(breaks.lunchLabel||'Pause de midi').trim()||'Pause de midi';breaks.showGapBadge=breaks.showGapBadge!==false;breaks.showLunchBadge=breaks.showLunchBadge!==false;
   normalizeWeek(weeks.A);normalizeWeek(weeks.B);state=weeks[mode==='today'?currentWeek:activeWeek];
 }
 function load(){
   try{
     let raw=null;if(window.AndroidSchedule&&AndroidSchedule.loadSchedule)raw=AndroidSchedule.loadSchedule();else raw=localStorage.getItem('edt');
-    if(raw){const root=JSON.parse(raw);slotConfigV2=root._slotConfigV2===true;if(root._slots)slots=root._slots.map((s,i)=>({n:i+1,start:s.start,end:s.end}));if(!slotConfigV2&&slots.length===9){const last=slots[slots.length-1],start=last?.end||'19:00',end=clock(Math.min(1439,min(start)+60));slots.push({n:10,start,end});slotConfigV2=true}if(root._breaks)breaks={...breaks,...root._breaks};currentWeek=(root._currentWeek==='B')?'B':'A';activeWeek=currentWeek;
+    if(raw){const root=JSON.parse(raw);slotConfigV2=root._slotConfigV2===true;if(root._slots)slots=root._slots.map((s,i)=>({n:Math.max(1,Math.min(10,Number(s.n)||i+1)),start:s.start,end:s.end}));if(!slotConfigV2&&slots.length===9){const last=slots[slots.length-1],start=last?.end||'19:00',end=clock(Math.min(1439,min(start)+60));slots.push({n:10,start,end});slotConfigV2=true}if(root._breaks)breaks={...breaks,...root._breaks};currentWeek=(root._currentWeek==='B')?'B':'A';activeWeek=currentWeek;
       if(root._weeks){for(const w of ['A','B'])if(root._weeks[w])for(const d of DAYS)if(root._weeks[w][d])weeks[w][d]=root._weeks[w][d]}
       else{const legacy=clone(DEFAULTS);for(const d of DAYS)if(root[d])legacy[d]=root[d];weeks.A=clone(legacy);weeks.B=clone(legacy)}
     }
@@ -131,7 +132,7 @@ function load(){
   normalize();render();
 }
 window.reloadSchedule=load;
-function exportState(){const root={_slots:slots.map(s=>({start:s.start,end:s.end})),_slotConfigV2:true,_breaks:{...breaks},_currentWeek:currentWeek,_weeks:{}};for(const w of ['A','B','C','D']){if(!weeks[w])continue;root._weeks[w]={};for(const d of DAYS)root._weeks[w][d]={enabled:true,courses:weeks[w][d]?.courses||[]}}const current=weeks[currentWeek];for(const d of DAYS)root[d]={enabled:true,courses:current[d].courses};return root}
+function exportState(){const root={_slots:slots.map(s=>({n:s.n,start:s.start,end:s.end})),_slotConfigV2:true,_breaks:{...breaks},_currentWeek:currentWeek,_weeks:{}};for(const w of ['A','B','C','D']){if(!weeks[w])continue;root._weeks[w]={};for(const d of DAYS)root._weeks[w][d]={enabled:true,courses:weeks[w][d]?.courses||[]}}const current=weeks[currentWeek];for(const d of DAYS)root[d]={enabled:true,courses:current[d].courses};return root}
 function save(){normalize();const raw=JSON.stringify(exportState());try{if(window.AndroidSchedule&&AndroidSchedule.saveSchedule)AndroidSchedule.saveSchedule(raw);else localStorage.setItem('edt',raw)}catch(e){}render()}
 function todayKey(){const d=new Date().getDay();return d>=1&&d<=5?d+1:6}
 function currentCourse(day){const now=new Date(),m=now.getHours()*60+now.getMinutes();if(day!==now.getDay()+1)return null;return weeks[currentWeek][day].courses.find(c=>m>=min(c.start)&&m<min(c.end))||null}
@@ -167,25 +168,25 @@ function renderBreakSettings(){$('gapLabel').value=breaks.gapLabel;$('lunchLabel
 function applyBreakSettings(){breaks.gapLabel=$('gapLabel').value.trim()||'Trou';breaks.lunchLabel=$('lunchLabel').value.trim()||'Pause de midi';breaks.showGapBadge=$('showGapBadge').checked;breaks.showLunchBadge=$('showLunchBadge').checked;save()}
 function removeSlotAt(index){
   if(!Number.isInteger(index)||index<0||index>=slots.length||slots.length<=1)return;
-  const removed=index+1;
+  const removed=slots[index].n;
   for(const w of ['A','B','C','D'])if(weeks[w])for(const d of DAYS)for(const c of weeks[w][d].courses){
-    if(c.slot===removed)c.slot=0;else if(c.slot>removed)c.slot--;
+    if(c.slot===removed)c.slot=0;
   }
-  slots.splice(index,1);slots.forEach((x,j)=>x.n=j+1);slotConfigV2=true;save();
+  slots.splice(index,1);slotConfigV2=true;save();
 }
 function renderSlots(){
   const box=$('slotSettings');box.innerHTML='';
   slots.forEach((s,i)=>{
     const row=document.createElement('div');row.className='slotRow';row.dataset.slotIndex=String(i);
-    row.innerHTML=`<div class="slotLead"><div class="slotNum">${i===0?'1ère heure':(i+1)+'ème heure'}</div><button type="button" class="slotRemove" data-slot-index="${i}" aria-label="Supprimer la ${i+1}e heure">×</button></div><input type="time" value="${esc(s.start)}"><input type="time" value="${esc(s.end)}">`;
+    row.innerHTML=`<div class="slotLead"><div class="slotNum">${s.n===1?'1ère heure':s.n+'ème heure'}</div><button type="button" class="slotRemove" data-slot-index="${i}" aria-label="Supprimer la ${s.n}e heure">×</button></div><input type="time" value="${esc(s.start)}"><input type="time" value="${esc(s.end)}">`;
     const inputs=row.querySelectorAll('input');
-    const apply=()=>{slots[i].start=inputs[0].value;slots[i].end=inputs[1].value;for(const w of ['A','B','C','D'])if(weeks[w])for(const d of DAYS)for(const c of weeks[w][d].courses)if(c.slot===i+1){c.start=slots[i].start;c.end=slots[i].end}save()};
+    const apply=()=>{slots[i].start=inputs[0].value;slots[i].end=inputs[1].value;const slotNumber=slots[i].n;for(const w of ['A','B','C','D'])if(weeks[w])for(const d of DAYS)for(const c of weeks[w][d].courses)if(c.slot===slotNumber){c.start=slots[i].start;c.end=slots[i].end}save()};
     inputs[0].onchange=apply;inputs[1].onchange=apply;
     row.querySelector('.slotRemove').onclick=e=>{e.preventDefault();e.stopPropagation();removeSlotAt(Number(e.currentTarget.dataset.slotIndex));return false};
     box.appendChild(row);
   });
   const add=document.createElement('button');add.type='button';add.className='slotAdd';add.textContent='＋ Ajouter une heure';add.hidden=slots.length>=10;
-  add.onclick=e=>{e.preventDefault();if(slots.length>=10)return;const last=slots[slots.length-1],start=last?.end||'08:00',end=clock(Math.min(1439,min(start)+60));slots.push({n:slots.length+1,start,end});slotConfigV2=true;save()};
+  add.onclick=e=>{e.preventDefault();if(slots.length>=10)return;const used=new Set(slots.map(s=>s.n)),n=[1,2,3,4,5,6,7,8,9,10].find(x=>!used.has(x));if(!n)return;const preset=DEFAULT_SLOTS.find(s=>s.n===n),last=slots[slots.length-1],start=preset?.start||last?.end||'08:00',end=preset?.end||clock(Math.min(1439,min(start)+60));slots.push({n,start,end});slots.sort((a,b)=>a.n-b.n);slotConfigV2=true;save()};
   box.appendChild(add);
 }
 window.removeSlotAt680=removeSlotAt;
