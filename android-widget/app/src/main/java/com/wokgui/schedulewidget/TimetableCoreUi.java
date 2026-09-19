@@ -2077,8 +2077,8 @@ final class TimetableCoreUi {
                   const form=document.getElementById('courseForm');if(!form||!form.onsubmit||form.onsubmit.__widgetLabelsV14)return;
                   const old=form.onsubmit;
                   const wrapped=function(e){
-                    const c=editedCourse(),oldKey=c?keyFor(activeWeek,selected,c.start,c.end):null;
-                    const week=typeof activeWeek!=='undefined'?activeWeek:'A',day=typeof selected!=='undefined'?selected:2;
+                    const c=editedCourse(),week=typeof activeWeek!=='undefined'?activeWeek:'A',day=typeof selected!=='undefined'?selected:2;
+                    const oldWeeks=c&&Array.isArray(c.weeks)&&c.weeks.length?c.weeks.slice():[week];
                     const slot=Number((document.getElementById('fSlot')||{}).value||0);let start='',end='';
                     if(slot>0&&typeof slots!=='undefined'&&slots[slot-1]){start=slots[slot-1].start;end=slots[slot-1].end}
                     else if(c){start=c.start;end=c.end}else if(typeof newPrefill!=='undefined'&&newPrefill){start=newPrefill.start;end=newPrefill.end}
@@ -2086,9 +2086,11 @@ final class TimetableCoreUi {
                     const result=old.call(this,e);
                     try{
                       const a=loadAdv();a.widgetCourseLabels=(a.widgetCourseLabels&&typeof a.widgetCourseLabels==='object')?a.widgetCourseLabels:{};
-                      if(oldKey)delete a.widgetCourseLabels[oldKey];const newKey=keyFor(week,day,start,end);
-                      if(widgetLabel)a.widgetCourseLabels[newKey]=widgetLabel;else delete a.widgetCourseLabels[newKey];saveAdv(a);
-                      widgetCourseLabelsCache=Object.assign({},a.widgetCourseLabels);
+                      if(c)oldWeeks.forEach(w=>delete a.widgetCourseLabels[keyFor(w,day,c.start,c.end)]);
+                      const arr=weeks[week]&&weeks[week][day]?weeks[week][day].courses:[],target=arr.find(x=>x.start===start&&x.end===end);
+                      const nextWeeks=target&&Array.isArray(target.weeks)&&target.weeks.length?target.weeks:[week];
+                      nextWeeks.forEach(w=>{const newKey=keyFor(w,day,start,end);if(widgetLabel)a.widgetCourseLabels[newKey]=widgetLabel;else delete a.widgetCourseLabels[newKey]});
+                      saveAdv(a);widgetCourseLabelsCache=Object.assign({},a.widgetCourseLabels);
                     }catch(ex){}
                     return result;
                   };
