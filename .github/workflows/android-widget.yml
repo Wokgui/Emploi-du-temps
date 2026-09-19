@@ -2,7 +2,7 @@ name: Build and validate Android timetable
 
 on:
   push:
-    branches: [feature/widget-week-polish-658, fix/user-feedback-659, fix/calendar-polish-660, fix/widget-compact-661, fix/week-context-navigation-splash-678]
+    branches: [main, feature/widget-week-polish-658, fix/user-feedback-659, fix/calendar-polish-660, fix/widget-compact-661, fix/week-context-navigation-splash-678]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 concurrency:
