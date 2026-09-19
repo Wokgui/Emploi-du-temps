@@ -171,11 +171,18 @@ function fillSlotOptions(selectedSlot,allowCustom,start,end){const sel=$('fSlot'
 function updateSlotPreview(){const n=Number($('fSlot').value);if(n===0){const c=editing!=null?state[selected].courses[editing]:newPrefill;$('slotPreview').textContent=c?`Horaire conservé : ${c.start}–${c.end}`:'Horaire personnalisé'}else{const s=slots[n-1];$('slotPreview').textContent=`Horaire appliqué : ${s.start}–${s.end}`}}
 function courseCycleLetters(){
   try{
-    const a=window.AndroidSchedule&&AndroidSchedule.loadAdvancedSettings?JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}'):{};
-    if(a.singleWeek===true)return ['A'];
-    const n=Math.max(2,Math.min(4,Number(a.cycleLength)||2));return ['A','B','C','D'].slice(0,n);
+    const single=document.documentElement.classList.contains('singleWeek678')||document.documentElement.classList.contains('singleWeekMode')||document.body.classList.contains('singleWeekMode');
+    if(single)return ['A'];
+    const cycle=document.querySelector('.weekCycleChoice678.active'),legacy=document.querySelector('#weekModeBar .weekModeChoice.active');
+    let n=Number(cycle?.dataset?.count||legacy?.dataset?.m||0);
+    if(!n){
+      const tabs=[...document.querySelectorAll('#weekTabs .weekTab')].filter(b=>b.getAttribute('aria-hidden')!=='true'&&b.style.visibility!=='hidden'&&b.style.display!=='none');
+      n=Math.max(2,tabs.length||2);
+    }
+    return ['A','B','C','D'].slice(0,Math.max(2,Math.min(4,n)));
   }catch(e){return ['A','B']}
 }
+window.courseCycleLetters679=courseCycleLetters;
 function ensureCourseWeek(w){
   if(!weeks[w])weeks[w]=clone(weeks.A||DEFAULTS);
   normalizeWeek(weeks[w]);return weeks[w];
