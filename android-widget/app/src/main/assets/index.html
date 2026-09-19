@@ -168,11 +168,16 @@ function renderBreakSettings(){$('gapLabel').value=breaks.gapLabel;$('lunchLabel
 function applyBreakSettings(){breaks.gapLabel=$('gapLabel').value.trim()||'Trou';breaks.lunchLabel=$('lunchLabel').value.trim()||'Pause de midi';breaks.showGapBadge=$('showGapBadge').checked;breaks.showLunchBadge=$('showLunchBadge').checked;save()}
 function removeSlotAt(index){
   if(!Number.isInteger(index)||index<0||index>=slots.length||slots.length<=1)return;
-  const removed=slots[index].n;
-  for(const w of ['A','B','C','D'])if(weeks[w])for(const d of DAYS)for(const c of weeks[w][d].courses){
-    if(c.slot===removed)c.slot=0;
+  const removed=Number(slots[index].n);
+  for(const w of ['A','B','C','D']){
+    if(!weeks[w])continue;
+    for(const d of DAYS){
+      if(!weeks[w][d]||!Array.isArray(weeks[w][d].courses))continue;
+      weeks[w][d].courses=weeks[w][d].courses.filter(c=>Number(c.slot)!==removed);
+    }
   }
   slots.splice(index,1);slotConfigV2=true;save({render:false});renderSlots();
+  try{if(window.invalidateTimetableViews)window.invalidateTimetableViews(['today','week','edit'])}catch(e){}
 }
 function renderSlots(){
   const box=$('slotSettings');box.innerHTML='';
