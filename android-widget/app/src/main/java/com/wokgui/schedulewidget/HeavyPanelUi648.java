@@ -188,7 +188,7 @@ final class HeavyPanelUi648 {
                 const slotOptions=[];
                 let slotLabelsKey='';
                 const fragment=document.createDocumentFragment();fragment.appendChild(customOption);
-                for(let i=0;i<9;i++){
+                for(let i=0;i<10;i++){
                   const option=document.createElement('option');option.value=String(i+1);slotOptions.push(option);fragment.appendChild(option);
                 }
                 slotSelect.replaceChildren(fragment);
@@ -212,11 +212,13 @@ final class HeavyPanelUi648 {
                   if(labelsKey!==slotLabelsKey){
                     slotLabelsKey=labelsKey;
                     for(let i=0;i<slotOptions.length;i++){
-                      const value=currentSlots[i]||{start:'',end:''};
-                      setText(slotOptions[i],periodName(i+1)+' · '+value.start+'–'+value.end);
+                      const value=currentSlots[i],visible=!!value;
+                      setFlag(slotOptions[i],'hidden',!visible);setFlag(slotOptions[i],'disabled',!visible);
+                      setText(slotOptions[i],visible?(periodName(i+1)+' · '+value.start+'–'+value.end):periodName(i+1));
                     }
                   }
-                  const selected=Number.isFinite(Number(selectedSlot))?Number(selectedSlot):1;
+                  let selected=Number.isFinite(Number(selectedSlot))?Number(selectedSlot):1;
+                  if(selected>currentSlots.length&&!custom)selected=currentSlots.length?1:0;
                   setValue(slotSelect,selected===0&&custom?0:selected);
                   const n=Number(slotSelect.value);
                   if(n===0){
