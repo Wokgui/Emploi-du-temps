@@ -133,7 +133,7 @@ function load(){
 }
 window.reloadSchedule=load;
 function exportState(){const root={_slots:slots.map(s=>({n:s.n,start:s.start,end:s.end})),_slotConfigV2:true,_breaks:{...breaks},_currentWeek:currentWeek,_weeks:{}};for(const w of ['A','B','C','D']){if(!weeks[w])continue;root._weeks[w]={};for(const d of DAYS)root._weeks[w][d]={enabled:true,courses:weeks[w][d]?.courses||[]}}const current=weeks[currentWeek];for(const d of DAYS)root[d]={enabled:true,courses:current[d].courses};return root}
-function save(){normalize();const raw=JSON.stringify(exportState());try{if(window.AndroidSchedule&&AndroidSchedule.saveSchedule)AndroidSchedule.saveSchedule(raw);else localStorage.setItem('edt',raw)}catch(e){}render()}
+function save(options){normalize();const raw=JSON.stringify(exportState());try{if(window.AndroidSchedule&&AndroidSchedule.saveSchedule)AndroidSchedule.saveSchedule(raw);else localStorage.setItem('edt',raw)}catch(e){}if(!(options&&options.render===false))render()}
 function todayKey(){const d=new Date().getDay();return d>=1&&d<=5?d+1:6}
 function currentCourse(day){const now=new Date(),m=now.getHours()*60+now.getMinutes();if(day!==now.getDay()+1)return null;return weeks[currentWeek][day].courses.find(c=>m>=min(c.start)&&m<min(c.end))||null}
 function lunch(){if(slots.length<5)return null;const start=slots[3]?.end,end=slots[4]?.start;return start&&end&&min(end)>min(start)?{start,end}:null}
@@ -172,7 +172,7 @@ function removeSlotAt(index){
   for(const w of ['A','B','C','D'])if(weeks[w])for(const d of DAYS)for(const c of weeks[w][d].courses){
     if(c.slot===removed)c.slot=0;
   }
-  slots.splice(index,1);slotConfigV2=true;save();
+  slots.splice(index,1);slotConfigV2=true;save({render:false});renderSlots();
 }
 function renderSlots(){
   const box=$('slotSettings');box.innerHTML='';
@@ -186,14 +186,14 @@ function renderSlots(){
     box.appendChild(row);
   });
   const add=document.createElement('button');add.type='button';add.className='slotAdd';add.textContent='＋ Ajouter une heure';add.hidden=slots.length>=10;
-  add.onclick=e=>{e.preventDefault();if(slots.length>=10)return;const used=new Set(slots.map(s=>s.n)),n=[1,2,3,4,5,6,7,8,9,10].find(x=>!used.has(x));if(!n)return;const preset=DEFAULT_SLOTS.find(s=>s.n===n),last=slots[slots.length-1],start=preset?.start||last?.end||'08:00',end=preset?.end||clock(Math.min(1439,min(start)+60));slots.push({n,start,end});slots.sort((a,b)=>a.n-b.n);slotConfigV2=true;save()};
+  add.onclick=e=>{e.preventDefault();if(slots.length>=10)return;const used=new Set(slots.map(s=>s.n)),n=[1,2,3,4,5,6,7,8,9,10].find(x=>!used.has(x));if(!n)return;const preset=DEFAULT_SLOTS.find(s=>s.n===n),last=slots[slots.length-1],start=preset?.start||last?.end||'08:00',end=preset?.end||clock(Math.min(1439,min(start)+60));slots.push({n,start,end});slots.sort((a,b)=>a.n-b.n);slotConfigV2=true;save({render:false});renderSlots()};
   box.appendChild(add);
 }
 window.removeSlotAt680=removeSlotAt;
 function firstFreeSlot(day){const used=new Set(state[day].courses.map(c=>c.slot).filter(Boolean));return slots.find(s=>!used.has(s.n))?.n||1}
 function slotForTimes(start,end){return slots.find(s=>s.start===start&&s.end===end)?.n||0}
 function fillSlotOptions(selectedSlot,allowCustom,start,end){const sel=$('fSlot');sel.innerHTML='';if(allowCustom&&start&&end){const o=document.createElement('option');o.value='0';o.textContent=`Horaire actuel (${start}–${end})`;sel.appendChild(o)}slots.forEach(s=>{const o=document.createElement('option');o.value=String(s.n);o.textContent=`${s.n===1?'1ère heure':s.n+'ème heure'} · ${s.start}–${s.end}`;sel.appendChild(o)});sel.value=String(selectedSlot);updateSlotPreview()}
-function updateSlotPreview(){const n=Number($('fSlot').value);if(n===0){const c=editing!=null?state[selected].courses[editing]:newPrefill;$('slotPreview').textContent=c?`Horaire conservé : ${c.start}–${c.end}`:'Horaire personnalisé'}else{const s=slots[n-1];$('slotPreview').textContent=`Horaire appliqué : ${s.start}–${s.end}`}}
+function updateSlotPreview(){const n=Number($('fSlot').value);if(n===0){const c=editing!=null?state[selected].courses[editing]:newPrefill;$('slotPreview').textContent=c?`Horaire conservé : ${c.start}–${c.end}`:'Horaire personnalisé'}else{const s=slots.find(x=>Number(x.n)===n);$('slotPreview').textContent=s?`Horaire appliqué : ${s.start}–${s.end}`:''}}
 function courseCycleLetters(){
   try{
     const single=document.documentElement.classList.contains('singleWeek678')||document.documentElement.classList.contains('singleWeekMode')||document.body.classList.contains('singleWeekMode');
@@ -255,7 +255,7 @@ $('fSlot').onchange=updateSlotPreview;
 $('cancelEdit').onclick=()=>{if(window.closeCoursePanel648)window.closeCoursePanel648();else $('modal').classList.remove('show');editing=null;newPrefill=null};
 $('deleteCourse').onclick=()=>{if(editing!=null&&confirm('Supprimer ce cours ?')){const old=state[selected].courses[editing];if(old&&old._series)removeCourseSeries(old._series);else state[selected].courses.splice(editing,1);if(window.closeCoursePanel648)window.closeCoursePanel648();else $('modal').classList.remove('show');editing=null;newPrefill=null;save()}};
 $('modal').onclick=e=>{if(e.target===$('modal'))$('cancelEdit').click()};
-$('courseForm').onsubmit=e=>{e.preventDefault();const slot=Number($('fSlot').value),old=editing!=null?state[selected].courses[editing]:null;let start,end;if(slot>0){start=slots[slot-1].start;end=slots[slot-1].end}else if(old){start=old.start;end=old.end}else if(newPrefill){start=newPrefill.start;end=newPrefill.end}else{return}const label=$('fLabel').value.trim();if(!label)return;const chosen=[...courseWeekSelection].filter(w=>courseCycleLetters().includes(w));if(!chosen.length)return;const series=old?old._series||newCourseSeries():newCourseSeries();if(old&&old._series)removeCourseSeries(old._series);else if(old)state[selected].courses.splice(editing,1);const course={start,end,label,room:$('fRoom').value.trim(),slot,_series:series,weeks:[...chosen]};chosen.forEach(w=>{const week=ensureCourseWeek(w);week[selected].courses.push(course)});state=weeks[activeWeek];if(window.closeCoursePanel648)window.closeCoursePanel648();else $('modal').classList.remove('show');editing=null;newPrefill=null;save()};
+$('courseForm').onsubmit=e=>{e.preventDefault();const slot=Number($('fSlot').value),old=editing!=null?state[selected].courses[editing]:null;let start,end;if(slot>0){const chosenSlot=slots.find(s=>Number(s.n)===slot);if(!chosenSlot)return;start=chosenSlot.start;end=chosenSlot.end}else if(old){start=old.start;end=old.end}else if(newPrefill){start=newPrefill.start;end=newPrefill.end}else{return}const label=$('fLabel').value.trim();if(!label)return;const chosen=[...courseWeekSelection].filter(w=>courseCycleLetters().includes(w));if(!chosen.length)return;const series=old?old._series||newCourseSeries():newCourseSeries();if(old&&old._series)removeCourseSeries(old._series);else if(old)state[selected].courses.splice(editing,1);const course={start,end,label,room:$('fRoom').value.trim(),slot,_series:series,weeks:[...chosen]};chosen.forEach(w=>{const week=ensureCourseWeek(w);week[selected].courses.push(course)});state=weeks[activeWeek];if(window.closeCoursePanel648)window.closeCoursePanel648();else $('modal').classList.remove('show');editing=null;newPrefill=null;save()};
 
 function ocrDay(text){const s=text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(/\blun(?:di)?\b/.test(s))return 2;if(/\bmar(?:di)?\b/.test(s))return 3;if(/\bmer(?:credi)?\b/.test(s))return 4;if(/\bjeu(?:di)?\b/.test(s))return 5;if(/\bven(?:dredi)?\b/.test(s))return 6;return null}
 function ocrTimes(text){const s=String(text).replace(/(\d{1,2})\s*[hH.]\s*([0-5]\d)/g,'$1:$2');const out=[];const re=/\b([0-2]?\d):([0-5]\d)\b/g;let m;while((m=re.exec(s))){const h=Number(m[1]);if(h<24)out.push(String(h).padStart(2,'0')+':'+m[2])}return out}
