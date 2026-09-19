@@ -80,9 +80,12 @@ final class HeavyPanelUi648 {
                 }
                 // A sheet closes on pointer-down. Its matching browser click can land on
                 // the timetable underneath; consume that same gesture before any router.
-                if(pendingClick&&(event.detail>0||event.pointerType||target===pendingClick)){
+                const pointerGenerated=event.detail>0||!!event.pointerType;
+                if(pendingClick&&pointerGenerated){
                   pendingClick=null;event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();return;
                 }
+                // A stale pointer gesture must never swallow keyboard/accessibility activation.
+                if(pendingClick)pendingClick=null;
                 if(!target)return;
                 if(!target.disabled&&inputOwner.route){if(inputOwner.metric)inputOwner.metric(event,performance.now());logInput(target);inputOwner.route(target,event)}
                 event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
