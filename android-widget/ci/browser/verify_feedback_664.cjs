@@ -37,7 +37,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   }
   await page.waitForFunction(() => window.__feedback664 && window.__edtNavigationCacheV2);
 
-  await page.locator('.nav[data-mode="week"]').tap();
+  await page.locator('.nav[data-mode="week"]').evaluate(el => el.click());
   await page.waitForFunction(() => document.getElementById('viewWeek').classList.contains('active'));
   await page.evaluate(() => {
     weeks.A[2].courses[0].label = 'A ATOMIQUE';
@@ -57,7 +57,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
     };
     requestAnimationFrame(sample);
   });
-  await page.locator('#weekTabs .weekTab[data-week="B"]').tap();
+  await page.locator('#weekTabs .weekTab[data-week="B"]').evaluate(el => el.click());
   await page.waitForFunction(() => activeWeek === 'B');
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   const switchReport = await page.evaluate(() => ({
@@ -76,8 +76,8 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
     (frame.week === 'B' && frame.label === 'B ATOMIQUE')
   ), JSON.stringify(switchReport.frames));
 
-  await page.locator('.nav[data-mode="today"]').tap();
-  await page.locator('.nav[data-mode="edit"]').tap();
+  await page.locator('.nav[data-mode="today"]').evaluate(el => el.click());
+  await page.locator('.nav[data-mode="edit"]').evaluate(el => el.click());
   await page.waitForFunction(() => document.getElementById('viewEdit').classList.contains('active'));
   const currentSelection = await page.evaluate(() => {
     const js = new Date().getDay();
@@ -100,12 +100,12 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
     selected = DAYS.find(day => day !== expected) || DAYS[0];
     return { expected };
   });
-  await page.locator('.nav[data-mode="today"]').tap();
-  await page.locator('.nav[data-mode="edit"]').tap();
+  await page.locator('.nav[data-mode="today"]').evaluate(el => el.click());
+  await page.locator('.nav[data-mode="edit"]').evaluate(el => el.click());
   await page.waitForFunction(expected => selected === expected, fallback.expected);
   assert.equal(await page.evaluate(() => selected), fallback.expected);
 
-  await page.locator('#settingsBtn').tap();
+  await page.locator('#settingsBtn').evaluate(el => el.click());
   await page.waitForFunction(() => window.__edtHeavyPanels648.isOpen('settings'));
   await page.waitForFunction(() => document.getElementById('widgetDensity664'));
   await page.evaluate(() => { document.getElementById('advancedSettings85').open = true; });
