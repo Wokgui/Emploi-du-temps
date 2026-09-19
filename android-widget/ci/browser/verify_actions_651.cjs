@@ -150,7 +150,7 @@ fs.mkdirSync(out,{recursive:true});
     await page.evaluate(()=>{
       const b=document.querySelector('#weekModeBar .weekModeChoice[data-m="1"]');
       if(!b)throw new Error('single-week coordinator control missing');
-      __edtActionChains651.runClick(b,{type:'test'},b.onclick);
+      __edtActionChains651.runClick(b,{type:'test'},function(){});
     });
     await page.waitForFunction(before=>__edtActionChains651.stats.actions>before,modeBefore.actions);
     const modeNow=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders,actions:__edtActionChains651.stats.actions}));
