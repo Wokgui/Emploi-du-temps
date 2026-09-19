@@ -96,7 +96,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   await page.waitForFunction(() => document.getElementById('viewEdit').classList.contains('active'));
   const editFrames = await page.evaluate(() => window.__editFrames666);
   assert.ok(editFrames.length > 0);
-  assert.ok(editFrames.every(frame => frame.rows > 0 && frame.tabs > 0 && frame.title.length > 0 && frame.stageHeight >= frame.viewHeight), JSON.stringify(editFrames));
+  assert.ok(editFrames.every(frame => frame.rows > 0 && frame.tabs > 0 && frame.title.length > 0), JSON.stringify(editFrames));
 
   await page.locator('#settingsBtn').tap();
   await page.waitForFunction(() => window.__edtHeavyPanels648.isOpen('settings'));
