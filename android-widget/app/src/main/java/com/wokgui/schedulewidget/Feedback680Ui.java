@@ -42,6 +42,7 @@ final class Feedback680Ui {
                   }
                   html body #settingsWeekCycle678 .weekCurrentChoice678{flex-basis:44px!important}
 
+                  html body #viewWeek #weekGrid#weekGrid{--ft-midi:var(--week658-lunch,#FFE08A)!important}
                   html body #viewWeek #weekGrid#weekGrid .wh.timecol.week658LunchTime,
                   html body #viewWeek #weekGrid#weekGrid .wc.week658Lunch,
                   html body #viewWeek #weekGrid#weekGrid .wc.lunchCell,
@@ -84,10 +85,10 @@ final class Feedback680Ui {
                   const grid=document.getElementById('weekGrid');if(!grid)return;
                   const computed=getComputedStyle(grid);
                   const colour=(computed.getPropertyValue('--week658-lunch')||'').trim()||'#FFE08A';
-                  grid.style.setProperty('--feedback680-lunch',colour);
+                  grid.style.setProperty('--ft-midi',colour,'important');
+                  grid.style.setProperty('--feedback680-lunch',colour,'important');
                   const selector='.wh.timecol.week658LunchTime,.wc.week658Lunch,.wc.lunchCell,.wc.dynamicLunchCell,.wc.nativeLunchCell,.wc.finalLunchCell,.wc.lunch655Synthetic';
                   grid.querySelectorAll(selector).forEach(cell=>{
-                    cell.style.setProperty('background',colour,'important');
                     cell.style.setProperty('background-color',colour,'important');
                     cell.style.setProperty('background-image','none','important');
                     cell.style.setProperty('opacity','1','important');
