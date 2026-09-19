@@ -200,6 +200,10 @@ function renderCourseWeekChoices(course){
     box.appendChild(b);
   });
 }
+window.renderCourseWeekChoices=renderCourseWeekChoices;
+(window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'course-week-scope-679',run:function(){
+  try{const c=editing!=null&&weeks[activeWeek]&&weeks[activeWeek][selected]?weeks[activeWeek][selected].courses[editing]||null:null;renderCourseWeekChoices(c)}catch(e){renderCourseWeekChoices(null)}
+}});
 function removeCourseSeries(series){
   if(!series)return;
   ['A','B','C','D'].forEach(w=>{const week=weeks[w];if(!week)return;DAYS.forEach(d=>{if(week[d]&&Array.isArray(week[d].courses))week[d].courses=week[d].courses.filter(c=>c._series!==series)})});
@@ -209,7 +213,7 @@ $('fSlot').onchange=updateSlotPreview;
 $('cancelEdit').onclick=()=>{if(window.closeCoursePanel648)window.closeCoursePanel648();else $('modal').classList.remove('show');editing=null;newPrefill=null};
 $('deleteCourse').onclick=()=>{if(editing!=null&&confirm('Supprimer ce cours ?')){const old=state[selected].courses[editing];if(old&&old._series)removeCourseSeries(old._series);else state[selected].courses.splice(editing,1);if(window.closeCoursePanel648)window.closeCoursePanel648();else $('modal').classList.remove('show');editing=null;newPrefill=null;save()}};
 $('modal').onclick=e=>{if(e.target===$('modal'))$('cancelEdit').click()};
-$('courseForm').onsubmit=e=>{e.preventDefault();const slot=Number($('fSlot').value),old=editing!=null?state[selected].courses[editing]:null;let start,end;if(slot>0){start=slots[slot-1].start;end=slots[slot-1].end}else if(old){start=old.start;end=old.end}else if(newPrefill){start=newPrefill.start;end=newPrefill.end}else{return}const label=$('fLabel').value.trim();if(!label)return;const chosen=[...courseWeekSelection].filter(w=>courseCycleLetters().includes(w));if(!chosen.length)return;const series=old?old._series||newCourseSeries():newCourseSeries();if(old&&old._series)removeCourseSeries(old._series);else if(old)state[selected].courses.splice(editing,1);chosen.forEach(w=>{const week=ensureCourseWeek(w),course={start,end,label,room:$('fRoom').value.trim(),slot,_series:series,weeks:[...chosen]};week[selected].courses.push(course)});state=weeks[activeWeek];if(window.closeCoursePanel648)window.closeCoursePanel648();else $('modal').classList.remove('show');editing=null;newPrefill=null;save()};
+$('courseForm').onsubmit=e=>{e.preventDefault();const slot=Number($('fSlot').value),old=editing!=null?state[selected].courses[editing]:null;let start,end;if(slot>0){start=slots[slot-1].start;end=slots[slot-1].end}else if(old){start=old.start;end=old.end}else if(newPrefill){start=newPrefill.start;end=newPrefill.end}else{return}const label=$('fLabel').value.trim();if(!label)return;const chosen=[...courseWeekSelection].filter(w=>courseCycleLetters().includes(w));if(!chosen.length)return;const series=old?old._series||newCourseSeries():newCourseSeries();if(old&&old._series)removeCourseSeries(old._series);else if(old)state[selected].courses.splice(editing,1);const course={start,end,label,room:$('fRoom').value.trim(),slot,_series:series,weeks:[...chosen]};chosen.forEach(w=>{const week=ensureCourseWeek(w);week[selected].courses.push(course)});state=weeks[activeWeek];if(window.closeCoursePanel648)window.closeCoursePanel648();else $('modal').classList.remove('show');editing=null;newPrefill=null;save()};
 
 function ocrDay(text){const s=text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(/\blun(?:di)?\b/.test(s))return 2;if(/\bmar(?:di)?\b/.test(s))return 3;if(/\bmer(?:credi)?\b/.test(s))return 4;if(/\bjeu(?:di)?\b/.test(s))return 5;if(/\bven(?:dredi)?\b/.test(s))return 6;return null}
 function ocrTimes(text){const s=String(text).replace(/(\d{1,2})\s*[hH.]\s*([0-5]\d)/g,'$1:$2');const out=[];const re=/\b([0-2]?\d):([0-5]\d)\b/g;let m;while((m=re.exec(s))){const h=Number(m[1]);if(h<24)out.push(String(h).padStart(2,'0')+':'+m[2])}return out}
