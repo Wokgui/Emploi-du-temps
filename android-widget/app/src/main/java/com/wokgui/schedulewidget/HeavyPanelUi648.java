@@ -31,7 +31,7 @@ final class HeavyPanelUi648 {
               }
               function inputTarget(node){
                 if(!node||!node.closest)return null;
-                const target=node.closest('#settingsBtn,#settingsX,#settingsDone,#addCourse,#cancelEdit,.editCourse,.todayCourse,.wc');
+                const target=node.closest('#settingsBtn,#settingsX,#settingsDone,#addCourse,#cancelEdit,.slotRemove,.slotAdd,.editCourse,.todayCourse,.wc');
                 if(target)return target;
                 // Only the backdrop itself closes a sheet; fields and inner controls keep
                 // their native focus, scrolling and form behaviour.
