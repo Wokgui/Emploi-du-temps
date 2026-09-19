@@ -191,8 +191,8 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
   assert.equal(weekUi.lunchColours.length, 1, JSON.stringify(weekUi));
 
   const gradle = fs.readFileSync(path.join(root, 'app/build.gradle'), 'utf8');
-  assert.match(gradle, /versionCode 679001/);
-  assert.match(gradle, /versionName '6\.79'/);
+  assert.match(gradle, /versionCode 684001/);
+  assert.match(gradle, /versionName '6\.84'/);
   assert.deepEqual(errors, [], errors.join('\n'));
 
   console.log('feedback_679_nav_feedback_is_immediate=passed');
