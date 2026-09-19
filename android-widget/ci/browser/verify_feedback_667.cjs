@@ -132,8 +132,9 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   assert.ok(!/android:configure=/.test(widgetInfo));
   const preview = fs.readFileSync(path.resolve(__dirname, '../../app/src/main/res/layout/widget_preview_condensed.xml'), 'utf8');
   const lunch = preview.slice(preview.indexOf('android:background="#FFE08A"') - 600, preview.indexOf('android:background="#FFE08A"') + 200);
-  assert.match(lunch, /android:layout_height="20dp"/);
-  assert.ok(!/android:layout_height="0dp"/.test(lunch));
+  assert.match(lunch, /android:layout_height="0dp"/);
+  assert.match(lunch, /android:layout_weight="1"/);
+  assert.ok(!/android:layout_height="20dp"/.test(lunch));
   assert.match(preview, /android:gravity="center_vertical"/);
 
   const advanced = fs.readFileSync(path.resolve(__dirname, '../../app/src/main/java/com/wokgui/schedulewidget/AdvancedSettingsStore.java'), 'utf8');
