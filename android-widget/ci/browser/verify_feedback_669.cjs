@@ -35,7 +35,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
   }
   await page.waitForFunction(() => window.__feedback666);
-  await page.locator('.nav[data-mode="week"]').tap();
+  await page.locator('.nav[data-mode="week"]').evaluate(el => el.click());
   await page.waitForFunction(() => document.getElementById('viewWeek').classList.contains('active'));
   await page.evaluate(() => {
     const makeDay = (prefix, afternoon) => ({ enabled: true, courses: [
@@ -67,7 +67,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
     }).observe(window.__weekGridRef668.parentNode, { childList: true });  });
   for (let i = 0; i < 80; i++) {
     const letter = i % 2 ? 'A' : 'B';
-    await page.locator('#weekTabs .weekTab[data-week="' + letter + '"]').tap();
+    await page.locator('#weekTabs .weekTab[data-week="' + letter + '"]').evaluate(el => el.click());
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve)))))));
     const frame = await page.evaluate(() => {
       const grid = document.getElementById('weekGrid');
