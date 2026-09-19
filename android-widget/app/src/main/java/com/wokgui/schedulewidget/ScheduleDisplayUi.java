@@ -961,7 +961,7 @@ final class ScheduleDisplayUi {
 
                 function polishSettings(){
                   installBreakVisibility();
-                  const title=document.querySelectorAll('#viewEdit .sectionHead h3');title.forEach(h=>{const s=(h.textContent||'').toLowerCase();if(s.includes('horaire')||s.includes('period')||s.includes('stunden'))h.textContent=tr('Horaires des 9 heures','9 period times','Zeiten der 9 Stunden')});
+                  const title=document.querySelectorAll('#viewEdit .sectionHead h3');title.forEach(h=>{const s=(h.textContent||'').toLowerCase();if(s.includes('horaire')||s.includes('period')||s.includes('stunden'))h.textContent=tr('Horaires des cours','Course times','Unterrichtszeiten')});
                   const v=document.getElementById('appVersionInfo');if(v)v.textContent='Version '+APP_VERSION;
                 }
 
