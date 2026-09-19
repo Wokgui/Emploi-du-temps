@@ -364,7 +364,6 @@ final class TimetableCoreUi {
                   try{
                     if(typeof slots==='undefined'||!Array.isArray(slots)||!slots.length)return;
                     if(slots.length>10)slots.splice(10);
-                    slots.forEach((s,i)=>s.n=i+1);
                     document.querySelectorAll('#viewEdit .sectionHead h3').forEach(h=>{if(/Horaires|period times|Zeiten/i.test(h.textContent||''))h.textContent=tr('Horaires des cours','Course times','Unterrichtszeiten')});
                   }catch(e){}
                 }
@@ -372,9 +371,9 @@ final class TimetableCoreUi {
                 function prettySlotRows(){
                   ensureNineSlots();
                   const rows=document.querySelectorAll('#slotSettings .slotRow');
-                  rows.forEach((row,i)=>{const n=row.querySelector('.slotNum');if(n)n.textContent=slotName(i)});
+                  rows.forEach((row,i)=>{const n=row.querySelector('.slotNum'),slot=slots[i];if(n&&slot)n.textContent=slotName(Math.max(0,(Number(slot.n)||i+1)-1))});
                   const sel=document.getElementById('fSlot');
-                  if(sel){[...sel.options].forEach(o=>{const n=Number(o.value);if(n>0&&slots[n-1])o.textContent=slotName(n-1)+' · '+slots[n-1].start+'–'+slots[n-1].end})}
+                  if(sel){[...sel.options].forEach(o=>{const n=Number(o.value),slot=slots.find(s=>Number(s.n)===n);if(n>0&&slot)o.textContent=slotName(n-1)+' · '+slot.start+'–'+slot.end})}
                 }
 
                 function wrapSlots(){
