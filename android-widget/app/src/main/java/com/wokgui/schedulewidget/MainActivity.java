@@ -168,20 +168,31 @@ public class MainActivity extends Activity {
 
     private void revealWebViewNow() {
         if (webView == null || !pageLoaded) return;
+        if (startupOverlay != null && startupOverlay.getVisibility() == View.VISIBLE) {
+            // Never cross-fade the blue startup layer over live timetable content:
+            // it visibly changes the lunch colour during the first rendered frame.
+            webView.setAlpha(0f);
+            webView.setVisibility(View.INVISIBLE);
+            startupOverlay.animate().cancel();
+            startupOverlay.animate()
+                    .alpha(0f)
+                    .setDuration(70L)
+                    .withEndAction(() -> {
+                        if (startupOverlay != null) {
+                            startupOverlay.setVisibility(View.GONE);
+                            startupOverlay.setAlpha(1f);
+                        }
+                        if (webView == null || !pageLoaded) return;
+                        webView.setAlpha(1f);
+                        webView.setVisibility(View.VISIBLE);
+                        hideResumeSnapshotAfterStableFrame();
+                    })
+                    .start();
+            return;
+        }
         webView.setAlpha(1f);
         webView.setVisibility(View.VISIBLE);
         hideResumeSnapshotAfterStableFrame();
-        if (startupOverlay == null || startupOverlay.getVisibility() != View.VISIBLE) return;
-        startupOverlay.animate().cancel();
-        startupOverlay.animate()
-                .alpha(0f)
-                .setDuration(140L)
-                .withEndAction(() -> {
-                    if (startupOverlay == null) return;
-                    startupOverlay.setVisibility(View.GONE);
-                    startupOverlay.setAlpha(1f);
-                })
-                .start();
     }
 
     private void captureResumeSnapshot() {
