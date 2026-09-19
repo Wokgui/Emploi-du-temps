@@ -60,5 +60,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: emploi-du-temps-widget-apk
-          path: android-widget/app/build/outputs/apk/debug/emploi-du-temps-widget-6.78.apk
+          path: android-widget/app/build/outputs/apk/debug/emploi-du-temps-widget-6.79.apk
           if-no-files-found: error
