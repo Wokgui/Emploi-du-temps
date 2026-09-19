@@ -180,9 +180,10 @@ function renderSlots(){
     row.innerHTML=`<div class="slotLead"><div class="slotNum">${i===0?'1ère heure':(i+1)+'ème heure'}</div><button type="button" class="slotRemove" data-slot-index="${i}" aria-label="Supprimer la ${i+1}e heure">×</button></div><input type="time" value="${esc(s.start)}"><input type="time" value="${esc(s.end)}">`;
     const inputs=row.querySelectorAll('input');
     const apply=()=>{slots[i].start=inputs[0].value;slots[i].end=inputs[1].value;for(const w of ['A','B','C','D'])if(weeks[w])for(const d of DAYS)for(const c of weeks[w][d].courses)if(c.slot===i+1){c.start=slots[i].start;c.end=slots[i].end}save()};
-    inputs[0].onchange=apply;inputs[1].onchange=apply;box.appendChild(row);
+    inputs[0].onchange=apply;inputs[1].onchange=apply;
+    row.querySelector('.slotRemove').onclick=e=>{e.preventDefault();e.stopPropagation();removeSlotAt(Number(e.currentTarget.dataset.slotIndex));return false};
+    box.appendChild(row);
   });
-  box.onclick=e=>{const button=e.target&&e.target.closest?e.target.closest('.slotRemove'):null;if(!button||!box.contains(button))return;e.preventDefault();e.stopPropagation();removeSlotAt(Number(button.dataset.slotIndex))};
   const add=document.createElement('button');add.type='button';add.className='slotAdd';add.textContent='＋ Ajouter une heure';add.hidden=slots.length>=10;
   add.onclick=e=>{e.preventDefault();if(slots.length>=10)return;const last=slots[slots.length-1],start=last?.end||'08:00',end=clock(Math.min(1439,min(start)+60));slots.push({n:slots.length+1,start,end});slotConfigV2=true;save()};
   box.appendChild(add);
