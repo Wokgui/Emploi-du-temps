@@ -155,8 +155,8 @@ const frames = count => new Promise(resolve => {
   assert.match(feedback, /box-sizing:border-box!important/);
   assert.match(feedback, /edtWeekTight674/);
   assert.match(priorFeedback, /cover\.style\.zIndex='11'/);
-  assert.match(gradle, /versionCode 674001/);
-  assert.match(gradle, /versionName '6\.74'/);
+  assert.match(gradle, /versionCode 675001/);
+  assert.match(gradle, /versionName '6\.75'/);
   assert.deepEqual(errors, []);
   console.log('feedback_674_standard_widget_left_time=passed');
   console.log('feedback_674_condensed_default_three_rows=passed');

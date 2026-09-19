@@ -573,17 +573,25 @@ public class UpcomingCoursesService extends RemoteViewsService {
             v.setViewVisibility(R.id.rowCondensedContent, View.GONE);
             v.setViewVisibility(R.id.rowMiniContent, View.VISIBLE);
             v.setTextViewText(R.id.rowMiniTitle, "Emploi du temps");
-            v.setTextViewText(R.id.rowMiniDate, dateLabel(targetDate));
 
             float scale = UiSettingsStore.widgetFontScale(context);
-            v.setTextViewTextSize(R.id.rowMiniTitle, TypedValue.COMPLEX_UNIT_SP, 10f * scale);
-            v.setTextViewTextSize(R.id.rowMiniDate, TypedValue.COMPLEX_UNIT_SP, 8f * scale);
+            Bundle options = widgetId == AppWidgetManager.INVALID_APPWIDGET_ID ? null
+                    : AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId);
+            boolean landscape = context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
+            int minWidth = options == null ? 0 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0);
+            int maxWidth = options == null ? 0 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0);
+            int widgetWidth = landscape ? Math.max(minWidth, maxWidth) : (minWidth > 0 ? minWidth : maxWidth);
+            boolean narrowHeader = widgetWidth > 0 && widgetWidth <= 140;
+            boolean compactHeader = widgetWidth > 0 && widgetWidth <= 190;
+            v.setTextViewText(R.id.rowMiniDate, narrowHeader ? compactDateLabel(targetDate) : dateLabel(targetDate));
+            v.setTextViewTextSize(R.id.rowMiniTitle, TypedValue.COMPLEX_UNIT_SP,
+                    (narrowHeader ? 7f : (compactHeader ? 8f : 10f)) * scale);
+            v.setTextViewTextSize(R.id.rowMiniDate, TypedValue.COMPLEX_UNIT_SP,
+                    (narrowHeader ? 6f : (compactHeader ? 7f : 8f)) * scale);
 
             if (AdvancedSettingsStore.widgetAutoDensity(context)
                     && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                     && widgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
-                Bundle options = AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId);
-                boolean landscape = context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
                 int minHeight = options == null ? 0 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0);
                 int maxHeight = options == null ? 0 : options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0);
                 int contentHeight = WidgetHeightSizing.contentHeightDp(minHeight, maxHeight, landscape,
@@ -641,6 +649,11 @@ public class UpcomingCoursesService extends RemoteViewsService {
             Locale locale = "de".equals(lang) ? Locale.GERMANY : ("en".equals(lang) ? Locale.UK : Locale.FRANCE);
             String pattern = "de".equals(lang) ? "EEE d. MMM" : "EEE d MMM";
             return new SimpleDateFormat(pattern, locale).format(date.getTime()) + " - " + ScheduleStore.getWeekLetter(context, date);
+        }
+
+        private String compactDateLabel(Calendar date) {
+            return new SimpleDateFormat("dd/MM", Locale.FRANCE).format(date.getTime())
+                    + " · " + ScheduleStore.getWeekLetter(context, date);
         }
 
         @Override public RemoteViews getLoadingView() { return null; }

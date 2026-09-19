@@ -27,17 +27,23 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center_vertical"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
             android:text="Emploi du temps"
             android:textColor="#17213A"
-            android:textSize="10sp"
+            android:textSize="7sp"
             android:textStyle="bold" />
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:gravity="center_vertical"
-            android:text="lun. 14 sept. · A"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:text="14/09 · A"
             android:textColor="#64748B"
-            android:textSize="8sp" />
+            android:textSize="6sp" />
     </LinearLayout>
 
     <LinearLayout
