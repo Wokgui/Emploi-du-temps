@@ -34,7 +34,7 @@ button,input,select{font:inherit}button{touch-action:manipulation;-webkit-tap-hi
 .slots{overflow:hidden}.slotRow{display:grid;grid-template-columns:92px 1fr 1fr;align-items:center;gap:6px;padding:6px 8px;border-top:1px solid #e9edf2}.slotRow:first-child{border-top:0}.slotNum{font-weight:800;color:#0c71d2;font-size:.75rem}.slotRow input{width:100%;border:1px solid var(--line);border-radius:6px;padding:7px 5px;font-size:.76rem;background:#fff;color:var(--ink)}
 .bottom{position:fixed;left:0;right:0;bottom:0;z-index:12;background:#ffffffef;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);padding:4px 7px calc(4px + env(safe-area-inset-bottom));backdrop-filter:blur(12px)}
 .nav{border:0;background:transparent;color:#777;padding:5px 3px;font-size:.72rem}.nav span{display:block;font-size:1.05rem;margin-bottom:0}.nav.active{color:var(--blue);font-weight:800}
-.modal{position:fixed;inset:0;z-index:30;background:#0b17384f;display:none;align-items:flex-end}.modal.show{display:flex}.sheet{width:100%;max-width:780px;margin:auto;background:#fff;padding:14px;border-radius:12px 12px 0 0;max-height:86vh;overflow:auto}.sheet h3{margin:0 0 10px;text-align:center}.field{margin-bottom:8px}.field label{display:block;color:var(--muted);font-size:.74rem;margin-bottom:3px}.field input,.field select{width:100%;border:1px solid var(--line);border-radius:7px;padding:9px;font:inherit;background:#fff;color:var(--ink)}.slotPreview{background:var(--soft);border:1px solid #d9eaff;border-radius:7px;padding:8px 10px;margin-bottom:8px;color:#31516f;font-size:.80rem}.sheetActions{display:flex;justify-content:space-between;gap:7px;margin-top:7px}.rightActions{display:flex;gap:7px}.btn{padding:9px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;font-weight:760}.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn.danger{color:var(--danger);border-color:#f0b9c4;background:#fff5f7}.btn[hidden]{display:none}
+.modal{position:fixed;inset:0;z-index:30;background:#0b17384f;display:none;align-items:flex-end}.modal.show{display:flex}.sheet{width:100%;max-width:780px;margin:auto;background:#fff;padding:14px;border-radius:12px 12px 0 0;max-height:86vh;overflow:auto}.sheet h3{margin:0 0 10px;text-align:center}.field{margin-bottom:8px}.field label{display:block;color:var(--muted);font-size:.74rem;margin-bottom:3px}.field input,.field select{width:100%;border:1px solid var(--line);border-radius:7px;padding:9px;font:inherit;background:#fff;color:var(--ink)}.courseWeekChoices{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:7px}.courseWeekChoice{min-width:44px;min-height:34px;border:1px solid #cbd7e6;border-radius:999px;background:#fff;color:#40516a;font-size:.78rem;font-weight:850;padding:6px 12px}.courseWeekChoice.active{background:var(--blue);border-color:var(--blue);color:#fff}.courseWeekChoice:active{transform:translateY(1px)}.slotPreview{background:var(--soft);border:1px solid #d9eaff;border-radius:7px;padding:8px 10px;margin-bottom:8px;color:#31516f;font-size:.80rem}.sheetActions{display:flex;justify-content:space-between;gap:7px;margin-top:7px}.rightActions{display:flex;gap:7px}.btn{padding:9px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;font-weight:760}.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn.danger{color:var(--danger);border-color:#f0b9c4;background:#fff5f7}.btn[hidden]{display:none}
 @media(max-width:560px){body{font-size:14px}.wrap{padding-left:6px;padding-right:6px}.header{height:78px;padding-top:17px}.header h1{font-size:1.38rem}.contextBar{height:37px;padding-left:7px;padding-right:7px}.todayCourse{min-height:42px}.weekGrid{grid-template-columns:39px repeat(5,minmax(0,1fr))}.wh,.wc{min-height:36px}.wc .cellLabel{font-size:.57rem}.wc .cellRoom{font-size:.50rem}}
 </style>
 </head>
@@ -84,6 +84,7 @@ button,input,select{font:inherit}button{touch-action:manipulation;-webkit-tap-hi
   <h3 id="modalTitle">Ajouter un cours</h3>
   <div class="field"><label>Heure de cours</label><select id="fSlot"></select></div>
   <div id="slotPreview" class="slotPreview"></div>
+  <div id="courseWeekField" class="field"><label>Semaines concernées</label><div id="courseWeekChoices" class="courseWeekChoices"></div></div>
   <div class="field"><label>Classe / groupe</label><input id="fLabel" type="text" maxlength="80" required></div>
   <div class="field"><label>Salle</label><input id="fRoom" type="text" maxlength="20"></div>
   <div class="sheetActions"><button id="deleteCourse" type="button" class="btn danger" hidden>Supprimer</button><div class="rightActions"><button id="cancelEdit" type="button" class="btn">Annuler</button><button type="submit" class="btn primary">Enregistrer</button></div></div>
@@ -103,7 +104,7 @@ const DEFAULTS={
 for(const d of DAYS)DEFAULTS[d].courses=DEFAULTS[d].courses.map(c=>({start:c[0],end:c[1],label:c[2],room:c[3],slot:c[4]}));
 const clone=o=>JSON.parse(JSON.stringify(o));
 const OPENING_DAY=(()=>{const d=new Date().getDay();return d>=1&&d<=5?d+1:6})();
-let weeks={A:clone(DEFAULTS),B:clone(DEFAULTS)},state=weeks.A,slots=clone(DEFAULT_SLOTS),breaks={gapLabel:'Trou',lunchLabel:'Pause de midi',showGapBadge:true,showLunchBadge:true},mode='today',selected=OPENING_DAY,editing=null,newPrefill=null,currentWeek='A',activeWeek='A';
+let weeks={A:clone(DEFAULTS),B:clone(DEFAULTS)},state=weeks.A,slots=clone(DEFAULT_SLOTS),breaks={gapLabel:'Trou',lunchLabel:'Pause de midi',showGapBadge:true,showLunchBadge:true},mode='today',selected=OPENING_DAY,editing=null,newPrefill=null,currentWeek='A',activeWeek='A',courseWeekSelection=new Set(['A']);
 const $=id=>document.getElementById(id),min=t=>{const [h,m]=(t||'00:00').split(':').map(Number);return h*60+m},clock=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 function normalizeWeek(obj){
@@ -168,12 +169,47 @@ function firstFreeSlot(day){const used=new Set(state[day].courses.map(c=>c.slot)
 function slotForTimes(start,end){return slots.find(s=>s.start===start&&s.end===end)?.n||0}
 function fillSlotOptions(selectedSlot,allowCustom,start,end){const sel=$('fSlot');sel.innerHTML='';if(allowCustom&&start&&end){const o=document.createElement('option');o.value='0';o.textContent=`Horaire actuel (${start}–${end})`;sel.appendChild(o)}slots.forEach(s=>{const o=document.createElement('option');o.value=String(s.n);o.textContent=`${s.n===1?'1ère heure':s.n+'ème heure'} · ${s.start}–${s.end}`;sel.appendChild(o)});sel.value=String(selectedSlot);updateSlotPreview()}
 function updateSlotPreview(){const n=Number($('fSlot').value);if(n===0){const c=editing!=null?state[selected].courses[editing]:newPrefill;$('slotPreview').textContent=c?`Horaire conservé : ${c.start}–${c.end}`:'Horaire personnalisé'}else{const s=slots[n-1];$('slotPreview').textContent=`Horaire appliqué : ${s.start}–${s.end}`}}
-function openEditor(index){state=weeks[activeWeek];editing=index;const c=index!=null?state[selected].courses[index]:null;$('modalTitle').textContent=c?`Modifier · Semaine ${activeWeek}`:`Ajouter · Semaine ${activeWeek}`;$('fLabel').value=c?.label||'';$('fRoom').value=c?.room||'';$('deleteCourse').hidden=!c;let chosen;if(c)chosen=c.slot||slotForTimes(c.start,c.end)||0;else if(newPrefill)chosen=slotForTimes(newPrefill.start,newPrefill.end)||0;else chosen=firstFreeSlot(selected);fillSlotOptions(chosen,!!c||!!newPrefill,c?.start||newPrefill?.start,c?.end||newPrefill?.end);$('modal').classList.add('show')}
+function courseCycleLetters(){
+  try{
+    const a=window.AndroidSchedule&&AndroidSchedule.loadAdvancedSettings?JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}'):{};
+    if(a.singleWeek===true)return ['A'];
+    const n=Math.max(2,Math.min(4,Number(a.cycleLength)||2));return ['A','B','C','D'].slice(0,n);
+  }catch(e){return ['A','B']}
+}
+function ensureCourseWeek(w){
+  if(!weeks[w])weeks[w]=clone(weeks.A||DEFAULTS);
+  normalizeWeek(weeks[w]);return weeks[w];
+}
+function newCourseSeries(){return 'course-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,9)}
+function courseSeriesWeeks(course){
+  const letters=courseCycleLetters();
+  if(course&&Array.isArray(course.weeks)){const saved=course.weeks.filter(w=>letters.includes(w));if(saved.length)return saved}
+  if(course&&course._series){
+    const found=letters.filter(w=>{const week=weeks[w];return week&&DAYS.some(d=>(week[d]?.courses||[]).some(c=>c._series===course._series))});
+    if(found.length)return found;
+  }
+  return [letters.includes(activeWeek)?activeWeek:letters[0]];
+}
+function renderCourseWeekChoices(course){
+  const letters=courseCycleLetters(),field=$('courseWeekField'),box=$('courseWeekChoices');if(!field||!box)return;
+  const initial=course?courseSeriesWeeks(course):[letters.includes(activeWeek)?activeWeek:letters[0]];
+  courseWeekSelection=new Set(initial);field.hidden=letters.length===1;box.innerHTML='';
+  letters.forEach(w=>{const b=document.createElement('button');b.type='button';b.className='courseWeekChoice';b.textContent=w;
+    const sync=()=>{const on=courseWeekSelection.has(w);b.classList.toggle('active',on);b.setAttribute('aria-pressed',on?'true':'false')};sync();
+    b.onclick=()=>{if(courseWeekSelection.has(w)){if(courseWeekSelection.size>1)courseWeekSelection.delete(w)}else courseWeekSelection.add(w);sync()};
+    box.appendChild(b);
+  });
+}
+function removeCourseSeries(series){
+  if(!series)return;
+  ['A','B','C','D'].forEach(w=>{const week=weeks[w];if(!week)return;DAYS.forEach(d=>{if(week[d]&&Array.isArray(week[d].courses))week[d].courses=week[d].courses.filter(c=>c._series!==series)})});
+}
+function openEditor(index){state=weeks[activeWeek];editing=index;const c=index!=null?state[selected].courses[index]:null;$('modalTitle').textContent=c?'Modifier le cours':'Ajouter un cours';$('fLabel').value=c?.label||'';$('fRoom').value=c?.room||'';$('deleteCourse').hidden=!c;renderCourseWeekChoices(c);let chosen;if(c)chosen=c.slot||slotForTimes(c.start,c.end)||0;else if(newPrefill)chosen=slotForTimes(newPrefill.start,newPrefill.end)||0;else chosen=firstFreeSlot(selected);fillSlotOptions(chosen,!!c||!!newPrefill,c?.start||newPrefill?.start,c?.end||newPrefill?.end);$('modal').classList.add('show')}
 $('fSlot').onchange=updateSlotPreview;
 $('cancelEdit').onclick=()=>{if(window.closeCoursePanel648)window.closeCoursePanel648();else $('modal').classList.remove('show');editing=null;newPrefill=null};
-$('deleteCourse').onclick=()=>{if(editing!=null&&confirm('Supprimer ce cours ?')){state[selected].courses.splice(editing,1);if(window.closeCoursePanel648)window.closeCoursePanel648();else $('modal').classList.remove('show');editing=null;newPrefill=null;save()}};
+$('deleteCourse').onclick=()=>{if(editing!=null&&confirm('Supprimer ce cours ?')){const old=state[selected].courses[editing];if(old&&old._series)removeCourseSeries(old._series);else state[selected].courses.splice(editing,1);if(window.closeCoursePanel648)window.closeCoursePanel648();else $('modal').classList.remove('show');editing=null;newPrefill=null;save()}};
 $('modal').onclick=e=>{if(e.target===$('modal'))$('cancelEdit').click()};
-$('courseForm').onsubmit=e=>{e.preventDefault();const slot=Number($('fSlot').value),old=editing!=null?state[selected].courses[editing]:null;let start,end;if(slot>0){start=slots[slot-1].start;end=slots[slot-1].end}else if(old){start=old.start;end=old.end}else if(newPrefill){start=newPrefill.start;end=newPrefill.end}else{return}const course={start,end,label:$('fLabel').value.trim(),room:$('fRoom').value.trim(),slot};if(editing!=null)state[selected].courses[editing]=course;else state[selected].courses.push(course);if(window.closeCoursePanel648)window.closeCoursePanel648();else $('modal').classList.remove('show');editing=null;newPrefill=null;save()};
+$('courseForm').onsubmit=e=>{e.preventDefault();const slot=Number($('fSlot').value),old=editing!=null?state[selected].courses[editing]:null;let start,end;if(slot>0){start=slots[slot-1].start;end=slots[slot-1].end}else if(old){start=old.start;end=old.end}else if(newPrefill){start=newPrefill.start;end=newPrefill.end}else{return}const label=$('fLabel').value.trim();if(!label)return;const chosen=[...courseWeekSelection].filter(w=>courseCycleLetters().includes(w));if(!chosen.length)return;const series=old?old._series||newCourseSeries():newCourseSeries();if(old&&old._series)removeCourseSeries(old._series);else if(old)state[selected].courses.splice(editing,1);chosen.forEach(w=>{const week=ensureCourseWeek(w),course={start,end,label,room:$('fRoom').value.trim(),slot,_series:series,weeks:[...chosen]};week[selected].courses.push(course)});state=weeks[activeWeek];if(window.closeCoursePanel648)window.closeCoursePanel648();else $('modal').classList.remove('show');editing=null;newPrefill=null;save()};
 
 function ocrDay(text){const s=text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(/\blun(?:di)?\b/.test(s))return 2;if(/\bmar(?:di)?\b/.test(s))return 3;if(/\bmer(?:credi)?\b/.test(s))return 4;if(/\bjeu(?:di)?\b/.test(s))return 5;if(/\bven(?:dredi)?\b/.test(s))return 6;return null}
 function ocrTimes(text){const s=String(text).replace(/(\d{1,2})\s*[hH.]\s*([0-5]\d)/g,'$1:$2');const out=[];const re=/\b([0-2]?\d):([0-5]\d)\b/g;let m;while((m=re.exec(s))){const h=Number(m[1]);if(h<24)out.push(String(h).padStart(2,'0')+':'+m[2])}return out}
