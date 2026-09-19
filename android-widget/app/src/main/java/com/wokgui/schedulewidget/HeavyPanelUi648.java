@@ -208,23 +208,24 @@ final class HeavyPanelUi648 {
                   setFlag(customOption,'hidden',!custom);setFlag(customOption,'disabled',!custom);
                   setText(customOption,custom?(lang==='de'?'Aktuelle Zeit ('+start+'–'+end+')':(lang==='en'?'Current time ('+start+'–'+end+')':'Horaire actuel ('+start+'–'+end+')')):'');
                   const currentSlots=typeof slots!=='undefined'?slots:[];
-                  const labelsKey=lang+'|'+currentSlots.map(function(value){return (value&&value.start||'')+'-'+(value&&value.end||'')}).join('|');
+                  const byNumber=new Map(currentSlots.map(function(value,index){return [Number(value&&value.n)||index+1,value]}));
+                  const labelsKey=lang+'|'+currentSlots.map(function(value,index){return (Number(value&&value.n)||index+1)+':'+(value&&value.start||'')+'-'+(value&&value.end||'')}).join('|');
                   if(labelsKey!==slotLabelsKey){
                     slotLabelsKey=labelsKey;
                     for(let i=0;i<slotOptions.length;i++){
-                      const value=currentSlots[i],visible=!!value;
+                      const number=i+1,value=byNumber.get(number),visible=!!value;
                       setFlag(slotOptions[i],'hidden',!visible);setFlag(slotOptions[i],'disabled',!visible);
-                      setText(slotOptions[i],visible?(periodName(i+1)+' · '+value.start+'–'+value.end):periodName(i+1));
+                      setText(slotOptions[i],visible?(periodName(number)+' · '+value.start+'–'+value.end):periodName(number));
                     }
                   }
                   let selected=Number.isFinite(Number(selectedSlot))?Number(selectedSlot):1;
-                  if(selected>currentSlots.length&&!custom)selected=currentSlots.length?1:0;
+                  if(!byNumber.has(selected)&&!custom)selected=currentSlots.length?(Number(currentSlots[0].n)||1):0;
                   setValue(slotSelect,selected===0&&custom?0:selected);
                   const n=Number(slotSelect.value);
                   if(n===0){
                     setText(slotPreview,lang==='de'?'Zeit beibehalten: '+start+'–'+end:(lang==='en'?'Time kept: '+start+'–'+end:'Horaire conservé : '+start+'–'+end));
                   }else{
-                    const value=(typeof slots!=='undefined'&&slots[n-1])?slots[n-1]:{start:'',end:''};
+                    const value=byNumber.get(n)||{start:'',end:''};
                     setText(slotPreview,lang==='de'?'Angewandte Zeit: '+value.start+'–'+value.end:(lang==='en'?'Applied time: '+value.start+'–'+value.end:'Horaire appliqué : '+value.start+'–'+value.end));
                   }
                 }
