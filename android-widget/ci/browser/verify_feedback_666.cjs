@@ -36,7 +36,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   }
   await page.waitForFunction(() => window.__feedback666 && window.__edtNavigationCacheV2);
 
-  await page.locator('.nav[data-mode="week"]').evaluate(el => el.click());
+  await page.locator('.nav[data-mode="week"]').tap();
   await page.waitForFunction(() => document.getElementById('viewWeek').classList.contains('active'));
   await page.evaluate(() => {
     const day = label => ({ enabled: true, courses: [
@@ -65,7 +65,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   assert.equal(await page.locator('#weekGridStable666').count(), 0);
   assert.equal(await page.evaluate(() => window.__feedback666 === true), true);
 
-  await page.locator('.nav[data-mode="today"]').evaluate(el => el.click());
+  await page.locator('.nav[data-mode="today"]').tap();
   await page.evaluate(() => {
     const edit = document.getElementById('viewEdit');
     document.getElementById('editList').innerHTML = '';
@@ -81,13 +81,13 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
       }
     }).observe(edit, { attributes: true, attributeFilter: ['class'] });
   });
-  await page.locator('.nav[data-mode="edit"]').evaluate(el => el.click());
+  await page.locator('.nav[data-mode="edit"]').tap();
   await page.waitForFunction(() => document.getElementById('viewEdit').classList.contains('active'));
   const editFrames = await page.evaluate(() => window.__editFrames666);
   assert.ok(editFrames.length > 0);
   assert.ok(editFrames.every(frame => frame.rows > 0 && frame.tabs > 0 && frame.title.length > 0), JSON.stringify(editFrames));
 
-  await page.locator('#settingsBtn').evaluate(el => el.click());
+  await page.locator('#settingsBtn').tap();
   await page.waitForFunction(() => window.__edtHeavyPanels648.isOpen('settings'));
   const settings = await page.evaluate(() => {
     const title = document.getElementById('advCalendarTitle');
