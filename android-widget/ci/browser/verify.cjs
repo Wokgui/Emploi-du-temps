@@ -62,7 +62,6 @@ async function interactions() {
   await p.locator('#settingsBtn').focus();await p.keyboard.press('Enter');
   assert.equal(await p.evaluate(()=>__edtHeavyPanels648.isOpen('settings')),true);
   await p.locator('#settingsX').focus();await p.keyboard.press('Enter');
-  await p.waitForFunction(()=>!__edtHeavyPanels648.isOpen('settings'),null,{timeout:1500});
   assert.equal(await p.evaluate(()=>__edtHeavyPanels648.isOpen('settings')),false);
   await p.locator('#editList .editCourse').first().tap();
   await p.locator('#fLabel').tap();
