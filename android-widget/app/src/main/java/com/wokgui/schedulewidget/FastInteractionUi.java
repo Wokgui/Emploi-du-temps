@@ -105,9 +105,11 @@ final class FastInteractionUi {
                   fn.call(el,event);
                 }
                 function invokeSubmit(form,event,fn){
+                  const pipeline=window.__edtRenderPipeline650;
+                  if(form&&form.id==='courseForm'&&pipeline&&typeof pipeline.runCourseSubmit==='function')return pipeline.runCourseSubmit(fn,form,event);
                   const chain=window.__edtActionChains651;
                   if(chain&&typeof chain.runSubmit==='function'&&chain.runSubmit(form,event,fn))return;
-                  fn.call(form,event);
+                  return fn.call(form,event);
                 }
 
                 if(!document.getElementById('edtFastInteractionStyle')){
