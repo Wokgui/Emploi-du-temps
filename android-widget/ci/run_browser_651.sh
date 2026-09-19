@@ -40,4 +40,14 @@ EDT_UI_CHUNKS=smoke-browser/chunks timeout 120s node android-widget/ci/browser/v
 EDT_UI_CHUNKS=smoke-browser/chunks timeout 120s node android-widget/ci/browser/verify_feedback_666.cjs
 EDT_UI_CHUNKS=smoke-browser/chunks timeout 120s node android-widget/ci/browser/verify_feedback_667.cjs
 EDT_UI_CHUNKS=smoke-browser/chunks timeout 120s node android-widget/ci/browser/verify_feedback_668.cjs
-echo 'BROWSER_SUITE|feedback661|passed'
+EDT_UI_CHUNKS=smoke-browser/chunks timeout 120s node android-widget/ci/browser/verify_feedback_669.cjs
+EDT_UI_CHUNKS=smoke-browser/chunks timeout 120s node android-widget/ci/browser/verify_feedback_670.cjs
+EDT_UI_CHUNKS=smoke-browser/chunks timeout 120s node android-widget/ci/browser/verify_feedback_671.cjs
+EDT_UI_CHUNKS=smoke-browser/chunks timeout 120s node android-widget/ci/browser/verify_feedback_672.cjs
+EDT_UI_CHUNKS=smoke-browser/chunks timeout 120s node android-widget/ci/browser/verify_feedback_673.cjs
+EDT_UI_CHUNKS=smoke-browser/chunks timeout 120s node android-widget/ci/browser/verify_feedback_674.cjs
+EDT_UI_CHUNKS=smoke-browser/chunks timeout 120s node android-widget/ci/browser/verify_feedback_675.cjs
+EDT_UI_CHUNKS=smoke-browser/chunks timeout 120s node android-widget/ci/browser/verify_feedback_676.cjs
+EDT_UI_CHUNKS=smoke-browser/chunks timeout 120s node android-widget/ci/browser/verify_feedback_677.cjs
+EDT_UI_CHUNKS=smoke-browser/chunks timeout 180s node android-widget/ci/browser/verify_feedback_678.cjs
+echo 'BROWSER_SUITE|feedback661-678|passed'
