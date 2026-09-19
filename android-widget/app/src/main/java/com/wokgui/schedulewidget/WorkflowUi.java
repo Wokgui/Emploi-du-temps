@@ -304,14 +304,14 @@ final class WorkflowUi {
                 document.head.appendChild(style);
 
                 function ensureButtons(){
-                  const add=document.getElementById('addCourse');if(!add)return;
+                  const edit=document.getElementById('viewEdit'),importButton=document.getElementById('importPhoto');if(!edit||!importButton)return;
                   let row=document.getElementById('editHistoryActions86');
                   if(!row){
                     row=document.createElement('div');row.id='editHistoryActions86';
                     const u=document.createElement('button');u.id='undoEdit86';u.type='button';u.onclick=doUndo;row.appendChild(u);
                     const r=document.createElement('button');r.id='redoEdit86';r.type='button';r.onclick=doRedo;row.appendChild(r);
-                    add.insertAdjacentElement('afterend',row);
                   }
+                  if(row.parentNode!==edit||row.nextElementSibling!==importButton)edit.insertBefore(row,importButton);
                   refreshButtons();
                 }
                 function refreshButtons(){
