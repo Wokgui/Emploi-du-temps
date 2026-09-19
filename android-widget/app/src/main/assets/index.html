@@ -200,12 +200,22 @@ function courseSeriesWeeks(course){
 function renderCourseWeekChoices(course){
   const letters=courseCycleLetters(),field=$('courseWeekField'),box=$('courseWeekChoices');if(!field||!box)return;
   const initial=course?courseSeriesWeeks(course):[letters.includes(activeWeek)?activeWeek:letters[0]];
-  courseWeekSelection=new Set(initial);field.hidden=letters.length===1;box.innerHTML='';
-  letters.forEach(w=>{const b=document.createElement('button');b.type='button';b.className='courseWeekChoice';b.textContent=w;
-    const sync=()=>{const on=courseWeekSelection.has(w);b.classList.toggle('active',on);b.setAttribute('aria-pressed',on?'true':'false')};sync();
-    b.onclick=()=>{if(courseWeekSelection.has(w)){if(courseWeekSelection.size>1)courseWeekSelection.delete(w)}else courseWeekSelection.add(w);sync()};
-    box.appendChild(b);
-  });
+  courseWeekSelection=new Set(initial);field.hidden=letters.length===1;
+  for(const w of ['A','B','C','D']){
+    let b=box.querySelector('.courseWeekChoice[data-week="'+w+'"]');
+    if(!b){
+      b=document.createElement('button');b.type='button';b.className='courseWeekChoice';b.dataset.week=w;b.textContent=w;
+      b.onclick=()=>{
+        const week=b.dataset.week;
+        if(courseWeekSelection.has(week)){if(courseWeekSelection.size>1)courseWeekSelection.delete(week)}
+        else courseWeekSelection.add(week);
+        [...box.querySelectorAll('.courseWeekChoice')].forEach(btn=>{const on=courseWeekSelection.has(btn.dataset.week);btn.classList.toggle('active',on);btn.setAttribute('aria-pressed',on?'true':'false')});
+      };
+      box.appendChild(b);
+    }
+    const visible=letters.includes(w),on=courseWeekSelection.has(w);
+    b.hidden=!visible;b.style.display=visible?'':'none';b.classList.toggle('active',on);b.setAttribute('aria-pressed',on?'true':'false');
+  }
 }
 window.renderCourseWeekChoices=renderCourseWeekChoices;
 (window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'course-week-scope-679',run:function(){
