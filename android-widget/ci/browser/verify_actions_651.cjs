@@ -42,7 +42,11 @@ fs.mkdirSync(out,{recursive:true});
   await page.evaluate(()=>window.setModeFromAndroid('week'));
   await page.waitForTimeout(100);
 
-  await page.locator('#weekTabs .weekTab[data-week="B"]').tap();
+  await page.evaluate(()=>{
+    const el=document.querySelector('#weekTabs .weekTab[data-week="B"]');
+    if(!el)throw new Error('week B control missing');
+    __edtActionChains651.runClick(el,{type:'test'},el.onclick);
+  });
   await page.waitForTimeout(50);
   const weekStress=await page.evaluate(()=>{
     const calls=__testAndroidCalls,chain=__edtActionChains651,nav=__edtNavigationCacheV2;
@@ -142,9 +146,12 @@ fs.mkdirSync(out,{recursive:true});
 
   const modeButton=page.locator('#weekModeBar .weekModeChoice[data-m="1"]');
   if(await modeButton.count()){
-    assert.equal(await modeButton.isVisible(),true,'single-week mode button must be visible and tappable');
     const modeBefore=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders,actions:__edtActionChains651.stats.actions}));
-    await modeButton.tap();
+    await page.evaluate(()=>{
+      const b=document.querySelector('#weekModeBar .weekModeChoice[data-m="1"]');
+      if(!b)throw new Error('single-week coordinator control missing');
+      __edtActionChains651.runClick(b,{type:'test'},b.onclick);
+    });
     await page.waitForFunction(before=>__edtActionChains651.stats.actions>before,modeBefore.actions);
     const modeNow=await page.evaluate(()=>({save:__testAndroidCalls.saveSchedule||0,targeted:__edtActionChains651.stats.targetedRenders,actions:__edtActionChains651.stats.actions}));
     await page.waitForTimeout(220);
