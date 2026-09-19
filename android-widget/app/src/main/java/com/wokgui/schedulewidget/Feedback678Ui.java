@@ -35,9 +35,9 @@ final class Feedback678Ui {
                   html body #settingsSheet .settingBox:has(#advCycleTitle){display:none!important}
                   #settingsWeekCycle678{display:block!important;margin:0 0 9px!important;padding:10px!important;border:1.5px solid #cbd6e2!important;border-radius:9px!important;background:#fff!important;box-shadow:0 1px 3px #15223810!important}
                   #settingsWeekCycle678 .settingTitle{text-align:center!important;font-size:.86rem!important;font-weight:900!important;margin:0 0 8px!important}
-                  .weekCycleChoices678,.weekCurrentChoices678{display:grid!important;gap:5px!important;width:100%!important}
-                  .weekCycleChoices678{grid-template-columns:repeat(4,minmax(0,1fr))!important}
-                  .weekCurrentChoices678{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+                  .weekCycleChoices678{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important;width:100%!important}
+                  .weekCurrentChoices678{display:flex!important;justify-content:center!important;align-items:center!important;flex-wrap:wrap!important;gap:7px!important;width:100%!important}
+                  .weekCurrentChoice678{flex:0 0 54px!important}
                   .weekCycleChoice678,.weekCurrentChoice678{min-width:0!important;min-height:32px!important;border:1px solid #cfd9e5!important;border-radius:999px!important;background:#fff!important;color:#4d5667!important;padding:5px 3px!important;font-size:.68rem!important;font-weight:850!important;line-height:1.05!important;white-space:nowrap!important;touch-action:manipulation!important}
                   .weekCycleChoice678.active,.weekCurrentChoice678.active{background:var(--set-accent,var(--blue,#0877f9))!important;border-color:var(--set-accent,var(--blue,#0877f9))!important;color:#fff!important}
                   .weekCurrentSettings678{margin-top:10px!important;padding-top:9px!important;border-top:1px solid #edf0f4!important}
@@ -45,7 +45,9 @@ final class Feedback678Ui {
                   html.singleWeek678 .weekCurrentSettings678{display:none!important}
                   html body .bottom,html body .bottom .nav{pointer-events:auto!important;touch-action:manipulation!important}
                   html body #edtImportReview:not(.show),html body #ocrPreview86:not(.show){pointer-events:none!important}
-                  html body #viewToday .dayTitle h2,html body #viewWeek .weekTop h2{white-space:nowrap!important}
+                  html body #viewToday .dayTitle h2{white-space:nowrap!important}
+                  html body #viewWeek .weekTop{display:none!important;margin:0!important;height:0!important;min-height:0!important}
+                  html body #viewEdit{padding-bottom:88px!important}
                 `;document.head.appendChild(style);
 
                 function ensureSettings(){
@@ -97,15 +99,12 @@ final class Feedback678Ui {
                 function navigate(target){
                   if(navigating||!['today','week','edit'].includes(target))return;navigating=true;unlockNavigation();
                   try{activeWeek=letter();if(typeof weeks!=='undefined'&&weeks[activeWeek])state=weeks[activeWeek]}catch(e){}
-                  try{if(typeof window.setModeFromAndroid==='function')window.setModeFromAndroid(target);else if(typeof window.setMode==='function')window.setMode(target)}catch(e){}
-                  enforceView(target);
-                  try{
-                    if(target==='today'&&typeof renderToday==='function')renderToday();
-                    else if(target==='week'&&typeof renderWeek==='function')renderWeek();
-                    else if(target==='edit'&&typeof renderEdit==='function')renderEdit();
-                  }catch(e){console.log('Feedback678Ui navigation render',e)}
-                  refreshIndicators();
-                  requestAnimationFrame(()=>requestAnimationFrame(()=>{unlockNavigation();enforceView(target);refreshIndicators();if(target==='week'&&window.fitActiveWeek676)window.fitActiveWeek676();navigating=false}));
+                  enforceView(target);refreshIndicators();
+                  requestAnimationFrame(()=>{
+                    try{if(typeof window.setModeFromAndroid==='function')window.setModeFromAndroid(target);else if(typeof window.setMode==='function')window.setMode(target)}catch(e){console.log('Feedback678Ui navigation',e)}
+                    enforceView(target);refreshIndicators();
+                    requestAnimationFrame(()=>{unlockNavigation();enforceView(target);refreshIndicators();if(target==='week'&&window.fitActiveWeek676)window.fitActiveWeek676();navigating=false});
+                  });
                 }
                 window.navigateStable678=navigate;
 
@@ -123,7 +122,7 @@ final class Feedback678Ui {
                   requestAnimationFrame(()=>requestAnimationFrame(()=>{try{activeWeek=letter()}catch(e){}refreshIndicators();unlockNavigation()}));
                 }
 
-                document.addEventListener('pointerdown',event=>{const nav=event.target&&event.target.closest?event.target.closest('.nav[data-mode]'):null;if(nav)unlockNavigation()},true);
+                document.addEventListener('pointerdown',event=>{const nav=event.target&&event.target.closest?event.target.closest('.nav[data-mode]'):null;if(nav){unlockNavigation();document.querySelectorAll('.nav[data-mode]').forEach(item=>item.classList.toggle('active',item===nav))}},true);
                 document.addEventListener('click',event=>{
                   const nav=event.target&&event.target.closest?event.target.closest('.nav[data-mode]'):null;if(!nav)return;
                   event.preventDefault();event.stopPropagation();if(event.stopImmediatePropagation)event.stopImmediatePropagation();
