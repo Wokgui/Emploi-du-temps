@@ -2152,8 +2152,8 @@ final class TimetableCoreUi {
                 function saveRoot(root){try{AndroidSchedule.saveSchedule(JSON.stringify(root));if(window.reloadSchedule)window.reloadSchedule()}catch(e){alert('Impossible d’enregistrer.')}}
                 function loadAdv(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
                 function saveAdv(o){try{AndroidSchedule.saveAdvancedSettings(JSON.stringify(o))}catch(e){}}
-                function oneWeek(){return loadAdv().singleWeek===true}
-                function cycleLetters(){const a=loadAdv();if(a.singleWeek===true)return ['A'];return ['A','B','C','D'].slice(0,Math.max(2,Math.min(4,Number(a.cycleLength)||2)))}
+                function cycleLetters(){try{return typeof window.courseCycleLetters679==='function'?window.courseCycleLetters679():['A','B']}catch(e){return ['A','B']}}
+                function oneWeek(){return cycleLetters().length===1}
                 function newSeries(){return 'course-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,9)}
                 let bulkWeekSelection=new Set();
                 function ensureWeek(root,w){root._weeks=root._weeks||{};root._weeks[w]=root._weeks[w]||{};DAYS.forEach(d=>{root._weeks[w][String(d)]=root._weeks[w][String(d)]||{enabled:true,courses:[]};root._weeks[w][String(d)].courses=root._weeks[w][String(d)].courses||[]})}
