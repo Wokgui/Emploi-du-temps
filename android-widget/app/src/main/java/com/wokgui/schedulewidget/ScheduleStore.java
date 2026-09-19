@@ -54,7 +54,7 @@ final class ScheduleStore {
             e.putBoolean(INIT, true);
         }
 
-        int slotCount = Math.max(1, Math.min(10, p.getInt(SLOT_COUNT, 10)));
+        int slotCount = Math.max(1, Math.min(10, p.getInt(SLOT_COUNT, 9)));
         if (!p.contains(SLOT_COUNT)) e.putInt(SLOT_COUNT, slotCount);
         for (int i = 0; i < slotCount; i++) {
             if (!p.contains("slot_" + (i + 1) + "_start")) e.putString("slot_" + (i + 1) + "_start", DEFAULT_START[i]);
@@ -107,7 +107,7 @@ final class ScheduleStore {
 
     static int getSlotCount(Context context) {
         ensureInitialized(context);
-        return Math.max(1, Math.min(10, prefs(context).getInt(SLOT_COUNT, 10)));
+        return Math.max(1, Math.min(10, prefs(context).getInt(SLOT_COUNT, 9)));
     }
 
     static String getSlotStart(Context context, int slot) {
