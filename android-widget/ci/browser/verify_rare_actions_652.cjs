@@ -107,7 +107,7 @@ fs.mkdirSync(out,{recursive:true});
   assert.equal(report.block2.after.listeners-report.block2.before.listeners,0,'rare actions must not progressively accumulate listeners after a complete exercised block');
   assert.equal(report.block2.after.observers-report.block2.before.observers,0,'rare actions must not progressively accumulate MutationObservers');
   assert.equal(report.block2.after.resize-report.block2.before.resize,0,'rare actions must not progressively accumulate ResizeObservers');
-  assert.ok(report.block2.after.nodes-report.block2.before.nodes<=8,'rare actions must not progressively grow the DOM');
+  // Compare two complete stress blocks at the same logical phase: some controls legitimately alternate between two DOM shapes.\n  assert.ok(report.block2.after.nodes-report.block1.before.nodes<=8,'rare actions must not progressively grow the DOM across complete stress blocks');
   assert.ok(report.block2.tailP50<=Math.max(report.block2.headP50*2,report.block2.headP50+5),'rare actions must not progressively slow down');
   assert.deepEqual(errors,[],'6.52 rare-action JavaScript errors');
   console.log('browser_rare_actions_652=passed',JSON.stringify(report));
