@@ -25,14 +25,15 @@ final class ScheduleStore {
     private static final String LUNCH_LABEL = "lunch_label";
     private static final String SHOW_GAP_BADGE = "show_gap_badge";
     private static final String SHOW_LUNCH_BADGE = "show_lunch_badge";
+    private static final String SLOT_COUNT = "slot_count";
     private static final String[] LETTERS = {"A", "B", "C", "D"};
     private static final int[] ALL_DAYS = {Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY, Calendar.THURSDAY, Calendar.FRIDAY, Calendar.SATURDAY, Calendar.SUNDAY};
 
     private static final String[] DEFAULT_START = {
-            "08:00","09:00","10:00","11:00","13:00","14:00","16:00","17:00","18:00"
+            "08:00","09:00","10:00","11:00","13:00","14:00","16:00","17:00","18:00","19:00"
     };
     private static final String[] DEFAULT_END = {
-            "09:00","10:00","11:00","12:00","14:00","15:00","17:00","18:00","19:00"
+            "09:00","10:00","11:00","12:00","14:00","15:00","17:00","18:00","19:00","20:00"
     };
 
     private ScheduleStore() {}
@@ -53,7 +54,9 @@ final class ScheduleStore {
             e.putBoolean(INIT, true);
         }
 
-        for (int i = 0; i < 9; i++) {
+        int slotCount = Math.max(1, Math.min(10, p.getInt(SLOT_COUNT, 9)));
+        if (!p.contains(SLOT_COUNT)) e.putInt(SLOT_COUNT, slotCount);
+        for (int i = 0; i < slotCount; i++) {
             if (!p.contains("slot_" + (i + 1) + "_start")) e.putString("slot_" + (i + 1) + "_start", DEFAULT_START[i]);
             if (!p.contains("slot_" + (i + 1) + "_end")) e.putString("slot_" + (i + 1) + "_end", DEFAULT_END[i]);
         }
@@ -102,15 +105,20 @@ final class ScheduleStore {
         return prefs(context).getBoolean("enabled_" + day, false);
     }
 
+    static int getSlotCount(Context context) {
+        ensureInitialized(context);
+        return Math.max(1, Math.min(10, prefs(context).getInt(SLOT_COUNT, 9)));
+    }
+
     static String getSlotStart(Context context, int slot) {
         ensureInitialized(context);
-        int i = Math.max(1, Math.min(9, slot)) - 1;
+        int i = Math.max(1, Math.min(10, slot)) - 1;
         return prefs(context).getString("slot_" + (i + 1) + "_start", DEFAULT_START[i]);
     }
 
     static String getSlotEnd(Context context, int slot) {
         ensureInitialized(context);
-        int i = Math.max(1, Math.min(9, slot)) - 1;
+        int i = Math.max(1, Math.min(10, slot)) - 1;
         return prefs(context).getString("slot_" + (i + 1) + "_end", DEFAULT_END[i]);
     }
 
@@ -179,13 +187,15 @@ final class ScheduleStore {
         try {
             JSONObject root = new JSONObject();
             JSONArray slots = new JSONArray();
-            for (int i = 1; i <= 9; i++) {
+            int slotCount = getSlotCount(context);
+            for (int i = 1; i <= slotCount; i++) {
                 JSONObject slot = new JSONObject();
                 slot.put("start", getSlotStart(context, i));
                 slot.put("end", getSlotEnd(context, i));
                 slots.put(slot);
             }
             root.put("_slots", slots);
+            root.put("_slotConfigV2", true);
 
             JSONObject breaks = new JSONObject();
             breaks.put("gapLabel", getGapLabel(context));
@@ -237,11 +247,17 @@ final class ScheduleStore {
 
             JSONArray slots = root.optJSONArray("_slots");
             if (slots != null) {
-                for (int i = 0; i < Math.min(9, slots.length()); i++) {
-                    JSONObject s = slots.optJSONObject(i);
-                    if (s == null) continue;
-                    editor.putString("slot_" + (i + 1) + "_start", s.optString("start", DEFAULT_START[i]));
-                    editor.putString("slot_" + (i + 1) + "_end", s.optString("end", DEFAULT_END[i]));
+                int count = Math.max(1, Math.min(10, slots.length()));
+                editor.putInt(SLOT_COUNT, count);
+                for (int i = 0; i < count; i++) {
+                    JSONObject slot = slots.optJSONObject(i);
+                    if (slot == null) continue;
+                    editor.putString("slot_" + (i + 1) + "_start", slot.optString("start", DEFAULT_START[i]));
+                    editor.putString("slot_" + (i + 1) + "_end", slot.optString("end", DEFAULT_END[i]));
+                }
+                for (int i = count; i < 10; i++) {
+                    editor.remove("slot_" + (i + 1) + "_start");
+                    editor.remove("slot_" + (i + 1) + "_end");
                 }
             }
 
@@ -346,7 +362,7 @@ final class ScheduleStore {
                 String color = o.optString("color", "");
                 String badge = o.optString("badge", "");
                 if (slot == 0) {
-                    for (int n = 0; n < 9; n++) {
+                    for (int n = 0; n < DEFAULT_START.length; n++) {
                         if (DEFAULT_START[n].equals(start) && DEFAULT_END[n].equals(end)) { slot = n + 1; break; }
                     }
                 }
