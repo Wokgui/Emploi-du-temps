@@ -100,30 +100,24 @@ final class Feedback680Ui {
                     cell.style.setProperty('filter','none','important');
                   });
                 }
-                function finalizeWeekVisual(show){
+                function finalizeWeekVisual(){
                   const grid=document.getElementById('weekGrid');if(!grid)return;
+                  grid.style.removeProperty('visibility');
                   try{if(typeof window.refreshWeekAppearance658==='function')window.refreshWeekAppearance658()}catch(e){}
                   stableLunchColour();
-                  if(show!==false)grid.style.removeProperty('visibility');
                   requestAnimationFrame(stableLunchColour);
                 }
-                function settleLunch(){finalizeWeekVisual(true)}
+                function settleLunch(){finalizeWeekVisual()}
                 const originalRenderWeek=window.renderWeek;
                 if(typeof originalRenderWeek==='function'&&!originalRenderWeek.__feedback680StableLunch){
                   const wrapped=function(){
-                    const grid=document.getElementById('weekGrid'),was=grid?grid.style.visibility:'';
-                    if(grid)grid.style.visibility='hidden';
                     const out=originalRenderWeek.apply(this,arguments);
-                    finalizeWeekVisual(true);
+                    finalizeWeekVisual();
                     return out;
                   };
                   wrapped.__feedback680StableLunch=true;wrapped.__feedback680Original=originalRenderWeek;
                   window.renderWeek=wrapped;try{renderWeek=wrapped}catch(e){}
                 }
-                document.addEventListener('pointerdown',e=>{
-                  const nav=e.target&&e.target.closest?e.target.closest('.nav[data-mode="week"]'):null;
-                  if(nav){const grid=document.getElementById('weekGrid');if(grid)grid.style.visibility='hidden'}
-                },true);
                 function refresh(){relabelHours();arrangeActions();stableLunchColour()}
                 window.refreshFeedback680=refresh;
                 refresh();
