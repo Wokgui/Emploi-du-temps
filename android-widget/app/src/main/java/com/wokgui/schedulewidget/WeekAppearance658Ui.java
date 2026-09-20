@@ -37,7 +37,7 @@ final class WeekAppearance658Ui {
                   }catch(e){return fallback}
                 }
                 function lunchLabel(){const value=visibleBreakLabel('lunch',tr('Midi','Lunch','Mittag'));return /^(pause de midi|lunch break|mittagspause)$/i.test(value)?tr('Midi','Lunch','Mittag'):value}
-                function namedGapLabel(){const value=visibleBreakLabel('gap',tr('Trou','Free period','Freistunde')),defaultValue=tr('Trou','Free period','Freistunde');return value&&value.toLocaleLowerCase()!==defaultValue.toLocaleLowerCase()?value:''}
+                function namedGapLabel(){const defaultValue=tr('Trou','Free period','Freistunde'),value=visibleBreakLabel('gap',defaultValue);return value||defaultValue}
                 function persistNative(settings,root){
                   try{
                     root=root&&typeof root==='object'?root:nativeRoot();root.weekAppearance658=settings;
