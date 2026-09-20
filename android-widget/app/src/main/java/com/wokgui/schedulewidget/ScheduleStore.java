@@ -436,14 +436,14 @@ final class ScheduleStore {
         for (String week : LETTERS) {
             for (int day : ALL_DAYS) {
                 String key = weekKey(week, day);
-                JSONArray filtered = filterCourses(new JSONArray(p.getString(key, "[]")), Collections.singleton(id));
+                JSONArray filtered = filterCourses(parseArray(p.getString(key, "[]")), Collections.singleton(id));
                 editor.putString(key, filtered.toString());
             }
         }
         for (int day : ALL_DAYS) {
             String key = "day_" + day;
             if (p.contains(key)) {
-                JSONArray filtered = filterCourses(new JSONArray(p.getString(key, "[]")), Collections.singleton(id));
+                JSONArray filtered = filterCourses(parseArray(p.getString(key, "[]")), Collections.singleton(id));
                 editor.putString(key, filtered.toString());
             }
         }
@@ -493,6 +493,11 @@ final class ScheduleStore {
             out.append(id);
         }
         return out.toString();
+    }
+
+    private static JSONArray parseArray(String raw) {
+        try { return new JSONArray(raw == null ? "[]" : raw); }
+        catch (Exception ignored) { return new JSONArray(); }
     }
 
     private static JSONArray filterCourses(JSONArray input, Set<Integer> disabled) {
