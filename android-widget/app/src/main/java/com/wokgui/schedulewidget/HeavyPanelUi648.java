@@ -134,12 +134,12 @@ final class HeavyPanelUi648 {
                   const style=document.createElement('style');style.id='edtHeavyPanels648Style';
                   style.textContent=`
                     #settingsModal.edtHeavyPanel648,#modal.edtHeavyPanel648{
-                      display:flex!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;
+                      display:flex!important;opacity:0!important;visibility:visible!important;pointer-events:none!important;
                       contain:layout style paint;transform:translateZ(0);will-change:opacity;
                     }
                     #settingsModal.edtHeavyPanel648[data-edt-open="true"],
                     #modal.edtHeavyPanel648[data-edt-open="true"]{
-                      opacity:1!important;visibility:visible!important;pointer-events:auto!important;
+                      opacity:1!important;pointer-events:auto!important;
                     }
                   `;
                   document.head.appendChild(style);
@@ -151,7 +151,6 @@ final class HeavyPanelUi648 {
                   if(alreadyOpen)panel.classList.remove('show');
                   panel.setAttribute('data-edt-open',alreadyOpen?'true':'false');
                   panel.setAttribute('aria-hidden',alreadyOpen?'false':'true');
-                  panel.inert=!alreadyOpen;
                 }
                 mount(settings);mount(course);
 
@@ -164,16 +163,11 @@ final class HeavyPanelUi648 {
                   if(!value&&panel.contains(document.activeElement)){
                     try{document.activeElement.blur()}catch(e){}
                   }
-                  panel.inert=!value;
                   panel.setAttribute('data-edt-open',next);panel.setAttribute('aria-hidden',value?'false':'true');
                   return true;
                 }
 
-                function openSettings(){
-                  // Settings must react on the first physical tap as quickly as the bottom navigation.
-                  settings.style.willChange='opacity';void settings.offsetWidth;
-                  setOpen(settings,true);return false
-                }
+                function openSettings(){setOpen(settings,true);return false}
                 function closeSettings(){setOpen(settings,false);return false}
                 function closeCourse(){setOpen(course,false);return false}
 
