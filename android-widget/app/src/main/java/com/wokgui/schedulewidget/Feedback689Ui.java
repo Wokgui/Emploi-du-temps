@@ -55,15 +55,15 @@ final class Feedback689Ui {
                     text-align:right!important;font-size:.66rem!important
                   }
                   #widgetEdgeBars672 select{
-                    width:auto!important;min-width:0!important;max-width:148px!important;
-                    min-height:29px!important;height:29px!important;
-                    padding:3px 22px 3px 8px!important;
+                    width:auto!important;min-width:0!important;max-width:136px!important;
+                    min-height:28px!important;height:28px!important;
+                    padding:3px 19px 3px 7px!important;
                     font-size:.64rem!important;line-height:1!important;
                     text-align:center!important;text-align-last:center!important
                   }
                   #widgetEdgeBars672 select option{text-align:center!important}
                   #widgetEdgeBars672 input[type=color]{
-                    width:32px!important;height:29px!important
+                    width:30px!important;height:28px!important
                   }
 
                   /* Accessibility is compact and centered too. */
@@ -72,9 +72,9 @@ final class Feedback689Ui {
                     justify-content:center!important;align-items:center!important;gap:7px!important
                   }
                   #settingsSheet #advAccess{
-                    width:auto!important;min-width:0!important;max-width:190px!important;
-                    min-height:30px!important;height:30px!important;
-                    padding:3px 24px 3px 8px!important;
+                    width:auto!important;min-width:0!important;max-width:176px!important;
+                    min-height:28px!important;height:28px!important;
+                    padding:3px 21px 3px 7px!important;
                     text-align:center!important;text-align-last:center!important;
                     font-size:.70rem!important
                   }
@@ -83,12 +83,12 @@ final class Feedback689Ui {
                   #settingsSheet .feedback664Profiles>#advProfilesTitle{text-align:center!important}
                   #settingsSheet .feedback664Profiles>.advRow:has(#advProfileSelect){
                     display:flex!important;justify-content:center!important;
-                    margin:0 0 12px!important
+                    margin:0 0 14px!important
                   }
                   #settingsSheet #advProfileSelect{
-                    width:auto!important;min-width:0!important;max-width:230px!important;
-                    min-height:30px!important;height:30px!important;
-                    padding:3px 25px 3px 9px!important;
+                    width:auto!important;min-width:0!important;max-width:216px!important;
+                    min-height:28px!important;height:28px!important;
+                    padding:2px 22px 2px 8px!important;
                     font-size:.70rem!important;line-height:1!important;
                     text-align:center!important;text-align-last:center!important
                   }
@@ -99,7 +99,7 @@ final class Feedback689Ui {
                   /* Automatic widget fitting: checkbox stays visually attached to its sentence. */
                   #widgetDensity664 .feedback665DensityAuto{
                     display:inline-flex!important;width:fit-content!important;max-width:100%!important;
-                    gap:4px!important;margin:7px auto 0!important;
+                    gap:3px!important;margin:7px auto 0!important;
                     align-items:center!important;justify-content:center!important
                   }
                   #widgetDensity664 .feedback665DensityAuto input{
@@ -108,8 +108,8 @@ final class Feedback689Ui {
 
                   /* Slightly slimmer import-photo action. */
                   html body #viewEdit>#importPhoto{
-                    min-height:32px!important;height:auto!important;
-                    padding:4px 12px!important;line-height:1.08!important
+                    min-height:30px!important;height:auto!important;
+                    padding:3px 12px!important;line-height:1.08!important
                   }
                 `;
                 document.head.appendChild(style);
@@ -126,15 +126,15 @@ final class Feedback689Ui {
                   span.textContent=text||' ';
                   span.style.cssText='position:absolute;visibility:hidden;white-space:nowrap;pointer-events:none;font:'+cs.font+';font-weight:'+cs.fontWeight+';';
                   document.body.appendChild(span);
-                  const width=Math.ceil(span.getBoundingClientRect().width)+34;
+                  const width=Math.ceil(span.getBoundingClientRect().width)+27;
                   span.remove();
                   select.style.setProperty('width',Math.max(min,Math.min(max,width))+'px','important');
                 }
                 function fitAll(){
-                  measure(document.getElementById('widgetTopBarMode672'),82,148);
-                  measure(document.getElementById('widgetBottomBarMode672'),82,148);
-                  measure(document.getElementById('advAccess'),92,190);
-                  measure(document.getElementById('advProfileSelect'),104,230);
+                  measure(document.getElementById('widgetTopBarMode672'),68,136);
+                  measure(document.getElementById('widgetBottomBarMode672'),68,136);
+                  measure(document.getElementById('advAccess'),82,176);
+                  measure(document.getElementById('advProfileSelect'),90,216);
                 }
                 function bind(select,min,max){
                   if(!select||select.__feedback689)return;
@@ -144,10 +144,10 @@ final class Feedback689Ui {
                   observer.observe(select,{childList:true,subtree:true,characterData:true});
                 }
                 function refresh(){
-                  bind(document.getElementById('widgetTopBarMode672'),82,148);
-                  bind(document.getElementById('widgetBottomBarMode672'),82,148);
-                  bind(document.getElementById('advAccess'),92,190);
-                  bind(document.getElementById('advProfileSelect'),104,230);
+                  bind(document.getElementById('widgetTopBarMode672'),68,136);
+                  bind(document.getElementById('widgetBottomBarMode672'),68,136);
+                  bind(document.getElementById('advAccess'),82,176);
+                  bind(document.getElementById('advProfileSelect'),90,216);
                   fitAll();
                 }
                 window.refreshFeedback689=refresh;
