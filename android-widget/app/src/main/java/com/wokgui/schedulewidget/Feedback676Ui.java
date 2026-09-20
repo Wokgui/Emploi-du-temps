@@ -74,7 +74,6 @@ final class Feedback676Ui {
                 new MutationObserver(()=>queue(true)).observe(grid,{childList:true,subtree:false});
                 new MutationObserver(()=>queue(true)).observe(week,{attributes:true,attributeFilter:['class']});
                 addEventListener('resize',()=>queue(true),{passive:true});
-                document.addEventListener('pointerdown',event=>{const target=event.target&&event.target.closest?event.target.closest('.nav[data-mode="week"],#weekTabs .weekTab'):null;if(target)fit(false)},true);
                 document.addEventListener('click',event=>{const target=event.target&&event.target.closest?event.target.closest('.nav[data-mode],#weekTabs .weekTab'):null;if(target)queue(true)},true);
                 window.fitActiveWeek676=()=>fit(true);window.refreshFeedback676=()=>queue(true);fit(true);
               }catch(e){console.error('Feedback676Ui',e)}
