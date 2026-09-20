@@ -615,6 +615,14 @@ public class MainActivity extends Activity {
     private final class ScheduleBridge {
         @JavascriptInterface public String loadSchedule() { return ScheduleStore.exportJson(MainActivity.this); }
         @JavascriptInterface public void saveSchedule(String json) { ScheduleStore.importJson(MainActivity.this, json); ProfileStore.saveCurrent(MainActivity.this); }
+        @JavascriptInterface public void removeScheduleSlot(int slot) {
+            ScheduleStore.removeSlot(MainActivity.this, slot);
+            ProfileStore.saveCurrent(MainActivity.this);
+        }
+        @JavascriptInterface public void restoreScheduleSlot(int slot, String start, String end) {
+            ScheduleStore.restoreSlot(MainActivity.this, slot, start, end);
+            ProfileStore.saveCurrent(MainActivity.this);
+        }
         @JavascriptInterface public void pickTimetablePhoto() { runOnUiThread(MainActivity.this::pickTimetablePhoto); }
         @JavascriptInterface public String loadUiSettings() { return UiSettingsStore.exportJson(MainActivity.this); }
         @JavascriptInterface public void saveUiSettings(String json) {
