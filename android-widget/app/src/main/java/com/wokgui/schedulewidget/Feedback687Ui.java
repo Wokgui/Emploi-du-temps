@@ -42,9 +42,13 @@ final class Feedback687Ui {
                   }
                   #widgetEdgeBars672 select{
                     width:126px!important;max-width:126px!important;min-width:0!important;min-height:29px!important;
-                    padding:4px 22px 4px 7px!important;border-radius:8px!important;
+                    padding:4px 22px!important;border-radius:8px!important;
                     font-size:.64rem!important;line-height:1.05!important;font-weight:750!important;
-                    text-align:center!important;text-align-last:center!important;justify-self:start!important
+                    text-align:center!important;text-align-last:center!important;justify-self:start!important;
+                    appearance:none!important;-webkit-appearance:none!important;
+                    background-color:#fff!important;
+                    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M2 2l4 4 4-4' fill='none' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;
+                    background-repeat:no-repeat!important;background-position:right 7px center!important;background-size:10px 7px!important
                   }
                   #widgetEdgeBars672 input[type=color]{
                     width:34px!important;height:30px!important;border-radius:7px!important;padding:2px!important
@@ -63,7 +67,11 @@ final class Feedback687Ui {
                   #settingsSheet #advProfileSelect{
                     display:block!important;width:min(72%,300px)!important;max-width:300px!important;
                     margin:0 auto!important;text-align:center!important;text-align-last:center!important;
-                    font-size:.72rem!important;padding:7px 26px 7px 10px!important
+                    font-size:.72rem!important;padding:7px 28px!important;
+                    appearance:none!important;-webkit-appearance:none!important;
+                    background-color:#fff!important;
+                    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M2 2l4 4 4-4' fill='none' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;
+                    background-repeat:no-repeat!important;background-position:right 9px center!important;background-size:10px 7px!important
                   }
                   #settingsSheet .advRow:has(#advProfileSelect){
                     display:block!important;width:100%!important;margin:0!important
