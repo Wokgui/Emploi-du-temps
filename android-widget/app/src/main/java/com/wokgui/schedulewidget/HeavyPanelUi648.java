@@ -214,7 +214,7 @@ final class HeavyPanelUi648 {
                     for(let i=0;i<slotOptions.length;i++){
                       const number=i+1,value=byNumber.get(number),visible=!!value;
                       setFlag(slotOptions[i],'hidden',!visible);setFlag(slotOptions[i],'disabled',!visible);
-                      setText(slotOptions[i],visible?(periodName(number)+' · '+value.start+'–'+value.end):periodName(number));
+                      setText(slotOptions[i],visible?(value.start+'–'+value.end):'');
                     }
                   }
                   let selected=Number.isFinite(Number(selectedSlot))?Number(selectedSlot):1;
