@@ -25,6 +25,7 @@ final class Feedback689Ui {
                     border-radius:0!important
                   }
                   #settingsSheet .settingBox{padding-left:2px!important;padding-right:2px!important}
+                  #settingsSheet .settingsSectionBody86>.settingBox{border-top:0!important;border-bottom:0!important}
                   #settingsSheet #settingsWeekCycle678{padding-left:2px!important;padding-right:2px!important}
                   #settingsSheet #widgetEdgeBars672{padding-left:0!important;padding-right:0!important}
 
@@ -43,6 +44,10 @@ final class Feedback689Ui {
                   #settingsSheet .paletteGrid{
                     justify-content:center!important;justify-items:center!important
                   }
+                  #settingsSheet .coursePaletteGrid{display:grid!important;visibility:visible!important;opacity:1!important}
+                  #settingsSheet .coursePaletteBtn{display:block!important;visibility:visible!important;opacity:1!important;background:#fff!important}
+                  #settingsSheet .coursePaletteSwatches{display:flex!important;visibility:visible!important;opacity:1!important;min-height:14px!important}
+                  #settingsSheet .coursePaletteSwatches i{display:block!important;visibility:visible!important;opacity:1!important;min-height:14px!important}
 
                   /* Widget top/bottom rows: controls hug their selected text. */
                   #widgetEdgeBars672 .bar672Grid{
@@ -55,7 +60,7 @@ final class Feedback689Ui {
                     text-align:right!important;font-size:.66rem!important
                   }
                   #widgetEdgeBars672 select{
-                    width:auto!important;min-width:0!important;max-width:136px!important;
+                    width:auto!important;min-width:0!important;max-width:150px!important;
                     min-height:28px!important;height:28px!important;
                     padding:3px 19px 3px 7px!important;
                     font-size:.64rem!important;line-height:1!important;
@@ -86,10 +91,10 @@ final class Feedback689Ui {
                     margin:0 0 14px!important
                   }
                   #settingsSheet #advProfileSelect{
-                    width:auto!important;min-width:0!important;max-width:216px!important;
-                    min-height:28px!important;height:28px!important;
-                    padding:2px 22px 2px 8px!important;
-                    font-size:.70rem!important;line-height:1!important;
+                    width:auto!important;min-width:0!important;max-width:228px!important;
+                    min-height:31px!important;height:31px!important;
+                    padding:4px 23px 4px 9px!important;
+                    font-size:.71rem!important;line-height:1.15!important;
                     text-align:center!important;text-align-last:center!important
                   }
                   #settingsSheet .feedback664Profiles>.advButtons{
@@ -98,9 +103,12 @@ final class Feedback689Ui {
 
                   /* Automatic widget fitting: checkbox stays visually attached to its sentence. */
                   #widgetDensity664 .feedback665DensityAuto{
-                    display:inline-flex!important;width:fit-content!important;max-width:100%!important;
-                    gap:3px!important;margin:7px auto 0!important;
-                    align-items:center!important;justify-content:center!important
+                    display:flex!important;width:100%!important;max-width:100%!important;
+                    gap:4px!important;margin:7px auto 0!important;
+                    align-items:center!important;justify-content:center!important;text-align:center!important
+                  }
+                  #widgetDensity664 .feedback665DensityAuto span{
+                    display:inline-block!important;text-align:center!important;line-height:1.18!important
                   }
                   #widgetDensity664 .feedback665DensityAuto input{
                     flex:0 0 auto!important;margin:0!important;width:17px!important;height:17px!important
@@ -110,6 +118,18 @@ final class Feedback689Ui {
                   html body #viewEdit>#importPhoto{
                     min-height:30px!important;height:auto!important;
                     padding:3px 12px!important;line-height:1.08!important
+                  }
+                  html body #viewEdit{padding-bottom:16px!important}
+                  html body #slotSettings .slotAdd{margin-bottom:14px!important}
+                  html body #breakDisplaySetting .feedback663Title,
+                  html body #week658Settings .w658Title{
+                    font-size:.86rem!important;font-weight:850!important;line-height:1.15!important;text-align:center!important
+                  }
+                  html body #breakDisplaySetting,
+                  html body #week658Settings,
+                  html body #breakDisplaySetting+#week658Settings,
+                  html body #week658Settings+#breakDisplaySetting{
+                    border-top:0!important;border-bottom:0!important
                   }
                 `;
                 document.head.appendChild(style);
@@ -126,15 +146,15 @@ final class Feedback689Ui {
                   span.textContent=text||' ';
                   span.style.cssText='position:absolute;visibility:hidden;white-space:nowrap;pointer-events:none;font:'+cs.font+';font-weight:'+cs.fontWeight+';';
                   document.body.appendChild(span);
-                  const width=Math.ceil(span.getBoundingClientRect().width)+27;
+                  const width=Math.ceil(span.getBoundingClientRect().width)+31;
                   span.remove();
                   select.style.setProperty('width',Math.max(min,Math.min(max,width))+'px','important');
                 }
                 function fitAll(){
-                  measure(document.getElementById('widgetTopBarMode672'),68,136);
-                  measure(document.getElementById('widgetBottomBarMode672'),68,136);
+                  measure(document.getElementById('widgetTopBarMode672'),76,150);
+                  measure(document.getElementById('widgetBottomBarMode672'),76,150);
                   measure(document.getElementById('advAccess'),82,176);
-                  measure(document.getElementById('advProfileSelect'),90,216);
+                  measure(document.getElementById('advProfileSelect'),96,228);
                 }
                 function bind(select,min,max){
                   if(!select||select.__feedback689)return;
@@ -144,10 +164,10 @@ final class Feedback689Ui {
                   observer.observe(select,{childList:true,subtree:true,characterData:true});
                 }
                 function refresh(){
-                  bind(document.getElementById('widgetTopBarMode672'),68,136);
-                  bind(document.getElementById('widgetBottomBarMode672'),68,136);
+                  bind(document.getElementById('widgetTopBarMode672'),76,150);
+                  bind(document.getElementById('widgetBottomBarMode672'),76,150);
                   bind(document.getElementById('advAccess'),82,176);
-                  bind(document.getElementById('advProfileSelect'),90,216);
+                  bind(document.getElementById('advProfileSelect'),96,228);
                   fitAll();
                 }
                 window.refreshFeedback689=refresh;
