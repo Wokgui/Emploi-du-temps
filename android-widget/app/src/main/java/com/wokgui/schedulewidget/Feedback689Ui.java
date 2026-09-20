@@ -144,11 +144,24 @@ final class Feedback689Ui {
                   html body #weekGrid .week658LunchRowBottom{
                     border-top-color:transparent!important;border-bottom-color:transparent!important;box-shadow:none!important
                   }
-                  html body #weekGrid.hideWeekLunch70 .wc:is(.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic){
-                    background:var(--week658-free,#E6F2FF)!important;color:#53627a!important;box-shadow:none!important
+                  html body #weekGrid.hideWeekLunch70:not(.hideWeekGaps70) .wc:is(.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic,.week658Lunch){
+                    background:var(--ft-gap,#fff)!important;color:var(--ft-gap-ink,#53627a)!important;
+                    border-radius:0!important;box-shadow:none!important;outline:0!important
                   }
-                  html body #weekGrid.hideWeekLunch70 .wc:is(.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic) .dynamicLunchOverlay{
-                    background:transparent!important;color:inherit!important;box-shadow:none!important
+                  html body #weekGrid.hideWeekLunch70:not(.hideWeekGaps70) .wc:is(.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic,.week658Lunch) *{
+                    visibility:visible!important;color:var(--ft-gap-ink,#53627a)!important
+                  }
+                  html body #weekGrid.hideWeekLunch70 .wc:is(.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic,.week658Lunch) .dynamicLunchOverlay{
+                    display:none!important;background:transparent!important;color:inherit!important;box-shadow:none!important
+                  }
+                  html body #weekGrid.hideWeekLunch70:not(.hideWeekGaps70) .wc:is(.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic,.week658Lunch) .cellLabel:before{
+                    content:none!important;display:none!important
+                  }
+                  html body #weekGrid.hideWeekLunch70.hideWeekGaps70 .wc:is(.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic,.week658Lunch){
+                    background:#fff!important;color:transparent!important;box-shadow:none!important
+                  }
+                  html body #weekGrid.hideWeekLunch70.hideWeekGaps70 .wc:is(.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic,.week658Lunch) *{
+                    visibility:hidden!important
                   }
                 `;
                 document.head.appendChild(style);
