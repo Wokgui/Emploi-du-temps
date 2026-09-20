@@ -1476,13 +1476,6 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
       text-align:center!important;font-size:.86rem!important;font-weight:850!important;color:#17213a!important
     }
 
-    /* Le moteur 6.58 est l'unique propriétaire du bandeau Midi semaine.
-       On laisse son fond englober la colonne horaire et les jours, avec ses limites fortes. */
-    html body #viewWeek #weekGrid#weekGrid .week658LunchLabel,
-    html body #viewWeek #weekGrid#weekGrid .week662GapLabel{
-      display:flex!important;visibility:visible!important;opacity:1!important
-    }
-
     /* Pas d'animation de taille lors du changement d'onglet. */
     html body main.wrap.edtInstantViews647,
     html body main.wrap.edtInstantViews647>.view{transition:none!important;animation:none!important}
