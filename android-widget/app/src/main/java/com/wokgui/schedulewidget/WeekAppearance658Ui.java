@@ -139,7 +139,7 @@ final class WeekAppearance658Ui {
                   });
                 }
                 function refresh(){queued=false;installSettings();paint()}
-                function schedule(){if(queued)return;queued=true;requestAnimationFrame(refresh)}
+                function schedule(){if(queued)return;queued=true;queueMicrotask(refresh)}
                 window.refreshWeekAppearance658=refresh;
                 const grid=document.getElementById('weekGrid');if(grid)new MutationObserver(schedule).observe(grid,{childList:true,subtree:false});
                 refresh();
