@@ -43,7 +43,7 @@ final class InstantViewUi647 {
                 };
                 const fit=function(name){
                   name=name||activeName();
-                  let h=heights[name]||measure(name);
+                  let h=measure(name)||heights[name];
                   if(!h)return;
                   const p=padding();
                   stage.style.height=Math.ceil(h+p.top+p.bottom)+'px';
