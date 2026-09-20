@@ -31,7 +31,7 @@ final class HeavyPanelUi648 {
               }
               function inputTarget(node){
                 if(!node||!node.closest)return null;
-                const target=node.closest('#settingsBtn,#settingsX,#settingsDone,#addCourse,#cancelEdit,.slotRemove,.slotAdd,.editCourse,.todayCourse,.wc');
+                const target=node.closest('#settingsBtn,#settingsX,#settingsDone,#addCourse,#addBulkCourses,#cancelEdit,.slotRemove,.slotAdd,.editCourse,.todayCourse,.wc');
                 if(target)return target;
                 // Only the backdrop itself closes a sheet; fields and inner controls keep
                 // their native focus, scrolling and form behaviour.
@@ -269,6 +269,11 @@ final class HeavyPanelUi648 {
                   else if(target.id==='settingsX'||target.id==='settingsDone'||target.id==='settingsModal')result=closeSettings();
                   else if(target.id==='cancelEdit'||target.id==='modal'){closeCourse();editing=null;newPrefill=null;result=false}
                   else if(target.id==='addCourse')result=openCourse(null);
+                  else if(target.id==='addBulkCourses'){
+                    if(typeof window.openBulkCourses==='function')result=window.openBulkCourses();
+                    else if(typeof target.onclick==='function')result=target.onclick.call(target,event);
+                    else result=false;
+                  }
                   else if(target.classList&&target.classList.contains('slotRemove')){
                     const index=Number(target.dataset.slotIndex);
                     if(typeof window.removeSlotAt680==='function'&&Number.isInteger(index))window.removeSlotAt680(index);
