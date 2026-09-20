@@ -260,31 +260,43 @@ public class MainActivity extends Activity {
                 (function(){
                   try{
                     var week=document.getElementById('viewWeek');
-                    var already=!!(week&&week.classList.contains('active'));
-                    if(!already){
+                    if(!(week&&week.classList.contains('active'))){
                       if(typeof setModeFromAndroid==='function')setModeFromAndroid('week');
                       else{
                         if(typeof mode!=='undefined')mode='week';
                         document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});
                         if(week)week.classList.add('active');
                         document.querySelectorAll('.nav').forEach(function(n){n.classList.toggle('active',n.dataset.mode==='week')});
-                        if(typeof render==='function')render();
                       }
                     }
+                    if(typeof renderWeek==='function')renderWeek();
+                    if(window.fitActiveWeek676)window.fitActiveWeek676();
+                    if(window.refreshWeekAppearance658)window.refreshWeekAppearance658();
+                    if(window.refreshFeedback680)window.refreshFeedback680();
                     if(window.refreshWeekViewStability)window.refreshWeekViewStability();
                     if(window.refreshFineTuneUi)window.refreshFineTuneUi();
                     week=document.getElementById('viewWeek');
-                    return !!(week&&week.classList.contains('active'));
+                    var grid=document.getElementById('weekGrid');
+                    return !!(week&&week.classList.contains('active')&&grid&&grid.children.length>0&&grid.getBoundingClientRect().height>80);
                   }catch(e){return false}
                 })();
                 """;
-        webView.evaluateJavascript(script, value -> webView.postDelayed(() ->
+        webView.evaluateJavascript(script, first -> webView.postDelayed(() ->
                 webView.evaluateJavascript(script, second -> {
+                    if (!"true".equals(second)) {
+                        webView.postDelayed(() -> webView.evaluateJavascript(script, third -> {
+                            primeWeekBadge();
+                            if (getIntent() != null) getIntent().removeExtra("open_mode");
+                            revealWebViewNow();
+                            forceWeekOpening = false;
+                        }), 55);
+                        return;
+                    }
                     primeWeekBadge();
                     if (getIntent() != null) getIntent().removeExtra("open_mode");
                     revealWebViewNow();
                     forceWeekOpening = false;
-                }), 45));
+                }), 28));
     }
 
     @Override
