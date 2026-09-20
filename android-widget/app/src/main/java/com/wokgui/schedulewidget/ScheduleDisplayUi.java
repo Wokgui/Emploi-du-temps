@@ -793,11 +793,30 @@ final class ScheduleDisplayUi {
                   #weekGrid .now70Bar{position:absolute!important;left:0!important;right:0!important;width:auto!important;height:2px!important;background:#1688F4!important;z-index:240!important;pointer-events:none!important;display:block!important}
                   #weekGrid .now70Dot{position:absolute!important;left:0!important;width:10px!important;height:10px!important;border-radius:50%!important;transform:translate(-50%,-50%)!important;background:#1688F4!important;border:2px solid #D9ECFF!important;box-sizing:border-box!important;z-index:241!important;pointer-events:none!important;display:block!important}
 
-                  /* Independent application visibility for lunch/free periods; widget toggles remain separate. */
-                  body.hideTodayLunch70 #todayList .todayCourse.lunch,body.hideTodayGaps70 #todayList .todayCourse.gap{display:none!important}
-                  #weekGrid.hideWeekLunch70 .wc.lunchCell,#weekGrid.hideWeekLunch70 .wc.dynamicLunchCell,#weekGrid.hideWeekLunch70 .wc.nativeLunchCell{background:#fff!important;color:transparent!important;box-shadow:none!important}
-                  #weekGrid.hideWeekLunch70 .wc.lunchCell *,#weekGrid.hideWeekLunch70 .wc.dynamicLunchCell *,#weekGrid.hideWeekLunch70 .wc.nativeLunchCell *{visibility:hidden!important}
+                  /* Independent application visibility for lunch/free periods; widget toggles remain separate.
+                     When lunch is disabled in the app, its time span becomes a normal free period. */
+                  body.hideTodayGaps70 #todayList .todayCourse.gap{display:none!important}
+                  body.hideTodayLunch70.hideTodayGaps70 #todayList .todayCourse.lunch{display:none!important}
+                  body.hideTodayLunch70:not(.hideTodayGaps70) #todayList .todayCourse.lunch{
+                    display:grid!important;background:var(--ft-gap,#fff)!important;color:var(--ft-gap-ink,#53627a)!important;
+                    border:0!important;border-radius:0!important;box-shadow:none!important
+                  }
+                  body.hideTodayLunch70:not(.hideTodayGaps70) #todayList .todayCourse.lunch *{color:var(--ft-gap-ink,#53627a)!important}
+                  body.hideTodayLunch70:not(.hideTodayGaps70) #todayList .todayCourse.lunch .label:before{content:none!important;display:none!important}
+                  #weekGrid.hideWeekLunch70:not(.hideWeekGaps70) .wc:is(.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic,.week658Lunch){
+                    background:var(--ft-gap,#fff)!important;color:var(--ft-gap-ink,#53627a)!important;
+                    border-radius:0!important;box-shadow:none!important;outline:0!important
+                  }
+                  #weekGrid.hideWeekLunch70:not(.hideWeekGaps70) .wc:is(.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic,.week658Lunch) *{
+                    visibility:visible!important;color:var(--ft-gap-ink,#53627a)!important
+                  }
+                  #weekGrid.hideWeekLunch70:not(.hideWeekGaps70) .wc:is(.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic,.week658Lunch) .cellLabel:before{
+                    content:none!important;display:none!important
+                  }
+                  #weekGrid.hideWeekLunch70 .dynamicLunchOverlay{display:none!important}
+                  #weekGrid.hideWeekLunch70.hideWeekGaps70 .wc:is(.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic,.week658Lunch),
                   #weekGrid.hideWeekGaps70 .wc.gapCell{background:#fff!important;color:transparent!important;box-shadow:none!important}
+                  #weekGrid.hideWeekLunch70.hideWeekGaps70 .wc:is(.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic,.week658Lunch) *,
                   #weekGrid.hideWeekGaps70 .wc.gapCell *{visibility:hidden!important}
 
                   /* Settings alignment requested for the principal personalization groups. */
@@ -938,8 +957,39 @@ final class ScheduleDisplayUi {
 
                 function applyBreakVisibility(){
                   const a=loadAdv(),grid=document.getElementById('weekGrid');
-                  document.body.classList.toggle('hideTodayLunch70',a.showLunchToday===false);document.body.classList.toggle('hideTodayGaps70',a.showBreaksToday===false);
-                  if(grid){grid.classList.toggle('hideWeekLunch70',a.showLunchWeek===false);grid.classList.toggle('hideWeekGaps70',a.showBreaksWeek===false)}
+                  const hideTodayLunch=a.showLunchToday===false,hideTodayGaps=a.showBreaksToday===false;
+                  const hideWeekLunch=a.showLunchWeek===false,hideWeekGaps=a.showBreaksWeek===false;
+                  document.body.classList.toggle('hideTodayLunch70',hideTodayLunch);
+                  document.body.classList.toggle('hideTodayGaps70',hideTodayGaps);
+                  if(hideTodayLunch&&!hideTodayGaps){
+                    document.querySelectorAll('#todayList .todayCourse.lunch').forEach(row=>{
+                      const label=row.querySelector('.label'),room=row.querySelector('.room'),time=row.querySelector('.time');
+                      if(label)label.textContent=(typeof breaks!=='undefined'&&breaks.gapLabel)?breaks.gapLabel:tr('Trou','Free period','Freistunde');
+                      if(room&&time){
+                        const values=(time.textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[];
+                        if(values.length>=2&&typeof durationLabel==='function'){
+                          const start=toMin(values[0]),end=toMin(values[1]);
+                          room.textContent=durationLabel(Math.max(0,end-start))+' '+tr('sans cours','free','frei');
+                        }
+                      }
+                    });
+                  }
+                  if(grid){
+                    grid.classList.toggle('hideWeekLunch70',hideWeekLunch);
+                    grid.classList.toggle('hideWeekGaps70',hideWeekGaps);
+                    if(hideWeekLunch&&!hideWeekGaps){
+                      const gapText=(typeof breaks!=='undefined'&&breaks.gapLabel)?breaks.gapLabel:tr('Trou','Free period','Freistunde');
+                      grid.querySelectorAll('.wc:is(.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic,.week658Lunch)').forEach(cell=>{
+                        cell.classList.add('lunchAsGap70');
+                        cell.querySelectorAll('.dynamicLunchOverlay').forEach(x=>x.remove());
+                        let label=cell.querySelector('.cellLabel');
+                        if(!label){label=document.createElement('div');label.className='cellLabel';cell.appendChild(label)}
+                        label.textContent=gapText;
+                      });
+                    }else{
+                      grid.querySelectorAll('.lunchAsGap70').forEach(cell=>cell.classList.remove('lunchAsGap70'));
+                    }
+                  }
                 }
 
                 function paintWeek70(){
@@ -953,7 +1003,7 @@ final class ScheduleDisplayUi {
                   if(!root){root=document.createElement('div');root.id='breakVisibility70';const hint=document.getElementById('breakDisplayHint');if(hint&&hint.nextSibling)box.insertBefore(root,hint.nextSibling);else box.appendChild(root)}
                   root.innerHTML='<div class="breakVisTitle70">'+tr('Application','Application','App')+'</div><div class="breakVisRow70"><span>'+tr('Aujourd’hui','Today','Heute')+'</span><label><input id="showLunchToday70" type="checkbox"> Midi</label><label><input id="showGapsToday70" type="checkbox"> '+tr('Trous','Free','Freistunden')+'</label></div><div class="breakVisRow70"><span>'+tr('Semaine','Week','Woche')+'</span><label><input id="showLunchWeek70" type="checkbox"> Midi</label><label><input id="showGapsWeek70" type="checkbox"> '+tr('Trous','Free','Freistunden')+'</label></div><div class="breakVisTitle70">Widget</div><div id="breakWidget70"></div>';
                   const a=loadAdv(),defs=[['showLunchToday70','showLunchToday'],['showGapsToday70','showBreaksToday'],['showLunchWeek70','showLunchWeek'],['showGapsWeek70','showBreaksWeek']];
-                  defs.forEach(([id,key])=>{const el=document.getElementById(id);if(!el)return;el.checked=a[key]!==false;el.onchange=()=>{const n=loadAdv();n[key]=el.checked;saveAdv(n);applyBreakVisibility();if(typeof mode!=='undefined'&&mode==='today'&&typeof renderToday==='function')renderToday();if(typeof mode!=='undefined'&&mode==='week')paintWeek70()}});
+                  defs.forEach(([id,key])=>{const el=document.getElementById(id);if(!el)return;el.checked=a[key]!==false;el.onchange=()=>{const n=loadAdv();n[key]=el.checked;saveAdv(n);if(typeof mode!=='undefined'&&mode==='today'&&typeof renderToday==='function')renderToday();if(typeof mode!=='undefined'&&mode==='week'&&typeof renderWeek==='function')renderWeek();applyBreakVisibility();if(typeof mode!=='undefined'&&mode==='week')paintWeek70()}});
                   const widget=document.getElementById('breakWidget70'),l=document.getElementById('advShowLunch'),g=document.getElementById('advShowBreaks');
                   if(widget){const lr=l&&l.closest('label'),gr=g&&g.closest('label');if(lr)widget.appendChild(lr);if(gr)widget.appendChild(gr)}
                   const ll=document.getElementById('advShowLunchLabel'),gl=document.getElementById('advShowBreaksLabel');if(ll)ll.textContent='Midi';if(gl)gl.textContent=tr('Trous','Free','Freistunden');
