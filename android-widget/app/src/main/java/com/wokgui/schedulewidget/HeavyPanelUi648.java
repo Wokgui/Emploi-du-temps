@@ -39,7 +39,7 @@ final class HeavyPanelUi648 {
               }
               let pendingClick=null,pendingCourse=null;
               inputOwner.scrollClicksBlocked=0;
-              const isScrollableCourse=target=>!!(target&&target.matches&&target.matches('.editCourse,.todayCourse,.wc'));
+              const isScrollableCourse=target=>!!(target&&target.matches&&target.matches('.editCourse,.todayCourse,.wc,.slotRemove,.slotAdd'));
               const nativeAdd=EventTarget.prototype.addEventListener;
               nativeAdd.call(document,'pointerdown',function(event){
                 pendingClick=null;
@@ -134,11 +134,12 @@ final class HeavyPanelUi648 {
                   const style=document.createElement('style');style.id='edtHeavyPanels648Style';
                   style.textContent=`
                     #settingsModal.edtHeavyPanel648,#modal.edtHeavyPanel648{
-                      display:flex!important;clip-path:inset(0 0 100% 0);contain:layout style paint;
+                      display:flex!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;
+                      contain:layout style paint;transform:translateZ(0);will-change:opacity;
                     }
                     #settingsModal.edtHeavyPanel648[data-edt-open="true"],
                     #modal.edtHeavyPanel648[data-edt-open="true"]{
-                      clip-path:inset(0);
+                      opacity:1!important;visibility:visible!important;pointer-events:auto!important;
                     }
                   `;
                   document.head.appendChild(style);
@@ -168,7 +169,11 @@ final class HeavyPanelUi648 {
                   return true;
                 }
 
-                function openSettings(){setOpen(settings,true);return false}
+                function openSettings(){
+                  // Settings must react on the first physical tap as quickly as the bottom navigation.
+                  settings.style.willChange='opacity';void settings.offsetWidth;
+                  setOpen(settings,true);return false
+                }
                 function closeSettings(){setOpen(settings,false);return false}
                 function closeCourse(){setOpen(course,false);return false}
 
