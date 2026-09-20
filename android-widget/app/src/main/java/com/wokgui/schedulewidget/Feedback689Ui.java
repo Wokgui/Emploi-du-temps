@@ -131,6 +131,25 @@ final class Feedback689Ui {
                   html body #week658Settings+#breakDisplaySetting{
                     border-top:0!important;border-bottom:0!important
                   }
+
+                  /* Week lunch has one single authoritative horizontal outline. */
+                  html body #weekGrid .wc:is(.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic,.week658Lunch),
+                  html body #weekGrid .dynamicLunchOverlay{
+                    border-top-color:transparent!important;border-bottom-color:transparent!important;
+                    box-shadow:none!important
+                  }
+                  html body #weekGrid .lunch653Top,
+                  html body #weekGrid .lunch653Bottom,
+                  html body #weekGrid .week658LunchRowTop,
+                  html body #weekGrid .week658LunchRowBottom{
+                    border-top-color:transparent!important;border-bottom-color:transparent!important;box-shadow:none!important
+                  }
+                  html body #weekGrid.hideWeekLunch70 .wc:is(.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic){
+                    background:var(--week658-free,#E6F2FF)!important;color:#53627a!important;box-shadow:none!important
+                  }
+                  html body #weekGrid.hideWeekLunch70 .wc:is(.lunchCell,.dynamicLunchCell,.nativeLunchCell,.finalLunchCell,.lunch655Synthetic) .dynamicLunchOverlay{
+                    background:transparent!important;color:inherit!important;box-shadow:none!important
+                  }
                 `;
                 document.head.appendChild(style);
 
