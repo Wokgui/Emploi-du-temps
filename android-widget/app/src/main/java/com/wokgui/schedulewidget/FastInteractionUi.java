@@ -123,6 +123,10 @@ final class FastInteractionUi {
                   document.head.appendChild(style);
                 }
 
+                const warmSettings=()=>{try{if(window.prepareSettingsOpen665)window.prepareSettingsOpen665()}catch(e){}};
+                if('requestIdleCallback' in window)requestIdleCallback(warmSettings,{timeout:700});
+                else setTimeout(warmSettings,220);
+
                 document.addEventListener('pointerdown',function(e){
                   const el=controlFrom(e.target);if(!el)return;
                   if(el.classList&&el.classList.contains('nav'))return;
@@ -136,8 +140,8 @@ final class FastInteractionUi {
                   if(el.id==='settingsBtn'&&typeof el.onclick==='function'){
                     const fn=el.onclick,n=++state.clicks,started=performance.now();
                     pointerHandled=el;pointerHandledAt=started;
-                    console.log('EDT_FAST_INPUT|settings|visual|delegated');
-                    afterPaint('',function(){invokeClick(el,e,fn);logSettle('click','settings',n,started)});
+                    console.log('EDT_FAST_INPUT|settings|visual|direct');
+                    invokeClick(el,e,fn);logSettle('click','settings',n,started);
                   }
                 },{capture:true,passive:true});
                 document.addEventListener('pointermove',moveCourseGesture,{capture:true,passive:true});
