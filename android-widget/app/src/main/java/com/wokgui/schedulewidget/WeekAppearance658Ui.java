@@ -36,8 +36,9 @@ final class WeekAppearance658Ui {
                     return String(value==null?'':value).split('\u200B').join('').trim().slice(0,28);
                   }catch(e){return fallback}
                 }
-                function lunchLabel(){const value=visibleBreakLabel('lunch',tr('Midi','Lunch','Mittag'));return /^(pause de midi|lunch break|mittagspause)$/i.test(value)?tr('Midi','Lunch','Mittag'):value}
-                function namedGapLabel(){const value=visibleBreakLabel('gap',tr('Trou','Free period','Freistunde')),defaultValue=tr('Trou','Free period','Freistunde');return value&&value.toLocaleLowerCase()!==defaultValue.toLocaleLowerCase()?value:''}
+                function breakPrefs(){try{const root=scheduleRoot();return root&&root._breaks&&typeof root._breaks==='object'?root._breaks:{}}catch(e){return {}}}
+                function lunchLabel(){const prefs=breakPrefs();if(prefs.showLunchBadge===false)return '';const value=visibleBreakLabel('lunch',tr('Midi','Lunch','Mittag'));return /^(pause de midi|lunch break|mittagspause)$/i.test(value)?tr('Midi','Lunch','Mittag'):value}
+                function namedGapLabel(){const prefs=breakPrefs();if(prefs.showGapBadge===false)return '';const value=visibleBreakLabel('gap',tr('Trou','Free period','Freistunde'));return value||tr('Trou','Free period','Freistunde')}
                 function persistNative(settings,root){
                   try{
                     root=root&&typeof root==='object'?root:nativeRoot();root.weekAppearance658=settings;
@@ -70,20 +71,21 @@ final class WeekAppearance658Ui {
                   try{const list=weeks[activeWeek]&&weeks[activeWeek][day]?weeks[activeWeek][day].courses:[];return (list||[]).some(c=>toMin(c.start)<end&&toMin(c.end)>start)}catch(e){return false}
                 }
                 function paint(){
-                  const grid=document.getElementById('weekGrid');if(!grid)return;grid.classList.remove('week662LunchLines');grid.style.removeProperty('--week662-lunch-lines');const settings=load(),data=rowsOf(grid);if(!data.rows.length)return;
+                  const grid=document.getElementById('weekGrid');if(!grid)return;grid.classList.remove('week662LunchLines');grid.style.removeProperty('--week662-lunch-lines');const settings=load(),data=rowsOf(grid),advanced=nativeRoot(),showLunch=advanced.showLunchWeek!==false,showGaps=advanced.showBreaksWeek!==false;if(!data.rows.length)return;
+                  grid.classList.toggle('hideWeekLunch70',!showLunch);grid.classList.toggle('hideWeekGaps70',!showGaps);
                   grid.style.setProperty('--week658-free',settings.free);
                   grid.style.setProperty('--week658-course',settings.course);
                   grid.style.setProperty('--week658-lunch',settings.lunch);
                   // Week view has one authoritative lunch colour. Legacy lunch renderers inherit this local value.
                   grid.style.setProperty('--ft-midi',settings.lunch,'important');
-                  const gapText=namedGapLabel();
-                  data.rows.forEach(row=>{row.time.classList.remove('week658LunchTime','week658LunchTop','week658LunchBottom','week658LunchRowTop','week658LunchRowBottom');cleanInline(row.time);row.cells.forEach(cell=>{cleanCell(cell);if(courseCell(cell))cell.classList.add('week658Course');else{cell.classList.add('week658Free');if(gapCell(cell)){cell.classList.add('week658Gap');if(gapText){cell.classList.add('week662NamedGap');const label=document.createElement('span');label.className='week662GapLabel';label.textContent=gapText;cell.appendChild(label)}}}})});
+                  const gapText=showGaps?namedGapLabel():'';
+                  data.rows.forEach(row=>{row.time.classList.remove('week658LunchTime','week658LunchTop','week658LunchBottom','week658LunchRowTop','week658LunchRowBottom');cleanInline(row.time);row.cells.forEach(cell=>{cleanCell(cell);if(courseCell(cell))cell.classList.add('week658Course');else{cell.classList.add('week658Free');if(showGaps&&gapCell(cell)){cell.classList.add('week658Gap');if(gapText){cell.classList.add('week662NamedGap');const label=document.createElement('span');label.className='week662GapLabel';label.textContent=gapText;cell.appendChild(label)}}}})});
                   data.heads.forEach((head,dayIndex)=>{
                     const day=dayKey(head,dayIndex),cfg=settings.days[day]||{enabled:true,start:720,end:780};if(cfg.enabled===false||courseOverlaps(day,cfg.start,cfg.end))return;
                     const band=data.rows.filter(row=>row.start<cfg.end&&row.end>cfg.start);if(!band.length)return;
                     const painted=[];
-                    band.forEach(row=>{const cell=row.cells[dayIndex];if(!cell||courseCell(cell))return;cell.classList.remove('week658Course','week658Free','week658Gap');cell.classList.add('week658Lunch');painted.push(cell)});
-                    if(!painted.length)return;painted[0].classList.add('week658LunchTop');painted[painted.length-1].classList.add('week658LunchBottom');
+                    band.forEach(row=>{const cell=row.cells[dayIndex];if(!cell||courseCell(cell))return;cell.classList.remove('week658Course','week658Free','week658Gap','week658Lunch');if(showLunch){cell.classList.add('week658Lunch');painted.push(cell)}else if(showGaps){cell.classList.add('week658Gap');if(gapText&&!cell.querySelector('.week662GapLabel')){cell.classList.add('week662NamedGap');const label=document.createElement('span');label.className='week662GapLabel';label.textContent=gapText;cell.appendChild(label)}}});
+                    if(!showLunch||!painted.length)return;painted[0].classList.add('week658LunchTop');painted[painted.length-1].classList.add('week658LunchBottom');
                     const text=lunchLabel();if(text){const label=document.createElement('span');label.className='week658LunchLabel';label.textContent=text;painted[0].appendChild(label)}
                   });
                   const flags=data.rows.map(row=>row.cells.some(cell=>cell.classList.contains('week658Lunch'))),lineLayers=[];let index=0;
