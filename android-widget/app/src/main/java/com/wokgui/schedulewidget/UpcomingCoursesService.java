@@ -561,11 +561,14 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 return new Segment(start, AdvancedSettingsStore.widgetCourseLabel(context, targetDate, found), found.room, bg,
                         dark ? 0xFF17213A : 0xFFFFFFFF, true, true);
             }
-            if (lunch && AdvancedSettingsStore.showLunch(context)) {
-                String label = ScheduleStore.getLunchLabel(context);
-                if ("Pause de midi".equalsIgnoreCase(label)) label = "Midi";
-                return new Segment(start, AdvancedSettingsStore.widgetLunchLabel(context, label), "",
-                        WidgetPaletteStore.lunchBackground(context), WidgetPaletteStore.lunchText(context), false, true);
+            if (lunch) {
+                if (AdvancedSettingsStore.showLunch(context)) {
+                    String label = ScheduleStore.getLunchLabel(context);
+                    if ("Pause de midi".equalsIgnoreCase(label)) label = "Midi";
+                    return new Segment(start, AdvancedSettingsStore.widgetLunchLabel(context, label), "",
+                            WidgetPaletteStore.lunchBackground(context), WidgetPaletteStore.lunchText(context), false, true);
+                }
+                return new Segment(start, "", "", 0xFFF7F9FC, 0xFF64748B, false, false);
             }
             if (AdvancedSettingsStore.showBreaks(context)) {
                 String label = ScheduleStore.getGapLabel(context);
@@ -573,7 +576,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 return new Segment(start, AdvancedSettingsStore.widgetGapLabel(context, label), "",
                         WidgetPaletteStore.gapBackground(context), WidgetPaletteStore.gapText(context), false, true);
             }
-            return new Segment(start, "", "", 0xFFF7F9FC, 0xFF64748B, false, true);
+            return new Segment(start, "", "", 0xFFF7F9FC, 0xFF64748B, false, false);
         }
 
         @Override
