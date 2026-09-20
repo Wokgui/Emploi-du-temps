@@ -12,9 +12,6 @@ final class Feedback665Ui {
                 window.__feedback665=true;
 
                 const style=document.createElement('style');style.id='feedback665Style';style.textContent=`
-                  /* The raw week renderer writes the default gap label before the final week
-                     painter runs. Never expose that unfinished label for a single frame. */
-                  html body #viewWeek #weekGrid .wc.gapCell>.cellLabel{display:none!important;visibility:hidden!important}
                   #widgetDensity664 .feedback664DensityRow{display:block!important}
                   #widgetDensity664 #advDensityLabel,#widgetDensity664 #advDensity{display:none!important}
                   #widgetDensity664 .feedback665DensityControl{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center;width:100%;max-width:390px;margin:0 auto}
