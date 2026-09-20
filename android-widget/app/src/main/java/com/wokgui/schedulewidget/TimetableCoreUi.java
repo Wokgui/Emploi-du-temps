@@ -689,7 +689,7 @@ final class TimetableCoreUi {
                   const now=new Date(),nowM=now.getHours()*60+now.getMinutes();
                   const events=list.map(c=>({type:'course',start:min(c.start),end:min(c.end),course:c}));
                   const gaps=gapSegments(list);for(const g of gaps)events.push({type:'gap',start:g.start,end:g.end});
-                  const l=lunch();if(l&&(adv.showLunchToday!==false)&&list.some(c=>min(c.end)<=min(l.start))&&list.some(c=>min(c.start)>=min(l.end)))events.push({type:'lunch',start:min(l.start),end:min(l.end),l:l});
+                  const l=lunch();if(l&&list.some(c=>min(c.end)<=min(l.start))&&list.some(c=>min(c.start)>=min(l.end))){if(adv.showLunchToday!==false)events.push({type:'lunch',start:min(l.start),end:min(l.end),l:l});else if(adv.showBreaksToday!==false)events.push({type:'gap',start:min(l.start),end:min(l.end)})}
                   events.sort((a,b)=>a.start-b.start||a.end-b.end);box.innerHTML='';
                   let total=0,done=0;for(const c of list){const s=min(c.start),e=min(c.end),dur=Math.max(0,e-s);total+=dur;if(nowM>=e)done+=dur;else if(nowM>s)done+=Math.min(dur,nowM-s)}const pr=document.getElementById('todayProgress');if(pr)pr.style.width=(total?Math.max(0,Math.min(100,done*100/total)):0)+'%';
                   for(const ev of events){
