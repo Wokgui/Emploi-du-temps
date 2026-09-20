@@ -6,7 +6,7 @@ on:
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 concurrency:
-  group: android-widget-${{ github.ref_name }}-v20
+  group: android-widget-${{ github.ref_name }}-v21
   cancel-in-progress: true
 permissions: {contents: read}
 
