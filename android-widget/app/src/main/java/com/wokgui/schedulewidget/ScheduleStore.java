@@ -14,6 +14,8 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 final class ScheduleStore {
     private static final String PREFS = "schedule_store_v1";
@@ -27,6 +29,7 @@ final class ScheduleStore {
     private static final String SHOW_LUNCH_BADGE = "show_lunch_badge";
     private static final String SLOT_COUNT = "slot_count";
     private static final String SLOT_IDS = "slot_ids";
+    private static final String DISABLED_SLOT_IDS = "disabled_slot_ids";
     private static final String[] LETTERS = {"A", "B", "C", "D"};
     private static final int[] ALL_DAYS = {Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY, Calendar.THURSDAY, Calendar.FRIDAY, Calendar.SATURDAY, Calendar.SUNDAY};
 
@@ -256,6 +259,7 @@ final class ScheduleStore {
             JSONObject root = new JSONObject(json);
             SharedPreferences.Editor editor = prefs(context).edit();
 
+            Set<Integer> disabledSlots = disabledSlotIds(prefs(context));
             JSONArray slots = root.optJSONArray("_slots");
             if (slots != null && slots.length() > 0) {
                 List<Integer> ids = new ArrayList<>();
@@ -263,7 +267,7 @@ final class ScheduleStore {
                     JSONObject slot = slots.optJSONObject(i);
                     if (slot == null) continue;
                     int id = Math.max(1, Math.min(10, slot.optInt("n", i + 1)));
-                    if (ids.contains(id)) continue;
+                    if (disabledSlots.contains(id) || ids.contains(id)) continue;
                     ids.add(id);
                     int def = id - 1;
                     editor.putString("slot_" + id + "_start", slot.optString("start", DEFAULT_START[def]));
@@ -271,13 +275,11 @@ final class ScheduleStore {
                 }
                 if (!ids.isEmpty()) {
                     Collections.sort(ids);
-                    StringBuilder rawIds = new StringBuilder();
-                    for (int id : ids) {
-                        if (rawIds.length() > 0) rawIds.append(',');
-                        rawIds.append(id);
-                    }
-                    editor.putString(SLOT_IDS, rawIds.toString());
+                    editor.putString(SLOT_IDS, joinSlotIds(ids));
                     editor.putInt(SLOT_COUNT, ids.size());
+                } else if (!disabledSlots.isEmpty()) {
+                    editor.putString(SLOT_IDS, "");
+                    editor.putInt(SLOT_COUNT, 0);
                 }
             }
 
@@ -316,7 +318,7 @@ final class ScheduleStore {
                         JSONObject d = weekObject.optJSONObject(String.valueOf(day));
                         if (d == null) continue;
                         JSONArray arr = d.optJSONArray("courses");
-                        if (arr != null) editor.putString(weekKey(week, day), arr.toString());
+                        if (arr != null) editor.putString(weekKey(week, day), filterCourses(arr, disabledSlots).toString());
                     }
                 }
             } else {
@@ -324,12 +326,15 @@ final class ScheduleStore {
                     JSONObject d = root.optJSONObject(String.valueOf(day));
                     if (d == null) continue;
                     JSONArray arr = d.optJSONArray("courses");
-                    if (arr != null) for (String week : LETTERS) editor.putString(weekKey(week, day), arr.toString());
+                    if (arr != null) {
+                        String filtered = filterCourses(arr, disabledSlots).toString();
+                        for (String week : LETTERS) editor.putString(weekKey(week, day), filtered);
+                    }
                 }
             }
 
             editor.putBoolean(WEEK_AB_INIT, true);
-            editor.apply();
+            editor.commit();
             if (root.has("_cycleLength")) AdvancedSettingsStore.setCycleLength(context, root.optInt("_cycleLength", 2));
             refreshWidgets(context);
         } catch (Exception ignored) {}
@@ -394,21 +399,113 @@ final class ScheduleStore {
 
     private static List<Integer> activeSlotIds(SharedPreferences p, int fallbackCount) {
         List<Integer> ids = new ArrayList<>();
+        Set<Integer> disabled = disabledSlotIds(p);
         String raw = p.getString(SLOT_IDS, "");
         if (raw != null && !raw.trim().isEmpty()) {
             for (String part : raw.split(",")) {
                 try {
                     int id = Integer.parseInt(part.trim());
-                    if (id >= 1 && id <= 10 && !ids.contains(id)) ids.add(id);
+                    if (id >= 1 && id <= 10 && !disabled.contains(id) && !ids.contains(id)) ids.add(id);
                 } catch (Exception ignored) {}
             }
         }
-        if (ids.isEmpty()) {
+        if (ids.isEmpty() && disabled.isEmpty()) {
             int count = Math.max(1, Math.min(10, fallbackCount));
             for (int i = 1; i <= count; i++) ids.add(i);
         }
         Collections.sort(ids);
         return ids;
+    }
+
+    static synchronized void removeSlot(Context context, int requestedId) {
+        ensureInitialized(context);
+        int id = Math.max(1, Math.min(10, requestedId));
+        SharedPreferences p = prefs(context);
+        Set<Integer> disabled = disabledSlotIds(p);
+        disabled.add(id);
+        List<Integer> active = activeSlotIds(p, p.getInt(SLOT_COUNT, 9));
+        active.remove(Integer.valueOf(id));
+
+        SharedPreferences.Editor editor = p.edit();
+        editor.putString(DISABLED_SLOT_IDS, joinSlotIds(new ArrayList<>(disabled)));
+        editor.putString(SLOT_IDS, joinSlotIds(active));
+        editor.putInt(SLOT_COUNT, active.size());
+        editor.remove("slot_" + id + "_start");
+        editor.remove("slot_" + id + "_end");
+
+        for (String week : LETTERS) {
+            for (int day : ALL_DAYS) {
+                String key = weekKey(week, day);
+                JSONArray filtered = filterCourses(new JSONArray(p.getString(key, "[]")), Collections.singleton(id));
+                editor.putString(key, filtered.toString());
+            }
+        }
+        for (int day : ALL_DAYS) {
+            String key = "day_" + day;
+            if (p.contains(key)) {
+                JSONArray filtered = filterCourses(new JSONArray(p.getString(key, "[]")), Collections.singleton(id));
+                editor.putString(key, filtered.toString());
+            }
+        }
+        editor.commit();
+        refreshWidgets(context);
+    }
+
+    static synchronized void restoreSlot(Context context, int requestedId, String start, String end) {
+        ensureInitialized(context);
+        int id = Math.max(1, Math.min(10, requestedId));
+        SharedPreferences p = prefs(context);
+        Set<Integer> disabled = disabledSlotIds(p);
+        disabled.remove(id);
+        List<Integer> active = activeSlotIds(p, p.getInt(SLOT_COUNT, 9));
+        if (!active.contains(id)) active.add(id);
+        Collections.sort(active);
+        int def = id - 1;
+        SharedPreferences.Editor editor = p.edit();
+        editor.putString(DISABLED_SLOT_IDS, joinSlotIds(new ArrayList<>(disabled)));
+        editor.putString(SLOT_IDS, joinSlotIds(active));
+        editor.putInt(SLOT_COUNT, active.size());
+        editor.putString("slot_" + id + "_start", (start == null || start.isEmpty()) ? DEFAULT_START[def] : start);
+        editor.putString("slot_" + id + "_end", (end == null || end.isEmpty()) ? DEFAULT_END[def] : end);
+        editor.commit();
+        refreshWidgets(context);
+    }
+
+    private static Set<Integer> disabledSlotIds(SharedPreferences p) {
+        Set<Integer> out = new HashSet<>();
+        String raw = p.getString(DISABLED_SLOT_IDS, "");
+        if (raw == null || raw.trim().isEmpty()) return out;
+        for (String part : raw.split(",")) {
+            try {
+                int id = Integer.parseInt(part.trim());
+                if (id >= 1 && id <= 10) out.add(id);
+            } catch (Exception ignored) {}
+        }
+        return out;
+    }
+
+    private static String joinSlotIds(List<Integer> ids) {
+        Collections.sort(ids);
+        StringBuilder out = new StringBuilder();
+        for (int id : ids) {
+            if (id < 1 || id > 10) continue;
+            if (out.length() > 0) out.append(',');
+            out.append(id);
+        }
+        return out.toString();
+    }
+
+    private static JSONArray filterCourses(JSONArray input, Set<Integer> disabled) {
+        JSONArray out = new JSONArray();
+        if (input == null) return out;
+        for (int i = 0; i < input.length(); i++) {
+            JSONObject course = input.optJSONObject(i);
+            if (course == null) continue;
+            int slot = course.optInt("slot", 0);
+            if (slot > 0 && disabled.contains(slot)) continue;
+            out.put(course);
+        }
+        return out;
     }
 
     private static String safeWeek(String week) {
