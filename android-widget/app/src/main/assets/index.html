@@ -85,7 +85,7 @@ button,input,select{font:inherit}button{touch-action:manipulation;-webkit-tap-hi
   <div class="field"><label>Heure de cours</label><select id="fSlot"></select></div>
   <div id="slotPreview" class="slotPreview"></div>
   <div id="courseWeekField" class="field"><label>Semaines concernées</label><div id="courseWeekChoices" class="courseWeekChoices"></div></div>
-  <div class="field"><label>Classe / groupe</label><input id="fLabel" type="text" maxlength="80" required></div>
+  <div class="field"><label>Classe</label><input id="fLabel" type="text" maxlength="80" required></div>
   <div class="field"><label>Salle</label><input id="fRoom" type="text" maxlength="20"></div>
   <div class="sheetActions"><button id="deleteCourse" type="button" class="btn danger" hidden>Supprimer</button><div class="rightActions"><button id="cancelEdit" type="button" class="btn">Annuler</button><button type="submit" class="btn primary">Enregistrer</button></div></div>
 </form>
@@ -168,25 +168,25 @@ function renderBreakSettings(){$('gapLabel').value=breaks.gapLabel;$('lunchLabel
 function applyBreakSettings(){breaks.gapLabel=$('gapLabel').value.trim()||'Trou';breaks.lunchLabel=$('lunchLabel').value.trim()||'Pause de midi';breaks.showGapBadge=$('showGapBadge').checked;breaks.showLunchBadge=$('showLunchBadge').checked;save()}
 function removeSlotAt(index){
   if(!Number.isInteger(index)||index<0||index>=slots.length||slots.length<=1)return;
-  const removed=Number(slots[index].n);
+  const removed=Number(slots[index].n),keepMode=mode,keepWeek=activeWeek,keepDay=selected;
   try{
     if(window.AndroidSchedule&&AndroidSchedule.removeScheduleSlot)AndroidSchedule.removeScheduleSlot(removed);
-  }catch(e){}
-  for(const w of ['A','B','C','D']){
-    if(!weeks[w])continue;
-    for(const d of DAYS){
-      if(!weeks[w][d]||!Array.isArray(weeks[w][d].courses))continue;
-      weeks[w][d].courses=weeks[w][d].courses.filter(c=>Number(c.slot)!==removed);
+    if(window.AndroidSchedule&&AndroidSchedule.loadSchedule){
+      const root=JSON.parse(AndroidSchedule.loadSchedule()||'{}');
+      if(Array.isArray(root._slots))slots=root._slots.map((s,i)=>({n:Math.max(1,Math.min(10,Number(s.n)||i+1)),start:s.start,end:s.end}));
+      if(root._weeks){
+        for(const w of ['A','B','C','D'])if(root._weeks[w]){
+          if(!weeks[w])weeks[w]=clone(DEFAULTS);
+          for(const d of DAYS)if(root._weeks[w][d])weeks[w][d]=root._weeks[w][d];
+        }
+      }
     }
+  }catch(e){
+    for(const w of ['A','B','C','D'])if(weeks[w])for(const d of DAYS)if(weeks[w][d]&&Array.isArray(weeks[w][d].courses))weeks[w][d].courses=weeks[w][d].courses.filter(c=>Number(c.slot)!==removed);
+    slots.splice(index,1);
   }
-  slots.splice(index,1);slotConfigV2=true;
-  state=weeks[activeWeek]||state;
-  renderSlots();
-  try{
-    if(typeof renderToday==='function')renderToday();
-    if(typeof renderWeek==='function')renderWeek();
-    if(typeof renderEdit==='function'&&mode==='edit')renderEdit();
-  }catch(e){}
+  slotConfigV2=true;mode=keepMode;activeWeek=keepWeek;selected=keepDay;state=weeks[mode==='today'?currentWeek:activeWeek]||state;
+  render();
 }
 function renderSlots(){
   const box=$('slotSettings');box.innerHTML='';
