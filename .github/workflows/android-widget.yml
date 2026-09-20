@@ -6,7 +6,7 @@ on:
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 concurrency:
-  group: android-widget-${{ github.ref_name }}-v19
+  group: android-widget-${{ github.ref_name }}-v20
   cancel-in-progress: true
 permissions: {contents: read}
 
@@ -49,6 +49,19 @@ jobs:
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
           echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+      - name: Package official APK signing tools
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/android-sign-tools/lib
+          cp "$ANDROID_HOME/build-tools/35.0.0/apksigner" /tmp/android-sign-tools/
+          cp "$ANDROID_HOME/build-tools/35.0.0/zipalign" /tmp/android-sign-tools/
+          cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" /tmp/android-sign-tools/lib/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-sign-tools-35
+          path: /tmp/android-sign-tools
+          if-no-files-found: error
       - uses: gradle/actions/setup-gradle@v4
         with: {gradle-version: '8.10.2'}
       - run: gradle clean :app:assembleDebug --stacktrace
