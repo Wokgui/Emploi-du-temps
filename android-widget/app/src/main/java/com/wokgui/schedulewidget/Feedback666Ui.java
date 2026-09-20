@@ -43,9 +43,15 @@ final class Feedback666Ui {
                     })),0);
                   };
                   const beginSwap=()=>{
-                    const live=document.getElementById('weekGrid');
-                    if(!live||!live.parentNode)return null;
-                    const parent=live.parentNode,rect=live.getBoundingClientRect(),parentRect=parent.getBoundingClientRect();
+                    const live=document.getElementById('weekGrid'),view=document.getElementById('viewWeek');
+                    removeCovers();
+                    // Never overlay the first render or a transition from another tab with
+                    // a clone of an unfinished/hidden grid: that caused the brief squeezed
+                    // lunch band and, occasionally, a white week screen.
+                    if(!live||!live.parentNode||!view||!view.classList.contains('active')||live.children.length<6)return null;
+                    const rect=live.getBoundingClientRect();
+                    if(rect.width<40||rect.height<40)return null;
+                    const parent=live.parentNode,parentRect=parent.getBoundingClientRect();
                     removeCovers();
                     const cover=live.cloneNode(true),token=++coverToken;
                     cover.classList.add('weekSwapCover669');cover.setAttribute('aria-hidden','true');
