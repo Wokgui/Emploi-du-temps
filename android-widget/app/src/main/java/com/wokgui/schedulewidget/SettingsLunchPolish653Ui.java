@@ -234,7 +234,7 @@ final class SettingsLunchPolish653Ui {
                   queued=false;
                   simplifyColourSettings();
                   clarifyWidgetBreakRow();
-                  paintFullWidthLunchBoundary();
+                  /* 7.06: WeekAppearance658 owns lunch rendering and boundaries. */
                 }
                 function schedule(){if(queued)return;queued=true;requestAnimationFrame(refresh)}
                 window.refreshSettingsLunchPolish653=refresh;
