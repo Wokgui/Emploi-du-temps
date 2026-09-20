@@ -285,10 +285,15 @@ final class ScheduleStore {
 
             JSONObject breaks = root.optJSONObject("_breaks");
             if (breaks != null) {
-                editor.putString(GAP_LABEL, breaks.optString("gapLabel", "Trou"));
-                editor.putString(LUNCH_LABEL, breaks.optString("lunchLabel", "Midi"));
-                editor.putBoolean(SHOW_GAP_BADGE, false);
-                editor.putBoolean(SHOW_LUNCH_BADGE, false);
+                SharedPreferences currentPrefs = prefs(context);
+                editor.putString(GAP_LABEL, breaks.optString("gapLabel", currentPrefs.getString(GAP_LABEL, "Trou")));
+                editor.putString(LUNCH_LABEL, breaks.optString("lunchLabel", currentPrefs.getString(LUNCH_LABEL, "Midi")));
+                editor.putBoolean(SHOW_GAP_BADGE, breaks.has("showGapBadge")
+                        ? breaks.optBoolean("showGapBadge")
+                        : currentPrefs.getBoolean(SHOW_GAP_BADGE, false));
+                editor.putBoolean(SHOW_LUNCH_BADGE, breaks.has("showLunchBadge")
+                        ? breaks.optBoolean("showLunchBadge")
+                        : currentPrefs.getBoolean(SHOW_LUNCH_BADGE, false));
             }
 
             Calendar now = Calendar.getInstance();
