@@ -101,6 +101,8 @@ final class Feedback678Ui {
 
                 function navigate(target){
                   if(navigating||!['today','week','edit'].includes(target))return;navigating=true;unlockNavigation();
+                  const weekView=document.getElementById('viewWeek'),prepareWeek=target==='week'&&weekView&&!weekView.classList.contains('active');
+                  if(prepareWeek)weekView.style.setProperty('opacity','0','important');
                   try{activeWeek=letter();if(typeof weeks!=='undefined'&&weeks[activeWeek])state=weeks[activeWeek]}catch(e){}
                   if(target!=='week')enforceView(target);
                   refreshIndicators();
@@ -114,7 +116,9 @@ final class Feedback678Ui {
                         if(window.refreshFeedback680)window.refreshFeedback680();
                       }
                     }catch(e){console.log('Feedback678Ui navigation',e)}
-                    enforceView(target);refreshIndicators();unlockNavigation();navigating=false;
+                    enforceView(target);refreshIndicators();
+                    if(prepareWeek)requestAnimationFrame(()=>weekView.style.removeProperty('opacity'));
+                    unlockNavigation();navigating=false;
                   });
                 }
                 window.navigateStable678=navigate;
