@@ -48,9 +48,9 @@ final class WorkflowUi {
                   #undoLast85{display:block;width:max-content;max-width:100%;margin:7px auto 0;padding:7px 11px;border:1px solid #cbd8e7;border-radius:8px;background:#fff;color:#40516a;font-size:.72rem;font-weight:800}
                   #undoLast85:disabled{opacity:.42}
                   #advancedSettings85{padding:0!important;overflow:hidden!important}
-                  #advancedSettings85>summary{list-style:none;cursor:pointer;padding:11px 12px;text-align:center;font-size:.78rem;font-weight:900;color:var(--ink);position:relative}
+                  #advancedSettings85>summary{list-style:none;cursor:pointer;padding:10px 12px;text-align:center;font-size:.91rem;font-weight:900;color:var(--ink);display:flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;width:max-content!important;max-width:100%!important;margin:0 auto!important;position:relative}
                   #advancedSettings85>summary::-webkit-details-marker{display:none}
-                  #advancedSettings85>summary:after{content:'⌄';position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.95rem}
+                  #advancedSettings85>summary:after{content:'⌄';position:static!important;display:inline-block!important;transform:none!important;color:var(--muted);font-size:.92rem;line-height:1}
                   #advancedSettings85[open]>summary:after{content:'⌃'}
                   #advancedContent85{padding:0 8px 8px}
                   #advancedContent85>.settingBox{margin:7px 0!important;box-shadow:none!important}
