@@ -255,6 +255,12 @@ final class HeavyPanelUi648 {
                     else chosen=firstFreeSlot(selected);
                     updateSlotOptions(chosen,!!editingCourse||!!newPrefill,editingCourse&&editingCourse.start||newPrefill&&newPrefill.start,editingCourse&&editingCourse.end||newPrefill&&newPrefill.end);
                     prepareContributedFields();
+                    const classInput=document.getElementById('fLabel'),roomInput=document.getElementById('fRoom'),lang=language();
+                    const classField=classInput&&classInput.closest('.field'),roomField=roomInput&&roomInput.closest('.field');
+                    const classLabel=classField&&classField.querySelector('label'),roomLabel=roomField&&roomField.querySelector('label');
+                    if(classLabel)setText(classLabel,lang==='de'?'Klasse':(lang==='en'?'Class':'Classe'));
+                    if(roomLabel)setText(roomLabel,lang==='de'?'Raum':(lang==='en'?'Room':'Salle'));
+                    if(classField&&roomField&&classField.nextElementSibling!==roomField)classField.insertAdjacentElement('afterend',roomField);
                     setOpen(course,true);
                   }catch(error){console.error('EDT_HEAVY_OPEN_ERROR|panel=course|message='+error)}
                   return false;
