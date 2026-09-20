@@ -1304,8 +1304,20 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
     uniq.forEach(markPair);
   }
   function fixAdvancedBottom(){
-    const a=document.getElementById('advancedSettings85');
-    if(a && !a.open){ const c=document.getElementById('advancedContent85'); if(c){c.style.setProperty('display','none','important');c.style.setProperty('padding','0','important');c.style.setProperty('margin','0','important')}}
+    const a=document.getElementById('advancedSettings85'),c=document.getElementById('advancedContent85');
+    if(!a||!c)return;
+    if(!a.open){
+      c.style.setProperty('display','none','important');
+      c.style.setProperty('padding','0','important');
+      c.style.setProperty('margin','0','important');
+      c.style.setProperty('height','0','important');
+      c.style.setProperty('min-height','0','important');
+      c.style.setProperty('overflow','hidden','important');
+    }else{
+      /* 7.07: remove the inline !important values written while closed.
+         They were surviving the native <details> toggle and made the panel look permanently closed. */
+      ['display','padding','margin','height','min-height','overflow'].forEach(p=>c.style.removeProperty(p));
+    }
   }
   let q=false; function apply(){q=false;applySeparators();fixAdvancedBottom()}
   function schedule(){if(q)return;q=true;requestAnimationFrame(apply)}
@@ -1412,7 +1424,7 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
   const style=document.createElement('style');
   style.id='edt706Style';
   style.textContent=`
-    /* 7.06 — first-subsection spacing kept consistent after removing the old lunch repaint layers. */
+    /* 7.07 — stable settings toggle plus the 7.06 UI fixes. */
     html body #settingsSheet #settingsTypeWeek692[open]>summary,
     html body #settingsSheet #settingsColors692[open]>summary,
     html body #settingsSheet #advancedSettings85[open]>summary{padding-bottom:7px!important}
@@ -1481,7 +1493,7 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
     html body main.wrap.edtInstantViews647>.view{transition:none!important;animation:none!important}
 
     /* Version affichée. */
-    html body #appVersionInfo:after{content:'Version 7.06'!important}
+    html body #appVersionInfo:after{content:'Version 7.07'!important}
   `;
   document.head.appendChild(style);
 
