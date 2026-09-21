@@ -3952,121 +3952,75 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 (function(){
   if(window.__edt732)return;window.__edt732=true;
 
-  function gap732(a,b){
-    if(!a||!b)return null;
-    const ar=a.getBoundingClientRect(),br=b.getBoundingClientRect();
-    if(!ar.height&&!br.height)return null;
-    return br.top-ar.bottom;
+  function visibleAdvanced732(){
+    return [...document.querySelectorAll('details#advancedSettings85')]
+      .find(e=>getComputedStyle(e).visibility!=='hidden')||document.querySelector('details#advancedSettings85');
   }
 
-  function px732(value){
-    const n=parseFloat(value);
-    return Number.isFinite(n)?n:0;
-  }
-
-  function adjustGap732(title,target,wanted){
-    if(!title||!target||!Number.isFinite(wanted))return false;
-    const current=gap732(title,target);
-    if(!Number.isFinite(current))return false;
-    const cs=getComputedStyle(target);
-    const old=px732(cs.marginTop);
-    const next=Math.max(0,old+(wanted-current));
-    if(Math.abs(current-wanted)>.5){
-      target.style.setProperty('margin-top',next.toFixed(1)+'px','important');
-      return true;
-    }
-    return false;
-  }
-
-  function firstVisible732(root,selectors){
-    if(!root)return null;
-    for(const sel of selectors){
-      const nodes=[...root.querySelectorAll(sel)];
-      const found=nodes.find(el=>{
-        const s=getComputedStyle(el),r=el.getBoundingClientRect();
-        return s.display!=='none'&&s.visibility!=='hidden'&&r.height>0;
-      });
-      if(found)return found;
-    }
-    return null;
-  }
-
-  function references732(){
-    const typeTitle=document.querySelector('#settingsWeekCycle678>.settingTitle');
-    const typeTiles=document.querySelector('#settingsWeekCycle678 .weekCycleChoices678');
-    const baseGap=gap732(typeTitle,typeTiles);
-
-    const breakTitle=document.getElementById('breakNamesTitle692');
-    const breakRoot=document.querySelector('#settingsDisplay692 .breakSettings');
-    const breakFirst=firstVisible732(breakRoot,[
-      '.breakRow',
-      '.breakNamesScope78',
-      '.dualBreakInputs',
-      'label',
-      'input'
-    ]);
-    const displayGap=gap732(breakTitle,breakFirst);
-
-    const profileTitle=document.getElementById('advProfilesTitle');
-    const profileSelect=document.getElementById('advProfileSelect');
-    const profileRow=profileSelect&&profileSelect.closest('.advRow');
-    const profileGap=gap732(profileTitle,profileRow||profileSelect);
-
-    return {baseGap,displayGap,profileGap};
-  }
-
-  function sync732(){
+  function applyExact732(){
     const style=document.getElementById('edt732Style');
     if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
 
-    const ref=references732();
-
-    /* Semaine en cours -> boutons : exactement comme Type de semaine -> boutons. */
+    /* Référence réelle : Type de semaine -> tuiles = 16 px. */
     const currentLabel=document.querySelector('#settingsWeekCycle678 .weekCurrentLabel678');
     const currentTiles=document.querySelector('#settingsWeekCycle678 .weekCurrentChoices678');
-    adjustGap732(currentLabel,currentTiles,ref.baseGap);
+    if(currentLabel)currentLabel.style.setProperty('margin-bottom','16px','important');
+    if(currentTiles)currentTiles.style.setProperty('margin-top','0','important');
 
-    /* Horaires des cours -> première ligne : même écart. */
+    /* Horaires des cours : même écart exact, sans marge héritée sur la première ligne. */
     const slotTitle=document.getElementById('slotTitle692');
-    const slotSettings=document.getElementById('slotSettings');
-    const firstSlot=firstVisible732(slotSettings,['.slotRow','input','select']);
-    adjustGap732(slotTitle,firstSlot,ref.baseGap);
+    const slots=document.getElementById('slotSettings');
+    const firstSlot=slots&&slots.querySelector('.slotRow');
+    if(slotTitle)slotTitle.style.setProperty('margin-bottom','16px','important');
+    if(slots)slots.style.setProperty('padding-top','0','important');
+    if(firstSlot)firstSlot.style.setProperty('margin-top','0','important');
 
-    /* Midi par jour -> intitulés de colonnes : comme Noms des interruptions -> sa ligne. */
+    /* Référence réelle : Noms des interruptions -> ligne = 22 px. */
     const midiTitle=document.querySelector('#week658Settings .w658Days>.w658Title');
     const midiHead=document.querySelector('#week658Settings .w658Days>.w658DayHead');
-    adjustGap732(midiTitle,midiHead,ref.displayGap);
+    if(midiTitle)midiTitle.style.setProperty('margin-bottom','13px','important');
+    if(midiHead)midiHead.style.setProperty('margin-top','3px','important');
 
-    /* Affichage du widget -> Condensation du widget : même écart de référence. */
-    const widgetTitle=document.getElementById('advWidgetTitle');
-    const densityTitle=document.querySelector('#widgetDensity664 .feedback664DensityTitle');
-    const densityBox=document.getElementById('widgetDensity664');
-    adjustGap732(widgetTitle,densityBox||densityTitle,ref.displayGap);
+    const density=document.getElementById('widgetDensity664');
+    if(density)density.style.setProperty('padding-top','0','important');
 
-    /* Modifications exceptionnelles -> Ajouter une exception : comme Profils -> Principal. */
-    const exceptionTitle=document.getElementById('advExceptionsTitle');
-    const addException=document.getElementById('advAddException');
-    const exceptionButtons=addException&&addException.closest('.advButtons');
-    adjustGap732(exceptionTitle,exceptionButtons||addException,ref.profileGap);
+    /* Référence réelle : Profils -> Principal = 14 px. */
+    const adv=visibleAdvanced732();
+    if(adv){
+      const exceptionTitle=adv.querySelector('#advExceptionsTitle');
+      const exceptionButtons=adv.querySelector('#advAddException')?.closest('.advButtons');
+      if(exceptionTitle)exceptionTitle.style.setProperty('margin-bottom','14px','important');
+      if(exceptionButtons)exceptionButtons.style.setProperty('margin-top','0','important');
+
+      const profile=adv.querySelector('#advProfileSelect');
+      if(profile){
+        profile.style.setProperty('-webkit-appearance','auto','important');
+        profile.style.setProperty('appearance','auto','important');
+        profile.style.setProperty('background-image','none','important');
+        profile.style.setProperty('padding-left','18px','important');
+        profile.style.setProperty('padding-right','32px','important');
+      }
+    }
   }
 
-  function verifyAndTag732(){
-    const ref=references732();
-    const pairs=[
-      ['week',document.querySelector('#settingsWeekCycle678 .weekCurrentLabel678'),document.querySelector('#settingsWeekCycle678 .weekCurrentChoices678'),ref.baseGap],
-      ['slots',document.getElementById('slotTitle692'),firstVisible732(document.getElementById('slotSettings'),['.slotRow','input','select']),ref.baseGap],
-      ['midi',document.querySelector('#week658Settings .w658Days>.w658Title'),document.querySelector('#week658Settings .w658Days>.w658DayHead'),ref.displayGap],
-      ['widget',document.getElementById('advWidgetTitle'),document.getElementById('widgetDensity664'),ref.displayGap],
-      ['exceptions',document.getElementById('advExceptionsTitle'),document.getElementById('advAddException')?.closest('.advButtons'),ref.profileGap]
-    ];
-    let ok=true;
-    for(const [name,a,b,wanted] of pairs){
-      const actual=gap732(a,b);
-      const pass=Number.isFinite(actual)&&Number.isFinite(wanted)&&Math.abs(actual-wanted)<=1.25;
-      document.documentElement.dataset['edt732'+name]=pass?'ok':'check';
-      if(!pass)ok=false;
-    }
-    document.documentElement.dataset.edt732Spacing=ok?'ok':'check';
+  function tagChecks732(){
+    const gap=(a,b)=>{
+      if(!a||!b)return null;
+      const A=a.getBoundingClientRect(),B=b.getBoundingClientRect();
+      return +(B.top-A.bottom).toFixed(1);
+    };
+    const adv=visibleAdvanced732();
+    const values={
+      type:gap(document.querySelector('#settingsWeekCycle678>.settingTitle'),document.querySelector('#settingsWeekCycle678 .weekCycleChoices678')),
+      current:gap(document.querySelector('#settingsWeekCycle678 .weekCurrentLabel678'),document.querySelector('#settingsWeekCycle678 .weekCurrentChoices678')),
+      slots:gap(document.getElementById('slotTitle692'),document.querySelector('#slotSettings .slotRow')),
+      names:gap(document.getElementById('breakNamesTitle692'),document.querySelector('#settingsDisplay692 .breakSettings')),
+      midi:gap(document.querySelector('#week658Settings .w658Days>.w658Title'),document.querySelector('#week658Settings .w658Days>.w658DayHead')),
+      widget:gap(document.getElementById('advWidgetTitle'),document.querySelector('#widgetDensity664 .feedback664DensityTitle')),
+      profiles:adv?gap(adv.querySelector('#advProfilesTitle'),adv.querySelector('#advProfileSelect')):null,
+      exceptions:adv?gap(adv.querySelector('#advExceptionsTitle'),adv.querySelector('#advAddException')):null
+    };
+    document.documentElement.dataset.edt732Metrics=JSON.stringify(values);
   }
 
   let queued=false;
@@ -4074,17 +4028,13 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     if(queued)return;queued=true;
     requestAnimationFrame(()=>{
       queued=false;
-      sync732();
-      requestAnimationFrame(()=>{
-        sync732();
-        verifyAndTag732();
-      });
+      applyExact732();
+      requestAnimationFrame(()=>{applyExact732();tagChecks732()});
     });
   }
 
   const sheet=document.getElementById('settingsSheet');
   if(sheet)new MutationObserver(settle732).observe(sheet,{childList:true,subtree:true,attributes:true,attributeFilter:['open','class']});
-
   document.addEventListener('click',e=>{
     if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))setTimeout(settle732,0);
   },true);
