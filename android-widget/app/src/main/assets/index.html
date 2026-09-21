@@ -1615,5 +1615,89 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
 })();
 </script>
 
+
+<script>
+(function(){
+  if(window.__edt710)return;window.__edt710=true;
+  const style=document.createElement('style');
+  style.id='edt710Style';
+  style.textContent=`
+    /* 7.10 — boutons de bas de panneau plus compacts et cohérents entre eux. */
+    html body #settingsModal #settingsSheet #resetFooter692{
+      grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+      gap:10px!important;
+      margin:8px 0 4px!important;
+      padding-top:10px!important;
+      border-top:0!important;
+    }
+    html body #settingsModal #settingsSheet #resetFooter692 button{
+      box-sizing:border-box!important;
+      height:46px!important;
+      min-height:46px!important;
+      max-height:46px!important;
+      margin:0!important;
+      padding:0 12px!important;
+      border:1px solid #d5dde8!important;
+      border-radius:12px!important;
+      background:#fff!important;
+      color:#4d5a6e!important;
+      font-size:.70rem!important;
+      font-weight:820!important;
+      line-height:1.12!important;
+    }
+    html body #settingsModal #settingsSheet .settingsActions{
+      margin:6px 0 0!important;
+      padding:0!important;
+      justify-content:center!important;
+    }
+    html body #settingsModal #settingsSheet .settingsActions #settingsDone{
+      box-sizing:border-box!important;
+      width:136px!important;
+      min-width:136px!important;
+      max-width:136px!important;
+      height:46px!important;
+      min-height:46px!important;
+      max-height:46px!important;
+      margin:0!important;
+      padding:0 18px!important;
+      border-radius:12px!important;
+      font-size:.88rem!important;
+      font-weight:850!important;
+      line-height:1!important;
+    }
+    html body #appVersionInfo:after{content:'Version 7.10'!important}
+  `;
+  document.head.appendChild(style);
+  function apply(){
+    const a=document.getElementById('resetBase692');
+    const b=document.getElementById('resetAdvanced692');
+    const done=document.getElementById('settingsDone');
+    [a,b].forEach(btn=>{if(!btn)return;
+      btn.style.setProperty('height','46px','important');
+      btn.style.setProperty('min-height','46px','important');
+      btn.style.setProperty('max-height','46px','important');
+      btn.style.setProperty('border-radius','12px','important');
+      btn.style.setProperty('padding','0 12px','important');
+      btn.style.setProperty('font-size','.70rem','important');
+    });
+    if(done){
+      done.style.setProperty('width','136px','important');
+      done.style.setProperty('min-width','136px','important');
+      done.style.setProperty('max-width','136px','important');
+      done.style.setProperty('height','46px','important');
+      done.style.setProperty('min-height','46px','important');
+      done.style.setProperty('max-height','46px','important');
+      done.style.setProperty('border-radius','12px','important');
+      done.style.setProperty('padding','0 18px','important');
+      done.style.setProperty('font-size','.88rem','important');
+    }
+  }
+  apply();
+  const sheet=document.getElementById('settingsSheet');
+  if(sheet)new MutationObserver(()=>queueMicrotask(apply)).observe(sheet,{childList:true,subtree:true});
+  setTimeout(apply,80);setTimeout(apply,300);
+})();
+</script>
+
 </body>
 </html>
