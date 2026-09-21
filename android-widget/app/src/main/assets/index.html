@@ -1589,20 +1589,11 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
     html body #appVersionInfo:after{content:'Version 7.08'!important}
   `;document.head.appendChild(style);
 
+  /* 7.21: do not write 72 px geometry inline.
+     Those inline !important values overrode every later open-state spacing rule.
+     Closed geometry remains defined by CSS; open geometry can now be controlled
+     deterministically by the final stylesheet without MutationObserver relayouts. */
   function apply(){
-    ids.forEach(id=>{
-      const d=document.getElementById(id),s=d&&d.querySelector(':scope > summary');
-      if(!s)return;
-      s.style.setProperty('height','72px','important');
-      s.style.setProperty('min-height','72px','important');
-      s.style.setProperty('padding','0 42px','important');
-      s.style.setProperty('margin','0','important');
-      s.style.setProperty('box-sizing','border-box','important');
-      s.style.setProperty('display','flex','important');
-      s.style.setProperty('align-items','center','important');
-      s.style.setProperty('justify-content','center','important');
-      s.style.setProperty('text-align','center','important');
-    });
     const f=document.getElementById('resetFooter692');
     if(f){
       f.style.setProperty('border-top','0','important');
@@ -1614,10 +1605,6 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
     }
   }
   apply();
-  const sheet=document.getElementById('settingsSheet');
-  if(sheet)new MutationObserver(()=>queueMicrotask(apply)).observe(sheet,{childList:true,subtree:true});
-  document.addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))queueMicrotask(apply)},true);
-  setTimeout(apply,80);setTimeout(apply,300);
 })();
 </script>
 
