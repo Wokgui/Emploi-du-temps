@@ -1888,5 +1888,60 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
 })();
 </script>
 
+
+<script>
+(function(){
+  if(window.__edt716)return;window.__edt716=true;
+  const style=document.createElement('style');
+  style.id='edt716Style';
+  style.textContent=`
+    /*
+      7.16 — correction visuelle directe.
+      On déplace tout le contenu ouvert vers le titre de 32 px et on retire
+      exactement la même valeur du flux : le vide supérieur diminue nettement
+      sans modifier la respiration sous le dernier élément.
+    */
+    html body #settingsSheet #settingsLanguage698[open] > .settingsAccordionBody692,
+    html body #settingsSheet #settingsTypeWeek692[open] > .settingsAccordionBody692,
+    html body #settingsSheet #settingsText692[open] > .settingsAccordionBody692,
+    html body #settingsSheet #settingsColors692[open] > .settingsAccordionBody692,
+    html body #settingsSheet #settingsDisplay692[open] > .settingsAccordionBody692,
+    html body #settingsSheet #advancedSettings85[open] > #advancedContent85{
+      position:relative!important;
+      transform:translateY(-32px)!important;
+      margin-bottom:-32px!important;
+      transition:none!important;
+      animation:none!important;
+    }
+
+    /* Aucune animation / interpolation de hauteur lors de l'ouverture. */
+    html body #settingsSheet .settingsAccordion692,
+    html body #settingsSheet .settingsAccordion692 > summary,
+    html body #settingsSheet .settingsAccordionBody692,
+    html body #settingsSheet #advancedSettings85,
+    html body #settingsSheet #advancedSettings85 > summary,
+    html body #settingsSheet #advancedContent85{
+      transition:none!important;
+      animation:none!important;
+      scroll-behavior:auto!important;
+    }
+    html body #settingsSheet{overflow-anchor:none!important}
+
+    /* Horaires : réserve basse indépendante du déplacement visuel. */
+    html body #settingsSheet #settingsTypeWeek692 #slotSettings{
+      padding-bottom:12px!important;
+      box-sizing:border-box!important;
+      overflow:hidden!important;
+    }
+    html body #settingsSheet #settingsTypeWeek692 #slotSettings .slotAdd{
+      margin:8px auto 0!important;
+    }
+
+    html body #appVersionInfo:after{content:'Version 7.16'!important}
+  `;
+  document.head.appendChild(style);
+})();
+</script>
+
 </body>
 </html>
