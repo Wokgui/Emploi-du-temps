@@ -1,4 +1,4 @@
-name: Visual spacing test
+name: Clean Android 7.21 tested build
 
 on:
   push:
@@ -89,7 +89,7 @@ jobs:
             if(n==='loadUiSettings')return JSON.stringify({language:'fr'});
             if(n==='loadAdvancedSetting')return '';
             if(n==='getCurrentWeek')return 'B';
-            if(n==='getAppVersionName')return '7.20';
+            if(n==='getAppVersionName')return '7.21';
             if(n==='loadHolidays'||n==='loadSchoolHolidays')return '[]';
             if(n.startsWith('load'))return '{}';
             if(n.startsWith('get')||n.startsWith('is'))return '';
@@ -153,6 +153,17 @@ jobs:
           report=json.loads(raw)
           pathlib.Path('build/visual/report.json').write_text(json.dumps(report,indent=2,ensure_ascii=False))
           print(json.dumps(report,indent=2,ensure_ascii=False))
+          required=['settingsLanguage698','settingsTypeWeek692','settingsText692','settingsColors692','settingsDisplay692']
+          missing=[k for k in required if k not in report]
+          if missing: raise SystemExit('missing visual sections: '+','.join(missing))
+          gaps=[float(report[k]['visibleGap']) for k in required]
+          body_gaps=[float(report[k]['firstTop'])-float(report[k]['summaryBottom']) for k in required]
+          heights=[float(report[k]['summaryHeight']) for k in required]
+          if max(gaps)-min(gaps)>0.6: raise SystemExit(f'visual gaps not uniform: {gaps}')
+          if not all(12.0<=x<=14.0 for x in gaps): raise SystemExit(f'visual title/content gap outside tested range: {gaps}')
+          if not all(abs(x-6.0)<=0.2 for x in body_gaps): raise SystemExit(f'body gap is not real 6px: {body_gaps}')
+          if not all(abs(x-32.0)<=0.2 for x in heights): raise SystemExit(f'open summary height unstable: {heights}')
+          print('VISUAL_SPACING_OK',{'gaps':gaps,'body_gaps':body_gaps,'heights':heights})
           PY
 
       - uses: actions/upload-artifact@v4
@@ -167,10 +178,10 @@ jobs:
       - name: Verify package metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='720001' versionName='7.20'" /tmp/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.20-clean-debug.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='721001' versionName='7.21'" /tmp/badging.txt
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.21-tested-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: EDT-7.20-clean
-          path: android-widget/app/build/outputs/apk/debug/EDT-7.20-clean-debug.apk
+          name: EDT-7.21-tested
+          path: android-widget/app/build/outputs/apk/debug/EDT-7.21-tested-debug.apk
           if-no-files-found: error
