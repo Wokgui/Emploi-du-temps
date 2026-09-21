@@ -1,8 +1,8 @@
-name: Clean Android 7.20 build
+name: Visual spacing test
 
 on:
   push:
-    branches: [fix/720-real-visible-gap]
+    branches: [fix/721-tested-spacing]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 
@@ -38,6 +38,132 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with: {gradle-version: '8.10.2'}
       - run: gradle clean :app:assembleDebug --stacktrace
+      - name: Build real WebView runtime for visual test
+        run: |
+          set -euxo pipefail
+          mkdir -p build/visual-src/com/wokgui/schedulewidget build/visual-classes build/visual
+          cat > build/visual-src/com/wokgui/schedulewidget/BuildConfig.java <<'EOF'
+          package com.wokgui.schedulewidget;
+          final class BuildConfig { static final boolean DEBUG = false; }
+          EOF
+          cat > build/visual-src/com/wokgui/schedulewidget/DumpUiRuntime.java <<'EOF'
+          package com.wokgui.schedulewidget;
+          public final class DumpUiRuntime {
+            public static void main(String[] args) { System.out.print(UiRuntimeBundle.script()); }
+          }
+          EOF
+          python3 - <<'PY'
+          import re, pathlib
+          root=pathlib.Path('app/src/main/java/com/wokgui/schedulewidget')
+          chunk=(root/'ChunkedUiScripts.java').read_text()
+          names=set(re.findall(r'\b([A-Z][A-Za-z0-9]+)(?:\.class|\.script\(|\.prelude\()',chunk))
+          names.update(['UiRuntimeBundle','ChunkedUiScripts','RuntimeRepair644','LegacyChainRepair651','ImportParserUi','ImportReviewUi'])
+          paths=[]
+          for name in sorted(names):
+              p=root/(name+'.java')
+              if p.exists(): paths.append(str(p))
+              else: print('MISSING',name)
+          pathlib.Path('build/visual/sources.txt').write_text('\n'.join(paths))
+          print('\n'.join(paths))
+          PY
+          javac -encoding UTF-8 -d build/visual-classes             build/visual-src/com/wokgui/schedulewidget/BuildConfig.java             build/visual-src/com/wokgui/schedulewidget/DumpUiRuntime.java             $(cat build/visual/sources.txt)
+          java -cp build/visual-classes com.wokgui.schedulewidget.DumpUiRuntime > build/visual/runtime.js
+
+      - name: Render settings in headless Chrome and measure real visible gaps
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          html=Path('app/src/main/assets/index.html').read_text(encoding='utf-8')
+          runtime=Path('build/visual/runtime.js').read_text(encoding='utf-8').replace('</script>','<\\/script>')
+          stub=r'''<script>
+          window.AndroidSchedule=new Proxy({}, {get(t,p){const n=String(p);return (...a)=>{
+            if(n==='loadSchedule')return JSON.stringify({_version:2,_slots:[
+              {n:1,start:'08:00',end:'09:00'},{n:2,start:'09:00',end:'10:00'},{n:3,start:'10:00',end:'11:00'},
+              {n:4,start:'11:00',end:'12:00'},{n:5,start:'13:00',end:'14:00'},{n:6,start:'14:00',end:'15:00'},
+              {n:7,start:'16:00',end:'17:00'},{n:8,start:'17:00',end:'18:00'},{n:9,start:'18:00',end:'19:00'}],
+              _weeks:{A:{2:{courses:[]},3:{courses:[]},4:{courses:[]},5:{courses:[]},6:{courses:[]}},
+                      B:{2:{courses:[]},3:{courses:[]},4:{courses:[]},5:{courses:[]},6:{courses:[]}}}});
+            if(n==='loadAdvancedSettings')return JSON.stringify({singleWeek:false,cycleLength:2});
+            if(n==='loadUiSettings')return JSON.stringify({language:'fr'});
+            if(n==='loadAdvancedSetting')return '';
+            if(n==='getCurrentWeek')return 'B';
+            if(n==='getAppVersionName')return '7.20';
+            if(n==='loadHolidays'||n==='loadSchoolHolidays')return '[]';
+            if(n.startsWith('load'))return '{}';
+            if(n.startsWith('get')||n.startsWith('is'))return '';
+            return '';
+          }}});
+          window.alert=()=>{};window.confirm=()=>true;
+          </script>'''
+          html=html.replace('<head>','<head>'+stub,1)
+          measure=r'''<script>
+          setTimeout(()=>{
+            try{
+              const modal=document.getElementById('settingsModal');
+              if(modal){modal.classList.add('show','edtForceVisible695');modal.setAttribute('data-edt-open','true');modal.style.display='block'}
+              const defs=[
+                ['settingsLanguage698','#languageSelect'],
+                ['settingsTypeWeek692','#settingsWeekCycle678>.settingTitle'],
+                ['settingsText692','#appFontTitle'],
+                ['settingsColors692','#themeTitle,.edtThemeTitle696'],
+                ['settingsDisplay692','#breakDisplaySetting .feedback663Title,.edtFirstSubTitle696'],
+                ['advancedSettings85','#languageExtraTitle85,.edtLanguagesTitle696']
+              ];
+              const report={};
+              for(const [id,sel] of defs){
+                document.querySelectorAll('#settingsSheet details').forEach(d=>d.open=false);
+                const d=document.getElementById(id); if(!d)continue; d.open=true;
+                const label=d.querySelector(':scope>summary .edtSummaryLabel700')||d.querySelector(':scope>summary');
+                const first=d.querySelector(sel);
+                if(!label||!first)continue;
+                const a=label.getBoundingClientRect(), b=first.getBoundingClientRect(), s=d.querySelector(':scope>summary').getBoundingClientRect();
+                report[id]={
+                  visibleGap:+(b.top-a.bottom).toFixed(1),
+                  summaryHeight:+s.height.toFixed(1),
+                  summaryBottom:+s.bottom.toFixed(1),
+                  firstTop:+b.top.toFixed(1),
+                  firstText:(first.textContent||'').trim().slice(0,80)
+                };
+              }
+              document.querySelectorAll('#settingsSheet details').forEach(d=>d.open=false);
+              const weeks=document.getElementById('settingsTypeWeek692');if(weeks)weeks.open=true;
+              const pre=document.createElement('pre');pre.id='visual-report';pre.textContent=JSON.stringify(report);document.body.appendChild(pre);
+              document.documentElement.dataset.visualDone='1';
+              document.scrollingElement.scrollTop=Math.max(0,(weeks?.getBoundingClientRect().top||0)-100);
+            }catch(e){
+              const pre=document.createElement('pre');pre.id='visual-report';pre.textContent=JSON.stringify({error:String(e),stack:e.stack});document.body.appendChild(pre);
+              document.documentElement.dataset.visualDone='1';
+            }
+          },3500);
+          </script>'''
+          html=html.replace('</body>',f'<script>{runtime}</script>'+measure+'</body>')
+          Path('build/visual/harness.html').write_text(html,encoding='utf-8')
+          PY
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=6000 --window-size=716,1500             --dump-dom "file://$PWD/build/visual/harness.html" > build/visual/dom.html
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=6000 --window-size=716,1500             --screenshot="$PWD/build/visual/settings.png" "file://$PWD/build/visual/harness.html"
+          python3 - <<'PY'
+          import re, html as h, json, pathlib
+          dom=pathlib.Path('build/visual/dom.html').read_text(errors='ignore')
+          m=re.search(r'<pre id="visual-report">(.*?)</pre>',dom,re.S)
+          if not m: raise SystemExit('visual report missing')
+          raw=h.unescape(m.group(1))
+          report=json.loads(raw)
+          pathlib.Path('build/visual/report.json').write_text(json.dumps(report,indent=2,ensure_ascii=False))
+          print(json.dumps(report,indent=2,ensure_ascii=False))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EDT-visual-spacing-report
+          path: |
+            android-widget/build/visual/report.json
+            android-widget/build/visual/settings.png
+            android-widget/build/visual/dom.html
+          if-no-files-found: error
+
       - name: Verify package metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
