@@ -1493,7 +1493,7 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
     html body main.wrap.edtInstantViews647>.view{transition:none!important;animation:none!important}
 
     /* Version affichée. */
-    html body #appVersionInfo:after{content:'Version 7.08'!important}
+    html body #appVersionInfo:after{content:'Version 7.09'!important}
   `;
   document.head.appendChild(style);
 
@@ -1530,7 +1530,7 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
 (function(){
   if(window.__edt708)return;window.__edt708=true;
   const ids=['settingsLanguage698','settingsTypeWeek692','settingsText692','settingsColors692','settingsDisplay692','advancedSettings85'];
-  const style=document.createElement('style');style.id='edt708Style';style.textContent=\`
+  const style=document.createElement('style');style.id='edt708Style';style.textContent=`
     /* 7.08 — géométrie identique des six grandes rubriques. */
     html body #settingsModal #settingsSheet #settingsLanguage698>summary,
     html body #settingsModal #settingsSheet #settingsTypeWeek692>summary,
@@ -1581,7 +1581,7 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
     html body #settingsModal #settingsSheet #resetFooter692::before,
     html body #settingsModal #settingsSheet #resetFooter692::after{content:none!important;display:none!important}
     html body #appVersionInfo:after{content:'Version 7.08'!important}
-  \`;document.head.appendChild(style);
+  `;document.head.appendChild(style);
 
   function apply(){
     ids.forEach(id=>{
