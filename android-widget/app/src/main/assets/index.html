@@ -753,7 +753,7 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
   function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim()}
   function apply(){
     const sheet=document.getElementById('settingsSheet');if(!sheet)return;
-    const appTitle=document.getElementById('appFontTitle');if(appTitle){appTitle.style.setProperty('margin-top','11px','important')}
+    const appTitle=document.getElementById('appFontTitle');if(appTitle){appTitle.style.removeProperty('margin-top')}
     [...sheet.querySelectorAll('button')].forEach(b=>{
       const t=norm(b.textContent);
       const langButton=(t.includes('telecharger')&&t.includes('langue')) ||
