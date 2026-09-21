@@ -1,8 +1,8 @@
-name: Clean Android 7.29 spacing-week-labels build
+name: Clean Android 7.30 title-spacing-harmonization build
 
 on:
   push:
-    branches: [fix/729-spacing-week-labels]
+    branches: [fix/730-title-spacing-harmonization]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 
@@ -89,7 +89,7 @@ jobs:
             if(n==='loadUiSettings')return JSON.stringify({language:'fr'});
             if(n==='loadAdvancedSetting')return '';
             if(n==='getCurrentWeek')return 'B';
-            if(n==='getAppVersionName')return '7.29';
+            if(n==='getAppVersionName')return '7.30';
             if(n==='loadHolidays'||n==='loadSchoolHolidays')return '[]';
             if(n.startsWith('load'))return '{}';
             if(n.startsWith('get')||n.startsWith('is'))return '';
@@ -198,10 +198,10 @@ jobs:
       - name: Verify package metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='729001' versionName='7.29'" /tmp/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.29-tested-debug.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='730001' versionName='7.30'" /tmp/badging.txt
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.30-tested-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: EDT-7.29-tested
-          path: android-widget/app/build/outputs/apk/debug/EDT-7.29-tested-debug.apk
+          name: EDT-7.30-tested
+          path: android-widget/app/build/outputs/apk/debug/EDT-7.30-tested-debug.apk
           if-no-files-found: error
