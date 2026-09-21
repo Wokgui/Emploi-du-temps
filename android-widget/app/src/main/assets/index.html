@@ -2367,9 +2367,7 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
   html body #settingsSheet #advancedContent85 > .holidayFlat725{border-top:0!important;padding-top:6px!important}
   html body #settingsSheet #advancedContent85 > .holidayFlat725 #advCalendarTitle{margin-top:0!important;padding-top:0!important}
 
-  html body #settingsSheet #languageExtra85,
-  html body #settingsSheet #languageDownloadBtn81,
-  html body #settingsSheet #languagePackPanel81{display:none!important}
+  html body #settingsSheet #languageExtra85{display:none!important}
 
   html body #settingsSheet #settingsLanguage698 .languageSelect{
     min-width:0!important;max-width:calc(100vw - 72px)!important;margin-left:auto!important;margin-right:auto!important
@@ -2439,9 +2437,11 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
   }
 
   function removeExtraLanguages(){
-    ['languageExtra85','languageDownloadBtn81','languagePackPanel81'].forEach(id=>{
-      const el=document.getElementById(id);if(el)el.remove();
-    });
+    const extra=document.getElementById('languageExtra85');
+    if(!extra)return;
+    const select=document.getElementById('languageSelect'),box=select&&select.closest('.settingBox');
+    ['languageDownloadBtn81','languagePackPanel81'].forEach(id=>{const el=document.getElementById(id);if(el&&box&&el.parentElement!==box)box.appendChild(el)});
+    extra.remove();
   }
 
   function fitLanguageSelect(){
