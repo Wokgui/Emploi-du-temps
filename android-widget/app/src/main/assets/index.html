@@ -1943,5 +1943,119 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
 })();
 </script>
 
+
+<script>
+(function(){
+  if(window.__edt717)return;window.__edt717=true;
+  const style=document.createElement('style');
+  style.id='edt717Style';
+  style.textContent=`
+    /*
+      7.17 — référence unique pour l'espace entre un grand titre et son premier contenu.
+      La référence choisie est 24 px, soit environ +50 % par rapport à l'écart
+      visuel actuel Couleurs -> Thème observé en 7.16.
+      Aucun recalcul JS : le placement reste parfaitement fixe après ouverture.
+    */
+    :root{--edt-major-open-gap:24px}
+
+    /* Annule les corrections précédentes qui rapprochaient artificiellement le contenu. */
+    html body #settingsSheet #settingsLanguage698[open] > summary,
+    html body #settingsSheet #settingsTypeWeek692[open] > summary,
+    html body #settingsSheet #settingsText692[open] > summary,
+    html body #settingsSheet #settingsColors692[open] > summary,
+    html body #settingsSheet #settingsDisplay692[open] > summary,
+    html body #settingsSheet #advancedSettings85[open] > summary{
+      margin-bottom:0!important;
+    }
+
+    html body #settingsSheet #settingsLanguage698[open] > .settingsAccordionBody692,
+    html body #settingsSheet #settingsTypeWeek692[open] > .settingsAccordionBody692,
+    html body #settingsSheet #settingsText692[open] > .settingsAccordionBody692,
+    html body #settingsSheet #settingsColors692[open] > .settingsAccordionBody692,
+    html body #settingsSheet #settingsDisplay692[open] > .settingsAccordionBody692,
+    html body #settingsSheet #advancedSettings85[open] > #advancedContent85{
+      position:static!important;
+      transform:none!important;
+      margin-top:0!important;
+      margin-bottom:0!important;
+      padding-top:var(--edt-major-open-gap)!important;
+      transition:none!important;
+      animation:none!important;
+    }
+
+    /* On neutralise uniquement les marges/paddings externes du PREMIER bloc de chaque rubrique.
+       Ainsi le même 24 px correspond au même vide visuel même si le contenu commence par
+       un texte, un sélecteur, une grille ou une tuile. */
+    html body #settingsSheet #settingsLanguage698 .settingsLanguage692{
+      margin-top:0!important;padding-top:0!important
+    }
+
+    html body #settingsSheet #settingsTypeWeek692 #settingsWeekCycle678{
+      margin-top:0!important;padding-top:0!important
+    }
+    html body #settingsSheet #settingsTypeWeek692 #settingsWeekCycle678 > .settingTitle{
+      margin-top:0!important;padding-top:0!important
+    }
+
+    html body #settingsSheet #settingsText692 #textSettings86,
+    html body #settingsSheet #settingsText692 #textSettings86 > .settingsSectionBody86,
+    html body #settingsSheet #settingsText692 #textSettings86 > .settingsSectionBody86 > .settingBox:first-child{
+      margin-top:0!important;padding-top:0!important
+    }
+    html body #settingsSheet #settingsText692 #appFontTitle{
+      margin-top:0!important;padding-top:0!important
+    }
+
+    html body #settingsSheet #settingsColors692 #colorSettings86,
+    html body #settingsSheet #settingsColors692 #colorSettings86 > .settingsSectionBody86{
+      margin-top:0!important;padding-top:0!important
+    }
+    html body #settingsSheet #settingsColors692 #themeTitle,
+    html body #settingsSheet #settingsColors692 .edtThemeTitle696{
+      margin-top:0!important;padding-top:0!important
+    }
+
+    html body #settingsSheet #settingsDisplay692 #breakDisplaySetting{
+      margin-top:0!important;padding-top:0!important
+    }
+    html body #settingsSheet #settingsDisplay692 #breakDisplaySetting .feedback663Title,
+    html body #settingsSheet #settingsDisplay692 .edtFirstSubTitle696{
+      margin-top:0!important;padding-top:0!important
+    }
+
+    html body #settingsSheet #advancedSettings85 #languageExtra85{
+      margin-top:0!important;padding-top:0!important
+    }
+    html body #settingsSheet #advancedSettings85 #languageExtraTitle85,
+    html body #settingsSheet #advancedSettings85 .edtLanguagesTitle696{
+      margin-top:0!important;padding-top:0!important
+    }
+
+    /* Garde la réserve basse stable du bouton Ajouter une heure. */
+    html body #settingsSheet #settingsTypeWeek692 #slotSettings{
+      box-sizing:border-box!important;
+      padding-bottom:12px!important;
+      overflow:hidden!important
+    }
+    html body #settingsSheet #settingsTypeWeek692 #slotSettings .slotAdd{
+      margin:8px auto 0!important
+    }
+
+    /* Aucun mouvement animé du contenu ou de la hauteur. */
+    html body #settingsSheet .settingsAccordion692,
+    html body #settingsSheet .settingsAccordion692 > summary,
+    html body #settingsSheet .settingsAccordionBody692,
+    html body #settingsSheet #advancedSettings85,
+    html body #settingsSheet #advancedSettings85 > summary,
+    html body #settingsSheet #advancedContent85{
+      transition:none!important;animation:none!important
+    }
+
+    html body #appVersionInfo:after{content:'Version 7.17'!important}
+  `;
+  document.head.appendChild(style);
+})();
+</script>
+
 </body>
 </html>
