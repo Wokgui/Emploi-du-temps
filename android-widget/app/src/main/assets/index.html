@@ -52,7 +52,7 @@ button,input,select{font:inherit}button{touch-action:manipulation;-webkit-tap-hi
   </section>
 
   <section id="viewWeek" class="view">
-    <div class="weekTop"><h2>Aperçu semaine <span id="weekTitleLetter" class="weekLetter">A</span></h2></div>
+    <div class="weekTop"><h2>Semaine <span id="weekTitleLetter" class="weekLetter">A</span></h2></div>
     <div class="weekScroller"><div id="weekGrid" class="weekGrid"></div></div>
   </section>
 
@@ -3500,6 +3500,196 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   else if(document.getElementById('viewWeek')?.classList.contains('active'))renderWeek728();
   setTimeout(()=>stableSettings728(false),120);
   setTimeout(()=>stableSettings728(false),500);
+})();
+</script>
+
+
+
+<style id="edt729Style">
+  /* 7.29 — harmonisation des espacements. */
+
+  /* Type de semaines : espace doublé avant "Semaine en cours". */
+  html body #settingsSheet #settingsTypeWeek692 #settingsWeekCycle678 .weekCurrentSettings678{
+    margin-top:18px!important;
+    padding-top:2px!important;
+  }
+
+  /* "Télécharger une langue" au même niveau typographique que "Type de semaines". */
+  html body #settingsSheet #languagePackPanel81 .languagePackTitle{
+    font-size:.84rem!important;
+    font-weight:850!important;
+    line-height:1.15!important;
+    margin-bottom:14px!important;
+  }
+
+  /* Même respiration sous les titres de sous-rubriques. */
+  html body #settingsSheet #themeTitle{
+    margin-bottom:14px!important;
+  }
+  html body #settingsSheet #settingsDisplay692 #widgetBaseTitle706{
+    margin-bottom:0!important;
+    padding-bottom:28px!important;
+  }
+  html body #settingsSheet #settingsDisplay692 #breakDisplaySetting .feedback663Title{
+    margin-bottom:22px!important;
+  }
+  html body #settingsSheet #settingsDisplay692 #week658Settings .w658Days>.w658Title{
+    margin-bottom:22px!important;
+  }
+  html body #settingsSheet #settingsDisplay692 #advWidgetTitle{
+    margin-bottom:22px!important;
+    padding-bottom:0!important;
+  }
+
+  /* Jours fériés : réduire encore d'environ un tiers l'espace supérieur. */
+  html body #settingsSheet #advancedContent85>.holidayFlat725{
+    margin-top:-12px!important;
+    padding-top:0!important;
+  }
+
+  /* Profils : même distance entre la rangée de boutons et le séparateur
+     que sous "Restaurer une sauvegarde". */
+  html body #settingsSheet #advancedSettings85 .feedback664Profiles>.advButtons{
+    margin-bottom:12px!important;
+  }
+  html body #settingsSheet #advancedSettings85 #advBackupTitle~.advButtons{
+    margin-bottom:12px!important;
+  }
+
+  /* Titre de semaine et plage de dates. */
+  html body #viewWeek .weekTop h2{
+    display:flex!important;
+    align-items:baseline!important;
+    justify-content:center!important;
+    flex-wrap:wrap!important;
+    gap:4px!important;
+    text-align:center!important;
+  }
+  html body #viewWeek #weekName729{
+    font-size:1rem!important;
+    font-weight:850!important;
+    color:var(--ink,#111936)!important;
+  }
+  html body #viewWeek #weekRange729{
+    color:#68738a!important;
+    font-size:.72rem!important;
+    font-weight:720!important;
+    white-space:nowrap!important;
+  }
+
+  /* Intitulés de colonnes sur deux lignes : Lun / 14/09. */
+  html body #viewWeek .wh.day{
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+    line-height:1!important;
+  }
+  html body #viewWeek .wh.day .weekDayName729{
+    display:block!important;
+    font-size:.65rem!important;
+    font-weight:850!important;
+  }
+  html body #viewWeek .wh.day .weekDayDate729{
+    display:block!important;
+    margin-top:3px!important;
+    color:#657087!important;
+    font-size:.54rem!important;
+    font-weight:720!important;
+  }
+
+  html body #appVersionInfo:after{content:'Version 7.29'!important}
+</style>
+
+<script>
+(function(){
+  if(window.__edt729)return;window.__edt729=true;
+
+  const SHORT729={1:'Dim',2:'Lun',3:'Mar',4:'Mer',5:'Jeu',6:'Ven',7:'Sam'};
+  const LETTERS729=['A','B','C','D'];
+  const WEEK_MS729=7*24*60*60*1000;
+
+  function monday729(date){
+    const d=new Date(date.getFullYear(),date.getMonth(),date.getDate(),12,0,0,0);
+    const js=d.getDay(),delta=js===0?-6:1-js;
+    d.setDate(d.getDate()+delta);return d;
+  }
+  function addDays729(date,n){
+    const d=new Date(date.getFullYear(),date.getMonth(),date.getDate(),12,0,0,0);
+    d.setDate(d.getDate()+n);return d;
+  }
+  function weekIndex729(date){return Math.floor(monday729(date).getTime()/WEEK_MS729)}
+  function root729(){
+    try{return JSON.parse(window.AndroidSchedule&&AndroidSchedule.loadSchedule?AndroidSchedule.loadSchedule():'{}')}catch(e){return {}}
+  }
+  function weekLetter729(date){
+    const root=root729(),len=Math.max(1,Math.min(4,Number(root._cycleLength)||2));
+    const anchor=Number.isFinite(Number(root._weekAnchor))?Number(root._weekAnchor):weekIndex729(new Date());
+    return LETTERS729[((weekIndex729(date)-anchor)%len+len)%len]||'A';
+  }
+  function enabledDays729(){
+    const raw=root729()._enabledDays;
+    const arr=Array.isArray(raw)?raw.map(Number):[2,3,4,5,6];
+    return [2,3,4,5,6,7,1].filter(d=>arr.includes(d));
+  }
+  function weekMonday729(){
+    const d=window.__edt728WeekMonday instanceof Date?window.__edt728WeekMonday:new Date();
+    return monday729(d);
+  }
+  function dateForCalDay729(monday,day){
+    return addDays729(monday,day===1?6:day-2);
+  }
+
+  function decorate729(){
+    const style=document.getElementById('edt729Style');
+    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+
+    const monday=weekMonday729(),sunday=addDays729(monday,6),letter=weekLetter729(monday);
+    const title=document.querySelector('#viewWeek .weekTop h2');
+    if(title){
+      const wantedName='Semaine '+letter;
+      let name=document.getElementById('weekName729'),range=document.getElementById('weekRange729');
+      if(!name||!range||name.parentElement!==title||range.parentElement!==title){
+        title.innerHTML='';
+        name=document.createElement('span');name.id='weekName729';
+        range=document.createElement('span');range.id='weekRange729';
+        title.append(name,range);
+      }
+      if(name.textContent!==wantedName)name.textContent=wantedName;
+      const wantedRange=monday.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+' – '+sunday.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+      if(range.textContent!==wantedRange)range.textContent=wantedRange;
+    }
+
+    const days=enabledDays729();
+    const headers=[...document.querySelectorAll('#weekGrid>.wh.day')];
+    headers.forEach((head,index)=>{
+      const day=days[index]||[2,3,4,5,6,7,1][index]||2;
+      const date=dateForCalDay729(monday,day);
+      const dayText=SHORT729[day]||'';
+      const dateText=date.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+      const currentName=head.querySelector('.weekDayName729');
+      const currentDate=head.querySelector('.weekDayDate729');
+      if(!currentName||!currentDate||currentName.textContent!==dayText||currentDate.textContent!==dateText){
+        head.innerHTML='<span class="weekDayName729">'+dayText+'</span><span class="weekDayDate729">'+dateText+'</span>';
+      }
+    });
+  }
+
+  let busy=false;
+  function schedule729(){
+    if(busy)return;busy=true;
+    requestAnimationFrame(()=>{busy=false;decorate729()});
+  }
+
+  const grid=document.getElementById('weekGrid');
+  if(grid)new MutationObserver(schedule729).observe(grid,{childList:true,subtree:true});
+  const top=document.querySelector('#viewWeek .weekTop');
+  if(top)new MutationObserver(schedule729).observe(top,{childList:true,subtree:true,characterData:true});
+  document.addEventListener('click',e=>{
+    if(e.target&&e.target.closest&&e.target.closest('#weekPrev728,#weekNext728,.nav[data-mode="week"]'))setTimeout(decorate729,0);
+  },true);
+
+  decorate729();setTimeout(decorate729,80);setTimeout(decorate729,300);
 })();
 </script>
 
