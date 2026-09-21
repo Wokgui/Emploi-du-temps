@@ -2006,5 +2006,164 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
 })();
 </script>
 
+
+<script>
+(function(){
+  if(window.__edt714)return;window.__edt714=true;
+
+  const style=document.createElement('style');style.id='edt714Style';style.textContent=`
+    /* 7.14 — le vide entre le titre d'une grande rubrique et son premier contenu
+       est réduit de moitié par rapport au modèle Taille du texte de la 7.13. */
+    html body #settingsSheet #settingsText692 #appFontTitle{
+      margin-top:0!important;
+    }
+
+    /* Horaires des cours : le bouton reste toujours à distance constante du bord bas
+       de sa tuile, y compris pendant les recalculs de hauteur. */
+    html body #settingsSheet #settingsTypeWeek692 #slotSettings{
+      box-sizing:border-box!important;
+      padding-bottom:10px!important;
+      overflow:hidden!important;
+    }
+    html body #settingsSheet #settingsTypeWeek692 #slotSettings .slotAdd{
+      margin-top:8px!important;
+      margin-bottom:0!important;
+    }
+
+    html body #appVersionInfo:after{content:'Version 7.14'!important}
+  `;document.head.appendChild(style);
+
+  const ids=['settingsLanguage698','settingsTypeWeek692','settingsText692','settingsColors692','settingsDisplay692','advancedSettings85'];
+  function bodyOf(details){
+    if(!details)return null;
+    return details.id==='advancedSettings85'
+      ? document.getElementById('advancedContent85')
+      : details.querySelector(':scope > .settingsAccordionBody692');
+  }
+  function labelOf(details){
+    const s=details&&details.querySelector(':scope > summary');
+    return s&&(s.querySelector('.edtSummaryLabel700')||s);
+  }
+  function visible(el){
+    if(!el)return false;
+    const cs=getComputedStyle(el),r=el.getBoundingClientRect();
+    return cs.display!=='none'&&cs.visibility!=='hidden'&&r.width>0&&r.height>0;
+  }
+  function candidates(body){
+    if(!body)return [];
+    const sel=[
+      '.settingTitle','.advTitle','.schoolTitle','.feedback663Title','.w658Title','.movedSectionTitle692',
+      '.settingRow','.slotRow','.weekModeChoices','.coursePaletteBtn','.themeButton',
+      'button','select','input[type="range"]','input[type="time"]','input[type="color"]','textarea'
+    ].join(',');
+    return [...body.querySelectorAll(sel)].filter(el=>visible(el)&&!el.closest('summary')&&!el.classList.contains('edtDuplicateDaysOff696'));
+  }
+  function firstLast(body){
+    const list=candidates(body);if(!list.length)return {first:null,last:null};
+    let first=list[0],last=list[0],top=first.getBoundingClientRect().top,bottom=last.getBoundingClientRect().bottom;
+    list.forEach(el=>{const r=el.getBoundingClientRect();if(r.top<top){top=r.top;first=el}if(r.bottom>bottom){bottom=r.bottom;last=el}});
+    return {first,last};
+  }
+  function transparentBox(el){
+    if(!el)return false;
+    const cs=getComputedStyle(el),bg=cs.backgroundColor;
+    const transparent=!bg||bg==='transparent'||bg==='rgba(0, 0, 0, 0)';
+    const border=(parseFloat(cs.borderTopWidth)||0)+(parseFloat(cs.borderBottomWidth)||0)+(parseFloat(cs.borderLeftWidth)||0)+(parseFloat(cs.borderRightWidth)||0);
+    return transparent&&border===0&&(!cs.boxShadow||cs.boxShadow==='none');
+  }
+  function clearTopPath(first,body){
+    if(!first||!body)return;
+    first.style.setProperty('margin-top','0','important');
+    let p=first.parentElement;
+    while(p&&p!==body){
+      if(!transparentBox(p))break;
+      p.style.setProperty('margin-top','0','important');
+      p.style.setProperty('padding-top','0','important');
+      p=p.parentElement;
+    }
+  }
+  function snapshot(el,prop){return [el.style.getPropertyValue(prop),el.style.getPropertyPriority(prop)]}
+  function restore(el,prop,s){if(s[0])el.style.setProperty(prop,s[0],s[1]||'');else el.style.removeProperty(prop)}
+  function measure(details){
+    const body=bodyOf(details),label=labelOf(details);if(!body||!label)return null;
+    const props=['display','visibility','pointer-events','height','min-height','max-height','overflow'];
+    const saved={};props.forEach(p=>saved[p]=snapshot(body,p));
+    const closed=!details.open;
+    if(closed){
+      body.style.setProperty('display','block','important');
+      body.style.setProperty('visibility','hidden','important');
+      body.style.setProperty('pointer-events','none','important');
+      body.style.setProperty('height','auto','important');
+      body.style.setProperty('min-height','0','important');
+      body.style.setProperty('max-height','none','important');
+      body.style.setProperty('overflow','visible','important');
+    }
+    const pair=firstLast(body);let out=null;
+    if(pair.first&&pair.last){
+      const lr=label.getBoundingClientRect(),fr=pair.first.getBoundingClientRect(),dr=details.getBoundingClientRect(),rr=pair.last.getBoundingClientRect();
+      out={top:Math.max(0,fr.top-lr.bottom),bottom:Math.max(0,dr.bottom-rr.bottom),first:pair.first,last:pair.last};
+    }
+    if(closed)props.forEach(p=>restore(body,p,saved[p]));
+    return out;
+  }
+
+  let target=null,running=false;
+  function establishTarget(){
+    if(target)return target;
+    const ref=document.getElementById('settingsText692'),m=measure(ref);
+    if(!m)return null;
+    target={
+      top:Math.max(5,Math.round(m.top*0.5*10)/10),
+      bottom:m.bottom
+    };
+    window.__edt714Target=target;
+    return target;
+  }
+  function applyOne(details,t){
+    const body=bodyOf(details);if(!details||!body||!t)return;
+
+    /* neutraliser le vide extérieur du premier contenu, puis recréer exactement la moitié
+       de l'espacement du modèle via le padding du corps */
+    let m=measure(details);if(!m)return;
+    clearTopPath(m.first,body);
+    body.style.setProperty('padding-top','0','important');
+
+    m=measure(details);if(!m)return;
+    body.style.setProperty('padding-top',Math.max(0,t.top-m.top)+'px','important');
+
+    /* Conserver la respiration basse du modèle 7.13. Pour Semaines et horaires,
+       la tuile conserve en plus son propre padding bas fixe. */
+    const pb=parseFloat(getComputedStyle(body).paddingBottom)||0;
+    m=measure(details);
+    if(m)body.style.setProperty('padding-bottom',Math.max(0,pb+(t.bottom-m.bottom))+'px','important');
+  }
+  function stabilizeSlots(){
+    const slots=document.getElementById('slotSettings'),add=slots&&slots.querySelector('.slotAdd');
+    if(slots){
+      slots.style.setProperty('padding-bottom','10px','important');
+      slots.style.setProperty('overflow','hidden','important');
+    }
+    if(add){
+      add.style.setProperty('margin-top','8px','important');
+      add.style.setProperty('margin-bottom','0','important');
+    }
+  }
+  function apply(){
+    if(running)return;running=true;
+    try{
+      /* laisser la 7.13 se poser avant de capturer son modèle, puis diviser seulement le haut par deux */
+      const t=establishTarget();if(!t)return;
+      ids.forEach(id=>applyOne(document.getElementById(id),t));
+      stabilizeSlots();
+    }finally{running=false}
+  }
+  const sheet=document.getElementById('settingsSheet');
+  if(sheet)new MutationObserver(()=>queueMicrotask(()=>{stabilizeSlots();if(target)apply()})).observe(sheet,{childList:true,subtree:true});
+  document.addEventListener('toggle',e=>{if(e.target&&ids.includes(e.target.id))setTimeout(apply,15)},true);
+  document.addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))setTimeout(apply,60)},true);
+  setTimeout(apply,120);setTimeout(apply,420);setTimeout(apply,900);
+})();
+</script>
+
 </body>
 </html>
