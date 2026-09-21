@@ -1493,7 +1493,7 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
     html body main.wrap.edtInstantViews647>.view{transition:none!important;animation:none!important}
 
     /* Version affichée. */
-    html body #appVersionInfo:after{content:'Version 7.07'!important}
+    html body #appVersionInfo:after{content:'Version 7.08'!important}
   `;
   document.head.appendChild(style);
 
@@ -1522,6 +1522,96 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
     observer.observe(document.documentElement,{childList:true,subtree:true});
     setTimeout(()=>{if(installBaseTitle())observer.disconnect()},1200);
   }
+})();
+</script>
+
+
+<script>
+(function(){
+  if(window.__edt708)return;window.__edt708=true;
+  const ids=['settingsLanguage698','settingsTypeWeek692','settingsText692','settingsColors692','settingsDisplay692','advancedSettings85'];
+  const style=document.createElement('style');style.id='edt708Style';style.textContent=\`
+    /* 7.08 — géométrie identique des six grandes rubriques. */
+    html body #settingsModal #settingsSheet #settingsLanguage698>summary,
+    html body #settingsModal #settingsSheet #settingsTypeWeek692>summary,
+    html body #settingsModal #settingsSheet #settingsText692>summary,
+    html body #settingsModal #settingsSheet #settingsColors692>summary,
+    html body #settingsModal #settingsSheet #settingsDisplay692>summary,
+    html body #settingsModal #settingsSheet #advancedSettings85>summary{
+      position:relative!important;box-sizing:border-box!important;
+      display:flex!important;align-items:center!important;justify-content:center!important;
+      width:100%!important;height:72px!important;min-height:72px!important;
+      margin:0!important;padding:0 42px!important;
+      text-align:center!important;line-height:1.15!important
+    }
+    html body #settingsModal #settingsSheet .edtSummaryLabel700{
+      position:static!important;display:block!important;width:auto!important;
+      margin:0 auto!important;padding:0!important;text-align:center!important
+    }
+    /* La flèche DOM historique est masquée : elle était parfois détruite par un rafraîchissement.
+       La flèche CSS ci-dessous est indépendante du texte et ne décale donc jamais le titre. */
+    html body #settingsModal #settingsSheet .edtSummaryArrow700{display:none!important}
+    html body #settingsModal #settingsSheet #settingsLanguage698>summary::after,
+    html body #settingsModal #settingsSheet #settingsTypeWeek692>summary::after,
+    html body #settingsModal #settingsSheet #settingsText692>summary::after,
+    html body #settingsModal #settingsSheet #settingsColors692>summary::after,
+    html body #settingsModal #settingsSheet #settingsDisplay692>summary::after,
+    html body #settingsModal #settingsSheet #advancedSettings85>summary::after{
+      content:'⌄'!important;display:block!important;visibility:visible!important;opacity:1!important;
+      position:absolute!important;right:18px!important;top:50%!important;
+      transform:translateY(-52%)!important;width:18px!important;height:20px!important;
+      color:#68738a!important;font-size:1rem!important;font-weight:800!important;
+      line-height:20px!important;text-align:center!important;pointer-events:none!important
+    }
+    html body #settingsModal #settingsSheet #settingsLanguage698[open]>summary::after,
+    html body #settingsModal #settingsSheet #settingsTypeWeek692[open]>summary::after,
+    html body #settingsModal #settingsSheet #settingsText692[open]>summary::after,
+    html body #settingsModal #settingsSheet #settingsColors692[open]>summary::after,
+    html body #settingsModal #settingsSheet #settingsDisplay692[open]>summary::after,
+    html body #settingsModal #settingsSheet #advancedSettings85[open]>summary::after{content:'⌃'!important}
+
+    /* Une seule grande ligne après Réglages avancés. */
+    html body #settingsModal #settingsSheet #advancedSettings85::after{
+      content:''!important;display:block!important
+    }
+    html body #settingsModal #settingsSheet #resetFooter692{
+      border-top:0!important;border-bottom:0!important;outline:0!important;box-shadow:none!important;
+      background-image:none!important;margin-top:0!important
+    }
+    html body #settingsModal #settingsSheet #resetFooter692::before,
+    html body #settingsModal #settingsSheet #resetFooter692::after{content:none!important;display:none!important}
+    html body #appVersionInfo:after{content:'Version 7.08'!important}
+  \`;document.head.appendChild(style);
+
+  function apply(){
+    ids.forEach(id=>{
+      const d=document.getElementById(id),s=d&&d.querySelector(':scope > summary');
+      if(!s)return;
+      s.style.setProperty('height','72px','important');
+      s.style.setProperty('min-height','72px','important');
+      s.style.setProperty('padding','0 42px','important');
+      s.style.setProperty('margin','0','important');
+      s.style.setProperty('box-sizing','border-box','important');
+      s.style.setProperty('display','flex','important');
+      s.style.setProperty('align-items','center','important');
+      s.style.setProperty('justify-content','center','important');
+      s.style.setProperty('text-align','center','important');
+    });
+    const f=document.getElementById('resetFooter692');
+    if(f){
+      f.style.setProperty('border-top','0','important');
+      f.style.setProperty('border-bottom','0','important');
+      f.style.setProperty('outline','0','important');
+      f.style.setProperty('box-shadow','none','important');
+      f.style.setProperty('background-image','none','important');
+      f.style.setProperty('margin-top','0','important');
+    }
+  }
+  apply();
+  const sheet=document.getElementById('settingsSheet');
+  if(sheet)new MutationObserver(()=>queueMicrotask(apply)).observe(sheet,{childList:true,subtree:true});
+  document.addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))queueMicrotask(apply)},true);
+  setTimeout(apply,80);setTimeout(apply,300);
 })();
 </script>
 
