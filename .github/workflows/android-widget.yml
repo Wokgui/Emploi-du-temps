@@ -1,8 +1,8 @@
-name: Clean Android 7.23 visual-balance build
+name: Clean Android 7.24 settings-subsections build
 
 on:
   push:
-    branches: [fix/723-balanced-title-spacing]
+    branches: [fix/724-settings-subsections]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 
@@ -89,7 +89,7 @@ jobs:
             if(n==='loadUiSettings')return JSON.stringify({language:'fr'});
             if(n==='loadAdvancedSetting')return '';
             if(n==='getCurrentWeek')return 'B';
-            if(n==='getAppVersionName')return '7.23';
+            if(n==='getAppVersionName')return '7.24';
             if(n==='loadHolidays'||n==='loadSchoolHolidays')return '[]';
             if(n.startsWith('load'))return '{}';
             if(n.startsWith('get')||n.startsWith('is'))return '';
@@ -108,7 +108,7 @@ jobs:
                 ['settingsTypeWeek692','#settingsWeekCycle678>.settingTitle'],
                 ['settingsText692','#appFontTitle'],
                 ['settingsColors692','#themeTitle,.edtThemeTitle696'],
-                ['settingsDisplay692','#breakDisplaySetting .feedback663Title,.edtFirstSubTitle696'],
+                ['settingsDisplay692','#widgetBaseTitle706,#breakDisplaySetting .feedback663Title,.edtFirstSubTitle696'],
                 ['advancedSettings85','#languageExtraTitle85,.edtLanguagesTitle696']
               ];
               const report={};
@@ -198,10 +198,10 @@ jobs:
       - name: Verify package metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='723001' versionName='7.23'" /tmp/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.23-tested-debug.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='724001' versionName='7.24'" /tmp/badging.txt
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.24-tested-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: EDT-7.23-tested
-          path: android-widget/app/build/outputs/apk/debug/EDT-7.23-tested-debug.apk
+          name: EDT-7.24-tested
+          path: android-widget/app/build/outputs/apk/debug/EDT-7.24-tested-debug.apk
           if-no-files-found: error
