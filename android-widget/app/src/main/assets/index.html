@@ -169,23 +169,19 @@ function applyBreakSettings(){breaks.gapLabel=$('gapLabel').value.trim()||'Trou'
 function removeSlotAt(index){
   if(!Number.isInteger(index)||index<0||index>=slots.length||slots.length<=1)return;
   const removed=Number(slots[index].n),keepMode=mode,keepWeek=activeWeek,keepDay=selected;
-  try{
-    if(window.AndroidSchedule&&AndroidSchedule.removeScheduleSlot)AndroidSchedule.removeScheduleSlot(removed);
-    if(window.AndroidSchedule&&AndroidSchedule.loadSchedule){
-      const root=JSON.parse(AndroidSchedule.loadSchedule()||'{}');
-      if(Array.isArray(root._slots))slots=root._slots.map((s,i)=>({n:Math.max(1,Math.min(10,Number(s.n)||i+1)),start:s.start,end:s.end}));
-      if(root._weeks){
-        for(const w of ['A','B','C','D'])if(root._weeks[w]){
-          if(!weeks[w])weeks[w]=clone(DEFAULTS);
-          for(const d of DAYS)if(root._weeks[w][d])weeks[w][d]=root._weeks[w][d];
-        }
+  for(const w of ['A','B','C','D']){
+    if(!weeks[w])continue;
+    for(const d of DAYS){
+      if(weeks[w][d]&&Array.isArray(weeks[w][d].courses)){
+        weeks[w][d].courses=weeks[w][d].courses.filter(c=>Number(c.slot)!==removed);
       }
     }
-  }catch(e){
-    for(const w of ['A','B','C','D'])if(weeks[w])for(const d of DAYS)if(weeks[w][d]&&Array.isArray(weeks[w][d].courses))weeks[w][d].courses=weeks[w][d].courses.filter(c=>Number(c.slot)!==removed);
-    slots.splice(index,1);
   }
-  slotConfigV2=true;mode=keepMode;activeWeek=keepWeek;selected=keepDay;state=weeks[mode==='today'?currentWeek:activeWeek]||state;
+  slots.splice(index,1);
+  slotConfigV2=true;
+  mode=keepMode;activeWeek=keepWeek;selected=keepDay;
+  state=weeks[mode==='today'?currentWeek:activeWeek]||state;
+  save();
   render();
 }
 function renderSlots(){
@@ -194,13 +190,23 @@ function renderSlots(){
     const row=document.createElement('div');row.className='slotRow';row.dataset.slotIndex=String(i);
     row.innerHTML=`<div class="slotLead"><div class="slotNum">${s.n===1?'1ère heure':s.n+'ème heure'}</div><button type="button" class="slotRemove" data-slot-index="${i}" aria-label="Supprimer la ${s.n}e heure">×</button></div><input type="time" value="${esc(s.start)}"><input type="time" value="${esc(s.end)}">`;
     const inputs=row.querySelectorAll('input');
-    const apply=()=>{slots[i].start=inputs[0].value;slots[i].end=inputs[1].value;const slotNumber=slots[i].n;for(const w of ['A','B','C','D'])if(weeks[w])for(const d of DAYS)for(const c of weeks[w][d].courses)if(c.slot===slotNumber){c.start=slots[i].start;c.end=slots[i].end}save()};
+    const apply=()=>{slots[i].start=inputs[0].value;slots[i].end=inputs[1].value;const slotNumber=slots[i].n;for(const w of ['A','B','C','D'])if(weeks[w])for(const d of DAYS)for(const c of weeks[w][d].courses)if(Number(c.slot)===Number(slotNumber)){c.start=slots[i].start;c.end=slots[i].end}slotConfigV2=true;save();render()};
     inputs[0].onchange=apply;inputs[1].onchange=apply;
-    row.querySelector('.slotRemove').onclick=e=>{e.preventDefault();e.stopPropagation();removeSlotAt(Number(e.currentTarget.dataset.slotIndex));return false};
+    row.querySelector('.slotRemove').onclick=e=>{e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();removeSlotAt(Number(e.currentTarget.dataset.slotIndex));return false};
     box.appendChild(row);
   });
   const add=document.createElement('button');add.type='button';add.className='slotAdd';add.textContent='＋ Ajouter une heure';add.hidden=slots.length>=10;
-  add.onclick=e=>{e.preventDefault();if(slots.length>=10)return;const used=new Set(slots.map(s=>s.n)),n=[1,2,3,4,5,6,7,8,9,10].find(x=>!used.has(x));if(!n)return;const preset=DEFAULT_SLOTS.find(s=>s.n===n),last=slots[slots.length-1],start=preset?.start||last?.end||'08:00',end=preset?.end||clock(Math.min(1439,min(start)+60));try{if(window.AndroidSchedule&&AndroidSchedule.restoreScheduleSlot)AndroidSchedule.restoreScheduleSlot(n,start,end)}catch(e){}slots.push({n,start,end});slots.sort((a,b)=>a.n-b.n);slotConfigV2=true;renderSlots()};
+  add.onclick=e=>{
+    e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+    if(slots.length>=10)return false;
+    const used=new Set(slots.map(s=>Number(s.n))),n=[1,2,3,4,5,6,7,8,9,10].find(x=>!used.has(x));
+    if(!n)return false;
+    const preset=DEFAULT_SLOTS.find(s=>Number(s.n)===n),last=slots[slots.length-1];
+    const start=preset?.start||last?.end||'08:00',end=preset?.end||clock(Math.min(1439,min(start)+60));
+    slots.push({n,start,end});slots.sort((a,b)=>a.n-b.n);slotConfigV2=true;
+    save();render();
+    return false;
+  };
   box.appendChild(add);
 }
 window.removeSlotAt680=removeSlotAt;
@@ -1696,6 +1702,74 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
   const sheet=document.getElementById('settingsSheet');
   if(sheet)new MutationObserver(()=>queueMicrotask(apply)).observe(sheet,{childList:true,subtree:true});
   setTimeout(apply,80);setTimeout(apply,300);
+})();
+</script>
+
+
+<script>
+(function(){
+  if(window.__edt711)return;window.__edt711=true;
+  const style=document.createElement('style');style.id='edt711Style';style.textContent=`
+    /* Langue : le titre de l'accordéon suffit, on retire le second "Langue" interne. */
+    html body #settingsSheet #settingsLanguage698 .settingsLanguage692>.settingTitle{display:none!important}
+    html body #settingsSheet #settingsLanguage698 .settingsLanguage692{padding-top:0!important}
+    
+    /* Réglages avancés : même respiration au-dessus et au-dessous des sections ciblées. */
+    html body #settingsSheet #advancedContent85>.edtAdvancedBalanced711{
+      box-sizing:border-box!important;margin:0!important;padding:15px 0!important;
+      border-top:1px solid #e6ebf1!important;border-bottom:0!important;
+      background:transparent!important
+    }
+    html body #settingsSheet #advancedContent85>.edtAdvancedBalanced711>.settingTitle,
+    html body #settingsSheet #advancedContent85>.edtAdvancedBalanced711 .settingTitle:first-child,
+    html body #settingsSheet #advancedContent85>.edtAdvancedBalanced711 #advReminderTitle,
+    html body #settingsSheet #advancedContent85>.edtAdvancedBalanced711 #advExceptionsTitle,
+    html body #settingsSheet #advancedContent85>.edtAdvancedBalanced711 #languageExtraTitle85{
+      margin:0 0 10px!important;padding:0!important;text-align:center!important
+    }
+    html body #settingsSheet #advancedContent85>.edtAdvancedBalanced711 .edtLanguagesTitle696{
+      margin:0 0 10px!important;padding:0!important
+    }
+    html body #settingsSheet #advancedContent85>.edtAdvancedBalanced711 .edtDaysOffTitle696{
+      margin:0 0 10px!important;padding:0!important;border-top:0!important
+    }
+    html body #settingsSheet #advancedContent85>.edtAdvancedBalanced711 .edtAddDaysOff696{
+      margin:10px auto 0!important
+    }
+    html body #settingsSheet #advancedContent85>.edtAdvancedBalanced711.edtAdvancedLast711{
+      border-bottom:1px solid #e6ebf1!important
+    }
+    html body #appVersionInfo:after{content:'Version 7.11'!important}
+  `;document.head.appendChild(style);
+
+  function mark(){
+    const language=document.querySelector('#settingsLanguage698 .settingsLanguage692>.settingTitle');
+    if(language)language.style.setProperty('display','none','important');
+
+    const content=document.getElementById('advancedContent85');if(!content)return;
+    const targets=[];
+    const addBox=el=>{
+      if(!el)return;
+      let box=el;
+      if(!box.classList?.contains('settingBox')&&box.id!=='schoolCalendarBlock'&&box.id!=='schoolCalendarSetting'){
+        box=el.closest?.('.settingBox,#schoolCalendarBlock,#schoolCalendarSetting');
+      }
+      if(box&&box.parentElement===content&&!targets.includes(box))targets.push(box);
+    };
+    addBox(document.getElementById('languageExtra85'));
+    addBox(document.getElementById('advReminderTitle'));
+    addBox(document.getElementById('schoolCalendarSetting')||document.getElementById('schoolCalendarBlock'));
+    addBox(document.getElementById('advCalendarTitle'));
+    addBox(document.getElementById('advExceptionsTitle'));
+    targets.forEach(x=>x.classList.add('edtAdvancedBalanced711'));
+    targets.forEach(x=>x.classList.remove('edtAdvancedLast711'));
+    if(targets.length)targets[targets.length-1].classList.add('edtAdvancedLast711');
+  }
+  mark();
+  const sheet=document.getElementById('settingsSheet');
+  if(sheet)new MutationObserver(()=>queueMicrotask(mark)).observe(sheet,{childList:true,subtree:true});
+  document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='advancedSettings85')queueMicrotask(mark)},true);
+  setTimeout(mark,80);setTimeout(mark,320);
 })();
 </script>
 
