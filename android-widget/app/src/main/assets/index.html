@@ -2752,5 +2752,64 @@ html body #settingsSheet #advDensityAutoRow665.feedback665DensityAuto{margin-top
 html body #appVersionInfo:after{content:'Version 7.26'!important}
 </style>
 
+
+<script>
+(function(){
+  if(window.__edt726)return;window.__edt726=true;
+
+  function sizeSelect(select,min,max,extra){
+    if(!select)return;
+    try{
+      const opt=select.selectedOptions&&select.selectedOptions[0]?select.selectedOptions[0]:(select.options&&select.options[0]);
+      const label=String(opt?opt.textContent:'');
+      const cs=getComputedStyle(select),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+      ctx.font=cs.font||cs.fontSize+' '+cs.fontFamily;
+      const width=Math.ceil(ctx.measureText(label).width+(extra||44));
+      select.style.setProperty('width',Math.max(min,Math.min(max,width))+'px','important');
+    }catch(e){}
+  }
+
+  function fit(){
+    sizeSelect(document.getElementById('advProfileSelect'),104,230,48);
+    sizeSelect(document.getElementById('schoolZone'),86,170,44);
+  }
+
+  function flattenLanguages(){
+    const select=document.getElementById('languageSelect'),box=select&&select.closest('.settingBox');
+    const extra=document.getElementById('languageExtra85');
+    const button=document.getElementById('languageDownloadBtn81');
+    const panel=document.getElementById('languagePackPanel81');
+    if(box){
+      if(button&&button.parentElement!==box)box.appendChild(button);
+      if(panel&&panel.parentElement!==box)box.appendChild(panel);
+    }
+    if(extra)extra.remove();
+  }
+
+  function apply(){
+    const style=document.getElementById('edt726Style');
+    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    flattenLanguages();fit();
+  }
+
+  let pending=false;
+  function schedule(){
+    if(pending)return;pending=true;
+    requestAnimationFrame(function(){pending=false;apply()});
+  }
+
+  const sheet=document.getElementById('settingsSheet');
+  if(sheet)new MutationObserver(schedule).observe(sheet,{childList:true,subtree:true});
+  document.addEventListener('change',function(e){
+    if(e.target&&['advProfileSelect','schoolZone','languageSelect'].includes(e.target.id))setTimeout(apply,0);
+  },true);
+  document.addEventListener('click',function(e){
+    if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#languageDownloadBtn81,#advancedSettings85'))setTimeout(apply,0);
+  },true);
+
+  apply();setTimeout(apply,120);setTimeout(apply,500);
+})();
+</script>
+
 </body>
 </html>
