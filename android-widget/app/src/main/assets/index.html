@@ -2306,5 +2306,401 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
 })();
 </script>
 
+
+
+<style id="edt725Style">
+  html body #settingsSheet #advancedSettings85 #advProfileSelect{
+    display:block!important;width:190px!important;max-width:min(190px,64vw)!important;min-width:0!important;
+    height:36px!important;min-height:36px!important;margin:0 auto!important;padding:0 30px 0 12px!important;
+    border:1px solid #d6dee8!important;border-radius:10px!important;background:#fff!important;
+    box-shadow:0 1px 2px #1522380d!important;text-align:center!important;text-align-last:center!important;
+    font-size:.74rem!important;font-weight:760!important
+  }
+  html body #settingsSheet #advancedSettings85 .feedback664Profiles>.advRow{justify-content:center!important;margin:0 0 8px!important}
+
+  html body #settingsSheet #advancedSettings85 .reminderLine725{
+    display:flex!important;align-items:center!important;justify-content:center!important;gap:10px!important;
+    width:100%!important;margin:4px auto 0!important;font-size:.76rem!important
+  }
+  html body #settingsSheet #advancedSettings85 .reminderLine725 #advReminderMinutes{
+    width:auto!important;min-width:82px!important;height:34px!important;min-height:34px!important;
+    padding:0 25px 0 9px!important;border:1px solid #d8e0e8!important;border-radius:8px!important;
+    background:#fff!important;text-align:center!important;text-align-last:center!important
+  }
+
+  html body #settingsSheet #advancedSettings85 .rangeDates725{
+    display:grid!important;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr)!important;
+    gap:6px!important;align-items:center!important;width:100%!important;margin-top:6px!important
+  }
+  html body #settingsSheet #advancedSettings85 .rangeDates725 .rangeConnector725{
+    font-size:.73rem!important;font-weight:760!important;color:#59677a!important;white-space:nowrap!important
+  }
+  html body #settingsSheet #advancedSettings85 .rangeDates725 input[type=date]{
+    display:block!important;width:100%!important;min-width:0!important;height:36px!important;
+    padding:0 5px!important;font-size:.70rem!important;text-align:center!important
+  }
+
+  html body #settingsSheet #advancedSettings85 #schoolCalendarSetting{margin:0!important;padding-bottom:10px!important}
+  html body #settingsSheet #advancedSettings85 #schoolCalendarBlock{margin:0!important;padding:0!important;border:0!important}
+  html body #settingsSheet #advancedSettings85 #schoolCalendarBlock .schoolTitle{
+    margin:0 0 8px!important;text-align:center!important;font-size:.86rem!important;font-weight:850!important;color:var(--ink,#111936)!important
+  }
+  html body #settingsSheet #advancedSettings85 #schoolCalendarBlock .schoolEnable{justify-content:center!important;margin:0 0 8px!important}
+  html body #settingsSheet #advancedSettings85 #schoolCalendarBlock .schoolGrid{
+    display:grid!important;grid-template-columns:minmax(0,220px)!important;justify-content:center!important;gap:0!important;width:100%!important
+  }
+  html body #settingsSheet #advancedSettings85 #schoolYear{display:none!important}
+  html body #settingsSheet #advancedSettings85 #schoolZone{
+    width:100%!important;height:36px!important;min-height:36px!important;padding:0 28px 0 10px!important;
+    text-align:center!important;text-align-last:center!important
+  }
+  html body #settingsSheet #advancedSettings85 #schoolAutoFetch725{
+    display:block!important;width:max-content!important;max-width:100%!important;margin:8px auto 0!important;
+    padding:7px 11px!important;border:1px solid #cbd9e8!important;border-radius:9px!important;
+    background:#f8fbff!important;color:#1768b5!important;font-size:.70rem!important;font-weight:800!important
+  }
+  html body #settingsSheet #advancedSettings85 #schoolAutoStatus725{
+    min-height:1em!important;margin:6px 0 0!important;text-align:center!important;color:#68738a!important;
+    font-size:.65rem!important;line-height:1.25!important
+  }
+
+  html body #settingsSheet #advancedContent85 > .holidayFlat725{border-top:0!important;padding-top:6px!important}
+  html body #settingsSheet #advancedContent85 > .holidayFlat725 #advCalendarTitle{margin-top:0!important;padding-top:0!important}
+
+  html body #settingsSheet #languageExtra85,
+  html body #settingsSheet #languageDownloadBtn81,
+  html body #settingsSheet #languagePackPanel81{display:none!important}
+
+  html body #settingsSheet #settingsLanguage698 .languageSelect{
+    min-width:0!important;max-width:calc(100vw - 72px)!important;margin-left:auto!important;margin-right:auto!important
+  }
+
+  html body #settingsSheet #settingsDisplay692 .settingBox:has(#advWidgetTitle) > .edtBaseControl724{display:none!important}
+  html body #settingsSheet #settingsDisplay692 #appBaseControls725{
+    order:2!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:7px 10px!important;width:100%!important;max-width:420px!important;margin:0 auto!important;padding:0 4px 7px!important
+  }
+  html body #settingsSheet #settingsDisplay692 .appBaseToggle725{
+    display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:7px!important;
+    min-width:0!important;margin:0!important;padding:5px 7px!important;border:0!important;border-radius:8px!important;
+    background:#f7f9fc!important;color:#334155!important;font-size:.73rem!important;font-weight:730!important
+  }
+  html body #settingsSheet #settingsDisplay692 .appBaseToggle725 input{
+    flex:0 0 17px!important;width:17px!important;height:17px!important;margin:0!important;
+    accent-color:var(--set-accent,var(--blue,#0877f9))!important
+  }
+
+  body.edtHideRoom725 #viewToday .todayCourse:not(.gap):not(.lunch) .room,
+  body.edtHideRoom725 #viewWeek .wc.has .cellRoom,
+  body.edtHideRoom725 #viewEdit .editCourse .room{display:none!important}
+
+  body.edtHideCourse725 #viewToday .todayCourse:not(.gap):not(.lunch) .label,
+  body.edtHideCourse725 #viewWeek .wc.has .cellLabel,
+  body.edtHideCourse725 #viewEdit .editCourse .label{display:none!important}
+
+  body.edtHideTimes725 #viewToday .todayCourse .time,
+  body.edtHideTimes725 #viewEdit .editCourse .time{display:none!important}
+  body.edtHideTimes725 #viewToday .todayCourse{grid-template-columns:minmax(0,1fr) auto!important}
+  body.edtHideTimes725 #viewWeek .wh.timecol{color:transparent!important}
+
+  body.edtHideProgress725 #viewToday .timelineCard{display:none!important}
+
+  #profileModal725{z-index:150!important}
+  #profileModal725 .profileSheet725{max-width:460px!important;padding:16px!important}
+  #profileModal725 .profileInput725{
+    width:100%!important;height:42px!important;border:1px solid #ccd7e4!important;border-radius:9px!important;
+    padding:0 11px!important;background:#fff!important;color:var(--ink,#111936)!important;font-size:.90rem!important
+  }
+  #profileModal725 .profileDup725{
+    display:flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;
+    margin:10px 0 2px!important;color:#536078!important;font-size:.75rem!important
+  }
+  #profileModal725 .profileDup725 input{width:17px!important;height:17px!important}
+
+  html body #appVersionInfo:after{content:'Version 7.25'!important}
+</style>
+
+<script>
+(function(){
+  if(window.__edt725)return;window.__edt725=true;
+
+  const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+
+  function readAdvanced(){
+    try{return JSON.parse(window.AndroidSchedule&&AndroidSchedule.loadAdvancedSettings?AndroidSchedule.loadAdvancedSettings():'{}')}catch(e){return {}}
+  }
+  function writeAdvanced(o){
+    try{if(window.AndroidSchedule&&AndroidSchedule.saveAdvancedSettings)AndroidSchedule.saveAdvancedSettings(JSON.stringify(o))}catch(e){}
+  }
+  function refreshAfterSettings(){
+    try{if(window.refreshAdvancedFeatures)window.refreshAdvancedFeatures()}catch(e){}
+    try{if(typeof render==='function')render()}catch(e){}
+  }
+
+  function removeExtraLanguages(){
+    ['languageExtra85','languageDownloadBtn81','languagePackPanel81'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.remove();
+    });
+  }
+
+  function fitLanguageSelect(){
+    const sel=document.getElementById('languageSelect');if(!sel||!sel.options||!sel.options.length)return;
+    try{
+      const style=getComputedStyle(sel);
+      const canvas=document.createElement('canvas');
+      const ctx=canvas.getContext('2d');
+      ctx.font=style.font||style.fontSize+' '+style.fontFamily;
+      let w=0;
+      [...sel.options].forEach(o=>{w=Math.max(w,ctx.measureText(String(o.textContent||'')).width)});
+      const px=Math.max(128,Math.min(270,Math.ceil(w+48)));
+      sel.style.setProperty('width',px+'px','important');
+    }catch(e){}
+  }
+
+  function setupRangeLine(){
+    const start=document.getElementById('advRangeStart'),end=document.getElementById('advRangeEnd');
+    if(!start||!end||start.parentElement!==end.parentElement)return;
+    const row=start.parentElement;row.classList.add('rangeDates725');
+    if(!row.querySelector('.rangeFrom725')){
+      const from=document.createElement('span');from.className='rangeConnector725 rangeFrom725';from.textContent='Du';
+      row.insertBefore(from,start);
+    }
+    if(!row.querySelector('.rangeTo725')){
+      const to=document.createElement('span');to.className='rangeConnector725 rangeTo725';to.textContent='au';
+      row.insertBefore(to,end);
+    }
+  }
+
+  function setupReminder(){
+    const check=document.getElementById('advReminders'),select=document.getElementById('advReminderMinutes');
+    if(!check||!select)return;
+    const label=check.closest('label');if(!label)return;
+    label.classList.add('reminderLine725');
+    const oldParent=select.parentElement;
+    if(select.parentElement!==label)label.appendChild(select);
+    if(oldParent&&oldParent!==label&&oldParent.classList&&oldParent.classList.contains('advRow'))oldParent.remove();
+  }
+
+  function setupHolidaySpacing(){
+    const label=document.getElementById('advHolidayLabel');
+    const box=label&&label.closest('.settingBox');
+    if(box){box.classList.add('holidayFlat725');box.classList.remove('edtAdvSep724')}
+  }
+
+  function cleanVacationTitle(){
+    const wanted='Vacances et jours sans cours';
+    const school=document.getElementById('schoolTitle');if(school)school.textContent=wanted;
+    document.querySelectorAll('#advancedSettings85 .settingTitle,#advancedSettings85 .schoolTitle,#advancedSettings85 .edtDaysOffTitle696').forEach(el=>{
+      const n=norm(el.textContent);
+      if(n==='jours sans cours'||n==='vacances scolaires')el.textContent=wanted;
+    });
+  }
+
+  function parseIcsDate(value){
+    const m=String(value||'').match(/(\d{4})(\d{2})(\d{2})/);if(!m)return null;
+    return new Date(Number(m[1]),Number(m[2])-1,Number(m[3]),12,0,0,0);
+  }
+  function dateKey725(d){
+    return String(d.getFullYear()).padStart(4,'0')+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  function unfoldIcs(text){
+    return String(text||'').replace(/\r\n[ \t]/g,'').replace(/\n[ \t]/g,'').split(/\r?\n/);
+  }
+  function parseSchoolIcs(text){
+    const lines=unfoldIcs(text),events=[];let ev=null;
+    for(const line of lines){
+      if(line==='BEGIN:VEVENT'){ev={};continue}
+      if(line==='END:VEVENT'){if(ev&&ev.start&&ev.end)events.push(ev);ev=null;continue}
+      if(!ev)continue;
+      if(line.startsWith('SUMMARY'))ev.summary=line.slice(line.indexOf(':')+1).replace(/\\,/g,',').replace(/\\;/g,';');
+      else if(line.startsWith('DTSTART'))ev.start=line.slice(line.indexOf(':')+1);
+      else if(line.startsWith('DTEND'))ev.end=line.slice(line.indexOf(':')+1);
+    }
+    const now=new Date();now.setHours(0,0,0,0);
+    const unique=new Map();
+    for(const item of events){
+      const start=parseIcsDate(item.start),endExclusive=parseIcsDate(item.end);if(!start||!endExclusive)continue;
+      const end=new Date(endExclusive);end.setDate(end.getDate()-1);
+      if(end<now)continue;
+      const summary=String(item.summary||'Vacances scolaires').replace(/^Vacances scolaires\s*[-–—:]?\s*/i,'').trim()||'Vacances scolaires';
+      const key=dateKey725(start)+'|'+dateKey725(end)+'|'+summary;
+      unique.set(key,{start:dateKey725(start),end:dateKey725(end),label:'Vacances scolaires · '+summary,source:'schoolCalendarAuto'});
+    }
+    return [...unique.values()].sort((a,b)=>a.start.localeCompare(b.start));
+  }
+
+  let schoolFetchBusy=false;
+  async function fetchSchoolVacations725(force){
+    if(schoolFetchBusy)return;
+    const enabled=document.getElementById('schoolEnabled'),zone=document.getElementById('schoolZone'),status=document.getElementById('schoolAutoStatus725');
+    if(!enabled||!zone)return;
+    const a=readAdvanced();
+    if(!enabled.checked){
+      a.schoolVacationEnabled=false;
+      if(Array.isArray(a.dayOffRanges))a.dayOffRanges=a.dayOffRanges.filter(r=>r&&r.source!=='schoolCalendar'&&r.source!=='schoolCalendarAuto');
+      writeAdvanced(a);refreshAfterSettings();return;
+    }
+    if(!force){
+      const last=Number(a.schoolVacationAutoUpdatedAt||0);
+      if(last&&Date.now()-last<7*24*60*60*1000)return;
+    }
+    schoolFetchBusy=true;
+    if(status)status.textContent='Recherche des vacances officielles…';
+    const z=['A','B','C'].includes(zone.value)?zone.value:'B';
+    const url='https://fr.ftp.opendatasoft.com/openscol/fr-en-calendrier-scolaire/Zone-'+z+'.ics';
+    try{
+      const res=await fetch(url,{cache:'no-store'});
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      const ranges=parseSchoolIcs(await res.text());
+      if(!ranges.length)throw new Error('Aucune période');
+      const next=readAdvanced();
+      if(!Array.isArray(next.dayOffRanges))next.dayOffRanges=[];
+      next.dayOffRanges=next.dayOffRanges.filter(r=>r&&r.source!=='schoolCalendar'&&r.source!=='schoolCalendarAuto').concat(ranges);
+      next.schoolVacationEnabled=true;next.schoolVacationZone=z;
+      next.schoolVacationAutoUpdatedAt=Date.now();next.schoolVacationAutoCount=ranges.length;
+      writeAdvanced(next);
+      if(status)status.textContent=ranges.length+' périodes à venir chargées · zone '+z;
+      refreshAfterSettings();
+    }catch(err){
+      if(status)status.textContent='Mise à jour impossible · données déjà enregistrées conservées';
+      const next=readAdvanced();next.schoolVacationEnabled=true;next.schoolVacationZone=z;writeAdvanced(next);
+    }finally{schoolFetchBusy=false}
+  }
+
+  function setupSchoolCalendar(){
+    const enabled=document.getElementById('schoolEnabled'),zone=document.getElementById('schoolZone'),block=document.getElementById('schoolCalendarBlock');
+    if(!enabled||!zone||!block)return;
+    cleanVacationTitle();
+    const enableLabel=document.getElementById('schoolEnableLabel');
+    if(enableLabel)enableLabel.textContent='Rechercher automatiquement les vacances à venir';
+
+    let button=document.getElementById('schoolAutoFetch725');
+    if(!button){button=document.createElement('button');button.id='schoolAutoFetch725';button.type='button';button.textContent='Mettre à jour maintenant';block.appendChild(button)}
+    let status=document.getElementById('schoolAutoStatus725');
+    if(!status){status=document.createElement('div');status.id='schoolAutoStatus725';block.appendChild(status)}
+
+    if(!enabled.__edt725){
+      enabled.__edt725=true;
+      enabled.onchange=()=>{
+        const a=readAdvanced();a.schoolVacationEnabled=enabled.checked;a.schoolVacationZone=zone.value;writeAdvanced(a);
+        fetchSchoolVacations725(true);
+      };
+    }
+    if(!zone.__edt725){
+      zone.__edt725=true;
+      zone.onchange=()=>{
+        const a=readAdvanced();a.schoolVacationZone=zone.value;writeAdvanced(a);
+        if(enabled.checked)fetchSchoolVacations725(true);
+      };
+    }
+    button.onclick=()=>{enabled.checked=true;fetchSchoolVacations725(true)};
+    const a=readAdvanced();
+    if(a.schoolVacationEnabled===true)enabled.checked=true;
+    if(['A','B','C'].includes(a.schoolVacationZone))zone.value=a.schoolVacationZone;
+    if(a.schoolVacationAutoCount&&status&&!status.textContent)status.textContent=a.schoolVacationAutoCount+' périodes à venir enregistrées · zone '+zone.value;
+
+    if(enabled.checked){
+      const last=Number(a.schoolVacationAutoUpdatedAt||0);
+      if(!window.__schoolAutoLastTry725||Date.now()-window.__schoolAutoLastTry725>60000){
+        window.__schoolAutoLastTry725=Date.now();
+        if(!last||Date.now()-last>7*24*60*60*1000)setTimeout(()=>fetchSchoolVacations725(false),250);
+      }
+    }
+  }
+
+  function ensureProfileModal(){
+    let modal=document.getElementById('profileModal725');if(modal)return modal;
+    modal=document.createElement('div');modal.id='profileModal725';modal.className='modal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
+    modal.innerHTML='<form id="profileForm725" class="sheet profileSheet725"><h3 id="profileTitle725">Nouveau profil</h3><div class="field"><label for="profileName725">Nom du profil</label><input id="profileName725" class="profileInput725" type="text" maxlength="40" autocomplete="off" required></div><label id="profileDupRow725" class="profileDup725"><input id="profileDuplicate725" type="checkbox" checked><span>Dupliquer le profil actuel</span></label><div class="advModalActions"><button id="profileCancel725" type="button" class="btn">Annuler</button><button id="profileSave725" type="submit" class="btn primary">Créer</button></div></form>';
+    document.body.appendChild(modal);
+    modal.onclick=e=>{if(e.target===modal)modal.classList.remove('show')};
+    document.getElementById('profileCancel725').onclick=()=>modal.classList.remove('show');
+    document.getElementById('profileForm725').onsubmit=e=>{
+      e.preventDefault();
+      const mode=modal.dataset.mode||'create',input=document.getElementById('profileName725');
+      const name=String(input.value||'').trim();if(!name)return;
+      try{
+        if(mode==='rename'){
+          const sel=document.getElementById('advProfileSelect');
+          if(sel&&sel.value&&window.AndroidSchedule&&AndroidSchedule.renameProfile)AndroidSchedule.renameProfile(sel.value,name);
+        }else if(window.AndroidSchedule&&AndroidSchedule.createProfile){
+          const dup=document.getElementById('profileDuplicate725').checked;
+          const id=AndroidSchedule.createProfile(name,dup);
+          if(id&&AndroidSchedule.activateProfile)AndroidSchedule.activateProfile(id);
+          if(window.reloadSchedule)window.reloadSchedule();
+        }
+      }catch(err){}
+      modal.classList.remove('show');
+      setTimeout(()=>{try{if(window.refreshAdvancedFeatures)window.refreshAdvancedFeatures()}catch(e){}},30);
+    };
+    return modal;
+  }
+  function openProfileModal(mode){
+    const modal=ensureProfileModal(),sel=document.getElementById('advProfileSelect'),input=document.getElementById('profileName725');
+    modal.dataset.mode=mode;
+    const rename=mode==='rename';
+    document.getElementById('profileTitle725').textContent=rename?'Renommer le profil':'Nouveau profil';
+    document.getElementById('profileSave725').textContent=rename?'Enregistrer':'Créer';
+    document.getElementById('profileDupRow725').style.display=rename?'none':'flex';
+    input.value=rename&&sel&&sel.selectedIndex>=0?sel.options[sel.selectedIndex].text:'';
+    modal.classList.add('show');
+    setTimeout(()=>{input.focus();input.select()},60);
+  }
+  function setupProfiles(){
+    const np=document.getElementById('advNewProfile'),rp=document.getElementById('advRenameProfile');
+    if(np)np.onclick=()=>openProfileModal('create');
+    if(rp)rp.onclick=()=>openProfileModal('rename');
+    ensureProfileModal();
+  }
+
+  function ensureBaseDisplay(){
+    const title=document.getElementById('widgetBaseTitle706');
+    if(!title||!title.parentElement)return;
+    let root=document.getElementById('appBaseControls725');
+    if(!root){
+      root=document.createElement('div');root.id='appBaseControls725';
+      root.innerHTML='<label class="appBaseToggle725"><input id="appShowRoom725" type="checkbox"><span>Salle</span></label><label class="appBaseToggle725"><input id="appShowCourse725" type="checkbox"><span>Cours</span></label><label class="appBaseToggle725"><input id="appShowTimes725" type="checkbox"><span>Heure</span></label><label class="appBaseToggle725"><input id="appShowProgress725" type="checkbox"><span>Progression du cours</span></label>';
+      title.insertAdjacentElement('afterend',root);
+    }
+    const a=readAdvanced();
+    const defs=[['appShowRoom725','appShowRoom'],['appShowCourse725','appShowCourse'],['appShowTimes725','appShowTimes'],['appShowProgress725','appShowCourseProgress']];
+    defs.forEach(([id,key])=>{
+      const input=document.getElementById(id);if(!input)return;
+      input.checked=a[key]!==false;
+      if(!input.__edt725){
+        input.__edt725=true;
+        input.onchange=()=>{
+          const next=readAdvanced();next[key]=input.checked;
+          if(key==='appShowRoom'&&input.checked)next.showRoom=true;
+          if(key==='appShowTimes'&&input.checked)next.showTimes=true;
+          writeAdvanced(next);applyBaseVisibility();refreshAfterSettings();
+        };
+      }
+    });
+    applyBaseVisibility();
+  }
+  function applyBaseVisibility(){
+    const a=readAdvanced(),b=document.body;if(!b)return;
+    b.classList.toggle('edtHideRoom725',a.appShowRoom===false);
+    b.classList.toggle('edtHideCourse725',a.appShowCourse===false);
+    b.classList.toggle('edtHideTimes725',a.appShowTimes===false);
+    b.classList.toggle('edtHideProgress725',a.appShowCourseProgress===false);
+  }
+
+  function apply(){
+    removeExtraLanguages();fitLanguageSelect();setupRangeLine();setupReminder();setupHolidaySpacing();
+    setupSchoolCalendar();setupProfiles();ensureBaseDisplay();cleanVacationTitle();applyBaseVisibility();
+  }
+
+  let queued=false;
+  function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;apply()})}
+  const sheet=document.getElementById('settingsSheet');
+  if(sheet)new MutationObserver(schedule).observe(sheet,{childList:true,subtree:true});
+  document.addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))setTimeout(schedule,0)},true);
+  document.addEventListener('change',e=>{if(e.target&&e.target.id==='languageSelect')setTimeout(()=>{fitLanguageSelect();cleanVacationTitle()},0)},true);
+  apply();setTimeout(apply,120);setTimeout(apply,550);
+})();
+</script>
+
 </body>
 </html>
