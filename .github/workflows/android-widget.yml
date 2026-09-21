@@ -1,8 +1,8 @@
-name: Clean Android 7.22 tested build
+name: Clean Android 7.23 visual-balance build
 
 on:
   push:
-    branches: [fix/722-preserve-title-top-gap]
+    branches: [fix/723-balanced-title-spacing]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 
@@ -89,7 +89,7 @@ jobs:
             if(n==='loadUiSettings')return JSON.stringify({language:'fr'});
             if(n==='loadAdvancedSetting')return '';
             if(n==='getCurrentWeek')return 'B';
-            if(n==='getAppVersionName')return '7.22';
+            if(n==='getAppVersionName')return '7.23';
             if(n==='loadHolidays'||n==='loadSchoolHolidays')return '[]';
             if(n.startsWith('load'))return '{}';
             if(n.startsWith('get')||n.startsWith('is'))return '';
@@ -115,22 +115,34 @@ jobs:
               for(const [id,sel] of defs){
                 document.querySelectorAll('#settingsSheet details').forEach(d=>d.open=false);
                 const d=document.getElementById(id); if(!d)continue;
+                function glyphRect(el){
+                  if(!el)return null;
+                  const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);
+                  let n;
+                  while((n=walker.nextNode())){
+                    if((n.nodeValue||'').trim()){
+                      const range=document.createRange(); range.selectNodeContents(n);
+                      const rect=range.getBoundingClientRect();
+                      if(rect.width>0&&rect.height>0)return rect;
+                    }
+                  }
+                  return el.getBoundingClientRect();
+                }
                 const closedLabel=d.querySelector(':scope>summary .edtSummaryLabel700')||d.querySelector(':scope>summary');
-                const closedDetails=d.getBoundingClientRect(), closedRect=closedLabel.getBoundingClientRect();
-                const closedTitleTopOffset=closedRect.top-closedDetails.top;
+                const closedDetails=d.getBoundingClientRect(), closedGlyph=glyphRect(closedLabel);
+                const closedTitleTopGap=closedGlyph.top-closedDetails.top;
                 d.open=true;
                 const label=d.querySelector(':scope>summary .edtSummaryLabel700')||d.querySelector(':scope>summary');
                 const first=d.querySelector(sel);
                 if(!label||!first)continue;
-                const a=label.getBoundingClientRect(), b=first.getBoundingClientRect(), s=d.querySelector(':scope>summary').getBoundingClientRect(), dr=d.getBoundingClientRect();
+                const titleGlyph=glyphRect(label), firstVisual=glyphRect(first);
+                const s=d.querySelector(':scope>summary').getBoundingClientRect(), dr=d.getBoundingClientRect();
                 report[id]={
-                  visibleGap:+(b.top-a.bottom).toFixed(1),
                   summaryHeight:+s.height.toFixed(1),
-                  summaryBottom:+s.bottom.toFixed(1),
-                  firstTop:+b.top.toFixed(1),
-                  labelHeight:+a.height.toFixed(1),
-                  closedTitleTopOffset:+closedTitleTopOffset.toFixed(1),
-                  openTitleTopOffset:+(a.top-dr.top).toFixed(1),
+                  topGap:+(titleGlyph.top-dr.top).toFixed(1),
+                  bottomGap:+(firstVisual.top-titleGlyph.bottom).toFixed(1),
+                  balanceError:+((firstVisual.top-titleGlyph.bottom)-(titleGlyph.top-dr.top)).toFixed(1),
+                  closedTopGap:+closedTitleTopGap.toFixed(1),
                   firstText:(first.textContent||'').trim().slice(0,80)
                 };
               }
@@ -163,16 +175,15 @@ jobs:
           required=['settingsLanguage698','settingsTypeWeek692','settingsText692','settingsColors692','settingsDisplay692']
           missing=[k for k in required if k not in report]
           if missing: raise SystemExit('missing visual sections: '+','.join(missing))
-          gaps=[float(report[k]['visibleGap']) for k in required]
           heights=[float(report[k]['summaryHeight']) for k in required]
-          closed_offsets=[float(report[k]['closedTitleTopOffset']) for k in required]
-          open_offsets=[float(report[k]['openTitleTopOffset']) for k in required]
-          first_offsets=[float(report[k]['firstTop'])-(float(report[k]['summaryBottom'])-float(report[k]['summaryHeight'])) for k in required]
-          if max(first_offsets)-min(first_offsets)>0.6: raise SystemExit(f'first-content offsets not uniform: {first_offsets}')
-          if not all(abs(x-58.0)<=0.2 for x in first_offsets): raise SystemExit(f'first content not at tested 58px offset: {first_offsets}')
-          if not all(abs(x-72.0)<=0.2 for x in heights): raise SystemExit(f'open summary height must match closed 72px: {heights}')
-          if not all(abs(a-b)<=0.2 for a,b in zip(closed_offsets,open_offsets)): raise SystemExit(f'title moved when opening: closed={closed_offsets} open={open_offsets}')
-          print('VISUAL_SPACING_OK',{'first_offsets':first_offsets,'heights':heights,'closed_offsets':closed_offsets,'open_offsets':open_offsets})
+          top=[float(report[k]['topGap']) for k in required]
+          bottom=[float(report[k]['bottomGap']) for k in required]
+          closed=[float(report[k]['closedTopGap']) for k in required]
+          errors=[float(report[k]['balanceError']) for k in required]
+          if not all(abs(x-72.0)<=0.2 for x in heights): raise SystemExit(f'open summary height must remain 72px: {heights}')
+          if not all(abs(a-b)<=0.5 for a,b in zip(top,closed)): raise SystemExit(f'title moved on open: open={top} closed={closed}')
+          if not all(abs(x)<=3.0 for x in errors): raise SystemExit(f'top/bottom visual spacing not balanced: top={top} bottom={bottom} errors={errors}')
+          print('VISUAL_BALANCE_OK',{'top':top,'bottom':bottom,'errors':errors,'heights':heights})
           PY
 
       - uses: actions/upload-artifact@v4
@@ -187,10 +198,10 @@ jobs:
       - name: Verify package metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='722001' versionName='7.22'" /tmp/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.22-tested-debug.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='723001' versionName='7.23'" /tmp/badging.txt
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.23-tested-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: EDT-7.22-tested
-          path: android-widget/app/build/outputs/apk/debug/EDT-7.22-tested-debug.apk
+          name: EDT-7.23-tested
+          path: android-widget/app/build/outputs/apk/debug/EDT-7.23-tested-debug.apk
           if-no-files-found: error
