@@ -4149,6 +4149,16 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     }
   }
 
+  function centerSettingsTitle733(){
+    const sheet=document.getElementById('settingsSheet');
+    const head=sheet&&sheet.querySelector('.settingsHead');
+    const title=document.getElementById('settingsTitle');
+    if(!sheet||!head||!title)return;
+    const sr=sheet.getBoundingClientRect(),hr=head.getBoundingClientRect();
+    const target=((sr.left+sr.right)/2)-hr.left;
+    title.style.setProperty('left',target.toFixed(2)+'px','important');
+  }
+
   function verifySettingsCenter733(){
     const sheet=document.getElementById('settingsSheet');
     const title=document.getElementById('settingsTitle');
@@ -4161,6 +4171,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   function apply733(){
     const style=document.getElementById('edt733Style');
     if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    centerSettingsTitle733();
     balanceResetFooter733();
     verifySettingsCenter733();
   }
