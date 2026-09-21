@@ -198,18 +198,19 @@ final class LocalizationFinalUi {
                 window.onGeneratedLanguagePack80=function(raw){
                   downloadBusy81=false;
                   try{
-                    const pack=typeof raw==='string'?JSON.parse(raw):raw;const panel=document.getElementById('languagePackPanel81'),status=panel&&panel.querySelector('.languagePackStatus');
-                    if(status)status.textContent=text81('Langue téléchargée. Application en cours…');
+                    const pack=typeof raw==='string'?JSON.parse(raw):raw;
+                    const panel=document.getElementById('languagePackPanel81'),status=panel&&panel.querySelector('.languagePackStatus');
                     if(pack&&pack.code){
-                      try{
-                        const next=loadUi81();next.language=String(pack.code);AndroidSchedule.saveUiSettings(JSON.stringify(next));
-                        try{if(window.refreshLocalization75)window.refreshLocalization75()}catch(e){}
-                        applyTranslation81(document.body);ensureLanguageSelect81();
-                        return;
-                      }catch(e){}
+                      ensureLanguageSelect81();
+                      if(status)status.textContent=String(pack.name||pack.code)+' · '+text81('Langue téléchargée');
+                      setTimeout(openLanguages81,40);
+                      return;
                     }
                     if(status)status.textContent=text81('La langue a été téléchargée mais n’a pas pu être appliquée.');
-                  }catch(e){const status=document.querySelector('#languagePackPanel81 .languagePackStatus');if(status)status.textContent=text81('La langue a été téléchargée mais n’a pas pu être appliquée.')}
+                  }catch(e){
+                    const status=document.querySelector('#languagePackPanel81 .languagePackStatus');
+                    if(status)status.textContent=text81('La langue a été téléchargée mais n’a pas pu être appliquée.');
+                  }
                 };
                 window.onGeneratedLanguagePackError80=function(message){downloadBusy81=false;const b=document.getElementById('languageGenerate81');if(b)b.disabled=false;const s=document.querySelector('#languagePackPanel81 .languagePackStatus');if(s)s.textContent=String(message||text81('Téléchargement impossible'))};
 
@@ -220,9 +221,9 @@ final class LocalizationFinalUi {
                   #slotSettings .slotRow{grid-template-columns:92px 1fr 1fr!important}
                   #slotSettings .slotNum{white-space:nowrap!important;text-align:left!important;font-size:.70rem!important}
                   #languageDownloadBtn{display:none!important}
-                  #languagePackPanel81{display:none;margin-top:8px;padding:8px;border-top:1px solid var(--line,#dce3eb)}
+                  #languagePackPanel81{display:none;margin-top:8px;padding:8px 0 0;border:0!important}
                   #languagePackPanel81.show{display:block!important}
-                  #languagePackPanel81 .languagePackTitle{text-align:center;font-size:.74rem;font-weight:850;margin-bottom:7px}
+                  #languagePackPanel81 .languagePackTitle{text-align:center;font-size:.74rem;font-weight:850;margin:0 0 8px;border:0!important}
                   #languagePackPanel81 .languageAny81{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:center}
                   #languagePackPanel81 select{width:100%;min-width:0;padding:9px;border:1px solid var(--line,#dce3eb);border-radius:8px;background:#fff;color:var(--ink,#111936);font-size:.74rem}
                   #languagePackPanel81 button,#languageDownloadBtn81{padding:9px 11px;border:1px solid var(--set-accent,var(--blue));border-radius:8px;background:var(--set-accent,var(--blue));color:#fff;font-size:.72rem;font-weight:850}
