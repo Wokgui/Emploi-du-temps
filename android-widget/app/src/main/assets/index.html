@@ -2876,5 +2876,113 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   html body #appVersionInfo:after{content:'Version 7.27'!important}
 </style>
 
+
+<script>
+(function(){
+  if(window.__edt727)return;window.__edt727=true;
+
+  function norm(value){
+    return String(value||'').toLowerCase().normalize('NFD')
+      .replace(/[\u0300-\u036f]/g,'').replace(/[’']/g,"'").replace(/\s+/g,' ').trim();
+  }
+
+  function keepStyleLast727(){
+    const style=document.getElementById('edt727Style');
+    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+  }
+
+  function openLanguagePanel727(){
+    const old=document.getElementById('languageDownloadBtn');
+    if(old)old.style.setProperty('display','none','important');
+    const button=document.getElementById('languageDownloadBtn81');
+    const panel=document.getElementById('languagePackPanel81');
+    if(!button)return;
+    button.style.setProperty('display','none','important');
+    if((!panel||!panel.classList.contains('show')||!document.getElementById('languageCatalog81'))&&!button.dataset.autoOpen727){
+      button.dataset.autoOpen727='1';
+      try{button.click()}catch(e){}
+      setTimeout(()=>{delete button.dataset.autoOpen727},100);
+    }
+  }
+
+  function removePaletteOutline727(){
+    const sheet=document.getElementById('settingsSheet');if(!sheet)return;
+    const phrases=[
+      "utiliser la meme palette dans l'application et le widget",
+      "use the same palette in the app and widget",
+      "gleiche palette in app und widget verwenden"
+    ];
+    const walker=document.createTreeWalker(sheet,NodeFilter.SHOW_TEXT);
+    let node;
+    while((node=walker.nextNode())){
+      const txt=norm(node.nodeValue);
+      if(!phrases.some(p=>txt.includes(p)))continue;
+      let target=node.parentElement;
+      if(!target)continue;
+      const label=target.closest('label');if(label)target=label;
+      target.classList.add('paletteSyncNoBorder727');
+      const parent=target.parentElement;
+      if(parent&&norm(parent.textContent)===norm(target.textContent))parent.classList.add('paletteSyncNoBorder727');
+    }
+  }
+
+  function arrangeSchoolUpdate727(){
+    const zone=document.getElementById('schoolZone');
+    const button=document.getElementById('schoolAutoFetch725');
+    if(!zone||!button)return;
+    const grid=zone.closest('.schoolGrid');
+    if(grid&&button.parentElement!==grid)grid.appendChild(button);
+  }
+
+  function fitProfile727(){
+    const select=document.getElementById('advProfileSelect');
+    if(!select||!select.options||!select.options.length)return;
+    try{
+      const cs=getComputedStyle(select),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+      ctx.font=cs.font||cs.fontSize+' '+cs.fontFamily;
+      let textWidth=0;
+      [...select.options].forEach(option=>{
+        textWidth=Math.max(textWidth,ctx.measureText(String(option.textContent||'')).width);
+      });
+      const available=Math.max(120,window.innerWidth-72);
+      const wanted=Math.ceil(textWidth+84);
+      select.style.setProperty('width',Math.min(available,Math.max(120,wanted))+'px','important');
+      if(wanted>available){
+        const scale=Math.max(.84,available/wanted);
+        select.style.setProperty('font-size',Math.max(10,parseFloat(cs.fontSize)*scale)+'px','important');
+      }else{
+        select.style.removeProperty('font-size');
+      }
+    }catch(e){}
+  }
+
+  function apply727(){
+    keepStyleLast727();
+    openLanguagePanel727();
+    removePaletteOutline727();
+    arrangeSchoolUpdate727();
+    fitProfile727();
+  }
+
+  let queued=false;
+  function schedule727(){
+    if(queued)return;queued=true;
+    requestAnimationFrame(()=>{queued=false;apply727()});
+  }
+
+  const sheet=document.getElementById('settingsSheet');
+  if(sheet)new MutationObserver(schedule727).observe(sheet,{childList:true,subtree:true,characterData:true});
+  document.addEventListener('click',e=>{
+    if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))setTimeout(schedule727,0);
+  },true);
+  document.addEventListener('change',e=>{
+    if(e.target&&['advProfileSelect','languageSelect','schoolZone'].includes(e.target.id))setTimeout(schedule727,0);
+  },true);
+  window.addEventListener('resize',schedule727);
+
+  apply727();setTimeout(apply727,120);setTimeout(apply727,600);
+})();
+</script>
+
 </body>
 </html>
