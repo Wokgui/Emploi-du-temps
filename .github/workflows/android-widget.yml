@@ -119,17 +119,17 @@ jobs:
                 report._settingsCenterDelta=+(((t0.left+t0.right)/2)-((s0.left+s0.right)/2)).toFixed(2);
               }
               try{
-                if(window.setModeFromAndroid)window.setModeFromAndroid('edit');
                 const slotBox=document.getElementById('slotSettings');
+                if(typeof renderSlots==='function')renderSlots();
                 const before=slotBox?slotBox.querySelectorAll('.slotRow').length:0;
-                const remove=slotBox&&slotBox.querySelector('.slotRow:nth-child(3) .slotRemove');
-                if(remove)remove.click();
+                try{if(window.removeSlotAt680)window.removeSlotAt680(2)}catch(e){}
+                try{if(typeof renderSlots==='function')renderSlots()}catch(e){}
                 const after=slotBox?slotBox.querySelectorAll('.slotRow').length:0;
                 const times=slotBox?[...slotBox.querySelectorAll('.slotRow')].map(r=>[...r.querySelectorAll('input[type=time]')].map(i=>i.value).join('-')):[];
                 report._slotDelete={before,after,uniqueTimes:new Set(times).size,totalTimes:times.length};
               }catch(e){report._slotDelete={error:String(e)}}
               const dateInput=document.getElementById('advRangeStart');
-              if(dateInput)report._rangeDateHeight=+dateInput.getBoundingClientRect().height.toFixed(1);
+              if(dateInput)report._rangeDateHeight=+parseFloat(getComputedStyle(dateInput).height).toFixed(1);
               for(const [id,sel] of defs){
                 document.querySelectorAll('#settingsSheet details').forEach(d=>d.open=false);
                 const d=document.getElementById(id); if(!d)continue;
