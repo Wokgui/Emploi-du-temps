@@ -2038,7 +2038,7 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
       transition:none!important;animation:none!important
     }
 
-    html body #appVersionInfo:after{content:'Version 7.21'!important}
+    html body #appVersionInfo:after{content:'Version 7.22'!important}
   `;
   document.head.appendChild(style);
 })();
@@ -2118,7 +2118,55 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
       margin-top:0!important;padding-top:0!important
     }
 
-    html body #appVersionInfo:after{content:'Version 7.21'!important}
+    html body #appVersionInfo:after{content:'Version 7.22'!important}
+  `;
+  document.head.appendChild(style);
+})();
+</script>
+
+
+<script>
+(function(){
+  if(window.__edt722)return;window.__edt722=true;
+  const style=document.createElement('style');
+  style.id='edt722Style';
+  style.textContent=`
+    /* 7.22 — le titre garde exactement sa position verticale repliée.
+       Le contenu seul remonte sous le titre, sans déplacer celui-ci. */
+    html body #settingsModal #settingsSheet #settingsLanguage698[open] > summary,
+    html body #settingsModal #settingsSheet #settingsTypeWeek692[open] > summary,
+    html body #settingsModal #settingsSheet #settingsText692[open] > summary,
+    html body #settingsModal #settingsSheet #settingsColors692[open] > summary,
+    html body #settingsModal #settingsSheet #settingsDisplay692[open] > summary,
+    html body #settingsModal #settingsSheet #advancedSettings85[open] > summary{
+      height:72px!important;
+      min-height:72px!important;
+      max-height:72px!important;
+      margin:0!important;
+      padding:0 42px!important;
+      box-sizing:border-box!important;
+      display:flex!important;
+      align-items:center!important;
+      justify-content:center!important;
+      transition:none!important;
+      animation:none!important;
+    }
+
+    html body #settingsModal #settingsSheet #settingsLanguage698[open] > .settingsAccordionBody692,
+    html body #settingsModal #settingsSheet #settingsTypeWeek692[open] > .settingsAccordionBody692,
+    html body #settingsModal #settingsSheet #settingsText692[open] > .settingsAccordionBody692,
+    html body #settingsModal #settingsSheet #settingsColors692[open] > .settingsAccordionBody692,
+    html body #settingsModal #settingsSheet #settingsDisplay692[open] > .settingsAccordionBody692,
+    html body #settingsModal #settingsSheet #advancedSettings85[open] > #advancedContent85{
+      margin-top:-28px!important;
+      padding-top:6px!important;
+      transform:none!important;
+      position:relative!important;
+      transition:none!important;
+      animation:none!important;
+    }
+
+    html body #appVersionInfo:after{content:'Version 7.22'!important}
   `;
   document.head.appendChild(style);
 })();
