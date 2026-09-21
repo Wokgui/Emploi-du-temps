@@ -4062,5 +4062,132 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 })();
 </script>
 
+
+
+<style id="edt733Style">
+  /* 7.33 — dates plus fines, titre Réglages vraiment centré et bas de panneau équilibré. */
+
+  html body #settingsSheet #advancedSettings85 .rangeDates725 input[type=date]{
+    height:30px!important;
+    min-height:30px!important;
+    max-height:30px!important;
+    padding-top:0!important;
+    padding-bottom:0!important;
+    font-size:.67rem!important;
+    border-radius:7px!important;
+  }
+
+  /* Le centre est calculé sur le groupe entier "roue + Réglages", indépendamment du bouton X. */
+  html body #settingsSheet .settingsHead{
+    position:relative!important;
+    display:block!important;
+    width:100%!important;
+    min-height:36px!important;
+    height:36px!important;
+  }
+  html body #settingsSheet .settingsHead #settingsTitle{
+    position:absolute!important;
+    left:50%!important;
+    top:50%!important;
+    transform:translate(-50%,-50%)!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:max-content!important;
+    max-width:calc(100% - 90px)!important;
+    margin:0!important;
+    padding:0!important;
+    white-space:nowrap!important;
+    text-align:center!important;
+  }
+  html body #settingsSheet .settingsHead .settingsX{
+    position:absolute!important;
+    right:0!important;
+    top:50%!important;
+    transform:translateY(-50%)!important;
+    margin:0!important;
+  }
+
+  /* La barre de séparation est celle du bas des réglages avancés.
+     Le footer ne dessine donc pas une seconde ligne. */
+  html body #settingsSheet #resetFooter692{
+    border-top:0!important;
+    padding-top:0!important;
+  }
+
+  html body #appVersionInfo:after{content:'Version 7.33'!important}
+</style>
+
+<script>
+(function(){
+  if(window.__edt733)return;window.__edt733=true;
+
+  function visibleAdvanced733(){
+    return [...document.querySelectorAll('details#advancedSettings85')]
+      .find(el=>getComputedStyle(el).display!=='none'&&getComputedStyle(el).visibility!=='hidden')
+      ||document.querySelector('details#advancedSettings85');
+  }
+
+  function balanceResetFooter733(){
+    const adv=visibleAdvanced733();
+    const footer=document.getElementById('resetFooter692');
+    const restore=adv&&adv.querySelector('#advRestoreBackup');
+    const firstReset=document.getElementById('resetBase692');
+    if(!adv||!footer||!firstReset)return;
+
+    footer.style.setProperty('border-top','0','important');
+    footer.style.setProperty('padding-top','0','important');
+
+    if(adv.open&&restore&&restore.getBoundingClientRect().height>0){
+      const a=adv.getBoundingClientRect();
+      const r=restore.getBoundingClientRect();
+      const before=Math.max(10,Math.round(a.bottom-r.bottom));
+      footer.style.setProperty('margin-top',before+'px','important');
+      document.documentElement.dataset.edt733ResetGap=String(before);
+    }else{
+      footer.style.setProperty('margin-top','14px','important');
+    }
+  }
+
+  function verifySettingsCenter733(){
+    const sheet=document.getElementById('settingsSheet');
+    const title=document.getElementById('settingsTitle');
+    if(!sheet||!title)return;
+    const sr=sheet.getBoundingClientRect(),tr=title.getBoundingClientRect();
+    const delta=((tr.left+tr.right)/2)-((sr.left+sr.right)/2);
+    document.documentElement.dataset.edt733SettingsCenter=Math.abs(delta)<=1?'ok':delta.toFixed(1);
+  }
+
+  function apply733(){
+    const style=document.getElementById('edt733Style');
+    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    balanceResetFooter733();
+    verifySettingsCenter733();
+  }
+
+  let queued=false;
+  function schedule733(){
+    if(queued)return;
+    queued=true;
+    requestAnimationFrame(()=>{
+      queued=false;
+      apply733();
+      requestAnimationFrame(apply733);
+    });
+  }
+
+  const sheet=document.getElementById('settingsSheet');
+  if(sheet)new MutationObserver(schedule733).observe(sheet,{childList:true,subtree:true,attributes:true,attributeFilter:['open','class']});
+  document.addEventListener('click',e=>{
+    if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))setTimeout(schedule733,0);
+  },true);
+  window.addEventListener('resize',schedule733);
+
+  schedule733();
+  setTimeout(schedule733,120);
+  setTimeout(schedule733,500);
+})();
+</script>
+
 </body>
 </html>
