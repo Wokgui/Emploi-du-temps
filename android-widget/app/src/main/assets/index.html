@@ -2688,6 +2688,7 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
   }
 
   function apply(){
+    const style=document.getElementById('edt725Style');if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
     removeExtraLanguages();fitLanguageSelect();setupRangeLine();setupReminder();setupHolidaySpacing();
     setupSchoolCalendar();setupProfiles();ensureBaseDisplay();cleanVacationTitle();applyBaseVisibility();
   }
