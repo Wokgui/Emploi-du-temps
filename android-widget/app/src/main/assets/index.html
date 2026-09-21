@@ -1810,358 +1810,81 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
 </script>
 
 
-<script>
-(function(){
-  if(window.__edt713)return;window.__edt713=true;
+<script>(function(){window.__edt713=true;})();</script>
 
-  const style=document.createElement('style');style.id='edt713Style';style.textContent=`
-    /* 7.13 — les six grandes rubriques utilisent Taille du texte comme référence visuelle.
-       Le calcul JS ci-dessous ajuste les bords réels, pas seulement des marges théoriques. */
-    html body #settingsSheet #settingsLanguage698>.settingsAccordionBody692,
-    html body #settingsSheet #settingsTypeWeek692>.settingsAccordionBody692,
-    html body #settingsSheet #settingsColors692>.settingsAccordionBody692,
-    html body #settingsSheet #settingsDisplay692>.settingsAccordionBody692,
-    html body #settingsSheet #advancedSettings85>#advancedContent85{
-      box-sizing:border-box!important;
-    }
 
-    /* Enlève uniquement les décalages extérieurs historiques qui rendaient le haut différent
-       selon qu'il commençait par du texte, une tuile ou un sélecteur. */
-    html body #settingsSheet #settingsLanguage698>.settingsAccordionBody692{padding-top:0!important}
-    html body #settingsSheet #settingsLanguage698 .settingsLanguage692{margin-top:0!important;padding-top:0!important}
-    html body #settingsSheet #settingsTypeWeek692 #settingsWeekCycle678{margin-top:0!important;padding-top:0!important}
-    html body #settingsSheet #settingsTypeWeek692 #settingsWeekCycle678>.settingTitle{margin-top:0!important}
-    html body #settingsSheet #settingsColors692 .edtThemeTitle696,
-    html body #settingsSheet #settingsColors692 #themeTitle{margin-top:0!important}
-    html body #settingsSheet #settingsDisplay692 .edtFirstSubTitle696,
-    html body #settingsSheet #settingsDisplay692 .feedback663Title{margin-top:0!important}
-    html body #settingsSheet #advancedSettings85 .edtLanguagesTitle696,
-    html body #settingsSheet #advancedSettings85 #languageExtraTitle85{margin-top:0!important}
-
-    html body #appVersionInfo:after{content:'Version 7.13'!important}
-  `;document.head.appendChild(style);
-
-  const ids=['settingsLanguage698','settingsTypeWeek692','settingsText692','settingsColors692','settingsDisplay692','advancedSettings85'];
-  const refId='settingsText692';
-
-  function bodyOf(details){
-    if(!details)return null;
-    return details.id==='advancedSettings85'
-      ? document.getElementById('advancedContent85')
-      : details.querySelector(':scope > .settingsAccordionBody692');
-  }
-  function summaryLabel(details){
-    const s=details&&details.querySelector(':scope > summary');
-    if(!s)return null;
-    return s.querySelector('.edtSummaryLabel700')||s;
-  }
-  function visible(el){
-    if(!el)return false;
-    const cs=getComputedStyle(el),r=el.getBoundingClientRect();
-    return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>0&&r.width>0&&r.height>0;
-  }
-  function visualCandidates(body){
-    if(!body)return [];
-    const sel=[
-      '.settingTitle','.advTitle','.schoolTitle','.feedback663Title','.w658Title','.movedSectionTitle692',
-      '.settingRow','.slotRow','.weekModeChoices','.coursePaletteBtn','.themeButton',
-      'button','select','input[type="range"]','input[type="time"]','input[type="color"]','textarea'
-    ].join(',');
-    return [...body.querySelectorAll(sel)].filter(el=>{
-      if(!visible(el))return false;
-      if(el.closest('summary'))return false;
-      if(el.classList.contains('edtDuplicateDaysOff696'))return false;
-      return true;
-    });
-  }
-  function firstLast(body){
-    const a=visualCandidates(body);
-    if(!a.length)return {first:null,last:null};
-    let first=a[0],last=a[0],ft=first.getBoundingClientRect().top,lb=last.getBoundingClientRect().bottom;
-    for(const el of a){
-      const r=el.getBoundingClientRect();
-      if(r.top<ft){ft=r.top;first=el}
-      if(r.bottom>lb){lb=r.bottom;last=el}
-    }
-    return {first,last};
-  }
-  function transparentBox(el){
-    if(!el)return true;
-    const cs=getComputedStyle(el);
-    const bg=cs.backgroundColor;
-    const transparent=!bg||bg==='rgba(0, 0, 0, 0)'||bg==='transparent';
-    const border=(parseFloat(cs.borderTopWidth)||0)+(parseFloat(cs.borderBottomWidth)||0)+(parseFloat(cs.borderLeftWidth)||0)+(parseFloat(cs.borderRightWidth)||0);
-    const shadow=!cs.boxShadow||cs.boxShadow==='none';
-    return transparent&&border===0&&shadow;
-  }
-  function clearOuterPath(anchor,body,edge){
-    if(!anchor||!body)return;
-    const startProp=edge==='top'?'margin-top':'margin-bottom';
-    anchor.style.setProperty(startProp,'0','important');
-    let p=anchor.parentElement;
-    while(p&&p!==body){
-      if(transparentBox(p)){
-        p.style.setProperty(edge==='top'?'padding-top':'padding-bottom','0','important');
-        p.style.setProperty(edge==='top'?'margin-top':'margin-bottom','0','important');
-      }else break;
-      p=p.parentElement;
-    }
-  }
-  function snapshotStyle(el,prop){
-    return [el.style.getPropertyValue(prop),el.style.getPropertyPriority(prop)];
-  }
-  function restoreStyle(el,prop,snap){
-    if(snap[0])el.style.setProperty(prop,snap[0],snap[1]||'');
-    else el.style.removeProperty(prop);
-  }
-  function measure(details,mutateEdges){
-    const body=bodyOf(details),label=summaryLabel(details);
-    if(!body||!label)return null;
-
-    const props=['display','visibility','pointer-events','height','min-height','max-height','overflow'];
-    const snaps={};props.forEach(p=>snaps[p]=snapshotStyle(body,p));
-    const wasClosed=!details.open;
-    if(wasClosed){
-      body.style.setProperty('display','block','important');
-      body.style.setProperty('visibility','hidden','important');
-      body.style.setProperty('pointer-events','none','important');
-      body.style.setProperty('height','auto','important');
-      body.style.setProperty('min-height','0','important');
-      body.style.setProperty('max-height','none','important');
-      body.style.setProperty('overflow','visible','important');
-    }
-
-    const pair=firstLast(body);
-    if(pair.first&&pair.last&&mutateEdges){
-      clearOuterPath(pair.first,body,'top');
-      clearOuterPath(pair.last,body,'bottom');
-    }
-
-    const pair2=firstLast(body);
-    let out=null;
-    if(pair2.first&&pair2.last){
-      const lr=label.getBoundingClientRect(),dr=details.getBoundingClientRect();
-      const fr=pair2.first.getBoundingClientRect(),rr=pair2.last.getBoundingClientRect();
-      out={
-        top:Math.max(0,fr.top-lr.bottom),
-        bottom:Math.max(0,dr.bottom-rr.bottom),
-        first:pair2.first,last:pair2.last
-      };
-    }
-    if(wasClosed)props.forEach(p=>restoreStyle(body,p,snaps[p]));
-    return out;
-  }
-
-  function reference(){
-    const d=document.getElementById(refId);if(!d)return null;
-    const m=measure(d,false);
-    if(!m)return null;
-    /* Bornes de sécurité uniquement : sur le S23 le modèle réel reste utilisé tel quel. */
-    return {
-      top:Math.max(12,Math.min(52,m.top)),
-      bottom:Math.max(12,Math.min(52,m.bottom))
-    };
-  }
-
-  function balanceOne(details,target){
-    if(!details||details.id===refId||!target)return;
-    const body=bodyOf(details);if(!body)return;
-
-    body.style.setProperty('padding-top','0','important');
-    body.style.setProperty('padding-bottom','0','important');
-
-    let m=measure(details,true);if(!m)return;
-    body.style.setProperty('padding-top',Math.max(0,target.top-m.top)+'px','important');
-    body.style.setProperty('padding-bottom',Math.max(0,target.bottom-m.bottom)+'px','important');
-
-    /* Deuxième passe sur les dimensions réellement rendues : corrige les tuiles et textes
-       qui n'ont pas la même boîte visuelle. */
-    m=measure(details,false);
-    if(!m)return;
-    const pt=parseFloat(getComputedStyle(body).paddingTop)||0;
-    const pb=parseFloat(getComputedStyle(body).paddingBottom)||0;
-    body.style.setProperty('padding-top',Math.max(0,pt+(target.top-m.top))+'px','important');
-    body.style.setProperty('padding-bottom',Math.max(0,pb+(target.bottom-m.bottom))+'px','important');
-  }
-
-  let running=false;
-  function apply(){
-    if(running)return;running=true;
-    try{
-      const target=reference();if(!target)return;
-      ids.forEach(id=>balanceOne(document.getElementById(id),target));
-      window.__edt713SpacingReport={reference:target};
-      ids.forEach(id=>{
-        const d=document.getElementById(id),m=d?measure(d,false):null;
-        if(m)window.__edt713SpacingReport[id]={top:Math.round(m.top*10)/10,bottom:Math.round(m.bottom*10)/10};
-      });
-    }finally{running=false}
-  }
-  function schedule(){queueMicrotask(apply)}
-  const sheet=document.getElementById('settingsSheet');
-  if(sheet)new MutationObserver(schedule).observe(sheet,{childList:true,subtree:true});
-  document.addEventListener('toggle',e=>{if(e.target&&ids.includes(e.target.id))setTimeout(apply,0)},true);
-  document.addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('#settingsBtn'))setTimeout(apply,30)},true);
-  setTimeout(apply,80);setTimeout(apply,350);setTimeout(apply,800);
-})();
-</script>
+<script>(function(){window.__edt714=true;})();</script>
 
 
 <script>
 (function(){
-  if(window.__edt714)return;window.__edt714=true;
+  if(window.__edt715)return;window.__edt715=true;
+  const style=document.createElement('style');
+  style.id='edt715Style';
+  style.textContent=`
+    /*
+      7.15
+      - Plus aucun recalcul de position après ouverture.
+      - Le vide entre le titre d'une grande rubrique et son premier contenu est
+        réduit statiquement d'environ moitié par rapport à 7.14.
+    */
+    html body #settingsSheet #settingsLanguage698[open] > summary,
+    html body #settingsSheet #settingsTypeWeek692[open] > summary,
+    html body #settingsSheet #settingsText692[open] > summary,
+    html body #settingsSheet #settingsColors692[open] > summary,
+    html body #settingsSheet #settingsDisplay692[open] > summary,
+    html body #settingsSheet #advancedSettings85[open] > summary{
+      margin-bottom:-22px!important;
+    }
 
-  const style=document.createElement('style');style.id='edt714Style';style.textContent=`
-    /* 7.14 — le vide entre le titre d'une grande rubrique et son premier contenu
-       est réduit de moitié par rapport au modèle Taille du texte de la 7.13. */
+    /* Le premier contenu ne rajoute pas de marge haute parasite. */
+    html body #settingsSheet #settingsLanguage698 > .settingsAccordionBody692,
+    html body #settingsSheet #settingsTypeWeek692 > .settingsAccordionBody692,
+    html body #settingsSheet #settingsText692 > .settingsAccordionBody692,
+    html body #settingsSheet #settingsColors692 > .settingsAccordionBody692,
+    html body #settingsSheet #settingsDisplay692 > .settingsAccordionBody692,
+    html body #settingsSheet #advancedSettings85 > #advancedContent85{
+      padding-top:0!important;
+      margin-top:0!important;
+    }
+
+    html body #settingsSheet #settingsText692 #textSettings86,
+    html body #settingsSheet #settingsText692 #textSettings86 .settingsSectionBody86,
+    html body #settingsSheet #settingsText692 #textSettings86 .settingsSectionBody86 > .settingBox:first-child{
+      margin-top:0!important;
+      padding-top:0!important;
+    }
     html body #settingsSheet #settingsText692 #appFontTitle{
       margin-top:0!important;
     }
 
-    /* Horaires des cours : le bouton reste toujours à distance constante du bord bas
-       de sa tuile, y compris pendant les recalculs de hauteur. */
+    /* Même principe pour le premier sous-titre des autres rubriques. */
+    html body #settingsSheet #settingsTypeWeek692 #settingsWeekCycle678,
+    html body #settingsSheet #settingsTypeWeek692 #settingsWeekCycle678 > .settingTitle,
+    html body #settingsSheet #settingsColors692 #themeTitle,
+    html body #settingsSheet #settingsColors692 .edtThemeTitle696,
+    html body #settingsSheet #settingsDisplay692 .edtFirstSubTitle696,
+    html body #settingsSheet #settingsDisplay692 .feedback663Title,
+    html body #settingsSheet #advancedSettings85 .edtLanguagesTitle696,
+    html body #settingsSheet #advancedSettings85 #languageExtraTitle85{
+      margin-top:0!important;
+      padding-top:0!important;
+    }
+
+    /* Horaires des cours : réserve basse fixe autour du bouton Ajouter une heure. */
     html body #settingsSheet #settingsTypeWeek692 #slotSettings{
       box-sizing:border-box!important;
-      padding-bottom:10px!important;
+      padding-bottom:12px!important;
       overflow:hidden!important;
     }
     html body #settingsSheet #settingsTypeWeek692 #slotSettings .slotAdd{
-      margin-top:8px!important;
-      margin-bottom:0!important;
+      display:block!important;
+      margin:8px auto 0!important;
     }
 
-    html body #appVersionInfo:after{content:'Version 7.14'!important}
-  `;document.head.appendChild(style);
-
-  const ids=['settingsLanguage698','settingsTypeWeek692','settingsText692','settingsColors692','settingsDisplay692','advancedSettings85'];
-  function bodyOf(details){
-    if(!details)return null;
-    return details.id==='advancedSettings85'
-      ? document.getElementById('advancedContent85')
-      : details.querySelector(':scope > .settingsAccordionBody692');
-  }
-  function labelOf(details){
-    const s=details&&details.querySelector(':scope > summary');
-    return s&&(s.querySelector('.edtSummaryLabel700')||s);
-  }
-  function visible(el){
-    if(!el)return false;
-    const cs=getComputedStyle(el),r=el.getBoundingClientRect();
-    return cs.display!=='none'&&cs.visibility!=='hidden'&&r.width>0&&r.height>0;
-  }
-  function candidates(body){
-    if(!body)return [];
-    const sel=[
-      '.settingTitle','.advTitle','.schoolTitle','.feedback663Title','.w658Title','.movedSectionTitle692',
-      '.settingRow','.slotRow','.weekModeChoices','.coursePaletteBtn','.themeButton',
-      'button','select','input[type="range"]','input[type="time"]','input[type="color"]','textarea'
-    ].join(',');
-    return [...body.querySelectorAll(sel)].filter(el=>visible(el)&&!el.closest('summary')&&!el.classList.contains('edtDuplicateDaysOff696'));
-  }
-  function firstLast(body){
-    const list=candidates(body);if(!list.length)return {first:null,last:null};
-    let first=list[0],last=list[0],top=first.getBoundingClientRect().top,bottom=last.getBoundingClientRect().bottom;
-    list.forEach(el=>{const r=el.getBoundingClientRect();if(r.top<top){top=r.top;first=el}if(r.bottom>bottom){bottom=r.bottom;last=el}});
-    return {first,last};
-  }
-  function transparentBox(el){
-    if(!el)return false;
-    const cs=getComputedStyle(el),bg=cs.backgroundColor;
-    const transparent=!bg||bg==='transparent'||bg==='rgba(0, 0, 0, 0)';
-    const border=(parseFloat(cs.borderTopWidth)||0)+(parseFloat(cs.borderBottomWidth)||0)+(parseFloat(cs.borderLeftWidth)||0)+(parseFloat(cs.borderRightWidth)||0);
-    return transparent&&border===0&&(!cs.boxShadow||cs.boxShadow==='none');
-  }
-  function clearTopPath(first,body){
-    if(!first||!body)return;
-    first.style.setProperty('margin-top','0','important');
-    let p=first.parentElement;
-    while(p&&p!==body){
-      if(!transparentBox(p))break;
-      p.style.setProperty('margin-top','0','important');
-      p.style.setProperty('padding-top','0','important');
-      p=p.parentElement;
-    }
-  }
-  function snapshot(el,prop){return [el.style.getPropertyValue(prop),el.style.getPropertyPriority(prop)]}
-  function restore(el,prop,s){if(s[0])el.style.setProperty(prop,s[0],s[1]||'');else el.style.removeProperty(prop)}
-  function measure(details){
-    const body=bodyOf(details),label=labelOf(details);if(!body||!label)return null;
-    const props=['display','visibility','pointer-events','height','min-height','max-height','overflow'];
-    const saved={};props.forEach(p=>saved[p]=snapshot(body,p));
-    const closed=!details.open;
-    if(closed){
-      body.style.setProperty('display','block','important');
-      body.style.setProperty('visibility','hidden','important');
-      body.style.setProperty('pointer-events','none','important');
-      body.style.setProperty('height','auto','important');
-      body.style.setProperty('min-height','0','important');
-      body.style.setProperty('max-height','none','important');
-      body.style.setProperty('overflow','visible','important');
-    }
-    const pair=firstLast(body);let out=null;
-    if(pair.first&&pair.last){
-      const lr=label.getBoundingClientRect(),fr=pair.first.getBoundingClientRect(),dr=details.getBoundingClientRect(),rr=pair.last.getBoundingClientRect();
-      out={top:Math.max(0,fr.top-lr.bottom),bottom:Math.max(0,dr.bottom-rr.bottom),first:pair.first,last:pair.last};
-    }
-    if(closed)props.forEach(p=>restore(body,p,saved[p]));
-    return out;
-  }
-
-  let target=null,running=false;
-  function establishTarget(){
-    if(target)return target;
-    const ref=document.getElementById('settingsText692'),m=measure(ref);
-    if(!m)return null;
-    target={
-      top:Math.max(5,Math.round(m.top*0.5*10)/10),
-      bottom:m.bottom
-    };
-    window.__edt714Target=target;
-    return target;
-  }
-  function applyOne(details,t){
-    const body=bodyOf(details);if(!details||!body||!t)return;
-
-    /* neutraliser le vide extérieur du premier contenu, puis recréer exactement la moitié
-       de l'espacement du modèle via le padding du corps */
-    let m=measure(details);if(!m)return;
-    clearTopPath(m.first,body);
-    body.style.setProperty('padding-top','0','important');
-
-    m=measure(details);if(!m)return;
-    body.style.setProperty('padding-top',Math.max(0,t.top-m.top)+'px','important');
-
-    /* Conserver la respiration basse du modèle 7.13. Pour Semaines et horaires,
-       la tuile conserve en plus son propre padding bas fixe. */
-    const pb=parseFloat(getComputedStyle(body).paddingBottom)||0;
-    m=measure(details);
-    if(m)body.style.setProperty('padding-bottom',Math.max(0,pb+(t.bottom-m.bottom))+'px','important');
-  }
-  function stabilizeSlots(){
-    const slots=document.getElementById('slotSettings'),add=slots&&slots.querySelector('.slotAdd');
-    if(slots){
-      slots.style.setProperty('padding-bottom','10px','important');
-      slots.style.setProperty('overflow','hidden','important');
-    }
-    if(add){
-      add.style.setProperty('margin-top','8px','important');
-      add.style.setProperty('margin-bottom','0','important');
-    }
-  }
-  function apply(){
-    if(running)return;running=true;
-    try{
-      /* laisser la 7.13 se poser avant de capturer son modèle, puis diviser seulement le haut par deux */
-      const t=establishTarget();if(!t)return;
-      ids.forEach(id=>applyOne(document.getElementById(id),t));
-      stabilizeSlots();
-    }finally{running=false}
-  }
-  const sheet=document.getElementById('settingsSheet');
-  if(sheet)new MutationObserver(()=>queueMicrotask(()=>{stabilizeSlots();if(target)apply()})).observe(sheet,{childList:true,subtree:true});
-  document.addEventListener('toggle',e=>{if(e.target&&ids.includes(e.target.id))setTimeout(apply,15)},true);
-  document.addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))setTimeout(apply,60)},true);
-  setTimeout(apply,120);setTimeout(apply,420);setTimeout(apply,900);
+    html body #appVersionInfo:after{content:'Version 7.15'!important}
+  `;
+  document.head.appendChild(style);
 })();
 </script>
 
