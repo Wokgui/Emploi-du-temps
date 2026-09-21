@@ -169,20 +169,36 @@ function applyBreakSettings(){breaks.gapLabel=$('gapLabel').value.trim()||'Trou'
 function removeSlotAt(index){
   if(!Number.isInteger(index)||index<0||index>=slots.length||slots.length<=1)return;
   const removed=Number(slots[index].n),keepMode=mode,keepWeek=activeWeek,keepDay=selected;
+
+  /* Retirer réellement la ligne, puis renuméroter les suivantes sans recréer
+     un horaire par défaut. Les cours de la ligne supprimée gardent leurs heures
+     et deviennent simplement des horaires libres. */
+  slots.splice(index,1);
+  const remap=new Map();
+  slots.forEach((s,i)=>{
+    const oldNumber=Number(s.n);
+    const newNumber=i+1;
+    remap.set(oldNumber,newNumber);
+    s.n=newNumber;
+  });
+
   for(const w of ['A','B','C','D']){
     if(!weeks[w])continue;
     for(const d of DAYS){
-      if(weeks[w][d]&&Array.isArray(weeks[w][d].courses)){
-        weeks[w][d].courses=weeks[w][d].courses.filter(c=>Number(c.slot)!==removed);
+      const day=weeks[w][d];
+      if(!day||!Array.isArray(day.courses))continue;
+      for(const course of day.courses){
+        const oldSlot=Number(course.slot||0);
+        if(oldSlot===removed)course.slot=0;
+        else if(remap.has(oldSlot))course.slot=remap.get(oldSlot);
       }
     }
   }
-  slots.splice(index,1);
+
   slotConfigV2=true;
   mode=keepMode;activeWeek=keepWeek;selected=keepDay;
   state=weeks[mode==='today'?currentWeek:activeWeek]||state;
   save();
-  render();
 }
 function renderSlots(){
   const box=$('slotSettings');box.innerHTML='';
