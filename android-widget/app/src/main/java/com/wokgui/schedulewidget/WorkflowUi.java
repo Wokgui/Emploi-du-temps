@@ -117,13 +117,10 @@ final class WorkflowUi {
                     if(school&&school.parentNode!==content)content.insertBefore(school,calendarBox&&calendarBox.parentNode===content?calendarBox:null);
                     else if(school&&calendarBox&&school.nextSibling!==calendarBox)content.insertBefore(school,calendarBox);
 
-                    const dl=document.getElementById('languageDownloadBtn81'),panel=document.getElementById('languagePackPanel81');
-                    if(dl||panel){
-                      let lb=document.getElementById('languageExtra85');
-                      if(!lb){lb=document.createElement('div');lb.id='languageExtra85';lb.className='settingBox';const h=document.createElement('div');h.id='languageExtraTitle85';h.className='settingTitle';lb.appendChild(h);content.insertBefore(lb,content.firstChild)}
-                      const h=document.getElementById('languageExtraTitle85');if(h)h.textContent=tr85('Langues supplémentaires','Additional languages','Zusätzliche Sprachen');
-                      if(dl&&dl.parentNode!==lb)lb.appendChild(dl);if(panel&&panel.parentNode!==lb)lb.appendChild(panel);
-                    }
+                    /* Language downloads stay inside the main Language section.
+                       Do not create a separate "Additional languages" advanced tile. */
+                    const extra=document.getElementById('languageExtra85');
+                    if(extra)extra.remove();
                   }finally{arranging=false}
                 }
                 function scheduleArrange85(){if(arrangeTimer)return;arrangeTimer=setTimeout(()=>{arrangeTimer=0;arrangeAdvanced85()},24)}
