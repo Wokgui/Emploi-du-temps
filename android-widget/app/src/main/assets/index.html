@@ -2172,5 +2172,139 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
 })();
 </script>
 
+
+
+<style id="edt724Style">
+  /* 7.24 — sous-rubriques des réglages : même langage visuel partout. */
+
+  /* Réglages avancés : suppression des tuiles, séparateur simple entre sous-catégories. */
+  html body #settingsSheet #advancedContent85 > .edtAdvFlat724,
+  html body #settingsSheet #advancedContent85 > .edtAdvFlat724.settingBox,
+  html body #settingsSheet #advancedContent85 > .edtAdvFlat724.advSection{
+    box-sizing:border-box!important;
+    width:100%!important;
+    margin:0!important;
+    padding:12px 0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    outline:0!important;
+  }
+  html body #settingsSheet #advancedContent85 > .edtAdvFlat724.edtAdvSep724{
+    border-top:1px solid #e6ebf1!important;
+  }
+  html body #settingsSheet #advancedContent85 .settingBox{
+    box-shadow:none!important;
+  }
+
+  /* Horaires des cours : plus de liseré autour du bloc complet. */
+  html body #settingsSheet #settingsTypeWeek692 #slotSettings{
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    outline:0!important;
+  }
+
+  /* Type de semaines : un peu plus d'air autour du libellé "Semaine en cours". */
+  html body #settingsSheet #settingsTypeWeek692 #settingsWeekCycle678 .weekCurrentSettings678{
+    margin-top:9px!important;
+    padding-top:2px!important;
+    border-top:0!important;
+  }
+  html body #settingsSheet #settingsTypeWeek692 #settingsWeekCycle678 .weekCurrentLabel678{
+    margin-top:0!important;
+    margin-bottom:8px!important;
+  }
+
+  /* Affichage du widget : sélecteurs En haut / En bas plus compacts et texte homogène. */
+  html body #settingsSheet #settingsDisplay692 #widgetEdgeBars672 select{
+    box-sizing:border-box!important;
+    height:34px!important;
+    min-height:34px!important;
+    max-height:34px!important;
+    padding:0 23px 0 7px!important;
+    border-radius:8px!important;
+    font-size:.69rem!important;
+    line-height:1.05!important;
+  }
+  html body #settingsSheet #settingsDisplay692 #widgetEdgeBars672 .bar672Label{
+    font-size:.72rem!important;
+    line-height:1.05!important;
+  }
+
+  /* Affichage de base passe avant Affichage des interruptions, avec ses contrôles. */
+  html body #settingsSheet #settingsDisplay692 #widgetBaseTitle706{
+    order:1!important;
+    margin:0!important;
+    padding:0 0 7px!important;
+    border-top:0!important;
+  }
+  html body #settingsSheet #settingsDisplay692 .settingBox:has(#advWidgetTitle) > .edtBaseControl724{
+    order:2!important;
+  }
+  html body #settingsSheet #settingsDisplay692 #breakDisplaySetting{
+    order:10!important;
+    margin-top:11px!important;
+    padding-top:13px!important;
+    border-top:1px solid #e6ebf1!important;
+  }
+  html body #settingsSheet #settingsDisplay692 #breakDisplaySetting .feedback663Title{
+    margin-top:0!important;
+    padding-top:0!important;
+  }
+
+  html body #appVersionInfo:after{content:'Version 7.24'!important}
+</style>
+<script>
+(function(){
+  if(window.__edt724)return;window.__edt724=true;
+
+  function markAdvanced(){
+    const content=document.getElementById('advancedContent85');
+    if(!content)return;
+    const sections=[...content.children].filter(el=>{
+      if(!el||el.nodeType!==1)return false;
+      if(el.matches('script,style'))return false;
+      if(el.classList.contains('edtDuplicateDaysOff696'))return false;
+      return true;
+    });
+    sections.forEach((el,index)=>{
+      el.classList.add('edtAdvFlat724');
+      el.classList.toggle('edtAdvSep724',index>0);
+    });
+  }
+
+  function markBaseDisplay(){
+    const title=document.getElementById('widgetBaseTitle706');
+    if(!title||!title.parentElement)return;
+    [...title.parentElement.children].forEach(el=>{
+      if(el===title)return;
+      if(el.matches&&el.matches('.advRow,.advCheck'))el.classList.add('edtBaseControl724');
+    });
+  }
+
+  function apply(){
+    markAdvanced();
+    markBaseDisplay();
+  }
+
+  let queued=false;
+  function schedule(){
+    if(queued)return;
+    queued=true;
+    requestAnimationFrame(()=>{queued=false;apply()});
+  }
+
+  const sheet=document.getElementById('settingsSheet');
+  if(sheet)new MutationObserver(schedule).observe(sheet,{childList:true,subtree:true});
+  document.addEventListener('click',e=>{
+    if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))setTimeout(schedule,0);
+  },true);
+  apply();setTimeout(apply,100);setTimeout(apply,450);
+})();
+</script>
+
 </body>
 </html>
