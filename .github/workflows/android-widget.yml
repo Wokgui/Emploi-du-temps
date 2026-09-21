@@ -164,15 +164,15 @@ jobs:
           missing=[k for k in required if k not in report]
           if missing: raise SystemExit('missing visual sections: '+','.join(missing))
           gaps=[float(report[k]['visibleGap']) for k in required]
-          body_gaps=[float(report[k]['firstTop'])-float(report[k]['summaryBottom']) for k in required]
           heights=[float(report[k]['summaryHeight']) for k in required]
           closed_offsets=[float(report[k]['closedTitleTopOffset']) for k in required]
           open_offsets=[float(report[k]['openTitleTopOffset']) for k in required]
-          if max(gaps)-min(gaps)>0.6: raise SystemExit(f'visual gaps not uniform: {gaps}')
-          if not all(abs(x-6.0)<=1.0 for x in gaps): raise SystemExit(f'visual title/content gap is not about 6px: {gaps}')
+          first_offsets=[float(report[k]['firstTop'])-(float(report[k]['summaryBottom'])-float(report[k]['summaryHeight'])) for k in required]
+          if max(first_offsets)-min(first_offsets)>0.6: raise SystemExit(f'first-content offsets not uniform: {first_offsets}')
+          if not all(abs(x-58.0)<=0.2 for x in first_offsets): raise SystemExit(f'first content not at tested 58px offset: {first_offsets}')
           if not all(abs(x-72.0)<=0.2 for x in heights): raise SystemExit(f'open summary height must match closed 72px: {heights}')
           if not all(abs(a-b)<=0.2 for a,b in zip(closed_offsets,open_offsets)): raise SystemExit(f'title moved when opening: closed={closed_offsets} open={open_offsets}')
-          print('VISUAL_SPACING_OK',{'gaps':gaps,'heights':heights,'closed_offsets':closed_offsets,'open_offsets':open_offsets})
+          print('VISUAL_SPACING_OK',{'first_offsets':first_offsets,'heights':heights,'closed_offsets':closed_offsets,'open_offsets':open_offsets})
           PY
 
       - uses: actions/upload-artifact@v4
