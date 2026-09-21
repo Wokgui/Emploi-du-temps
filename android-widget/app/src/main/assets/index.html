@@ -1773,5 +1773,41 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
 })();
 </script>
 
+
+<script>
+(function(){
+  if(window.__edt712)return;window.__edt712=true;
+  const style=document.createElement('style');style.id='edt712Style';style.textContent=`
+    /* Couleurs : séparateurs internes identiques aux autres rubriques. */
+    html body #settingsSheet #settingsColors692 #colorSettings86 .settingsSectionBody86 > #paletteSettingRoot{
+      border-top:1px solid #e6ebf1!important;
+      margin-top:12px!important;
+      padding-top:12px!important;
+    }
+    html body #settingsSheet #settingsColors692 #colorSettings86 .settingsSectionBody86 > #week658Settings{
+      border-top:1px solid #e6ebf1!important;
+      margin-top:12px!important;
+      padding-top:12px!important;
+    }
+    html body #appVersionInfo:after{content:'Version 7.12'!important}
+  `;document.head.appendChild(style);
+
+  function apply(){
+    const palette=document.getElementById('paletteSettingRoot');
+    const week=document.getElementById('week658Settings');
+    [palette,week].forEach(el=>{
+      if(!el)return;
+      el.style.setProperty('border-top','1px solid #e6ebf1','important');
+      el.style.setProperty('margin-top','12px','important');
+      el.style.setProperty('padding-top','12px','important');
+    });
+  }
+  apply();
+  const colors=document.getElementById('settingsColors692');
+  if(colors)new MutationObserver(()=>queueMicrotask(apply)).observe(colors,{childList:true,subtree:true});
+  setTimeout(apply,80);setTimeout(apply,300);
+})();
+</script>
+
 </body>
 </html>
