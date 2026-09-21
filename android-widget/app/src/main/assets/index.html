@@ -3916,5 +3916,185 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 })();
 </script>
 
+
+
+<style id="edt732Style">
+  /* 7.32 — égalités d'espacement demandées. */
+
+  /* Le sélecteur Principal redevient un vrai select Android avec sa flèche visible. */
+  html body #settingsSheet #advancedSettings85 #advProfileSelect{
+    -webkit-appearance:auto!important;
+    appearance:auto!important;
+    background-image:none!important;
+    padding-left:18px!important;
+    padding-right:32px!important;
+    text-align:center!important;
+    text-align-last:center!important;
+  }
+
+  /* Valeurs de départ cohérentes avant la synchronisation géométrique JS. */
+  html body #settingsSheet #settingsTypeWeek692 #settingsWeekCycle678 .weekCurrentLabel678{
+    margin-bottom:16px!important;
+  }
+  html body #settingsSheet #slotTitle692{
+    margin-bottom:16px!important;
+  }
+  html body #settingsSheet #settingsDisplay692 #week658Settings .w658Days>.w658Title,
+  html body #settingsSheet #settingsDisplay692 #advWidgetTitle,
+  html body #settingsSheet #advancedSettings85 #advExceptionsTitle{
+    margin-bottom:0!important;
+  }
+
+  html body #appVersionInfo:after{content:'Version 7.32'!important}
+</style>
+
+<script>
+(function(){
+  if(window.__edt732)return;window.__edt732=true;
+
+  function gap732(a,b){
+    if(!a||!b)return null;
+    const ar=a.getBoundingClientRect(),br=b.getBoundingClientRect();
+    if(!ar.height&&!br.height)return null;
+    return br.top-ar.bottom;
+  }
+
+  function px732(value){
+    const n=parseFloat(value);
+    return Number.isFinite(n)?n:0;
+  }
+
+  function adjustGap732(title,target,wanted){
+    if(!title||!target||!Number.isFinite(wanted))return false;
+    const current=gap732(title,target);
+    if(!Number.isFinite(current))return false;
+    const cs=getComputedStyle(target);
+    const old=px732(cs.marginTop);
+    const next=Math.max(0,old+(wanted-current));
+    if(Math.abs(current-wanted)>.5){
+      target.style.setProperty('margin-top',next.toFixed(1)+'px','important');
+      return true;
+    }
+    return false;
+  }
+
+  function firstVisible732(root,selectors){
+    if(!root)return null;
+    for(const sel of selectors){
+      const nodes=[...root.querySelectorAll(sel)];
+      const found=nodes.find(el=>{
+        const s=getComputedStyle(el),r=el.getBoundingClientRect();
+        return s.display!=='none'&&s.visibility!=='hidden'&&r.height>0;
+      });
+      if(found)return found;
+    }
+    return null;
+  }
+
+  function references732(){
+    const typeTitle=document.querySelector('#settingsWeekCycle678>.settingTitle');
+    const typeTiles=document.querySelector('#settingsWeekCycle678 .weekCycleChoices678');
+    const baseGap=gap732(typeTitle,typeTiles);
+
+    const breakTitle=document.getElementById('breakNamesTitle692');
+    const breakRoot=document.querySelector('#settingsDisplay692 .breakSettings');
+    const breakFirst=firstVisible732(breakRoot,[
+      '.breakRow',
+      '.breakNamesScope78',
+      '.dualBreakInputs',
+      'label',
+      'input'
+    ]);
+    const displayGap=gap732(breakTitle,breakFirst);
+
+    const profileTitle=document.getElementById('advProfilesTitle');
+    const profileSelect=document.getElementById('advProfileSelect');
+    const profileRow=profileSelect&&profileSelect.closest('.advRow');
+    const profileGap=gap732(profileTitle,profileRow||profileSelect);
+
+    return {baseGap,displayGap,profileGap};
+  }
+
+  function sync732(){
+    const style=document.getElementById('edt732Style');
+    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+
+    const ref=references732();
+
+    /* Semaine en cours -> boutons : exactement comme Type de semaine -> boutons. */
+    const currentLabel=document.querySelector('#settingsWeekCycle678 .weekCurrentLabel678');
+    const currentTiles=document.querySelector('#settingsWeekCycle678 .weekCurrentChoices678');
+    adjustGap732(currentLabel,currentTiles,ref.baseGap);
+
+    /* Horaires des cours -> première ligne : même écart. */
+    const slotTitle=document.getElementById('slotTitle692');
+    const slotSettings=document.getElementById('slotSettings');
+    const firstSlot=firstVisible732(slotSettings,['.slotRow','input','select']);
+    adjustGap732(slotTitle,firstSlot,ref.baseGap);
+
+    /* Midi par jour -> intitulés de colonnes : comme Noms des interruptions -> sa ligne. */
+    const midiTitle=document.querySelector('#week658Settings .w658Days>.w658Title');
+    const midiHead=document.querySelector('#week658Settings .w658Days>.w658DayHead');
+    adjustGap732(midiTitle,midiHead,ref.displayGap);
+
+    /* Affichage du widget -> Condensation du widget : même écart de référence. */
+    const widgetTitle=document.getElementById('advWidgetTitle');
+    const densityTitle=document.querySelector('#widgetDensity664 .feedback664DensityTitle');
+    const densityBox=document.getElementById('widgetDensity664');
+    adjustGap732(widgetTitle,densityBox||densityTitle,ref.displayGap);
+
+    /* Modifications exceptionnelles -> Ajouter une exception : comme Profils -> Principal. */
+    const exceptionTitle=document.getElementById('advExceptionsTitle');
+    const addException=document.getElementById('advAddException');
+    const exceptionButtons=addException&&addException.closest('.advButtons');
+    adjustGap732(exceptionTitle,exceptionButtons||addException,ref.profileGap);
+  }
+
+  function verifyAndTag732(){
+    const ref=references732();
+    const pairs=[
+      ['week',document.querySelector('#settingsWeekCycle678 .weekCurrentLabel678'),document.querySelector('#settingsWeekCycle678 .weekCurrentChoices678'),ref.baseGap],
+      ['slots',document.getElementById('slotTitle692'),firstVisible732(document.getElementById('slotSettings'),['.slotRow','input','select']),ref.baseGap],
+      ['midi',document.querySelector('#week658Settings .w658Days>.w658Title'),document.querySelector('#week658Settings .w658Days>.w658DayHead'),ref.displayGap],
+      ['widget',document.getElementById('advWidgetTitle'),document.getElementById('widgetDensity664'),ref.displayGap],
+      ['exceptions',document.getElementById('advExceptionsTitle'),document.getElementById('advAddException')?.closest('.advButtons'),ref.profileGap]
+    ];
+    let ok=true;
+    for(const [name,a,b,wanted] of pairs){
+      const actual=gap732(a,b);
+      const pass=Number.isFinite(actual)&&Number.isFinite(wanted)&&Math.abs(actual-wanted)<=1.25;
+      document.documentElement.dataset['edt732'+name]=pass?'ok':'check';
+      if(!pass)ok=false;
+    }
+    document.documentElement.dataset.edt732Spacing=ok?'ok':'check';
+  }
+
+  let queued=false;
+  function settle732(){
+    if(queued)return;queued=true;
+    requestAnimationFrame(()=>{
+      queued=false;
+      sync732();
+      requestAnimationFrame(()=>{
+        sync732();
+        verifyAndTag732();
+      });
+    });
+  }
+
+  const sheet=document.getElementById('settingsSheet');
+  if(sheet)new MutationObserver(settle732).observe(sheet,{childList:true,subtree:true,attributes:true,attributeFilter:['open','class']});
+
+  document.addEventListener('click',e=>{
+    if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))setTimeout(settle732,0);
+  },true);
+  window.addEventListener('resize',settle732);
+
+  settle732();
+  setTimeout(settle732,120);
+  setTimeout(settle732,500);
+})();
+</script>
+
 </body>
 </html>
