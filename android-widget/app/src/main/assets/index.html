@@ -3440,19 +3440,32 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   function decorateWeek728(){
     ensureWeekNav728();
     const monday=weekMonday728(),letter=weekLetter728(monday),sunday=addDays728(monday,6);
-    const title=document.querySelector('#viewWeek .weekTop h2'),letterSpan=document.getElementById('weekTitleLetter');
+    const title=document.querySelector('#viewWeek .weekTop h2');
     if(title){
-      let first=[...title.childNodes].find(n=>n.nodeType===3);
-      if(first)first.nodeValue='Semaine ';
-      if(letterSpan)letterSpan.textContent=letter;
-      let range=document.getElementById('weekRange728');
-      if(!range){range=document.createElement('span');range.id='weekRange728';title.appendChild(range)}
-      range.textContent=' · '+monday.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+' – '+sunday.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+      let name=document.getElementById('weekName731');
+      let range=document.getElementById('weekRange731');
+      if(!name||!range||name.parentElement!==title||range.parentElement!==title){
+        title.replaceChildren();
+        name=document.createElement('span');name.id='weekName731';
+        range=document.createElement('span');range.id='weekRange731';
+        title.append(name,range);
+      }
+      name.textContent='Semaine '+letter;
+      range.textContent=monday.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+' – '+sunday.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
     }
     const headers=[...document.querySelectorAll('#weekGrid>.wh.day')],days=enabledDays728();
     headers.forEach((head,index)=>{
       const calDay=days[index]||[2,3,4,5,6,7,1][index]||2,date=weekDateForDay728(monday,calDay);
-      head.innerHTML='<span class="weekDayName728">'+(DAY_SHORT_728[calDay]||'')+'</span><span class="weekDayDate728">'+date.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+'</span>';
+      const dayText=DAY_SHORT_728[calDay]||'';
+      const dateText=date.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+      const currentName=head.querySelector('.weekDayName731');
+      const currentDate=head.querySelector('.weekDayDate731');
+      if(!currentName||!currentDate||currentName.textContent!==dayText||currentDate.textContent!==dateText){
+        head.replaceChildren();
+        const n=document.createElement('span');n.className='weekDayName731';n.textContent=dayText;
+        const d=document.createElement('span');d.className='weekDayDate731';d.textContent=dateText;
+        head.append(n,d);
+      }
     });
   }
   function renderWeek728(){
@@ -3601,97 +3614,8 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   html body #appVersionInfo:after{content:'Version 7.29'!important}
 </style>
 
-<script>
-(function(){
-  if(window.__edt729)return;window.__edt729=true;
+<!-- 7.31: removed competing 7.29 week observer -->
 
-  const SHORT729={1:'Dim',2:'Lun',3:'Mar',4:'Mer',5:'Jeu',6:'Ven',7:'Sam'};
-  const LETTERS729=['A','B','C','D'];
-  const WEEK_MS729=7*24*60*60*1000;
-
-  function monday729(date){
-    const d=new Date(date.getFullYear(),date.getMonth(),date.getDate(),12,0,0,0);
-    const js=d.getDay(),delta=js===0?-6:1-js;
-    d.setDate(d.getDate()+delta);return d;
-  }
-  function addDays729(date,n){
-    const d=new Date(date.getFullYear(),date.getMonth(),date.getDate(),12,0,0,0);
-    d.setDate(d.getDate()+n);return d;
-  }
-  function weekIndex729(date){return Math.floor(monday729(date).getTime()/WEEK_MS729)}
-  function root729(){
-    try{return JSON.parse(window.AndroidSchedule&&AndroidSchedule.loadSchedule?AndroidSchedule.loadSchedule():'{}')}catch(e){return {}}
-  }
-  function weekLetter729(date){
-    const root=root729(),len=Math.max(1,Math.min(4,Number(root._cycleLength)||2));
-    const anchor=Number.isFinite(Number(root._weekAnchor))?Number(root._weekAnchor):weekIndex729(new Date());
-    return LETTERS729[((weekIndex729(date)-anchor)%len+len)%len]||'A';
-  }
-  function enabledDays729(){
-    const raw=root729()._enabledDays;
-    const arr=Array.isArray(raw)?raw.map(Number):[2,3,4,5,6];
-    return [2,3,4,5,6,7,1].filter(d=>arr.includes(d));
-  }
-  function weekMonday729(){
-    const d=window.__edt728WeekMonday instanceof Date?window.__edt728WeekMonday:new Date();
-    return monday729(d);
-  }
-  function dateForCalDay729(monday,day){
-    return addDays729(monday,day===1?6:day-2);
-  }
-
-  function decorate729(){
-    const style=document.getElementById('edt729Style');
-    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
-
-    const monday=weekMonday729(),sunday=addDays729(monday,6),letter=weekLetter729(monday);
-    const title=document.querySelector('#viewWeek .weekTop h2');
-    if(title){
-      const wantedName='Semaine '+letter;
-      let name=document.getElementById('weekName729'),range=document.getElementById('weekRange729');
-      if(!name||!range||name.parentElement!==title||range.parentElement!==title){
-        title.innerHTML='';
-        name=document.createElement('span');name.id='weekName729';
-        range=document.createElement('span');range.id='weekRange729';
-        title.append(name,range);
-      }
-      if(name.textContent!==wantedName)name.textContent=wantedName;
-      const wantedRange=monday.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+' – '+sunday.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
-      if(range.textContent!==wantedRange)range.textContent=wantedRange;
-    }
-
-    const days=enabledDays729();
-    const headers=[...document.querySelectorAll('#weekGrid>.wh.day')];
-    headers.forEach((head,index)=>{
-      const day=days[index]||[2,3,4,5,6,7,1][index]||2;
-      const date=dateForCalDay729(monday,day);
-      const dayText=SHORT729[day]||'';
-      const dateText=date.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
-      const currentName=head.querySelector('.weekDayName729');
-      const currentDate=head.querySelector('.weekDayDate729');
-      if(!currentName||!currentDate||currentName.textContent!==dayText||currentDate.textContent!==dateText){
-        head.innerHTML='<span class="weekDayName729">'+dayText+'</span><span class="weekDayDate729">'+dateText+'</span>';
-      }
-    });
-  }
-
-  let busy=false;
-  function schedule729(){
-    if(busy)return;busy=true;
-    requestAnimationFrame(()=>{busy=false;decorate729()});
-  }
-
-  const grid=document.getElementById('weekGrid');
-  if(grid)new MutationObserver(schedule729).observe(grid,{childList:true,subtree:true});
-  const top=document.querySelector('#viewWeek .weekTop');
-  if(top)new MutationObserver(schedule729).observe(top,{childList:true,subtree:true,characterData:true});
-  document.addEventListener('click',e=>{
-    if(e.target&&e.target.closest&&e.target.closest('#weekPrev728,#weekNext728,.nav[data-mode="week"]'))setTimeout(decorate729,0);
-  },true);
-
-  decorate729();setTimeout(decorate729,80);setTimeout(decorate729,300);
-})();
-</script>
 
 
 
@@ -3798,6 +3722,197 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   },true);
 
   apply730();setTimeout(apply730,100);setTimeout(apply730,450);
+})();
+</script>
+
+
+
+<style id="edt731Style">
+  /* 7.31 — stabilité de la vue semaine + alignements précis. */
+
+  /* Semaine en cours : doubler l'espace avec les boutons de cycle. */
+  html body #settingsSheet #settingsTypeWeek692 #settingsWeekCycle678 .weekCurrentSettings678{
+    margin-top:36px!important;
+  }
+
+  /* Réglages : numéro de version puis roue + titre parfaitement centrés comme un seul bloc. */
+  html body #settingsSheet #appVersionInfo{
+    width:100%!important;
+    text-align:center!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+  html body #settingsSheet .settingsHead{
+    position:relative!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    place-items:center!important;
+    width:100%!important;
+  }
+  html body #settingsSheet .settingsHead #settingsTitle{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:auto!important;
+    max-width:calc(100% - 84px)!important;
+    margin:0 auto!important;
+    padding:0!important;
+    text-align:center!important;
+  }
+  html body #settingsSheet #settingsTitle::before{
+    margin-right:7px!important;
+  }
+  html body #settingsSheet .settingsHead .settingsX{
+    position:absolute!important;
+    right:0!important;
+    top:50%!important;
+    transform:translateY(-50%)!important;
+  }
+
+  /* Affichage de base : aucune marge parasite avant les tuiles.
+     L'écart réel est synchronisé en JS sur celui d'Affichage des interruptions. */
+  html body #settingsSheet #settingsDisplay692 #widgetBaseTitle706{
+    margin-bottom:0!important;
+    padding-bottom:0!important;
+  }
+  html body #settingsSheet #settingsDisplay692 #appBaseControls725{
+    margin-top:0!important;
+    padding-top:0!important;
+  }
+
+  /* Vue semaine : un seul en-tête stable. */
+  html body #viewWeek{
+    display:none;
+  }
+  html body #viewWeek.active{
+    display:block!important;
+    visibility:visible!important;
+    opacity:1!important;
+    min-height:1px!important;
+  }
+  html body #viewWeek .weekTop{
+    display:grid!important;
+    grid-template-columns:34px minmax(0,1fr) 34px!important;
+    align-items:center!important;
+    gap:8px!important;
+  }
+  html body #viewWeek .weekTop h2{
+    display:flex!important;
+    align-items:baseline!important;
+    justify-content:center!important;
+    flex-wrap:wrap!important;
+    column-gap:16px!important;
+    row-gap:4px!important;
+    min-width:0!important;
+    margin:0!important;
+    text-align:center!important;
+  }
+  html body #viewWeek #weekName731{
+    color:var(--ink,#111936)!important;
+    font-size:1rem!important;
+    font-weight:850!important;
+    white-space:nowrap!important;
+  }
+  html body #viewWeek #weekRange731{
+    color:#68738a!important;
+    font-size:.72rem!important;
+    font-weight:720!important;
+    white-space:nowrap!important;
+  }
+
+  html body #viewWeek .wh.day{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+    gap:2px!important;
+    line-height:1!important;
+  }
+  html body #viewWeek .wh.day .weekDayName731{
+    display:block!important;
+    font-size:.65rem!important;
+    font-weight:850!important;
+  }
+  html body #viewWeek .wh.day .weekDayDate731{
+    display:block!important;
+    margin-top:2px!important;
+    color:#657087!important;
+    font-size:.54rem!important;
+    font-weight:720!important;
+  }
+
+  html body #appVersionInfo:after{content:'Version 7.31'!important}
+</style>
+
+<script>
+(function(){
+  if(window.__edt731)return;window.__edt731=true;
+
+  function keep731Last(){
+    const style=document.getElementById('edt731Style');
+    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+  }
+
+  function syncBaseGap731(){
+    const baseTitle=document.getElementById('widgetBaseTitle706');
+    const base=document.getElementById('appBaseControls725');
+    const breakTitle=document.querySelector('#breakDisplaySetting .feedback663Title');
+    const table=document.getElementById('feedback663Visibility') ||
+      document.querySelector('#breakDisplaySetting .breakVisibility70,#breakDisplaySetting table,#breakDisplaySetting .breakDisplayGrid');
+    if(!baseTitle||!base||!breakTitle||!table)return;
+
+    const ref=Math.max(0,Math.round(table.getBoundingClientRect().top-breakTitle.getBoundingClientRect().bottom));
+    base.style.setProperty('margin-top',ref+'px','important');
+  }
+
+  function ensureWeekVisible731(){
+    const view=document.getElementById('viewWeek');
+    if(!view)return;
+    if(view.classList.contains('active')){
+      view.style.setProperty('display','block','important');
+      view.style.setProperty('visibility','visible','important');
+      view.style.setProperty('opacity','1','important');
+    }else{
+      view.style.removeProperty('display');
+      view.style.removeProperty('visibility');
+      view.style.removeProperty('opacity');
+    }
+  }
+
+  function refreshWeekHeader731(){
+    try{
+      if(document.getElementById('viewWeek')?.classList.contains('active')&&typeof window.renderWeek==='function'){
+        window.renderWeek();
+      }
+    }catch(e){}
+    ensureWeekVisible731();
+  }
+
+  function apply731(){
+    keep731Last();
+    syncBaseGap731();
+    ensureWeekVisible731();
+  }
+
+  document.addEventListener('click',e=>{
+    const weekNav=e.target&&e.target.closest&&e.target.closest('.nav[data-mode="week"],#weekPrev728,#weekNext728');
+    if(weekNav){
+      setTimeout(()=>{apply731();refreshWeekHeader731()},0);
+      setTimeout(apply731,80);
+    }
+    if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))setTimeout(apply731,0);
+  },true);
+
+  const weekView=document.getElementById('viewWeek');
+  if(weekView)new MutationObserver(()=>requestAnimationFrame(ensureWeekVisible731))
+    .observe(weekView,{attributes:true,attributeFilter:['class']});
+
+  const settings=document.getElementById('settingsSheet');
+  if(settings)new MutationObserver(()=>requestAnimationFrame(syncBaseGap731))
+    .observe(settings,{childList:true,subtree:true});
+
+  apply731();setTimeout(apply731,120);setTimeout(apply731,500);
 })();
 </script>
 
