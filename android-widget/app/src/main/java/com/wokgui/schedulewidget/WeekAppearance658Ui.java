@@ -28,6 +28,13 @@ final class WeekAppearance658Ui {
                 }
                 function nativeRoot(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
                 function scheduleRoot(){try{return JSON.parse(AndroidSchedule.loadSchedule()||'{}')}catch(e){return {}}}
+                function enabledLunchDays(){
+                  try{
+                    const root=scheduleRoot(),raw=Array.isArray(root._enabledDays)?root._enabledDays:[2,3,4,5,6];
+                    const enabled=new Set(raw.map(Number));
+                    return [2,3,4,5,6,7,1].filter(day=>enabled.has(day));
+                  }catch(e){return [2,3,4,5,6]}
+                }
                 function visibleBreakLabel(kind,fallback){
                   try{
                     const fn=kind==='lunch'?window.lunchLabelText:window.gapLabelText;
@@ -123,14 +130,17 @@ final class WeekAppearance658Ui {
                 `;document.head.appendChild(style);
                 function settingsHost(){const sheet=document.getElementById('settingsSheet');if(!sheet)return null;return sheet.querySelector('#colorSettings86 .settingsSectionBody86')||sheet}
                 function installSettings(){
-                  const host=settingsHost();if(!host)return;let box=document.getElementById('week658Settings');if(box&&box.querySelector('.w658Start')){if(box.parentNode!==host)host.appendChild(box);return}if(box)box.remove();
-                  const settings=load();box=document.createElement('section');box.id='week658Settings';box.className='settingBox';
+                  const host=settingsHost();if(!host)return;
+                  const wantedDays=enabledLunchDays(),signature=wantedDays.join(',');
+                  let box=document.getElementById('week658Settings');
+                  if(box&&box.querySelector('.w658Start')&&box.dataset.enabledDays===signature){if(box.parentNode!==host)host.appendChild(box);return}
+                  if(box)box.remove();
+                  const settings=load();box=document.createElement('section');box.id='week658Settings';box.className='settingBox';box.dataset.enabledDays=signature;
                   box.innerHTML='<div class="w658Title">'+tr('Couleurs de la vue semaine','Week view colours','Farben der Wochenansicht')+'</div><div class="w658Colors"><span>'+tr('Cases libres','Free cells','Freie Felder')+'</span><input id="w658Free" type="color"><span>'+tr('Cours','Classes','Unterricht')+'</span><input id="w658Course" type="color"><span>'+tr('Midi','Lunch','Mittag')+'</span><input id="w658Lunch" type="color"></div><div class="w658Days"><div class="w658Title">'+tr('Midi par jour','Lunch by day','Mittag pro Tag')+'</div><div class="w658DayHead"><span></span><span>'+tr('Afficher','Show','Anzeigen')+'</span><span>'+tr('Début','Start','Beginn')+'</span><span>'+tr('Fin','End','Ende')+'</span></div></div>';
                   const actions=document.querySelector('#settingsSheet .settingsActions');if(host.id==='settingsSheet'&&actions)host.insertBefore(box,actions);else host.appendChild(box);
                   box.querySelector('#w658Free').value=settings.free;box.querySelector('#w658Course').value=settings.course;box.querySelector('#w658Lunch').value=settings.lunch;
                   [['w658Free','free'],['w658Course','course'],['w658Lunch','lunch']].forEach(([id,key])=>box.querySelector('#'+id).addEventListener('input',event=>{const value=load();value[key]=event.target.value;save(value)}));
-                  const days=box.querySelector('.w658Days');[2,3,4,5,6,7,1].forEach(day=>{
-                    if(!document.documentElement.classList.contains('weekendScheduleEnabled')&&(day===7||day===1))return;
+                  const days=box.querySelector('.w658Days');wantedDays.forEach(day=>{
                     const cfg=settings.days[day]||{enabled:true,start:720,end:780},row=document.createElement('div');row.className='w658Day';
                     row.innerHTML='<b>'+DAYN[day]+'</b><label><input class="w658Enabled" type="checkbox" '+(cfg.enabled===false?'':'checked')+'><span>'+tr('Midi','Lunch','Mittag')+'</span></label><input class="w658Start" type="time" step="300" value="'+clock(cfg.start)+'"><input class="w658End" type="time" step="300" value="'+clock(cfg.end)+'">';
                     const enabled=row.querySelector('.w658Enabled'),start=row.querySelector('.w658Start'),end=row.querySelector('.w658End');
