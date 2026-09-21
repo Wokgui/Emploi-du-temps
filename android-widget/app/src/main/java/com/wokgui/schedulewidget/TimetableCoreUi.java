@@ -361,21 +361,24 @@ final class TimetableCoreUi {
                 function ensureNineSlots(){
                   try{
                     if(typeof slots==='undefined'||!Array.isArray(slots))return;
-                    const defaults=[['17:00','18:00'],['18:00','19:00']];
-                    while(slots.length<9){const i=slots.length-7,p=defaults[Math.max(0,Math.min(1,i))];slots.push({n:slots.length+1,start:p[0],end:p[1]})}
-                    if(slots.length>9)slots.splice(9);
-                    slots.forEach((s,i)=>s.n=i+1);
+                    /* Le nombre d'heures est désormais réellement personnalisable.
+                       Ne jamais recréer une ligne supprimée lors d'un rendu. */
                     const head=document.querySelector('#viewEdit .sectionHead h3');
-                    document.querySelectorAll('#viewEdit .sectionHead h3').forEach(h=>{if(/Horaires|period times|Zeiten/i.test(h.textContent||''))h.textContent=tr('Horaires des 9 heures','9 period times','Zeiten der 9 Stunden')});
+                    document.querySelectorAll('#viewEdit .sectionHead h3').forEach(h=>{if(/Horaires|period times|Zeiten/i.test(h.textContent||''))h.textContent=tr('Horaires des cours','Class times','Unterrichtszeiten')});
                   }catch(e){}
                 }
 
                 function prettySlotRows(){
                   ensureNineSlots();
                   const rows=document.querySelectorAll('#slotSettings .slotRow');
-                  rows.forEach((row,i)=>{const n=row.querySelector('.slotNum');if(n)n.textContent=slotName(i)});
+                  rows.forEach((row,i)=>{
+                    const n=row.querySelector('.slotNum');
+                    const slot=typeof slots!=='undefined'&&slots[i]?slots[i]:null;
+                    const number=Math.max(1,Number(slot&&slot.n)||i+1);
+                    if(n)n.textContent=slotName(number-1);
+                  });
                   const sel=document.getElementById('fSlot');
-                  if(sel){[...sel.options].forEach(o=>{const n=Number(o.value);if(n>0&&slots[n-1])o.textContent=slotName(n-1)+' · '+slots[n-1].start+'–'+slots[n-1].end})}
+                  if(sel){[...sel.options].forEach(o=>{const n=Number(o.value),slot=typeof slots!=='undefined'?slots.find(s=>Number(s.n)===n):null;if(n>0&&slot)o.textContent=slotName(n-1)+' · '+slot.start+'–'+slot.end})}
                 }
 
                 function wrapSlots(){
