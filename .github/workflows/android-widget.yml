@@ -1,8 +1,8 @@
-name: Clean Android 7.13 build
+name: Clean Android 7.14 build
 
 on:
   push:
-    branches: [fix/713-visual-category-spacing]
+    branches: [fix/714-half-top-gap-slot-bottom]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 
@@ -41,10 +41,10 @@ jobs:
       - name: Verify package metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='713001' versionName='7.13'" /tmp/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.13-clean-debug.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='714001' versionName='7.14'" /tmp/badging.txt
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.14-clean-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: EDT-7.13-clean
-          path: android-widget/app/build/outputs/apk/debug/EDT-7.13-clean-debug.apk
+          name: EDT-7.14-clean
+          path: android-widget/app/build/outputs/apk/debug/EDT-7.14-clean-debug.apk
           if-no-files-found: error
