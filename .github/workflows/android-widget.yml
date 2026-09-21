@@ -142,8 +142,8 @@ jobs:
           Path('build/visual/harness.html').write_text(html,encoding='utf-8')
           PY
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
-          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=6000 --window-size=716,1500             --dump-dom "file://$PWD/build/visual/harness.html" > build/visual/dom.html
-          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=6000 --window-size=716,1500             --screenshot="$PWD/build/visual/settings.png" "file://$PWD/build/visual/harness.html"
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=6000 --window-size=360,780 --force-device-scale-factor=2             --dump-dom "file://$PWD/build/visual/harness.html" > build/visual/dom.html
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=6000 --window-size=360,780 --force-device-scale-factor=2             --screenshot="$PWD/build/visual/settings.png" "file://$PWD/build/visual/harness.html"
           python3 - <<'PY'
           import re, html as h, json, pathlib
           dom=pathlib.Path('build/visual/dom.html').read_text(errors='ignore')
