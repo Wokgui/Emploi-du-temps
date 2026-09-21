@@ -2401,6 +2401,7 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
   body.edtHideTimes725 #viewToday .todayCourse .time,
   body.edtHideTimes725 #viewEdit .editCourse .time{display:none!important}
   body.edtHideTimes725 #viewToday .todayCourse{grid-template-columns:minmax(0,1fr) auto!important}
+  body.edtHideTimes725 #viewEdit .editCourse{grid-template-columns:minmax(0,1fr)!important}
   body.edtHideTimes725 #viewWeek .wh.timecol{color:transparent!important}
 
   body.edtHideProgress725 #viewToday .timelineCard{display:none!important}
@@ -2666,7 +2667,12 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
     const defs=[['appShowRoom725','appShowRoom'],['appShowCourse725','appShowCourse'],['appShowTimes725','appShowTimes'],['appShowProgress725','appShowCourseProgress']];
     defs.forEach(([id,key])=>{
       const input=document.getElementById(id);if(!input)return;
-      input.checked=a[key]!==false;
+      let value=a[key];
+      if(value===undefined&&key==='appShowRoom')value=a.showRoom!==false;
+      if(value===undefined&&key==='appShowTimes')value=a.showTimes!==false;
+      if(value===undefined&&key==='appShowCourseProgress')value=a.showProgress!==false;
+      if(value===undefined)value=true;
+      input.checked=value!==false;
       if(!input.__edt725){
         input.__edt725=true;
         input.onchange=()=>{
