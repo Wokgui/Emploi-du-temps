@@ -2984,5 +2984,524 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 })();
 </script>
 
+
+
+<style id="edt728Style">
+  /* 7.28 — stabilité des réglages et navigation calendaire. */
+
+  /* Le titre du panneau Réglages porte sa propre icône. */
+  html body #settingsSheet #settingsTitle::before{
+    content:'⚙';
+    display:inline-block;
+    margin-right:7px;
+    font-size:.96em;
+    line-height:1;
+    vertical-align:-.03em;
+  }
+
+  /* Les deux sélecteurs gardent le texte entièrement visible et une flèche symétrique. */
+  html body #settingsSheet #advancedSettings85 #advProfileSelect,
+  html body #settingsSheet #advancedSettings85 #schoolZone{
+    -webkit-appearance:none!important;
+    appearance:none!important;
+    background-color:#fff!important;
+    background-image:
+      linear-gradient(45deg,transparent 50%,#68738a 50%),
+      linear-gradient(135deg,#68738a 50%,transparent 50%)!important;
+    background-position:
+      calc(100% - 15px) 50%,
+      calc(100% - 11px) 50%!important;
+    background-size:4px 4px,4px 4px!important;
+    background-repeat:no-repeat!important;
+    text-align:center!important;
+    text-align-last:center!important;
+    text-overflow:clip!important;
+  }
+  html body #settingsSheet #advancedSettings85 #advProfileSelect{
+    box-sizing:border-box!important;
+    width:min(252px,calc(100vw - 72px))!important;
+    max-width:min(252px,calc(100vw - 72px))!important;
+    min-width:min(190px,calc(100vw - 72px))!important;
+    height:32px!important;
+    min-height:32px!important;
+    padding:0 38px!important;
+  }
+  html body #settingsSheet #advancedSettings85 #schoolZone{
+    box-sizing:border-box!important;
+    width:116px!important;
+    min-width:116px!important;
+    max-width:116px!important;
+    height:32px!important;
+    min-height:32px!important;
+    padding:0 30px 0 12px!important;
+  }
+
+  /* Les lignes Rappels et Vacances ne changent plus de géométrie après un clic. */
+  html body #settingsSheet #advancedSettings85 .reminderLine725{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:10px!important;
+    width:100%!important;
+    min-height:36px!important;
+    margin:4px auto 0!important;
+  }
+  html body #settingsSheet #advancedSettings85 #schoolCalendarBlock .schoolGrid{
+    display:grid!important;
+    grid-template-columns:116px max-content!important;
+    justify-content:center!important;
+    align-items:center!important;
+    gap:8px!important;
+    width:100%!important;
+    min-height:34px!important;
+  }
+  html body #settingsSheet #advancedSettings85 #schoolAutoFetch725{
+    grid-column:2!important;
+    align-self:center!important;
+    margin:0!important;
+    white-space:nowrap!important;
+  }
+  html body #settingsSheet #advancedSettings85 #schoolAutoStatus725{
+    display:block!important;
+    min-height:15px!important;
+    margin:5px 0 0!important;
+  }
+
+  /* Jours fériés plus proches du bloc précédent. */
+  html body #settingsSheet #advancedContent85>.holidayFlat725{
+    margin-top:-8px!important;
+    padding-top:0!important;
+  }
+
+  /* Espaces demandés sous les titres des sous-rubriques. */
+  html body #settingsSheet #settingsDisplay692 #widgetBaseTitle706{
+    padding-bottom:28px!important;
+  }
+  html body #settingsSheet #settingsDisplay692 #breakDisplaySetting .feedback663Title{
+    margin-bottom:28px!important;
+  }
+  html body #settingsSheet #settingsDisplay692 #breakNamesTitle692{
+    margin-bottom:22px!important;
+  }
+  html body #settingsSheet #settingsDisplay692 .breakSettings{
+    padding-top:0!important;
+  }
+
+  /* Semaine en cours = même niveau typographique que Type de semaines. */
+  html body #settingsSheet #settingsTypeWeek692 #settingsWeekCycle678 .weekCurrentLabel678{
+    font-size:.84rem!important;
+    font-weight:850!important;
+    line-height:1.15!important;
+  }
+
+  /* Alignements des libellés de Noms des interruptions. */
+  html body #settingsSheet #settingsDisplay692 .breakSettings .breakLabelRight728{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-end!important;
+    justify-self:end!important;
+    width:100%!important;
+    text-align:right!important;
+  }
+
+  /* Navigation Jour. */
+  html body #viewToday .dayTitle{
+    display:grid!important;
+    grid-template-columns:34px minmax(0,1fr) 34px!important;
+    align-items:center!important;
+    gap:7px!important;
+    margin-bottom:7px!important;
+  }
+  html body #viewToday #dayCenter728{
+    min-width:0!important;
+    text-align:center!important;
+  }
+  html body #viewToday #dayCenter728 #todayTitle{
+    margin:0!important;
+    text-align:center!important;
+  }
+  html body #viewToday #dayCenter728 #todayDate{
+    text-align:center!important;
+  }
+
+  /* Navigation Semaine. */
+  html body #viewWeek .weekTop{
+    display:grid!important;
+    grid-template-columns:34px minmax(0,1fr) 34px!important;
+    align-items:center!important;
+    gap:7px!important;
+    margin:0 0 7px!important;
+  }
+  html body #viewWeek .weekTop h2{
+    min-width:0!important;
+    text-align:center!important;
+    line-height:1.15!important;
+  }
+  html body #viewWeek #weekRange728{
+    display:inline!important;
+    margin-left:4px!important;
+    color:#68738a!important;
+    font-size:.72rem!important;
+    font-weight:720!important;
+    white-space:nowrap!important;
+  }
+
+  html body .calendarNav728{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:32px!important;
+    height:32px!important;
+    min-width:32px!important;
+    min-height:32px!important;
+    margin:0!important;
+    padding:0!important;
+    border:1px solid #d7e0e9!important;
+    border-radius:50%!important;
+    background:#fff!important;
+    color:var(--set-accent,var(--blue,#0877f9))!important;
+    font-size:1.22rem!important;
+    font-weight:850!important;
+    line-height:1!important;
+  }
+
+  /* Deux lignes centrées dans les en-têtes des jours de la vue semaine. */
+  html body #viewWeek .wh.day{
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:1px!important;
+    line-height:1!important;
+    padding-top:3px!important;
+    padding-bottom:3px!important;
+  }
+  html body #viewWeek .wh.day .weekDayName728{
+    display:block!important;
+    font-weight:850!important;
+  }
+  html body #viewWeek .wh.day .weekDayDate728{
+    display:block!important;
+    margin-top:2px!important;
+    color:#657087!important;
+    font-size:.54rem!important;
+    font-weight:720!important;
+  }
+
+  html body #appVersionInfo:after{content:'Version 7.28'!important}
+</style>
+
+<script>
+(function(){
+  if(window.__edt728)return;window.__edt728=true;
+
+  const DAY_NAMES_728={1:'Dimanche',2:'Lundi',3:'Mardi',4:'Mercredi',5:'Jeudi',6:'Vendredi',7:'Samedi'};
+  const DAY_SHORT_728={1:'Dim',2:'Lun',3:'Mar',4:'Mer',5:'Jeu',6:'Ven',7:'Sam'};
+  const WEEK_LETTERS_728=['A','B','C','D'];
+  const WEEK_MS_728=7*24*60*60*1000;
+
+  function norm728(value){
+    return String(value||'').toLowerCase().normalize('NFD')
+      .replace(/[\u0300-\u036f]/g,'').replace(/[’']/g,"'").replace(/\s+/g,' ').trim();
+  }
+  function dateKey728(date){
+    return String(date.getFullYear()).padStart(4,'0')+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+  }
+  function sameDate728(a,b){
+    return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+  }
+  function monday728(date){
+    const d=new Date(date.getFullYear(),date.getMonth(),date.getDate(),12,0,0,0);
+    const js=d.getDay();
+    const delta=js===0?-6:1-js;
+    d.setDate(d.getDate()+delta);
+    return d;
+  }
+  function addDays728(date,n){
+    const d=new Date(date.getFullYear(),date.getMonth(),date.getDate(),12,0,0,0);
+    d.setDate(d.getDate()+Number(n||0));
+    return d;
+  }
+  function calDay728(date){
+    const js=date.getDay();
+    return js===0?1:js+1;
+  }
+  function weekIndex728(date){
+    return Math.floor(monday728(date).getTime()/WEEK_MS_728);
+  }
+  function scheduleRoot728(){
+    try{return JSON.parse(window.AndroidSchedule&&AndroidSchedule.loadSchedule?AndroidSchedule.loadSchedule():'{}')}catch(e){return {}}
+  }
+  function enabledDays728(){
+    const root=scheduleRoot728(),raw=Array.isArray(root._enabledDays)?root._enabledDays:[2,3,4,5,6];
+    const clean=[...new Set(raw.map(Number).filter(n=>n>=1&&n<=7))];
+    return [2,3,4,5,6,7,1].filter(n=>clean.includes(n));
+  }
+  function weekLetter728(date){
+    const root=scheduleRoot728();
+    const length=Math.max(1,Math.min(4,Number(root._cycleLength)||2));
+    const anchor=Number.isFinite(Number(root._weekAnchor))?Number(root._weekAnchor):weekIndex728(new Date());
+    const idx=((weekIndex728(date)-anchor)%length+length)%length;
+    return WEEK_LETTERS_728[idx]||'A';
+  }
+  function weekDateForDay728(monday,calDay){
+    const offset=calDay===1?6:calDay-2;
+    return addDays728(monday,offset);
+  }
+  function effective728(date){
+    try{
+      if(window.AndroidSchedule&&AndroidSchedule.loadEffectiveCourses){
+        const raw=JSON.parse(AndroidSchedule.loadEffectiveCourses(dateKey728(date))||'{}');
+        if(raw&&Array.isArray(raw.courses))return {dayOff:raw.dayOff===true,courses:raw.courses};
+      }
+    }catch(e){}
+    try{
+      const letter=weekLetter728(date),day=calDay728(date);
+      const list=weeks&&weeks[letter]&&weeks[letter][day]&&Array.isArray(weeks[letter][day].courses)
+        ? weeks[letter][day].courses.map(x=>Object.assign({},x)):[];
+      return {dayOff:false,courses:list};
+    }catch(e){return {dayOff:false,courses:[]}}
+  }
+
+  function stabilizeReminder728(){
+    const check=document.getElementById('advReminders'),select=document.getElementById('advReminderMinutes');
+    if(!check||!select)return;
+    const label=check.closest('label');
+    if(!label)return;
+    label.classList.add('reminderLine725');
+    if(select.parentElement!==label)label.appendChild(select);
+  }
+  function stabilizeSchool728(){
+    const zone=document.getElementById('schoolZone'),button=document.getElementById('schoolAutoFetch725');
+    if(!zone||!button)return;
+    const grid=zone.closest('.schoolGrid');
+    if(grid&&button.parentElement!==grid)grid.appendChild(button);
+  }
+  function fitSelects728(){
+    const profile=document.getElementById('advProfileSelect');
+    if(profile){
+      profile.style.setProperty('width','min(252px, calc(100vw - 72px))','important');
+      profile.style.setProperty('font-size','.72rem','important');
+    }
+    const zone=document.getElementById('schoolZone');
+    if(zone){
+      zone.style.setProperty('width','116px','important');
+      zone.style.setProperty('font-size','.72rem','important');
+    }
+  }
+  function alignBreakLabels728(){
+    const root=document.querySelector('#settingsDisplay692 .breakSettings');
+    if(!root)return;
+    root.querySelectorAll('*').forEach(el=>{
+      if(el.children.length&&el.querySelector('input,select,button'))return;
+      const text=norm728(el.textContent);
+      if(text==='application'||text==='tuile'||text==='widget'||text==='pause de midi'){
+        el.classList.add('breakLabelRight728');
+      }
+    });
+  }
+  function stableSettings728(restoreScroll){
+    const sheet=document.getElementById('settingsSheet');
+    const top=restoreScroll&&sheet?sheet.scrollTop:null;
+    const style=document.getElementById('edt728Style');
+    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    stabilizeReminder728();
+    stabilizeSchool728();
+    fitSelects728();
+    alignBreakLabels728();
+    if(top!=null&&sheet)sheet.scrollTop=top;
+  }
+  function settleSettings728(){
+    const sheet=document.getElementById('settingsSheet'),top=sheet?sheet.scrollTop:0;
+    [0,40,120,260].forEach(delay=>setTimeout(()=>{
+      stableSettings728(false);
+      if(sheet)sheet.scrollTop=top;
+    },delay));
+  }
+
+  function ensureDayNav728(){
+    const root=document.querySelector('#viewToday .dayTitle'),title=document.getElementById('todayTitle'),date=document.getElementById('todayDate');
+    if(!root||!title||!date)return;
+    let center=document.getElementById('dayCenter728');
+    if(!center){
+      center=document.createElement('div');center.id='dayCenter728';
+      root.insertBefore(center,title);center.append(title,date);
+    }
+    let prev=document.getElementById('dayPrev728');
+    if(!prev){
+      prev=document.createElement('button');prev.id='dayPrev728';prev.type='button';prev.className='calendarNav728';prev.setAttribute('aria-label','Jour précédent');prev.textContent='‹';
+      root.insertBefore(prev,center);
+      prev.onclick=e=>{e.preventDefault();window.__edt728DayDate=addDays728(dayDate728(),-1);renderToday728()};
+    }
+    let next=document.getElementById('dayNext728');
+    if(!next){
+      next=document.createElement('button');next.id='dayNext728';next.type='button';next.className='calendarNav728';next.setAttribute('aria-label','Jour suivant');next.textContent='›';
+      root.appendChild(next);
+      next.onclick=e=>{e.preventDefault();window.__edt728DayDate=addDays728(dayDate728(),1);renderToday728()};
+    }
+  }
+  function ensureWeekNav728(){
+    const root=document.querySelector('#viewWeek .weekTop'),title=root&&root.querySelector('h2');
+    if(!root||!title)return;
+    let prev=document.getElementById('weekPrev728');
+    if(!prev){
+      prev=document.createElement('button');prev.id='weekPrev728';prev.type='button';prev.className='calendarNav728';prev.setAttribute('aria-label','Semaine précédente');prev.textContent='‹';
+      root.insertBefore(prev,title);
+      prev.onclick=e=>{e.preventDefault();window.__edt728WeekMonday=addDays728(weekMonday728(),-7);renderWeek728()};
+    }
+    let next=document.getElementById('weekNext728');
+    if(!next){
+      next=document.createElement('button');next.id='weekNext728';next.type='button';next.className='calendarNav728';next.setAttribute('aria-label','Semaine suivante');next.textContent='›';
+      root.appendChild(next);
+      next.onclick=e=>{e.preventDefault();window.__edt728WeekMonday=addDays728(weekMonday728(),7);renderWeek728()};
+    }
+  }
+  function dayDate728(){
+    if(!(window.__edt728DayDate instanceof Date)||Number.isNaN(window.__edt728DayDate.getTime()))window.__edt728DayDate=new Date();
+    return new Date(window.__edt728DayDate.getFullYear(),window.__edt728DayDate.getMonth(),window.__edt728DayDate.getDate(),12,0,0,0);
+  }
+  function weekMonday728(){
+    if(!(window.__edt728WeekMonday instanceof Date)||Number.isNaN(window.__edt728WeekMonday.getTime()))window.__edt728WeekMonday=monday728(new Date());
+    return monday728(window.__edt728WeekMonday);
+  }
+
+  function progressForDate728(date,list){
+    const now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12,0,0,0);
+    if(date<today)return 100;
+    if(date>today)return 0;
+    const nowM=now.getHours()*60+now.getMinutes();let total=0,done=0;
+    for(const c of list){
+      const s=min(c.start),e=min(c.end),dur=Math.max(0,e-s);
+      total+=dur;
+      if(nowM>=e)done+=dur;
+      else if(nowM>s)done+=Math.min(dur,nowM-s);
+    }
+    return total?Math.max(0,Math.min(100,done*100/total)):0;
+  }
+  function openCourseForDate728(date,course){
+    try{
+      const letter=weekLetter728(date),day=calDay728(date);
+      const source=weeks&&weeks[letter]&&weeks[letter][day]&&Array.isArray(weeks[letter][day].courses)?weeks[letter][day].courses:[];
+      const index=source.findIndex(c=>c.start===course.start&&c.end===course.end&&(c.label||'')===(course.label||''));
+      if(index<0)return;
+      activeWeek=letter;state=weeks[letter];selected=day;editing=index;openEditor(index);
+    }catch(e){}
+  }
+
+  const oldToday728=window.renderToday;
+  function renderToday728(){
+    ensureDayNav728();
+    const date=dayDate728(),day=calDay728(date),letter=weekLetter728(date),data=effective728(date),list=(data.courses||[]).slice().sort((a,b)=>min(a.start)-min(b.start));
+    try{state=weeks[letter]||state}catch(e){}
+    const title=document.getElementById('todayTitle'),dateEl=document.getElementById('todayDate');
+    if(title)title.textContent=(DAY_NAMES_728[day]||'Jour')+' · Semaine '+letter;
+    if(dateEl)dateEl.textContent=date.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+    const now=new Date(),isToday=sameDate728(date,now);
+    const clockEl=document.getElementById('todayClock');if(clockEl)clockEl.textContent=isToday?now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'';
+    const progress=document.getElementById('todayProgress');if(progress)progress.style.width=progressForDate728(date,list)+'%';
+    const scaleStart=document.getElementById('scaleStart'),scaleEnd=document.getElementById('scaleEnd');
+    if(scaleStart)scaleStart.textContent=list[0]?.start||slots[0]?.start||'';
+    if(scaleEnd)scaleEnd.textContent=list[list.length-1]?.end||slots[slots.length-1]?.end||'';
+
+    const box=document.getElementById('todayList');if(!box)return;
+    box.innerHTML='';
+    if(!list.length){
+      box.innerHTML='<div class="empty">'+(data.dayOff?'Jour sans cours.':'Aucun cours ce jour.')+'</div>';
+      try{if(window.applyBreakVisibility)window.applyBreakVisibility()}catch(e){}
+      return;
+    }
+    const nowM=now.getHours()*60+now.getMinutes();
+    const events=list.map(c=>({type:'course',start:min(c.start),end:min(c.end),course:c}));
+    try{for(const g of gapSegments(list))events.push({type:'gap',start:g.start,end:g.end})}catch(e){}
+    let lunchBand=null;try{lunchBand=lunch()}catch(e){}
+    if(lunchBand&&list.some(c=>min(c.end)<=min(lunchBand.start))&&list.some(c=>min(c.start)>=min(lunchBand.end))){
+      events.push({type:'lunch',start:min(lunchBand.start),end:min(lunchBand.end),l:lunchBand});
+    }
+    events.sort((a,b)=>a.start-b.start||a.end-b.end);
+    for(const ev of events){
+      const row=document.createElement('div');
+      if(ev.type==='course'){
+        const c=ev.course,cur=isToday&&nowM>=min(c.start)&&nowM<min(c.end);
+        row.className='todayCourse'+(cur?' current':'');
+        row.innerHTML='<div class="time"><strong>'+esc(c.start)+'</strong><br>'+esc(c.end)+'</div><div><div class="label">'+esc(c.label)+'</div><div class="room">salle '+esc(c.room||'—')+(c.slot?' · '+(c.slot===1?'1ère heure':c.slot+'ème heure'):'')+'</div></div>'+(cur?'<div class="badge">En cours</div>':'');
+        row.onclick=()=>openCourseForDate728(date,c);
+      }else if(ev.type==='gap'){
+        row.className='todayCourse gap';
+        row.innerHTML='<div class="time"><strong>'+clock(ev.start)+'</strong><br>'+clock(ev.end)+'</div><div><div class="label">'+esc(breaks.gapLabel)+'</div><div class="room">'+durationLabel(ev.end-ev.start)+' sans cours</div></div>'+(breaks.showGapBadge?'<div class="badge gap">Trou</div>':'');
+      }else{
+        row.className='todayCourse lunch';
+        row.innerHTML='<div class="time"><strong>'+esc(ev.l.start)+'</strong><br>'+esc(ev.l.end)+'</div><div><div class="label">'+esc(breaks.lunchLabel)+'</div><div class="room">Reprise à '+esc(ev.l.end)+'</div></div>'+(breaks.showLunchBadge?'<div class="badge lunch">Pause</div>':'');
+      }
+      box.appendChild(row);
+    }
+    try{if(window.applyBreakVisibility)window.applyBreakVisibility()}catch(e){}
+  }
+
+  const oldWeek728=window.renderWeek;
+  function decorateWeek728(){
+    ensureWeekNav728();
+    const monday=weekMonday728(),letter=weekLetter728(monday),sunday=addDays728(monday,6);
+    const title=document.querySelector('#viewWeek .weekTop h2'),letterSpan=document.getElementById('weekTitleLetter');
+    if(title){
+      let first=[...title.childNodes].find(n=>n.nodeType===3);
+      if(first)first.nodeValue='Semaine ';
+      if(letterSpan)letterSpan.textContent=letter;
+      let range=document.getElementById('weekRange728');
+      if(!range){range=document.createElement('span');range.id='weekRange728';title.appendChild(range)}
+      range.textContent=' · '+monday.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+' – '+sunday.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+    }
+    const headers=[...document.querySelectorAll('#weekGrid>.wh.day')],days=enabledDays728();
+    headers.forEach((head,index)=>{
+      const calDay=days[index]||[2,3,4,5,6,7,1][index]||2,date=weekDateForDay728(monday,calDay);
+      head.innerHTML='<span class="weekDayName728">'+(DAY_SHORT_728[calDay]||'')+'</span><span class="weekDayDate728">'+date.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+'</span>';
+    });
+  }
+  function renderWeek728(){
+    const monday=weekMonday728(),letter=weekLetter728(monday);
+    try{activeWeek=letter;if(weeks&&weeks[letter])state=weeks[letter]}catch(e){}
+    if(typeof oldWeek728==='function')oldWeek728();
+    decorateWeek728();
+    try{if(window.refreshWeekAppearance658)window.refreshWeekAppearance658()}catch(e){}
+  }
+
+  window.renderToday=renderToday728;try{renderToday=renderToday728}catch(e){}
+  window.renderWeek=renderWeek728;try{renderWeek=renderWeek728}catch(e){}
+
+  /* Revenir au jour / à la semaine courants quand on retape l'onglet principal. */
+  document.addEventListener('pointerdown',e=>{
+    const nav=e.target&&e.target.closest?e.target.closest('.bottom .nav[data-mode]'):null;
+    if(!nav)return;
+    if(nav.dataset.mode==='today')window.__edt728DayDate=new Date();
+    if(nav.dataset.mode==='week')window.__edt728WeekMonday=monday728(new Date());
+  },true);
+
+  /* Les deux cases qui reconstruisent les réglages doivent conserver exactement la même géométrie. */
+  document.addEventListener('change',e=>{
+    const id=e.target&&e.target.id||'';
+    if(id==='advReminders'||id==='schoolEnabled'){
+      settleSettings728();
+    }else if(id==='advProfileSelect'||id==='schoolZone'){
+      setTimeout(()=>stableSettings728(true),0);
+    }
+  },true);
+
+  const advanced=document.getElementById('advancedContent85');
+  if(advanced&&!advanced.__edt728Obs){
+    advanced.__edt728Obs=true;
+    let pending=false;
+    new MutationObserver(()=>{
+      if(pending)return;pending=true;
+      requestAnimationFrame(()=>{pending=false;stableSettings728(true)});
+    }).observe(advanced,{childList:true,subtree:true});
+  }
+
+  stableSettings728(false);
+  ensureDayNav728();ensureWeekNav728();
+  if(document.getElementById('viewToday')?.classList.contains('active'))renderToday728();
+  else if(document.getElementById('viewWeek')?.classList.contains('active'))renderWeek728();
+  setTimeout(()=>stableSettings728(false),120);
+  setTimeout(()=>stableSettings728(false),500);
+})();
+</script>
+
 </body>
 </html>
