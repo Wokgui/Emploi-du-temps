@@ -136,9 +136,14 @@ jobs:
               /* 7.44 week calendar + lunch visibility checks. */
               try{
                 const weekView=document.getElementById('viewWeek');
-                document.querySelectorAll('main.wrap>.view').forEach(v=>v.classList.toggle('active',v===weekView));
-                try{mode='week'}catch(e){}
+                const weekNav=document.querySelector('.bottom .nav[data-mode="week"]');
                 window.__edt728WeekMonday=undefined;
+                if(weekNav){
+                  weekNav.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerType:'touch'}));
+                  weekNav.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));
+                }else if(typeof window.setModeFromAndroid==='function'){
+                  window.setModeFromAndroid('week');
+                }
                 if(typeof window.renderWeek==='function')window.renderWeek();
                 if(typeof window.refreshWeekAppearance658==='function')window.refreshWeekAppearance658();
                 if(typeof window.refreshWeekView744==='function')window.refreshWeekView744();
@@ -490,8 +495,9 @@ jobs:
           week=r'''<script>
           setTimeout(()=>{
             const modal=document.getElementById('settingsModal');if(modal){modal.classList.remove('show','edtForceVisible695');modal.setAttribute('data-edt-open','false')}
-            const view=document.getElementById('viewWeek');document.querySelectorAll('main.wrap>.view').forEach(v=>v.classList.toggle('active',v===view));
-            try{mode='week'}catch(e){}
+            const nav=document.querySelector('.bottom .nav[data-mode="week"]');
+            if(nav){nav.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerType:'touch'}));nav.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}))}
+            else if(typeof window.setModeFromAndroid==='function')window.setModeFromAndroid('week');
             if(typeof window.renderWeek==='function')window.renderWeek();
             if(typeof window.refreshWeekAppearance658==='function')window.refreshWeekAppearance658();
             if(typeof window.refreshWeekView744==='function')window.refreshWeekView744();
