@@ -4200,5 +4200,281 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 })();
 </script>
 
+
+
+<style id="edt734Style">
+  /* 7.34 — polissage final demandé. */
+
+  /* Dates "Du / au" : plus fines, fond blanc, contenu centré comme si l'icône native n'existait pas. */
+  html body #settingsSheet #advancedSettings85 .rangeDates725 .dateShell734{
+    position:relative!important;
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  html body #settingsSheet #advancedSettings85 .rangeDates725 .dateShell734 input[type=date]{
+    box-sizing:border-box!important;
+    width:100%!important;
+    height:27px!important;
+    min-height:27px!important;
+    max-height:27px!important;
+    padding:0 30px!important;
+    border:1px solid #cfd7e1!important;
+    border-radius:7px!important;
+    background:#fff!important;
+    background-color:#fff!important;
+    color:#283244!important;
+    -webkit-appearance:none!important;
+    appearance:none!important;
+    text-align:center!important;
+    text-align-last:center!important;
+    font-size:.66rem!important;
+    line-height:27px!important;
+  }
+  html body #settingsSheet #advancedSettings85 .rangeDates725 .dateShell734 input[type=date]::-webkit-datetime-edit{
+    display:block!important;
+    width:100%!important;
+    padding:0!important;
+    text-align:center!important;
+  }
+  html body #settingsSheet #advancedSettings85 .rangeDates725 .dateShell734 input[type=date]::-webkit-datetime-edit-fields-wrapper{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    padding:0!important;
+  }
+  html body #settingsSheet #advancedSettings85 .rangeDates725 .dateShell734 input[type=date]::-webkit-calendar-picker-indicator{
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    height:100%!important;
+    margin:0!important;
+    padding:0!important;
+    opacity:0!important;
+    cursor:pointer!important;
+  }
+  html body #settingsSheet #advancedSettings85 .dateArrow734{
+    position:absolute!important;
+    right:9px!important;
+    top:50%!important;
+    transform:translateY(-52%)!important;
+    pointer-events:none!important;
+    color:#68738a!important;
+    font-size:.78rem!important;
+    line-height:1!important;
+  }
+
+  /* Profil : texte vraiment centré, flèche indépendante du texte. */
+  html body #settingsSheet #advancedSettings85 .profileShell734{
+    position:relative!important;
+    display:block!important;
+    width:max-content!important;
+    max-width:calc(100vw - 72px)!important;
+    margin:0 auto!important;
+  }
+  html body #settingsSheet #advancedSettings85 .profileShell734 #advProfileSelect{
+    box-sizing:border-box!important;
+    -webkit-appearance:none!important;
+    appearance:none!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    height:32px!important;
+    min-height:32px!important;
+    padding:0 34px!important;
+    background:#fff!important;
+    background-image:none!important;
+    text-align:center!important;
+    text-align-last:center!important;
+    text-overflow:clip!important;
+  }
+  html body #settingsSheet #advancedSettings85 .profileArrow734{
+    position:absolute!important;
+    right:11px!important;
+    top:50%!important;
+    transform:translateY(-52%)!important;
+    pointer-events:none!important;
+    color:#68738a!important;
+    font-size:.78rem!important;
+    line-height:1!important;
+  }
+
+  /* Bloc roue + Réglages : le groupe réel, pas le h2, est centré. */
+  html body #settingsSheet #settingsTitle::before{content:none!important;display:none!important}
+  html body #settingsSheet .settingsHead #settingsTitle{
+    position:absolute!important;
+    left:50%!important;
+    top:50%!important;
+    transform:translate(-50%,-50%)!important;
+    width:max-content!important;
+    max-width:calc(100% - 92px)!important;
+    margin:0!important;
+    padding:0!important;
+  }
+  html body #settingsSheet .settingsTitleGroup734{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:6px!important;
+    width:max-content!important;
+    max-width:100%!important;
+    white-space:nowrap!important;
+  }
+  html body #settingsSheet .settingsGear734,
+  html body #settingsSheet .settingsText734{
+    display:inline-block!important;
+    flex:0 0 auto!important;
+  }
+
+  /* Trou / Pause de midi : centrés dans leurs mini-tuiles. */
+  html body #settingsSheet #settingsDisplay692 .breakSettings .breakName,
+  html body #settingsSheet #settingsDisplay692 .breakSettings .breakLabelRight728{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    align-self:stretch!important;
+    justify-self:stretch!important;
+    min-height:100%!important;
+    padding:0 4px!important;
+    text-align:center!important;
+    line-height:1.12!important;
+  }
+
+  html body #appVersionInfo:after{content:'Version 7.34'!important}
+</style>
+
+<script>
+(function(){
+  if(window.__edt734)return;window.__edt734=true;
+
+  function wrapDate734(input){
+    if(!input||input.parentElement?.classList.contains('dateShell734'))return;
+    const shell=document.createElement('span');shell.className='dateShell734';
+    input.parentNode.insertBefore(shell,input);shell.appendChild(input);
+    const arrow=document.createElement('span');arrow.className='dateArrow734';arrow.textContent='⌄';shell.appendChild(arrow);
+  }
+
+  function ensureDates734(){
+    wrapDate734(document.getElementById('advRangeStart'));
+    wrapDate734(document.getElementById('advRangeEnd'));
+  }
+
+  function ensureProfile734(){
+    const select=document.getElementById('advProfileSelect');if(!select)return;
+    let shell=select.parentElement?.classList.contains('profileShell734')?select.parentElement:null;
+    if(!shell){
+      shell=document.createElement('span');shell.className='profileShell734';
+      select.parentNode.insertBefore(shell,select);shell.appendChild(select);
+      const arrow=document.createElement('span');arrow.className='profileArrow734';arrow.textContent='⌄';shell.appendChild(arrow);
+    }
+    try{
+      const cs=getComputedStyle(select),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+      ctx.font=cs.font||cs.fontSize+' '+cs.fontFamily;
+      let w=0;[...select.options].forEach(o=>{w=Math.max(w,ctx.measureText(String(o.textContent||'')).width)});
+      const width=Math.max(128,Math.min(window.innerWidth-72,Math.ceil(w+78)));
+      shell.style.setProperty('width',width+'px','important');
+    }catch(e){}
+  }
+
+  function settingsLabel734(){
+    const title=document.getElementById('settingsTitle');if(!title)return;
+    let group=title.querySelector('.settingsTitleGroup734');
+    const raw=String(title.textContent||'').replace(/^⚙\s*/,'').trim()||'Réglages';
+    if(!group){
+      title.replaceChildren();
+      group=document.createElement('span');group.className='settingsTitleGroup734';
+      const gear=document.createElement('span');gear.className='settingsGear734';gear.textContent='⚙';
+      const text=document.createElement('span');text.className='settingsText734';text.textContent=raw;
+      group.append(gear,text);title.appendChild(group);
+    }else{
+      const text=group.querySelector('.settingsText734');
+      if(text&&raw&&raw!==group.textContent.replace(/^⚙\s*/,'').trim())text.textContent=raw;
+    }
+  }
+
+  function centerSettings734(){
+    settingsLabel734();
+    const sheet=document.getElementById('settingsSheet');
+    const head=sheet&&sheet.querySelector('.settingsHead');
+    const title=document.getElementById('settingsTitle');
+    const group=title&&title.querySelector('.settingsTitleGroup734');
+    if(!sheet||!head||!title||!group)return;
+    title.style.setProperty('left','50%','important');
+    title.style.setProperty('transform','translate(-50%,-50%)','important');
+    requestAnimationFrame(()=>{
+      const sr=sheet.getBoundingClientRect(),gr=group.getBoundingClientRect();
+      const delta=((gr.left+gr.right)/2)-((sr.left+sr.right)/2);
+      if(Math.abs(delta)>.25){
+        const current=parseFloat(getComputedStyle(title).left)||head.clientWidth/2;
+        title.style.setProperty('left',(current-delta)+'px','important');
+      }
+      const g2=group.getBoundingClientRect(),s2=sheet.getBoundingClientRect();
+      document.documentElement.dataset.edt734SettingsDelta=((((g2.left+g2.right)/2)-((s2.left+s2.right)/2))).toFixed(2);
+    });
+  }
+
+  function halveHolidayGap734(){
+    const holiday=document.getElementById('advHolidayLabel')?.closest('.settingBox')||document.querySelector('#advancedContent85>.holidayFlat725');
+    const parent=holiday&&holiday.parentElement;
+    if(!holiday||!parent||holiday.dataset.edt734Gap==='done')return;
+    const siblings=[...parent.children],index=siblings.indexOf(holiday);
+    let prev=null;
+    for(let i=index-1;i>=0;i--){
+      const el=siblings[i],cs=getComputedStyle(el),r=el.getBoundingClientRect();
+      if(cs.display!=='none'&&cs.visibility!=='hidden'&&r.height>0){prev=el;break}
+    }
+    if(!prev)return;
+    const pr=prev.getBoundingClientRect(),hr=holiday.getBoundingClientRect();
+    const gap=Math.max(0,hr.top-pr.bottom);
+    const target=gap/2;
+    const mt=parseFloat(getComputedStyle(holiday).marginTop)||0;
+    holiday.style.setProperty('margin-top',(mt-(gap-target)).toFixed(1)+'px','important');
+    holiday.dataset.edt734Gap='done';
+    document.documentElement.dataset.edt734HolidayGapBefore=gap.toFixed(1);
+    requestAnimationFrame(()=>{
+      const pr2=prev.getBoundingClientRect(),hr2=holiday.getBoundingClientRect();
+      document.documentElement.dataset.edt734HolidayGapAfter=Math.max(0,hr2.top-pr2.bottom).toFixed(1);
+    });
+  }
+
+  function centerBreakNames734(){
+    const root=document.querySelector('#settingsDisplay692 .breakSettings');if(!root)return;
+    root.querySelectorAll('.breakName').forEach(el=>{
+      el.classList.remove('breakLabelRight728');
+      el.style.setProperty('display','flex','important');
+      el.style.setProperty('align-items','center','important');
+      el.style.setProperty('justify-content','center','important');
+      el.style.setProperty('text-align','center','important');
+      el.style.setProperty('align-self','stretch','important');
+    });
+  }
+
+  function apply734(){
+    const style=document.getElementById('edt734Style');
+    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    ensureDates734();ensureProfile734();centerSettings734();halveHolidayGap734();centerBreakNames734();
+  }
+
+  let queued=false;
+  function schedule734(){
+    if(queued)return;queued=true;
+    requestAnimationFrame(()=>{queued=false;apply734()});
+  }
+
+  const sheet=document.getElementById('settingsSheet');
+  if(sheet)new MutationObserver(schedule734).observe(sheet,{childList:true,subtree:true,characterData:true});
+  document.addEventListener('click',e=>{
+    if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))setTimeout(schedule734,0);
+  },true);
+  document.addEventListener('change',e=>{
+    if(e.target&&e.target.id==='advProfileSelect')setTimeout(schedule734,0);
+  },true);
+  window.addEventListener('resize',schedule734);
+
+  apply734();setTimeout(apply734,120);setTimeout(apply734,500);
+})();
+</script>
+
 </body>
 </html>
