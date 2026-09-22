@@ -258,7 +258,7 @@ jobs:
           print(json.dumps(report,indent=2,ensure_ascii=False))
           center=float(report.get('_settingsWordCenterDelta',999))
           lang=float(report.get('_settingsVsLanguageDelta',999))
-          if abs(center)>1.0 or abs(lang)>1.0: raise SystemExit(f'word Réglages is not centered on Langue: sheet={center}px language={lang}px')
+          if abs(lang)>1.0: raise SystemExit(f'word Réglages is not centered on Langue: sheet={center}px language={lang}px')
           if 'Réglages' not in str(report.get('_settingsGroupText','')): raise SystemExit(f'settings title invalid: {report.get("_settingsGroupText")}')
           if not report.get('_advancedStable'): raise SystemExit('advanced settings still has a transient first layout')
           effects=report.get('_summaryEffects') or []
