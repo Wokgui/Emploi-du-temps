@@ -395,7 +395,7 @@ final class Settings746Ui {
                   const density=document.getElementById('widgetDensity664');
                   if(density){
                     imp746(density,'margin-top','0px');
-                    imp746(density,'padding-top','22px');
+                    imp746(density,'padding-top','30px');
                   }
                 }
 
