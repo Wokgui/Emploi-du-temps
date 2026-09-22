@@ -215,8 +215,8 @@ final class Settings745Ui {
                     setImp745(schoolSetting,'width','100%');
                     setImp745(schoolSetting,'max-width','100%');
                     setImp745(schoolSetting,'margin','0px');
-                    setImp745(schoolSetting,'padding-left','0px');
-                    setImp745(schoolSetting,'padding-right','0px');
+                    setImp745(schoolSetting,'padding-left','8px');
+                    setImp745(schoolSetting,'padding-right','8px');
                     setImp745(schoolSetting,'border-left-width','0px');
                     setImp745(schoolSetting,'border-right-width','0px');
                   }
