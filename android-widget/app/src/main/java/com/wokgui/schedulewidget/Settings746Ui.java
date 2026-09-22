@@ -54,7 +54,7 @@ final class Settings746Ui {
                   }
                   html body #settingsSheet #widgetDensity664{
                     margin-top:0!important;
-                    padding-top:22px!important;
+                    padding-top:30px!important;
                   }
 
                   /* Profile selector is centered as a whole under "Profils". */
@@ -227,7 +227,19 @@ final class Settings746Ui {
 
                 function ensureCenteredSelect746(select,minWidth,maxWidth){
                   if(!select)return null;
+                  const schoolRow=select.id==='schoolZone'?document.getElementById('schoolAutoRow739'):null;
                   let shell=select.closest('.centerSelect746');
+
+                  /* Older advanced refreshes can move #schoolZone out of our shell.
+                     Remove the abandoned shell before recreating it so the row never
+                     accumulates several visible "Zone B" controls. */
+                  const cleanupRoot=schoolRow||(shell?shell.parentElement:select.parentElement);
+                  if(cleanupRoot){
+                    cleanupRoot.querySelectorAll(':scope > .centerSelect746').forEach(old=>{
+                      if(old!==shell&&!old.querySelector('select'))old.remove();
+                    });
+                  }
+
                   if(!shell){
                     shell=document.createElement('span');
                     shell.className='centerSelect746';
@@ -239,6 +251,14 @@ final class Settings746Ui {
                     arrow.className='centerSelect746Arrow';
                     shell.append(visual,arrow);
                   }
+
+                  if(schoolRow){
+                    schoolRow.querySelectorAll(':scope > .centerSelect746').forEach(old=>{
+                      if(old!==shell)old.remove();
+                    });
+                    if(shell.parentElement!==schoolRow)schoolRow.appendChild(shell);
+                  }
+
                   const visual=shell.querySelector('.centerSelect746Visual');
                   const text=selectedText746(select);
                   if(visual&&visual.textContent!==text)visual.textContent=text;
