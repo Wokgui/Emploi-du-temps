@@ -4730,26 +4730,14 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     }catch(e){}
   }
 
-  let advToken=0;
   function finalizeAdvanced735(){
     const adv=document.getElementById('advancedSettings85');if(!adv)return;
-    if(!adv.open){adv.classList.remove('edtAdvStabilizing735');return}
-    const token=++advToken;
-    adv.classList.add('edtAdvStabilizing735');
-    const refresh=()=>{
-      ['refreshAdvancedFeatures','refreshWorkflow85','refreshSettingsLayout','refreshStability78','refresh734'].forEach(n=>{
-        try{if(typeof window[n]==='function')window[n]()}catch(e){}
-      });
-      showAdvancedContent735();profile735();compactHoliday735();ensureSlots735();settingsTitle735();ensureVersion735();
-    };
-    refresh();
-    setTimeout(()=>{
-      if(token!==advToken||!adv.open)return;
-      refresh();
-      requestAnimationFrame(()=>requestAnimationFrame(()=>{
-        if(token===advToken&&adv.open)adv.classList.remove('edtAdvStabilizing735');
-      }));
-    },70);
+    adv.classList.remove('edtAdvStabilizing735');
+    if(!adv.open)return;
+    ['refreshAdvancedFeatures','refreshWorkflow85','refreshSettingsLayout','refreshStability78','refresh734'].forEach(n=>{
+      try{if(typeof window[n]==='function')window[n]()}catch(e){}
+    });
+    showAdvancedContent735();profile735();compactHoliday735();ensureSlots735();settingsTitle735();ensureVersion735();
   }
 
   function neutralizeAccordionFlash735(){
@@ -4770,8 +4758,8 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   document.addEventListener('pointerdown',e=>{
     const summary=e.target&&e.target.closest?e.target.closest('#settingsSheet summary'):null;
     if(summary)summary.classList.remove('press85');
-    if(summary&&summary.parentElement?.id==='advancedSettings85'&&!summary.parentElement.open){
-      summary.parentElement.classList.add('edtAdvStabilizing735');
+    if(summary&&summary.parentElement?.id==='advancedSettings85'){
+      summary.parentElement.classList.remove('edtAdvStabilizing735');
     }
   },true);
 
@@ -5301,57 +5289,32 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   }
   window.refresh737=finalise737;
 
-  /* Prépare tout AVANT l'action native : aucun premier affichage provisoire. */
+  /* Prépare les contenus avant que l'utilisateur ouvre une rubrique.
+     Les clics sur Langue et Réglages avancés restent 100 % natifs. */
   document.addEventListener('click',e=>{
     const target=e.target;
     if(!target||!target.closest)return;
-
     if(target.closest('#settingsBtn')){
       prepareHeader737();
       prepareLanguage737();
-      return;
-    }
-
-    const langSummary=target.closest('#settingsLanguage698>summary');
-    if(langSummary){
-      const details=document.getElementById('settingsLanguage698');
-      if(details){
-        e.preventDefault();
-        if(details.open){
-          details.open=false;
-        }else{
-          prepareHeader737();
-          prepareLanguage737();
-          details.open=true;
-          prepareLanguage737();
-        }
-      }
-      return;
-    }
-
-    const advSummary=target.closest('#advancedSettings85>summary');
-    if(advSummary){
-      const details=document.getElementById('advancedSettings85');
-      if(details){
-        e.preventDefault();
-        if(details.open){
-          details.open=false;
-        }else{
-          prepareHeader737();
-          details.open=true;
-          prepareAdvanced737();
-        }
+      const adv=document.getElementById('advancedSettings85');
+      if(adv){
+        const wasOpen=adv.open;
+        if(!wasOpen)adv.open=true;
+        prepareAdvanced737();
+        if(!wasOpen)adv.open=false;
       }
     }
   },true);
 
-  /* Les anciens recalculs retardés sont corrigés dans la même micro-tâche, avant peinture. */
+  /* Observer léger : seulement la structure et l'état ouvert/fermé, jamais chaque changement de style. */
   const sheet=document.getElementById('settingsSheet');
   if(sheet){
     new MutationObserver(()=>{
       if(fixing)return;
-      finalise737();
-    }).observe(sheet,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['class','open','style']});
+      ensureVersion737();
+      try{if(typeof window.refresh736==='function')window.refresh736()}catch(e){}
+    }).observe(sheet,{childList:true,subtree:true,attributes:true,attributeFilter:['open']});
   }
 
   document.addEventListener('toggle',e=>{
