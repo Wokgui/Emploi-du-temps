@@ -4341,7 +4341,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     line-height:1.12!important;
   }
 
-  html body #appVersionInfo:after{content:'Version 7.34'!important}
+  html body #appVersionInfo:after{content:none!important;display:none!important}
 </style>
 
 <script>
@@ -4457,6 +4457,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   function apply734(){
     const style=document.getElementById('edt734Style');
     if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    const version=document.getElementById('appVersionInfo');if(version&&version.textContent!=='Version 7.34')version.textContent='Version 7.34';
     ensureDates734();ensureProfile734();centerSettings734();halveHolidayGap734();centerBreakNames734();
   }
   window.refresh734=apply734;
