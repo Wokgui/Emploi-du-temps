@@ -1,8 +1,8 @@
-name: Clean Android 7.45 settings-polish build
+name: Clean Android 7.46 settings-polish build
 
 on:
   push:
-    branches: [fix/745-settings-polish]
+    branches: [fix/746-settings-week-final]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 
@@ -68,6 +68,8 @@ jobs:
           PY
           javac -encoding UTF-8 -d build/visual-classes             build/visual-src/com/wokgui/schedulewidget/BuildConfig.java             build/visual-src/com/wokgui/schedulewidget/DumpUiRuntime.java             $(cat build/visual/sources.txt)
           java -cp build/visual-classes com.wokgui.schedulewidget.DumpUiRuntime > build/visual/runtime.js
+          grep -q "__settings746" build/visual/runtime.js
+          grep -q "__weekView746" build/visual/runtime.js
           python3 - <<'PY'
           from pathlib import Path
           raw=Path('build/visual/runtime.js').read_text(encoding='utf-8')
@@ -109,7 +111,7 @@ jobs:
             if(n==='listProfiles')return JSON.stringify({current:'main',profiles:[{id:'main',name:'Principal'}]});
             if(n==='loadAdvancedSetting')return '';
             if(n==='getCurrentWeek')return 'B';
-            if(n==='getAppVersionName')return '7.45';
+            if(n==='getAppVersionName')return '7.46';
             if(n==='loadHolidays'||n==='loadSchoolHolidays')return '[]';
             if(n.startsWith('load'))return '{}';
             if(n.startsWith('get')||n.startsWith('is'))return '';
@@ -369,7 +371,7 @@ jobs:
               }
               report._profile=selectGeom('advProfileSelect');
 
-              /* 7.45 final settings owner. */
+              /* 7.46 final settings owner. */
               try{
                 const profileShell=document.querySelector('#advancedSettings85 .profileShell745');
                 const profileVisual=profileShell&&profileShell.querySelector('.profileVisual745');
@@ -626,23 +628,23 @@ jobs:
               if obj.get('textAlign')!='center': raise SystemExit(f'{name} text is not centered: {obj}')
               if require_arrow and obj.get('backgroundImage') in ('none',''): raise SystemExit(f'{name} has no visible dropdown arrow: {obj}')
           s745=report.get('_settings745') or {}
-          if s745.get('error'): raise SystemExit(f'7.45 settings measurement error: {s745}')
-          if s745.get('attached')!='1': raise SystemExit(f'7.45 final settings owner is not active: {s745}')
+          if s745.get('error'): raise SystemExit(f'7.46 settings measurement error: {s745}')
+          if s745.get('attached')!='1': raise SystemExit(f'7.46 final settings owner is not active: {s745}')
           if s745.get('rangeFrom')!='Du' or s745.get('rangeTo')!='Au': raise SystemExit(f'Du/Au labels are missing: {s745}')
           if s745.get('profileText')!='Principal' or abs(float(s745.get('profileCenterDelta',999)))>0.5 or not s745.get('profileFits') or float(s745.get('profileShellWidth',0))<170: raise SystemExit(f'Principal is not stably centered/untruncated: {s745}')
-          if s745.get('version')!='Version 7.45' or not s745.get('versionBelowClose'): raise SystemExit(f'app version is not below Fermer: {s745}')
+          if s745.get('version')!='Version 7.46' or not s745.get('versionBelowClose'): raise SystemExit(f'app version is not below Fermer: {s745}')
           if float(s745.get('appFontBorderBottom',999))>0.1 or float(s745.get('widgetFontBorderTop',999))>0.1: raise SystemExit(f'text-size separator still visible: {s745}')
           if float(s745.get('midiTitleGap',-999)) + 1 < float(s745.get('breakTitleGap',999)): raise SystemExit(f'Midi par jour title gap is still smaller than break-name reference: {s745}')
-          if float(s745.get('widgetDensityGap',-999)) < 12: raise SystemExit(f'Affichage du widget / Condensation gap is still too small: {s745}')
+          if float(s745.get('widgetDensityGap',-999)) < 20: raise SystemExit(f'Affichage du widget / Condensation gap is still too small: {s745}')
 
           ia745=(report.get('_instantAdvanced') or {})
-          if ia745.get('final745')!='1': raise SystemExit(f'advanced panel was not finalized by 7.45 before open: {ia745}')
+          if ia745.get('final745')!='1': raise SystemExit(f'advanced panel was not finalized by 7.46 before open: {ia745}')
           before745=ia745.get('afterLegacy745') or {}
           after745=ia745.get('afterFinal745') or {}
           for k in ('profileLeft','profileWidth','rangeLeft','rangeWidth'):
-              if abs(float(before745.get(k,999))-float(after745.get(k,-999)))>0.5: raise SystemExit(f'advanced 7.45 geometry still changes after final refresh: {k} {before745} -> {after745}')
+              if abs(float(before745.get(k,999))-float(after745.get(k,-999)))>0.5: raise SystemExit(f'advanced 7.46 geometry still changes after final refresh: {k} {before745} -> {after745}')
           for k in ('profileText','from','to'):
-              if before745.get(k)!=after745.get(k): raise SystemExit(f'advanced 7.45 content still changes after final refresh: {k} {before745} -> {after745}')
+              if before745.get(k)!=after745.get(k): raise SystemExit(f'advanced 7.46 content still changes after final refresh: {k} {before745} -> {after745}')
 
           gaps=report.get('_displayGaps') or {}
           if abs(float(gaps.get('base',999))-float(gaps.get('interruptions',-999)))>1.0:
@@ -717,10 +719,10 @@ jobs:
       - name: Verify package metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='745001' versionName='7.45'" /tmp/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.45-tested-debug.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='746001' versionName='7.46'" /tmp/badging.txt
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.46-tested-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: EDT-7.45-tested
-          path: android-widget/app/build/outputs/apk/debug/EDT-7.45-tested-debug.apk
+          name: EDT-7.46-tested
+          path: android-widget/app/build/outputs/apk/debug/EDT-7.46-tested-debug.apk
           if-no-files-found: error
