@@ -87,6 +87,7 @@ jobs:
                       B:{2:{courses:[{start:'10:00',end:'11:00',label:'Test B',room:'102',slot:3}]},3:{courses:[]},4:{courses:[]},5:{courses:[]},6:{courses:[]}}}});
             if(n==='loadAdvancedSettings')return JSON.stringify({singleWeek:false,cycleLength:2});
             if(n==='loadUiSettings')return JSON.stringify({language:'fr'});
+            if(n==='listProfiles')return JSON.stringify({current:'main',profiles:[{id:'main',name:'Principal'}]});
             if(n==='loadAdvancedSetting')return '';
             if(n==='getCurrentWeek')return 'B';
             if(n==='getAppVersionName')return '7.34';
