@@ -606,6 +606,8 @@ jobs:
                 const mr748=m748&&m748.getBoundingClientRect(),sr748=sh748&&sh748.getBoundingClientRect();
                 report._layout748={
                   attached:!!window.__layout748,
+                  initError:document.documentElement.dataset.edtLayout748Error||'',
+                  initStack:document.documentElement.dataset.edtLayout748Stack||'',
                   settingsOpen:!!(m748&&m748.getAttribute('data-edt-open')==='true'),
                   settingsLeft:mr748?+mr748.left.toFixed(1):999,
                   settingsTop:mr748?+mr748.top.toFixed(1):999,
@@ -772,7 +774,7 @@ jobs:
           pathlib.Path('build/visual/report.json').write_text(json.dumps(report,indent=2,ensure_ascii=False))
           print(json.dumps(report,indent=2,ensure_ascii=False))
           l748=report.get('_layout748') or {}
-          if l748.get('error') or not l748.get('attached'): raise SystemExit(f'7.48 layout owner missing/error: {l748}')
+          if l748.get('error') or l748.get('initError') or not l748.get('attached'): raise SystemExit(f'7.48 layout owner missing/init error: {l748}')
           if not l748.get('settingsOpen') or abs(float(l748.get('settingsLeft',999)))>0.5 or abs(float(l748.get('settingsTop',999)))>0.5 or abs(float(l748.get('settingsWidth',0))-float(l748.get('viewportWidth',-999)))>1 or abs(float(l748.get('settingsHeight',0))-float(l748.get('viewportHeight',-999)))>1: raise SystemExit(f'7.48 real HeavyPanel settings is not a full page: {l748}')
           if l748.get('sheetRadius') not in ('0px','0') or l748.get('sheetOverflowX') not in ('hidden','clip'): raise SystemExit(f'7.48 settings still looks/behaves like a floating tile: {l748}')
           if not (l748.get('closedVisibility')=='hidden' or (l748.get('closedOpacity')=='0' and l748.get('closedPointer')=='none')): raise SystemExit(f'7.48 settings remains visible/interactive after close: {l748}')
