@@ -187,10 +187,10 @@ function removeSlotAt(index){
     for(const d of DAYS){
       const day=weeks[w][d];
       if(!day||!Array.isArray(day.courses))continue;
+      day.courses=day.courses.filter(course=>Number(course.slot||0)!==removed);
       for(const course of day.courses){
         const oldSlot=Number(course.slot||0);
-        if(oldSlot===removed)course.slot=0;
-        else if(remap.has(oldSlot))course.slot=remap.get(oldSlot);
+        if(remap.has(oldSlot))course.slot=remap.get(oldSlot);
       }
     }
   }
