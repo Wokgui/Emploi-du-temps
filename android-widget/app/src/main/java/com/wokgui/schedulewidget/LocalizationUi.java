@@ -331,10 +331,13 @@ final class LocalizationUi {
                 function ensureNineSlots(){
                   try{
                     /* Historical compatibility hook only.
-                       The timetable no longer has a 9-hour minimum: never recreate
-                       deleted rows and never force the rendered row count. */
+                       The timetable no longer has a 9-hour minimum. Keep the current
+                       variable-length slot list, but ensure the settings UI renders it. */
                     if(typeof slots==='undefined'||!Array.isArray(slots))return;
                     slots.forEach((slot,index)=>{if(slot)slot.n=index+1});
+                    const box=document.getElementById('slotSettings');
+                    const rendered=box?box.querySelectorAll(':scope > .slotRow').length:0;
+                    if(box&&rendered!==slots.length&&typeof renderSlots==='function')renderSlots();
                   }catch(e){}
                 }
 
