@@ -206,6 +206,19 @@ jobs:
                   hiddenNoonCellBgs:noonCellBgs,
                   hiddenLunchPainted:grid.querySelectorAll('.wc.week658Lunch').length
                 };
+                const stableTitle746=document.getElementById('weekTitleStable746');
+                const goodCount746=grid.childElementCount;
+                const stableText746=(stableTitle746?.textContent||'').trim();
+                grid.innerHTML='';
+                try{if(typeof window.refreshWeekView746==='function')window.refreshWeekView746()}catch(e){}
+                report._week746={
+                  attached:document.documentElement.dataset.edtWeek746||'',
+                  goodCount:goodCount746,
+                  recoveredCount:grid.childElementCount,
+                  stableTitle:stableText746,
+                  stableTitleAfterRecovery:(document.getElementById('weekTitleStable746')?.textContent||'').trim(),
+                  stableHeight:parseFloat(getComputedStyle(grid).minHeight)||0
+                };
                 window.__testAdvanced.showLunchWeek=true;
                 if(typeof window.renderWeek==='function')window.renderWeek();
                 if(typeof window.refreshWeekAppearance658==='function')window.refreshWeekAppearance658();
@@ -394,6 +407,12 @@ jobs:
                 const mtr=midiTitle&&midiTitle.getBoundingClientRect(),mhr=midiHead&&midiHead.getBoundingClientRect();
                 const btr=breakNamesTitle&&breakNamesTitle.getBoundingClientRect(),bbr=breakBox&&breakBox.getBoundingClientRect();
                 const awr=advWidgetTitle&&advWidgetTitle.getBoundingClientRect(),dtr=densityTitle&&densityTitle.getBoundingClientRect();
+                const zoneShell746=document.getElementById('schoolZone')?.closest('.centerSelect746');
+                const zoneVisual746=zoneShell746?.querySelector('.centerSelect746Visual');
+                const holidayShell746=document.getElementById('advHoliday')?.closest('.centerSelect746');
+                const holidayVisual746=holidayShell746?.querySelector('.centerSelect746Visual');
+                const zsr746=zoneShell746&&zoneShell746.getBoundingClientRect(),zvr746=zoneVisual746&&zoneVisual746.getBoundingClientRect();
+                const hsr746=holidayShell746&&holidayShell746.getBoundingClientRect(),hvr746=holidayVisual746&&holidayVisual746.getBoundingClientRect();
 
                 report._settings745={
                   attached:document.documentElement.dataset.edt745Final||'',
@@ -409,7 +428,10 @@ jobs:
                   widgetFontBorderTop:widgetFontCs?parseFloat(widgetFontCs.borderTopWidth)||0:999,
                   midiTitleGap:(mtr&&mhr)?+(mhr.top-mtr.bottom).toFixed(1):999,
                   breakTitleGap:(btr&&bbr)?+(bbr.top-btr.bottom).toFixed(1):999,
-                  widgetDensityGap:(awr&&dtr)?+(dtr.top-awr.bottom).toFixed(1):999
+                  widgetDensityGap:(awr&&dtr)?+(dtr.top-awr.bottom).toFixed(1):999,
+                  zoneShellCount:document.querySelectorAll('#schoolAutoRow739 > .centerSelect746').length,
+                  zoneVisualCenterDelta:(zsr746&&zvr746)?+((((zvr746.left+zvr746.right)/2)-((zsr746.left+zsr746.right)/2)).toFixed(2)):999,
+                  holidayVisualCenterDelta:(hsr746&&hvr746)?+((((hvr746.left+hvr746.right)/2)-((hsr746.left+hsr746.right)/2)).toFixed(2)):999
                 };
               }catch(e){report._settings745={error:String(e)}}
 
