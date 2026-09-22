@@ -13,14 +13,26 @@ final class Feedback664Ui {
 
                 const style=document.createElement('style');style.id='feedback664Style';style.textContent=`
                   #settingsSheet>.previewGrid{display:none!important}
-                  #widgetDensity664{margin-top:0!important}
+                  #widgetDensity664{margin-top:14px!important}
                   #widgetDensity664 .feedback664DensityTitle{text-align:center!important;font-size:.74rem!important;font-weight:800!important;color:#586579!important;margin:0 0 7px!important}
                   #widgetDensity664 .feedback664DensityRow{display:grid!important;grid-template-columns:minmax(82px,1fr) minmax(132px,1.25fr)!important;align-items:center!important;gap:10px!important;margin:0!important}
                   #widgetDensity664 .feedback664DensityRow>span{text-align:center!important;font-weight:700!important;color:#586579!important}
                   #widgetDensity664 .feedback664DensityRow>select{width:100%!important;max-width:220px!important;justify-self:center!important;text-align:center!important;text-align-last:center!important;border-radius:11px!important;padding:8px 28px 8px 10px!important}
                   #advancedSettings85 .feedback664Profiles>#advProfilesTitle{text-align:center!important;font-size:.86rem!important;font-weight:850!important;margin:0 0 8px!important}
                   #advancedSettings85 .feedback664Profiles>.advRow{justify-content:center!important;margin:0 0 9px!important}
-                  #advancedSettings85 .feedback664Profiles #advProfileSelect{display:block!important;width:72%!important;max-width:260px!important;min-width:150px!important;margin:0 auto!important;padding:9px 30px 9px 12px!important;border:1px solid #cfd9e5!important;border-radius:12px!important;background-color:#fff!important;text-align:center!important;text-align-last:center!important;font-weight:750!important;color:#233047!important}
+                  #advancedSettings85 .feedback664Profiles #advProfileSelect{
+                    display:block!important;box-sizing:border-box!important;
+                    width:180px!important;max-width:min(180px,calc(100vw - 84px))!important;min-width:180px!important;
+                    height:36px!important;min-height:36px!important;margin:0 auto!important;
+                    padding:0 32px!important;border:1px solid #cfd9e5!important;border-radius:12px!important;
+                    -webkit-appearance:none!important;appearance:none!important;
+                    background-color:#fff!important;
+                    background-image:linear-gradient(45deg,transparent 50%,#68738a 50%),linear-gradient(135deg,#68738a 50%,transparent 50%)!important;
+                    background-position:calc(100% - 14px) 50%,calc(100% - 10px) 50%!important;
+                    background-size:4px 4px,4px 4px!important;background-repeat:no-repeat!important;
+                    text-align:center!important;text-align-last:center!important;text-overflow:clip!important;
+                    font-weight:750!important;color:#233047!important;-webkit-text-fill-color:#233047!important
+                  }
                   #advancedSettings85 .feedback664Profiles #advProfileSelect option{text-align:center!important}
                   #advancedSettings85 .feedback664Profiles>.advButtons{justify-content:center!important}
                 `;document.head.appendChild(style);
