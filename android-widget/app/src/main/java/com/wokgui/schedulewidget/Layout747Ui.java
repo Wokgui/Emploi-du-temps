@@ -347,6 +347,66 @@ final class Layout747Ui {
                   }catch(e){return false}
                 }
 
+                function bindDayNav748(){
+                  const defs=[['dayPrev728',-1],['dayNext728',1]];
+                  defs.forEach(([id,delta])=>{
+                    const button=document.getElementById(id);
+                    if(!button||button.__layout748DayOwner)return;
+                    button.__layout748DayOwner=true;
+                    button.onclick=function(event){
+                      if(event){
+                        event.preventDefault();
+                        event.stopPropagation();
+                      }
+                      movePinnedDay748(delta);
+                      fitToday748();
+                      return false;
+                    };
+                  });
+                }
+
+                function finalProfile748(){
+                  const select=document.getElementById('advProfileSelect');if(!select)return;
+                  const shell=select.closest('.profileShell745')||select.parentElement;
+                  if(shell){
+                    shell.style.setProperty('position','relative','important');
+                    shell.style.setProperty('display','block','important');
+                    shell.style.setProperty('width','180px','important');
+                    shell.style.setProperty('min-width','180px','important');
+                    shell.style.setProperty('max-width','min(180px,calc(100vw - 84px))','important');
+                    shell.style.setProperty('height','36px','important');
+                    shell.style.setProperty('margin','0 auto','important');
+                    shell.style.setProperty('border','1px solid #cfd9e5','important');
+                    shell.style.setProperty('border-radius','12px','important');
+                    shell.style.setProperty('background','#fff','important');
+                    shell.style.setProperty('overflow','hidden','important');
+                  }
+                  select.style.setProperty('position','absolute','important');
+                  select.style.setProperty('inset','0','important');
+                  select.style.setProperty('width','100%','important');
+                  select.style.setProperty('min-width','100%','important');
+                  select.style.setProperty('max-width','100%','important');
+                  select.style.setProperty('height','36px','important');
+                  select.style.setProperty('margin','0','important');
+                  select.style.setProperty('padding','0','important');
+                  select.style.setProperty('opacity','0','important');
+                  select.style.setProperty('color','transparent','important');
+                  select.style.setProperty('-webkit-text-fill-color','transparent','important');
+                  select.style.setProperty('appearance','none','important');
+                  select.style.setProperty('-webkit-appearance','none','important');
+                  select.style.setProperty('cursor','pointer','important');
+                  select.style.setProperty('z-index','5','important');
+                  const visual=shell&&shell.querySelector(':scope > .profileVisual745');
+                  if(visual){
+                    const option=select.options&&select.options[select.selectedIndex];
+                    const text=String(option?.textContent||'').trim();
+                    if(visual.textContent!==text)visual.textContent=text;
+                    visual.style.setProperty('z-index','3','important');
+                  }
+                  const arrow=shell&&shell.querySelector(':scope > .profileArrow745');
+                  if(arrow)arrow.style.setProperty('z-index','4','important');
+                }
+
                 function fitToday748(){
                   const view=document.getElementById('viewToday');
                   const list=document.getElementById('todayList');
@@ -386,8 +446,9 @@ final class Layout747Ui {
                     restorePinnedDay748();
                     const result=previousToday748.apply(this,arguments);
                     restorePinnedDay748();
+                    bindDayNav748();
                     fitToday748();
-                    requestAnimationFrame(fitToday748);
+                    requestAnimationFrame(()=>{bindDayNav748();fitToday748()});
                     return result;
                   };
                   renderToday748.__layout748=true;
@@ -427,9 +488,11 @@ final class Layout747Ui {
                       try{if(typeof window.refreshWorkflow85==='function')window.refreshWorkflow85()}catch(e){}
                       try{if(typeof window.refreshSettings745==='function')window.refreshSettings745()}catch(e){}
                       try{if(typeof window.refreshSettings746==='function')window.refreshSettings746()}catch(e){}
+                      finalProfile748();
                       requestAnimationFrame(()=>{
                         try{if(typeof window.refreshSettings745==='function')window.refreshSettings745()}catch(e){}
                         try{if(typeof window.refreshSettings746==='function')window.refreshSettings746()}catch(e){}
+                        finalProfile748();
                       });
                     });
                   }else if(!open){
@@ -457,19 +520,15 @@ final class Layout747Ui {
                   }
                 },true);
 
-                document.addEventListener('click',event=>{
+                document.addEventListener('pointerup',event=>{
                   const dayNav=event.target&&event.target.closest?event.target.closest('#dayPrev728,#dayNext728'):null;
-                  if(!dayNav)return;
-                  event.preventDefault();
-                  event.stopPropagation();
-                  if(event.stopImmediatePropagation)event.stopImmediatePropagation();
-                  movePinnedDay748(dayNav.id==='dayPrev728'?-1:1);
-                  fitToday748();
+                  if(dayNav)requestAnimationFrame(()=>{bindDayNav748();capturePinnedDay748();fitToday748()});
                 },true);
 
                 const activeObserver=new MutationObserver(()=>{
                   fitToday748();
                   balanceEdit748();
+                  finalProfile748();
                   if(weekView()?.classList.contains('active')){
                     if(!weekValid748())scheduleWeekRepair748();
                     else finishWeek748();
@@ -489,7 +548,29 @@ final class Layout747Ui {
                 window.addEventListener('resize',()=>{fitToday748();balanceEdit748();finishWeek748()},{passive:true});
                 window.addEventListener('orientationchange',()=>setTimeout(()=>{fitToday748();balanceEdit748();finishWeek748()},80),{passive:true});
 
+                function installRenderOwners748(){
+                  if(typeof renderToday748==='function'){
+                    window.renderToday=renderToday748;
+                    try{renderToday=renderToday748}catch(e){}
+                  }
+                  window.renderWeek=renderWeek748;
+                  try{renderWeek=renderWeek748}catch(e){}
+                  bindDayNav748();
+                }
+
+                const legacyLunchRefresh748=window.refreshLunchBreakUi;
+                if(typeof legacyLunchRefresh748==='function'&&!legacyLunchRefresh748.__layout748Owner){
+                  const ownedLunchRefresh748=function(){
+                    const result=legacyLunchRefresh748.apply(this,arguments);
+                    installRenderOwners748();
+                    return result;
+                  };
+                  ownedLunchRefresh748.__layout748Owner=true;
+                  window.refreshLunchBreakUi=ownedLunchRefresh748;
+                }
+
                 window.refreshLayout747=function(){
+                  installRenderOwners748();
                   syncSettings748();
                   fitToday748();
                   balanceEdit748();
@@ -500,10 +581,13 @@ final class Layout747Ui {
                 };
 
                 /* Do not pre-render Week at startup: 7.47's early render raced native schedule loading. */
+                installRenderOwners748();
                 syncSettings748();
+                bindDayNav748();
                 fitToday748();
                 balanceEdit748();
-                requestAnimationFrame(()=>{fitToday748();balanceEdit748()});
+                finalProfile748();
+                requestAnimationFrame(()=>{installRenderOwners748();bindDayNav748();fitToday748();balanceEdit748();finalProfile748()});
               }catch(e){console.error('Layout748Ui',e)}
             })();
             """;
