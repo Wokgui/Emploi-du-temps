@@ -131,6 +131,9 @@ jobs:
                   height:+lr.height.toFixed(1)
                 };
                 if(summary)summary.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));
+                report._instantLanguage.closedAfterSecond=!langDetails.open;
+                if(summary)summary.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));
+                report._instantLanguage.reopenedAfterThird=langDetails.open;
               }
 
               const advanced=document.getElementById('advancedSettings85');
@@ -154,6 +157,10 @@ jobs:
                   stabilizing:advanced.classList.contains('edtAdvStabilizing735'),
                   vacationTitle:(document.getElementById('schoolTitle')?.textContent||'').trim()
                 };
+                if(summary)summary.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));
+                report._instantAdvanced.closedAfterSecond=!advanced.open;
+                if(summary)summary.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));
+                report._instantAdvanced.reopenedAfterThird=advanced.open;
               }
               const sheet0=document.getElementById('settingsSheet'),title0=document.getElementById('settingsTitle');
               const titleWord=title0&&title0.querySelector('.settingsText735');
@@ -336,9 +343,9 @@ jobs:
           if abs(lang)>1.0: raise SystemExit(f'word Réglages is not centered on Langue: sheet={center}px language={lang}px')
           if 'Réglages' not in str(report.get('_settingsGroupText','')): raise SystemExit(f'settings title invalid: {report.get("_settingsGroupText")}')
           il=report.get('_instantLanguage') or {}
-          if not il.get('open') or not il.get('catalog') or float(il.get('catalogWidth',0))<=1 or not il.get('gear') or float(il.get('height',0))<=72: raise SystemExit(f'language section is not final on the opening click: {il}')
+          if not il.get('open') or not il.get('catalog') or float(il.get('catalogWidth',0))<=1 or not il.get('gear') or float(il.get('height',0))<=72 or not il.get('closedAfterSecond') or not il.get('reopenedAfterThird'): raise SystemExit(f'language section is not immediately responsive/final: {il}')
           ia=report.get('_instantAdvanced') or {}
-          if not ia.get('open') or ia.get('display')=='none' or ia.get('visibility')=='hidden' or float(ia.get('height',0))<=1 or ia.get('overflow')=='hidden' or ia.get('stabilizing') or ia.get('vacationTitle')!='Vacances et jours sans cours': raise SystemExit(f'advanced settings is not final on the opening click: {ia}')
+          if not ia.get('open') or ia.get('display')=='none' or ia.get('visibility')=='hidden' or float(ia.get('height',0))<=1 or ia.get('overflow')=='hidden' or ia.get('stabilizing') or ia.get('vacationTitle')!='Vacances et jours sans cours' or not ia.get('closedAfterSecond') or not ia.get('reopenedAfterThird'): raise SystemExit(f'advanced settings is not immediately responsive/final: {ia}')
           if not report.get('_advancedStable'): raise SystemExit('advanced settings still has a transient first layout')
           ac=report.get('_advancedContent') or {}
           if ac.get('display')=='none' or ac.get('visibility')=='hidden' or float(ac.get('height',0))<=1: raise SystemExit(f'advanced settings final content is still hidden: {ac}')
