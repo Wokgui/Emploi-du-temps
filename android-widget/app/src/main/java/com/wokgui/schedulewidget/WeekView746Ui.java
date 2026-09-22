@@ -13,7 +13,7 @@ final class WeekView746Ui {
 
                 const style=document.createElement('style');
                 style.id='weekView746Style';
-                style.textContent=\`
+                style.textContent=`
                   html body #viewWeek .weekTop{
                     position:relative!important;
                     min-height:36px!important;
@@ -63,7 +63,7 @@ final class WeekView746Ui {
                     transition:none!important;
                     animation:none!important;
                   }
-                \`;
+                `;
                 document.head.appendChild(style);
 
                 let rendering746=false;
