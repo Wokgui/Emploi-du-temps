@@ -2713,7 +2713,7 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
   }
 
   function apply(){
-    const style=document.getElementById('edt725Style');if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    const style=document.getElementById('edt725Style');/* 7.41: stylesheet order is fixed at startup; never reorder it after a tap. */
     removeExtraLanguages();fitLanguageSelect();setupRangeLine();setupReminder();setupHolidaySpacing();
     setupSchoolCalendar();setupProfiles();ensureBaseDisplay();cleanVacationTitle();applyBaseVisibility();
   }
@@ -2807,7 +2807,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 
   function apply(){
     const style=document.getElementById('edt726Style');
-    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    /* 7.41: stylesheet order is fixed at startup; never reorder it after a tap. */
     flattenLanguages();fit();
   }
 
@@ -2907,7 +2907,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 
   function keepStyleLast727(){
     const style=document.getElementById('edt727Style');
-    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    /* 7.41: stylesheet order is fixed at startup; never reorder it after a tap. */
   }
 
   function openLanguagePanel727(){
@@ -3322,7 +3322,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     const sheet=document.getElementById('settingsSheet');
     const top=restoreScroll&&sheet?sheet.scrollTop:null;
     const style=document.getElementById('edt728Style');
-    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    /* 7.41: stylesheet order is fixed at startup; never reorder it after a tap. */
     stabilizeReminder728();
     stabilizeSchool728();
     fitSelects728();
@@ -3331,10 +3331,8 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   }
   function settleSettings728(){
     const sheet=document.getElementById('settingsSheet'),top=sheet?sheet.scrollTop:0;
-    [0,40,120,260].forEach(delay=>setTimeout(()=>{
-      stableSettings728(false);
-      if(sheet)sheet.scrollTop=top;
-    },delay));
+    stableSettings728(false);
+    if(sheet)sheet.scrollTop=top;
   }
 
   function ensureDayNav728(){
@@ -3530,8 +3528,6 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   ensureDayNav728();ensureWeekNav728();
   if(document.getElementById('viewToday')?.classList.contains('active'))renderToday728();
   else if(document.getElementById('viewWeek')?.classList.contains('active'))renderWeek728();
-  setTimeout(()=>stableSettings728(false),120);
-  setTimeout(()=>stableSettings728(false),500);
 })();
 </script>
 
@@ -3719,7 +3715,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 
   function keepStyleLast730(){
     const style=document.getElementById('edt730Style');
-    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    /* 7.41: stylesheet order is fixed at startup; never reorder it after a tap. */
   }
 
   function apply730(){
@@ -3870,7 +3866,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 
   function keep731Last(){
     const style=document.getElementById('edt731Style');
-    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    /* 7.41: stylesheet order is fixed at startup; never reorder it after a tap. */
   }
 
   function syncBaseGap731(){
@@ -3978,7 +3974,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 
   function applyExact732(){
     const style=document.getElementById('edt732Style');
-    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    /* 7.41: stylesheet order is fixed at startup; never reorder it after a tap. */
 
     /* Référence réelle : Type de semaine -> tuiles = 16 px. */
     const currentLabel=document.querySelector('#settingsWeekCycle678 .weekCurrentLabel678');
@@ -4157,7 +4153,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 
   function apply733(){
     const style=document.getElementById('edt733Style');
-    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    /* 7.41: stylesheet order is fixed at startup; never reorder it after a tap. */
     centerSettingsTitle733();
     balanceResetFooter733();
     verifySettingsCenter733();
@@ -4463,7 +4459,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 
   function apply734(){
     const style=document.getElementById('edt734Style');
-    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    /* 7.41: stylesheet order is fixed at startup; never reorder it after a tap. */
     const version=document.getElementById('appVersionInfo');if(version&&version.textContent!=='Version 7.34')version.textContent='Version 7.34';
     ensureDates734();ensureProfile734();centerSettings734();halveHolidayGap734();centerBreakNames734();
   }
@@ -4707,7 +4703,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 
   function apply735(){
     const style=document.getElementById('edt735Style');
-    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    /* 7.41: stylesheet order is fixed at startup; never reorder it after a tap. */
     ensureVersion735();neutralizeAccordionFlash735();showAdvancedContent735();profile735();settingsTitle735();compactHoliday735();ensureSlots735();
   }
   window.refresh735=apply735;
@@ -5063,7 +5059,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 
   function apply736(){
     const style=document.getElementById('edt736Style');
-    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    /* 7.41: stylesheet order is fixed at startup; never reorder it after a tap. */
     ensureVersion736();
     centerReminder736();
     fitSelectors736();
@@ -5432,7 +5428,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
         if(text)group.insertBefore(gear,text);else group.prepend(gear);
       }
     }
-    if(gear&&(!gear.querySelector('svg')||gear.innerHTML!==gearSvg))gear.innerHTML=gearSvg;
+    if(gear&&!gear.querySelector('svg'))gear.innerHTML=gearSvg;
   }
 
   function stabilizeProfile740(){
@@ -5463,8 +5459,6 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   }
 
   function final740(){
-    const style=document.getElementById('edt740Style');
-    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
     ensureGear740();stabilizeProfile740();wrapMidi740();
     document.documentElement.dataset.edt740Attached='1';
     const v=document.getElementById('appVersionInfo');if(v&&v.textContent!=='Version 7.40')v.textContent='Version 7.40';
