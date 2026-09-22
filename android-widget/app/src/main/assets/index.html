@@ -4671,6 +4671,18 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     place();requestAnimationFrame(place);
   }
 
+  function showAdvancedContent735(){
+    const adv=document.getElementById('advancedSettings85');
+    const content=document.getElementById('advancedContent85');
+    if(!adv||!content||!adv.open)return;
+    content.style.setProperty('display','block','important');
+    content.style.setProperty('height','auto','important');
+    content.style.setProperty('min-height','0','important');
+    content.style.setProperty('overflow','visible','important');
+    content.style.setProperty('padding','0','important');
+    content.style.setProperty('margin','0','important');
+  }
+
   function compactHoliday735(){
     const status=document.getElementById('schoolAutoStatus725');
     const label=document.getElementById('advHolidayLabel');
@@ -4715,7 +4727,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
       ['refreshAdvancedFeatures','refreshWorkflow85','refreshSettingsLayout','refreshStability78','refresh734'].forEach(n=>{
         try{if(typeof window[n]==='function')window[n]()}catch(e){}
       });
-      profile735();compactHoliday735();ensureSlots735();settingsTitle735();ensureVersion735();
+      showAdvancedContent735();profile735();compactHoliday735();ensureSlots735();settingsTitle735();ensureVersion735();
     };
     refresh();
     setTimeout(()=>{
@@ -4738,7 +4750,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   function apply735(){
     const style=document.getElementById('edt735Style');
     if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
-    ensureVersion735();neutralizeAccordionFlash735();profile735();settingsTitle735();compactHoliday735();ensureSlots735();
+    ensureVersion735();neutralizeAccordionFlash735();showAdvancedContent735();profile735();settingsTitle735();compactHoliday735();ensureSlots735();
   }
   window.refresh735=apply735;
 
@@ -4759,6 +4771,23 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   const sheet=document.getElementById('settingsSheet');
   if(sheet)new MutationObserver(()=>requestAnimationFrame(apply735))
     .observe(sheet,{childList:true,subtree:true,attributes:true,attributeFilter:['class','open']});
+
+  const advContent735=document.getElementById('advancedContent85');
+  if(advContent735&&!advContent735.__edt735StyleObs){
+    advContent735.__edt735StyleObs=true;
+    let fixing=false;
+    new MutationObserver(()=>{
+      const adv=document.getElementById('advancedSettings85');
+      if(!adv?.open||fixing)return;
+      const hidden=advContent735.style.getPropertyValue('display')==='none' ||
+                   advContent735.style.getPropertyValue('height')==='0px' ||
+                   advContent735.style.getPropertyValue('overflow')==='hidden';
+      if(hidden){
+        fixing=true;
+        requestAnimationFrame(()=>{showAdvancedContent735();fixing=false});
+      }
+    }).observe(advContent735,{attributes:true,attributeFilter:['style']});
+  }
 
   document.addEventListener('click',e=>{
     if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))setTimeout(apply735,0);
