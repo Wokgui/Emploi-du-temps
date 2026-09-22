@@ -74,7 +74,72 @@ final class Feedback665Ui {
                 }
 
                 let preparing=false,settingsPrepared=false;
-                function refresh(){installDensitySlider();applyWeekVisibilityBeforePaint()}
+                function freezeAdvancedGeometry741(){
+                  const adv=document.getElementById('advancedSettings85');
+                  if(!adv)return;
+
+                  const reminderCheck=document.getElementById('advReminders');
+                  const reminderSelect=document.getElementById('advReminderMinutes');
+                  const reminderLabel=reminderCheck&&reminderCheck.closest('label');
+                  if(reminderLabel&&reminderSelect){
+                    reminderLabel.classList.add('reminderLine725','reminderLine741');
+                    if(reminderSelect.parentElement!==reminderLabel)reminderLabel.appendChild(reminderSelect);
+                    reminderLabel.style.setProperty('display','flex','important');
+                    reminderLabel.style.setProperty('align-items','center','important');
+                    reminderLabel.style.setProperty('justify-content','center','important');
+                    reminderLabel.style.setProperty('gap','10px','important');
+                    reminderLabel.style.setProperty('width','max-content','important');
+                    reminderLabel.style.setProperty('max-width','100%','important');
+                    reminderLabel.style.setProperty('min-height','36px','important');
+                    reminderLabel.style.setProperty('margin','4px auto 0','important');
+                    reminderSelect.style.setProperty('flex','0 0 auto','important');
+                    reminderSelect.style.setProperty('width','82px','important');
+                    reminderSelect.style.setProperty('min-width','82px','important');
+                    reminderSelect.style.setProperty('max-width','82px','important');
+                  }
+
+                  const enabled=document.getElementById('schoolEnabled');
+                  const zone=document.getElementById('schoolZone');
+                  const block=document.getElementById('schoolCalendarBlock');
+                  if(enabled&&zone&&block){
+                    const enableRow=enabled.closest('.schoolEnable')||enabled.parentElement;
+                    let row=document.getElementById('schoolAutoRow739');
+                    if(!row){
+                      row=document.createElement('div');
+                      row.id='schoolAutoRow739';row.className='schoolAutoRow739';
+                      const grid=block.querySelector('.schoolGrid');
+                      if(grid)block.insertBefore(row,grid);else block.appendChild(row);
+                    }
+                    if(enableRow&&enableRow.parentElement!==row)row.appendChild(enableRow);
+                    if(zone.parentElement!==row)row.appendChild(zone);
+                    row.classList.add('schoolAutoRow741');
+                    row.style.setProperty('display','flex','important');
+                    row.style.setProperty('align-items','center','important');
+                    row.style.setProperty('justify-content','center','important');
+                    row.style.setProperty('gap','10px','important');
+                    row.style.setProperty('width','max-content','important');
+                    row.style.setProperty('max-width','100%','important');
+                    row.style.setProperty('min-height','34px','important');
+                    row.style.setProperty('margin','0 auto 8px','important');
+                    if(enableRow){
+                      enableRow.style.setProperty('display','flex','important');
+                      enableRow.style.setProperty('align-items','center','important');
+                      enableRow.style.setProperty('justify-content','center','important');
+                      enableRow.style.setProperty('gap','6px','important');
+                      enableRow.style.setProperty('width','auto','important');
+                      enableRow.style.setProperty('min-width','0','important');
+                      enableRow.style.setProperty('flex','0 0 auto','important');
+                      enableRow.style.setProperty('margin','0','important');
+                    }
+                    zone.style.setProperty('flex','0 0 104px','important');
+                    zone.style.setProperty('width','104px','important');
+                    zone.style.setProperty('min-width','104px','important');
+                    zone.style.setProperty('max-width','104px','important');
+                    zone.style.setProperty('margin','0','important');
+                  }
+                  document.documentElement.dataset.edtAdvancedFrozen741='1';
+                }
+                function refresh(){installDensitySlider();applyWeekVisibilityBeforePaint();freezeAdvancedGeometry741()}
                 function prepareSettings(){
                   if(preparing)return;if(settingsPrepared){refresh();return}preparing=true;
                   try{
@@ -82,6 +147,7 @@ final class Feedback665Ui {
                     if(window.refreshAdvancedFeatures)window.refreshAdvancedFeatures();
                     if(window.refreshSettingsLayout)window.refreshSettingsLayout();
                     if(window.refreshFeedback664)window.refreshFeedback664();
+                    freezeAdvancedGeometry741();
                     refresh();
                     settingsPrepared=true;
                   }finally{preparing=false}
@@ -100,6 +166,10 @@ final class Feedback665Ui {
                   wrapped.__feedback665=true;window[name]=wrapped;try{eval(name+'=wrapped')}catch(e){}
                 });
                 prepareSettings();
+                document.addEventListener('pointerdown',event=>{
+                  const summary=event.target&&event.target.closest?event.target.closest('#advancedSettings85>summary'):null;
+                  if(summary)freezeAdvancedGeometry741();
+                },true);
               }catch(e){console.error('Feedback665Ui',e)}
             })();
             """;
