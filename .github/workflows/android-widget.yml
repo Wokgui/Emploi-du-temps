@@ -265,7 +265,7 @@ jobs:
               const baseTitle=document.getElementById('widgetBaseTitle706');
               const baseControls=document.getElementById('appBaseControls725');
               const interruptionTitle=document.querySelector('#breakDisplaySetting .feedback663Title');
-              const interruptionTable=document.getElementById('feedback663Visibility') || document.querySelector('#breakDisplaySetting .breakVisibility70,#breakDisplaySetting table,#breakDisplaySetting .breakDisplayGrid');
+              const interruptionTable=document.querySelector('#feedback663Visibility .feedback663Matrix') || document.querySelector('#breakDisplaySetting .breakVisibility70,#breakDisplaySetting table,#breakDisplaySetting .breakDisplayGrid');
               if(baseTitle&&baseControls&&interruptionTitle&&interruptionTable){
                 report._displayGaps={
                   base:+(baseControls.getBoundingClientRect().top-baseTitle.getBoundingClientRect().bottom).toFixed(2),
