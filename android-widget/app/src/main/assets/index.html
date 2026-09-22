@@ -5119,7 +5119,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 
   function ensureVersion737(){
     const v=document.getElementById('appVersionInfo');
-    if(v&&v.textContent!=='Version 7.42')v.textContent='Version 7.42';
+    if(v&&v.textContent!=='Version 7.43')v.textContent='Version 7.43';
   }
 
   function refreshKnown737(){
@@ -5460,7 +5460,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   function final740(){
     ensureGear740();stabilizeProfile740();wrapMidi740();
     document.documentElement.dataset.edt740Attached='1';
-    const v=document.getElementById('appVersionInfo');if(v&&v.textContent!=='Version 7.42')v.textContent='Version 7.42';
+    const v=document.getElementById('appVersionInfo');if(v&&v.textContent!=='Version 7.43')v.textContent='Version 7.43';
   }
 
   /* The native runtime creates Settings after this HTML script.
@@ -5501,6 +5501,67 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   document.addEventListener('change',e=>{
     if(e.target&&e.target.id==='advProfileSelect')queueMicrotask(stabilizeProfile740);
   },true);
+})();
+</script>
+
+
+<style id="edt743Style">
+  /* 7.43 — rythme vertical du bloc Vacances. */
+  html body #settingsSheet #advancedSettings85 #schoolAutoRow739{
+    margin:0!important;
+  }
+  html body #settingsSheet #advancedSettings85 #schoolCalendarBlock .schoolGrid.edtUnusedSchoolGrid743{
+    display:none!important;
+    width:0!important;height:0!important;min-height:0!important;
+    margin:0!important;padding:0!important;overflow:hidden!important;
+  }
+  html body #settingsSheet #advancedSettings85 #schoolCalendarBlock #schoolHint{
+    display:block!important;
+    margin:6px 0 0!important;
+    padding:0!important;
+    min-height:0!important;
+    text-align:center!important;
+  }
+  html body #settingsSheet #advancedSettings85 #schoolAutoFetch725{
+    display:block!important;
+    margin:14px auto 0!important;
+  }
+  html body #settingsSheet #advancedSettings85 #schoolAutoStatus725{
+    display:block!important;
+    margin:12px 0 0!important;
+    min-height:0!important;
+  }
+  html body #settingsSheet #advancedSettings85 #schoolCalendarSetting{
+    margin-bottom:0!important;
+    padding-bottom:0!important;
+  }
+  html body #settingsSheet #advancedSettings85 .holidayFlat725{
+    margin-top:-2px!important;
+    padding-top:0!important;
+  }
+</style>
+
+<script>
+(function(){
+  if(window.__edt743)return;window.__edt743=true;
+  function apply743(){
+    const grid=document.querySelector('#schoolCalendarBlock .schoolGrid');
+    const zone=document.getElementById('schoolZone');
+    if(grid){
+      const visible=[...grid.children].filter(el=>{
+        if(el===zone)return true;
+        const cs=getComputedStyle(el);
+        return cs.display!=='none'&&cs.visibility!=='hidden';
+      });
+      grid.classList.toggle('edtUnusedSchoolGrid743',!visible.length);
+    }
+    const v=document.getElementById('appVersionInfo');
+    if(v&&v.textContent!=='Version 7.43')v.textContent='Version 7.43';
+  }
+  apply743();
+  const sheet=document.getElementById('settingsSheet');
+  if(sheet)new MutationObserver(()=>queueMicrotask(apply743)).observe(sheet,{childList:true,subtree:true});
+  window.refresh743=apply743;
 })();
 </script>
 
