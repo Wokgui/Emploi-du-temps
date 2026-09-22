@@ -399,8 +399,8 @@ jobs:
                 const widgetFontTitle745=document.getElementById('widgetFontTitle');
                 const appFontBox=appFontTitle745?.closest('.settingBox');
                 const widgetFontBox=widgetFontTitle745?.closest('.settingBox');
-                const appFontRow745=appFontBox?.querySelector('.settingRow');
-                const widgetFontRow745=widgetFontBox?.querySelector('.settingRow');
+                const appFontRow745=document.getElementById('appFont')?.closest('.settingRow');
+                const widgetFontRow745=document.getElementById('widgetFont')?.closest('.settingRow');
                 const appFontCs=appFontBox&&getComputedStyle(appFontBox),widgetFontCs=widgetFontBox&&getComputedStyle(widgetFontBox);
                 const aftr745=appFontTitle745&&appFontTitle745.getBoundingClientRect(),afrr745=appFontRow745&&appFontRow745.getBoundingClientRect();
                 const wftr745=widgetFontTitle745&&widgetFontTitle745.getBoundingClientRect(),wfrr745=widgetFontRow745&&widgetFontRow745.getBoundingClientRect();
