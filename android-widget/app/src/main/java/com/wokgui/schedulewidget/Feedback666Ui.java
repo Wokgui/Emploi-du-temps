@@ -17,7 +17,7 @@ final class Feedback666Ui {
                 }
                 function dayOffTitle(){
                   const l=language();
-                  return l==='de'?'Unterrichtsfreie Tage':(l==='en'?'Days off':'Jours sans cours');
+                  return l==='de'?'Ferien und unterrichtsfreie Tage':(l==='en'?'Holidays and days off':'Vacances et jours sans cours');
                 }
                 function arrangeDaysOff(){
                   const title=document.getElementById('advCalendarTitle');
