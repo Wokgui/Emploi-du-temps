@@ -5191,8 +5191,16 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   }
 
   function prepareLanguage737(){
-    const button=document.getElementById('languageDownloadBtn81');
-    const panel=document.getElementById('languagePackPanel81');
+    /* Construire le bloc complet alors qu'il est encore hors écran/fermé. */
+    try{if(typeof window.refreshStability81==='function')window.refreshStability81()}catch(e){}
+    try{if(typeof window.refreshLocalization75==='function')window.refreshLocalization75()}catch(e){}
+    let button=document.getElementById('languageDownloadBtn81');
+    let panel=document.getElementById('languagePackPanel81');
+    if(!button){
+      try{if(typeof window.refreshStability81==='function')window.refreshStability81()}catch(e){}
+      button=document.getElementById('languageDownloadBtn81');
+      panel=document.getElementById('languagePackPanel81');
+    }
     if(button){
       button.style.setProperty('display','none','important');
       if((!panel||!panel.classList.contains('show')||!document.getElementById('languageCatalog81'))&&!button.dataset.instant737){
