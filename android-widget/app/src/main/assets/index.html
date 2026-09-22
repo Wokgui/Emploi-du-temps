@@ -5242,6 +5242,11 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
       if(enableRow&&enableRow.parentElement!==row)row.appendChild(enableRow);
       if(zone.parentElement!==row)row.appendChild(zone);
     }
+    const holiday=document.getElementById('advHolidayLabel')?.closest('.settingBox');
+    if(holiday){
+      holiday.style.setProperty('margin-top','-30px','important');
+      holiday.style.setProperty('padding-top','0','important');
+    }
     const footer=document.getElementById('resetFooter692');
     if(footer){
       footer.style.setProperty('margin-top','14px','important');
