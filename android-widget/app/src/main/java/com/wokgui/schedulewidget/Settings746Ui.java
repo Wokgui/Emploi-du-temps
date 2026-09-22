@@ -57,7 +57,7 @@ final class Settings746Ui {
                     padding-top:0!important;
                   }
                   html body #settingsSheet #settingsDisplay692 #widgetDensity664 .feedback664DensityTitle{
-                    margin-top:10px!important;
+                    margin-top:22px!important;
                   }
 
                   /* Profile selector is centered as a whole under "Profils". */
@@ -300,6 +300,20 @@ final class Settings746Ui {
                   return shell;
                 }
 
+                function flattenAdvanced746(){
+                  const content=document.getElementById('advancedContent85');
+                  if(!content)return;
+                  const sections=[...content.children].filter(el=>{
+                    if(!el||el.nodeType!==1||el.matches('script,style'))return false;
+                    if(el.classList.contains('edtDuplicateDaysOff696'))return false;
+                    return true;
+                  });
+                  sections.forEach((el,index)=>{
+                    el.classList.add('edtAdvFlat724');
+                    el.classList.toggle('edtAdvSep724',index>0);
+                  });
+                }
+
                 function stabilizeSelects746(){
                   const zone=document.getElementById('schoolZone');
                   if(zone){
@@ -319,33 +333,74 @@ final class Settings746Ui {
 
                 function stabilizeProfile746(){
                   const select=document.getElementById('advProfileSelect');if(!select)return;
-                  const row=select.closest('.advRow');
-                  if(row)row.classList.add('profileRow746');
-                  const shell=select.parentElement;
-                  if(shell){
+                  const row=select.closest('.advRow');if(!row)return;
+                  row.classList.add('profileRow746');
+                  row.classList.remove('profileShell745');
+                  row.querySelectorAll(':scope > .profileVisual745,:scope > .profileArrow745').forEach(el=>el.remove());
+
+                  let shell=select.parentElement;
+                  if(shell===row||!shell?.classList?.contains('profileShell734')){
+                    const dedicated=document.createElement('span');
+                    dedicated.className='profileShell734 profileShell745';
+                    select.parentNode.insertBefore(dedicated,select);
+                    dedicated.appendChild(select);
+                    shell=dedicated;
+                  }else{
                     shell.classList.add('profileShell745');
-                    imp746(shell,'width','180px');
-                    imp746(shell,'min-width','180px');
-                    imp746(shell,'max-width','min(180px,calc(100vw - 84px))');
-                    imp746(shell,'height','36px');
-                    imp746(shell,'margin','0px auto');
                   }
-                  let value=shell&&shell.querySelector('.profileVisual745');
-                  if(!value&&shell){
+
+                  [...shell.querySelectorAll(':scope > .profileVisual745')].slice(1).forEach(el=>el.remove());
+                  [...shell.querySelectorAll(':scope > .profileArrow745')].slice(1).forEach(el=>el.remove());
+
+                  imp746(shell,'position','relative');
+                  imp746(shell,'display','block');
+                  imp746(shell,'width','180px');
+                  imp746(shell,'min-width','180px');
+                  imp746(shell,'max-width','min(180px,calc(100vw - 84px))');
+                  imp746(shell,'height','36px');
+                  imp746(shell,'margin','0px auto');
+
+                  imp746(select,'position','absolute');
+                  imp746(select,'inset','0px');
+                  imp746(select,'display','block');
+                  imp746(select,'box-sizing','border-box');
+                  imp746(select,'width','100%');
+                  imp746(select,'min-width','100%');
+                  imp746(select,'max-width','100%');
+                  imp746(select,'height','36px');
+                  imp746(select,'min-height','36px');
+                  imp746(select,'margin','0px');
+                  imp746(select,'padding','0px 32px');
+                  imp746(select,'-webkit-appearance','none');
+                  imp746(select,'appearance','none');
+                  imp746(select,'background-image','none');
+                  imp746(select,'color','transparent');
+                  imp746(select,'-webkit-text-fill-color','transparent');
+                  imp746(select,'text-shadow','none');
+                  imp746(select,'text-align','center');
+                  imp746(select,'text-align-last','center');
+
+                  let value=shell.querySelector(':scope > .profileVisual745');
+                  if(!value){
                     value=document.createElement('span');
                     value.className='profileVisual745';
                     shell.appendChild(value);
                   }
-                  if(value){
-                    const text=selectedText746(select);
-                    if(value.textContent!==text)value.textContent=text;
-                    imp746(value,'inset','0px 32px');
-                    imp746(value,'display','flex');
-                    imp746(value,'align-items','center');
-                    imp746(value,'justify-content','center');
-                    imp746(value,'text-align','center');
-                    imp746(value,'text-overflow','clip');
-                    imp746(value,'line-height','36px');
+                  const text=selectedText746(select);
+                  if(value.textContent!==text)value.textContent=text;
+                  imp746(value,'inset','0px 32px');
+                  imp746(value,'display','flex');
+                  imp746(value,'align-items','center');
+                  imp746(value,'justify-content','center');
+                  imp746(value,'text-align','center');
+                  imp746(value,'text-overflow','clip');
+                  imp746(value,'line-height','36px');
+
+                  let arrow=shell.querySelector(':scope > .profileArrow745');
+                  if(!arrow){
+                    arrow=document.createElement('span');
+                    arrow.className='profileArrow745';
+                    shell.appendChild(arrow);
                   }
                 }
 
@@ -429,6 +484,7 @@ final class Settings746Ui {
                   try{
                     spacing746();
                     equalizeTextSpacing746();
+                    flattenAdvanced746();
                     stabilizeSelects746();
                     stabilizeProfile746();
                     ensureRange746();
