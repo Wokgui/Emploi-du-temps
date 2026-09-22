@@ -1,8 +1,8 @@
-name: Clean Android 7.43 vacation-spacing build
+name: Clean Android 7.44 week-calendar-lunch build
 
 on:
   push:
-    branches: [fix/743-vacation-spacing]
+    branches: [fix/744-week-calendar-lunch]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 
@@ -90,6 +90,12 @@ jobs:
           html=Path('app/src/main/assets/index.html').read_text(encoding='utf-8')
           runtime=Path('build/visual/runtime.js').read_text(encoding='utf-8').replace('</script>','<\\/script>')
           stub=r'''<script>
+          window.__testAdvanced={
+            singleWeek:false,cycleLength:2,
+            schoolVacationEnabled:true,schoolVacationYear:'2026-2027',schoolVacationZone:'B',
+            schoolVacationAutoCount:13,schoolVacationAutoUpdatedAt:Date.now(),
+            showLunchToday:true,showLunchWeek:true,showBreaksToday:true,showBreaksWeek:true
+          };
           window.AndroidSchedule=new Proxy({}, {get(t,p){const n=String(p);return (...a)=>{
             if(n==='loadSchedule')return JSON.stringify({_version:2,_slotConfigV2:true,_slots:[
               {n:1,start:'08:00',end:'09:00'},{n:2,start:'09:00',end:'10:00'},{n:3,start:'10:00',end:'11:00'},
@@ -97,16 +103,13 @@ jobs:
               {n:7,start:'16:00',end:'17:00'},{n:8,start:'17:00',end:'18:00'},{n:9,start:'18:00',end:'19:00'}],
               _weeks:{A:{2:{courses:[{start:'10:00',end:'11:00',label:'Test A',room:'101',slot:3}]},3:{courses:[]},4:{courses:[]},5:{courses:[]},6:{courses:[]}},
                       B:{2:{courses:[{start:'10:00',end:'11:00',label:'Test B',room:'102',slot:3}]},3:{courses:[]},4:{courses:[]},5:{courses:[]},6:{courses:[]}}}});
-            if(n==='loadAdvancedSettings')return JSON.stringify({
-              singleWeek:false,cycleLength:2,
-              schoolVacationEnabled:true,schoolVacationYear:'2026-2027',schoolVacationZone:'B',
-              schoolVacationAutoCount:13,schoolVacationAutoUpdatedAt:Date.now()
-            });
+            if(n==='loadAdvancedSettings')return JSON.stringify(window.__testAdvanced);
+            if(n==='saveAdvancedSettings'){try{window.__testAdvanced=JSON.parse(a[0]||'{}')}catch(e){};return ''};
             if(n==='loadUiSettings')return JSON.stringify({language:'fr'});
             if(n==='listProfiles')return JSON.stringify({current:'main',profiles:[{id:'main',name:'Principal'}]});
             if(n==='loadAdvancedSetting')return '';
             if(n==='getCurrentWeek')return 'B';
-            if(n==='getAppVersionName')return '7.43';
+            if(n==='getAppVersionName')return '7.44';
             if(n==='loadHolidays'||n==='loadSchoolHolidays')return '[]';
             if(n.startsWith('load'))return '{}';
             if(n.startsWith('get')||n.startsWith('is'))return '';
@@ -129,6 +132,79 @@ jobs:
                 ['advancedSettings85','#languageExtraTitle85,.edtLanguagesTitle696']
               ];
               const report={};
+
+              /* 7.44 week calendar + lunch visibility checks. */
+              try{
+                const weekView=document.getElementById('viewWeek');
+                document.querySelectorAll('main.wrap>.view').forEach(v=>v.classList.toggle('active',v===weekView));
+                try{mode='week'}catch(e){}
+                window.__edt728WeekMonday=undefined;
+                if(typeof window.renderWeek==='function')window.renderWeek();
+                if(typeof window.refreshWeekAppearance658==='function')window.refreshWeekAppearance658();
+                if(typeof window.refreshWeekView744==='function')window.refreshWeekView744();
+
+                const weekName=document.getElementById('weekName744'),weekRange=document.getElementById('weekRange744');
+                const dayHeads=[...document.querySelectorAll('#weekGrid>.wh.day')];
+                const startRange=(weekRange?.textContent||'').trim();
+                const titleSize=weekName?parseFloat(getComputedStyle(weekName).fontSize):0;
+                const rangeSize=weekRange?parseFloat(getComputedStyle(weekRange).fontSize):0;
+                const dayDates=dayHeads.map(h=>(h.querySelector('.weekDayDate744')?.textContent||'').trim());
+                const next=document.getElementById('weekNext728'),prev=document.getElementById('weekPrev728');
+                if(next)next.click();const next1=(document.getElementById('weekRange744')?.textContent||'').trim();
+                if(next)next.click();const next2=(document.getElementById('weekRange744')?.textContent||'').trim();
+                if(prev)prev.click();if(prev)prev.click();const restored=(document.getElementById('weekRange744')?.textContent||'').trim();
+
+                window.__testAdvanced.showLunchWeek=true;
+                if(typeof window.renderWeek==='function')window.renderWeek();
+                if(typeof window.refreshWeekAppearance658==='function')window.refreshWeekAppearance658();
+                if(typeof window.refreshWeekView744==='function')window.refreshWeekView744();
+                const grid=document.getElementById('weekGrid');
+                const visibleLunchCells=[...grid.querySelectorAll('.wc.week658Lunch')];
+                const visibleLunchTime=grid.querySelector('.wh.timecol.week658LunchTime');
+                const visibleBgs=[visibleLunchTime,...visibleLunchCells].filter(Boolean).map(x=>getComputedStyle(x).backgroundColor);
+                const visibleLines=(grid.style.getPropertyValue('--week744-lunch-lines')||'').trim();
+
+                window.__testAdvanced.showLunchWeek=false;
+                if(typeof window.renderWeek==='function')window.renderWeek();
+                if(typeof window.refreshWeekAppearance658==='function')window.refreshWeekAppearance658();
+                if(typeof window.refreshWeekView744==='function')window.refreshWeekView744();
+                const rows=()=>{
+                  const heads=[...grid.querySelectorAll(':scope>.wh.day')],n=heads.length||5,out=[];
+                  for(const t of grid.querySelectorAll(':scope>.wh.timecol')){
+                    const vals=(t.textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[];if(vals.length<2)continue;
+                    const cells=[];let node=t.nextElementSibling;
+                    while(node&&cells.length<n){if(node.classList&&node.classList.contains('wc'))cells.push(node);node=node.nextElementSibling}
+                    if(cells.length===n)out.push({time:t,vals,cells});
+                  }
+                  return out;
+                };
+                const hiddenRows=rows(),noon=hiddenRows.find(r=>r.vals[0]==='12:00'&&r.vals[1]==='13:00');
+                const normal=hiddenRows.find(r=>r.vals[0]==='11:00'&&r.vals[1]==='12:00')||hiddenRows.find(r=>r!==noon);
+                const noonCellBgs=noon?noon.cells.map(x=>getComputedStyle(x).backgroundColor):[];
+                report._week744={
+                  attached:document.documentElement.dataset.edtWeek744||'',
+                  name:(weekName?.textContent||'').trim(),
+                  startRange,startRange,
+                  titleSize:+titleSize.toFixed(2),rangeSize:+rangeSize.toFixed(2),
+                  dayDates,
+                  next1,next2,restored,
+                  navPrev:!!prev,navNext:!!next,
+                  visibleLunchCount:visibleLunchCells.length,
+                  visibleBgs,
+                  visibleLines,
+                  hiddenClass:grid.classList.contains('week744NoLunch'),
+                  hiddenLines:(grid.style.getPropertyValue('--week744-lunch-lines')||'').trim(),
+                  hiddenNoonTimeBg:noon?getComputedStyle(noon.time).backgroundColor:'',
+                  normalTimeBg:normal?getComputedStyle(normal.time).backgroundColor:'',
+                  hiddenNoonCellBgs:noonCellBgs,
+                  hiddenLunchPainted:grid.querySelectorAll('.wc.week658Lunch').length
+                };
+                window.__testAdvanced.showLunchWeek=true;
+                if(typeof window.renderWeek==='function')window.renderWeek();
+                if(typeof window.refreshWeekAppearance658==='function')window.refreshWeekAppearance658();
+                if(typeof window.refreshWeekView744==='function')window.refreshWeekView744();
+              }catch(e){report._week744={error:String(e),stack:e.stack}}
+
               report._initialOpenAccordions=[...document.querySelectorAll('#settingsSheet details[open]')].map(x=>x.id);
               /* 7.40 functional/visual checks. */
               try{if(window.prewarmLanguage737)window.prewarmLanguage737()}catch(e){}
@@ -411,11 +487,23 @@ jobs:
           },4300);
           </script>'''
           Path('build/visual/harness-advanced.html').write_text(html.replace('</body>',advanced+'</body>'),encoding='utf-8')
+          week=r'''<script>
+          setTimeout(()=>{
+            const modal=document.getElementById('settingsModal');if(modal){modal.classList.remove('show','edtForceVisible695');modal.setAttribute('data-edt-open','false')}
+            const view=document.getElementById('viewWeek');document.querySelectorAll('main.wrap>.view').forEach(v=>v.classList.toggle('active',v===view));
+            try{mode='week'}catch(e){}
+            if(typeof window.renderWeek==='function')window.renderWeek();
+            if(typeof window.refreshWeekAppearance658==='function')window.refreshWeekAppearance658();
+            if(typeof window.refreshWeekView744==='function')window.refreshWeekView744();
+          },4300);
+          </script>'''
+          Path('build/visual/harness-week.html').write_text(html.replace('</body>',week+'</body>'),encoding='utf-8')
           PY
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
           "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=6000 --window-size=360,780 --force-device-scale-factor=2             --dump-dom "file://$PWD/build/visual/harness.html" > build/visual/dom.html
           "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=6000 --window-size=360,780 --force-device-scale-factor=2             --screenshot="$PWD/build/visual/settings.png" "file://$PWD/build/visual/harness.html"
           "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=7000 --window-size=360,780 --force-device-scale-factor=2             --screenshot="$PWD/build/visual/advanced.png" "file://$PWD/build/visual/harness-advanced.html"
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=7000 --window-size=360,780 --force-device-scale-factor=2             --screenshot="$PWD/build/visual/week.png" "file://$PWD/build/visual/harness-week.html"
           python3 - <<'PY'
           import re, html as h, json, pathlib
           dom=pathlib.Path('build/visual/dom.html').read_text(errors='ignore')
@@ -425,6 +513,21 @@ jobs:
           report=json.loads(raw)
           pathlib.Path('build/visual/report.json').write_text(json.dumps(report,indent=2,ensure_ascii=False))
           print(json.dumps(report,indent=2,ensure_ascii=False))
+          week=report.get('_week744') or {}
+          if week.get('error'): raise SystemExit(f'week 7.44 test error: {week}')
+          if week.get('attached')!='1' or not week.get('navPrev') or not week.get('navNext'): raise SystemExit(f'week 7.44 owner/navigation missing: {week}')
+          if not str(week.get('name','')).startswith('Semaine '): raise SystemExit(f'week title does not show Semaine X: {week}')
+          if abs(float(week.get('titleSize',0))-float(week.get('rangeSize',999)))>0.2: raise SystemExit(f'week range is not same font size as Semaine X: {week}')
+          dates=week.get('dayDates') or []
+          if len(dates)<5 or any(not __import__('re').fullmatch(r'\d{2}/\d{2}',str(x)) for x in dates): raise SystemExit(f'weekday dates are missing: {week}')
+          if not week.get('startRange') or week.get('next1') in ('',week.get('startRange')) or week.get('next2') in ('',week.get('next1'),week.get('startRange')) or week.get('restored')!=week.get('startRange'): raise SystemExit(f'week arrows are not freely navigating/restoring dates: {week}')
+          if int(week.get('visibleLunchCount',0))<5 or not week.get('visibleLines'): raise SystemExit(f'visible lunch band is incomplete: {week}')
+          vb=week.get('visibleBgs') or []
+          if len(set(vb))!=1: raise SystemExit(f'visible lunch band colour is not uniform: {week}')
+          if not week.get('hiddenClass') or week.get('hiddenLines') or int(week.get('hiddenLunchPainted',-1))!=0: raise SystemExit(f'hidden lunch still has lunch painting/lines: {week}')
+          if week.get('hiddenNoonTimeBg')!=week.get('normalTimeBg'): raise SystemExit(f'12:00 time cell remains specially coloured when lunch is hidden: {week}')
+          hb=week.get('hiddenNoonCellBgs') or []
+          if not hb or len(set(hb))!=1 or (vb and hb[0]==vb[0]): raise SystemExit(f'12:00 row remains lunch-coloured when hidden: {week}')
           center=float(report.get('_settingsWordCenterDelta',999))
           lang=float(report.get('_settingsVsLanguageDelta',999))
           if abs(lang)>1.0: raise SystemExit(f'word Réglages is not centered on Langue: sheet={center}px language={lang}px')
@@ -518,16 +621,17 @@ jobs:
             android-widget/build/visual/report.json
             android-widget/build/visual/settings.png
             android-widget/build/visual/advanced.png
+            android-widget/build/visual/week.png
             android-widget/build/visual/dom.html
           if-no-files-found: error
 
       - name: Verify package metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='743001' versionName='7.43'" /tmp/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.43-tested-debug.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='744001' versionName='7.44'" /tmp/badging.txt
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.44-tested-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: EDT-7.43-tested
-          path: android-widget/app/build/outputs/apk/debug/EDT-7.43-tested-debug.apk
+          name: EDT-7.44-tested
+          path: android-widget/app/build/outputs/apk/debug/EDT-7.44-tested-debug.apk
           if-no-files-found: error
