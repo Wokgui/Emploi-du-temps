@@ -2989,7 +2989,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   const sheet=document.getElementById('settingsSheet');
   if(sheet)new MutationObserver(schedule727).observe(sheet,{childList:true,subtree:true,characterData:true});
   document.addEventListener('click',e=>{
-    if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))setTimeout(schedule727,0);
+    if(e.target&&e.target.closest&&e.target.closest('#settingsBtn'))apply727();
   },true);
   document.addEventListener('change',e=>{
     if(e.target&&['advProfileSelect','languageSelect','schoolZone'].includes(e.target.id))setTimeout(schedule727,0);
@@ -4470,9 +4470,9 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 
   const sheet=document.getElementById('settingsSheet');
   if(sheet)new MutationObserver(schedule734).observe(sheet,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['open','class']});
-  document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='advancedSettings85')setTimeout(schedule734,0)},true);
+  document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='advancedSettings85')apply734()},true);
   document.addEventListener('click',e=>{
-    if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))setTimeout(schedule734,0);
+    if(e.target&&e.target.closest&&e.target.closest('#settingsBtn'))apply734();
   },true);
   document.addEventListener('change',e=>{
     if(e.target&&e.target.id==='advProfileSelect')setTimeout(schedule734,0);
@@ -4733,11 +4733,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   function finalizeAdvanced735(){
     const adv=document.getElementById('advancedSettings85');if(!adv)return;
     adv.classList.remove('edtAdvStabilizing735');
-    if(!adv.open)return;
-    ['refreshAdvancedFeatures','refreshWorkflow85','refreshSettingsLayout','refreshStability78','refresh734'].forEach(n=>{
-      try{if(typeof window[n]==='function')window[n]()}catch(e){}
-    });
-    showAdvancedContent735();profile735();compactHoliday735();ensureSlots735();settingsTitle735();ensureVersion735();
+    if(adv.open)showAdvancedContent735();
   }
 
   function neutralizeAccordionFlash735(){
@@ -4791,7 +4787,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   }
 
   document.addEventListener('click',e=>{
-    if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))setTimeout(apply735,0);
+    if(e.target&&e.target.closest&&e.target.closest('#settingsBtn'))apply735();
   },true);
   window.addEventListener('resize',()=>requestAnimationFrame(apply735));
 
@@ -5129,7 +5125,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     }
   },true);
   document.addEventListener('click',e=>{
-    if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))setTimeout(apply736,0);
+    if(e.target&&e.target.closest&&e.target.closest('#settingsBtn'))apply736();
   },true);
 
   const sheet=document.getElementById('settingsSheet');
@@ -5297,13 +5293,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     if(target.closest('#settingsBtn')){
       prepareHeader737();
       prepareLanguage737();
-      const adv=document.getElementById('advancedSettings85');
-      if(adv){
-        const wasOpen=adv.open;
-        if(!wasOpen)adv.open=true;
-        prepareAdvanced737();
-        if(!wasOpen)adv.open=false;
-      }
+      prepareAdvanced737();
     }
   },true);
 
@@ -5319,12 +5309,12 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 
   document.addEventListener('toggle',e=>{
     const el=e.target;
-    if(el?.id==='settingsLanguage698'&&el.open)prepareLanguage737();
-    if(el?.id==='advancedSettings85'&&el.open)prepareAdvanced737();
+    if(el?.id==='settingsLanguage698'||el?.id==='advancedSettings85')ensureVersion737();
   },true);
 
   prepareHeader737();
   prepareLanguage737();
+  prepareAdvanced737();
   finalise737();
 })();
 </script>
