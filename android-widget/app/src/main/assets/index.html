@@ -3870,15 +3870,11 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   }
 
   function syncBaseGap731(){
-    const baseTitle=document.getElementById('widgetBaseTitle706');
     const base=document.getElementById('appBaseControls725');
-    const breakTitle=document.querySelector('#breakDisplaySetting .feedback663Title');
-    const table=document.getElementById('feedback663Visibility') ||
-      document.querySelector('#breakDisplaySetting .breakVisibility70,#breakDisplaySetting table,#breakDisplaySetting .breakDisplayGrid');
-    if(!baseTitle||!base||!breakTitle||!table)return;
-
-    const ref=Math.max(0,Math.round(table.getBoundingClientRect().top-breakTitle.getBoundingClientRect().bottom));
-    base.style.setProperty('margin-top',ref+'px','important');
+    if(!base)return;
+    /* 7.42: same fixed title-to-controls rhythm as "Affichage des interruptions".
+       Do not measure a not-yet-laid-out table: that was why the gap occasionally collapsed. */
+    base.style.setProperty('margin-top','22px','important');
   }
 
   function ensureWeekVisible731(){
@@ -4377,6 +4373,9 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   html body #settingsSheet #settingsDisplay692 #widgetTopBarMode672,
   html body #settingsSheet #settingsDisplay692 #widgetBottomBarMode672{
     padding-top:2px!important;padding-bottom:0!important;
+  }
+  html body #settingsSheet #settingsDisplay692 #appBaseControls725{
+    margin-top:22px!important;
   }
 </style>
 
@@ -5120,7 +5119,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 
   function ensureVersion737(){
     const v=document.getElementById('appVersionInfo');
-    if(v&&v.textContent!=='Version 7.41')v.textContent='Version 7.41';
+    if(v&&v.textContent!=='Version 7.42')v.textContent='Version 7.42';
   }
 
   function refreshKnown737(){
@@ -5408,7 +5407,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 (function(){
   if(window.__edt740)return;window.__edt740=true;
   const accordionIds=['settingsLanguage698','settingsTypeWeek692','settingsText692','settingsColors692','settingsDisplay692','advancedSettings85'];
-  const gearSvg='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.05-.63.05-.94s-.01-.63-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.28 7.28 0 0 0-1.62-.94l-.36-2.52a.49.49 0 0 0-.49-.4h-3.8a.49.49 0 0 0-.49.4l-.36 2.52c-.58.24-1.12.55-1.62.94L5.24 5.3a.5.5 0 0 0-.61.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.62-.05.94s.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .61.22l2.39-.96c.5.39 1.04.7 1.62.94l.36 2.52c.04.24.24.4.49.4h3.8c.25 0 .45-.16.49-.4l.36-2.52c.58-.24 1.12-.55 1.62-.94l2.39.96a.5.5 0 0 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z"/></svg>';
+  const gearSvg='<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="gearMetal742f" x1="4" y1="3" x2="20" y2="21" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#a9b5c4"/><stop offset=".32" stop-color="#647286"/><stop offset="1" stop-color="#172131"/></linearGradient></defs><path fill="url(#gearMetal742f)" stroke="#1b2533" stroke-width=".45" d="M10.25 2.05h3.5l.5 2.2c.58.18 1.12.41 1.62.69l1.91-1.19 2.47 2.47-1.19 1.91c.28.5.51 1.04.69 1.62l2.2.5v3.5l-2.2.5a7.7 7.7 0 0 1-.69 1.62l1.19 1.91-2.47 2.47-1.91-1.19c-.5.28-1.04.51-1.62.69l-.5 2.2h-3.5l-.5-2.2a7.7 7.7 0 0 1-1.62-.69l-1.91 1.19-2.47-2.47 1.19-1.91a7.7 7.7 0 0 1-.69-1.62l-2.2-.5v-3.5l2.2-.5c.18-.58.41-1.12.69-1.62L3.75 6.22l2.47-2.47 1.91 1.19c.5-.28 1.04-.51 1.62-.69l.5-2.2Z"/><circle cx="12" cy="12" r="4.15" fill="#445164" stroke="#1b2533" stroke-width=".8"/><circle cx="12" cy="12" r="2.05" fill="#f7f9fc" stroke="#2c3949" stroke-width=".8"/></svg>';
 
   function collapseAtLaunch740(){
     accordionIds.forEach(id=>{
@@ -5461,7 +5460,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   function final740(){
     ensureGear740();stabilizeProfile740();wrapMidi740();
     document.documentElement.dataset.edt740Attached='1';
-    const v=document.getElementById('appVersionInfo');if(v&&v.textContent!=='Version 7.41')v.textContent='Version 7.41';
+    const v=document.getElementById('appVersionInfo');if(v&&v.textContent!=='Version 7.42')v.textContent='Version 7.42';
   }
 
   /* The native runtime creates Settings after this HTML script.
