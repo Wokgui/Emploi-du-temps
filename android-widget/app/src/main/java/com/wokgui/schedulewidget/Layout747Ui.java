@@ -247,7 +247,7 @@ final class Layout747Ui {
                   const listTop=Math.round(list.getBoundingClientRect().top);
                   const listAvail=Math.max(120,navTop-listTop-4);
                   const rows=[...list.querySelectorAll(':scope>.todayCourse')];
-                  if(!rows.length){list.style.removeProperty('height');return}
+                  if(!rows.length){list.style.removeProperty('height');list.style.removeProperty('max-height');document.documentElement.dataset.edtToday747='empty';return}
                   const target=Math.max(34,Math.min(64,Math.floor((listAvail-2)/rows.length)));
                   view.style.setProperty('--today747-row-h',target+'px');
                   view.classList.toggle('todayTight747',target<49);
@@ -274,11 +274,13 @@ final class Layout747Ui {
                   const open=!!(modal&&modal.classList.contains('show'));
                   document.documentElement.classList.toggle('settingsPage747',open);
                   if(open){
-                    modal.style.setProperty('display','block','important');
-                    modal.style.setProperty('opacity','1','important');
-                    modal.style.setProperty('visibility','visible','important');
-                    modal.style.setProperty('pointer-events','auto','important');
+                    if(modal.getAttribute('data-edt-open')!=='true')modal.setAttribute('data-edt-open','true');
                   }else{
+                    if(modal.getAttribute('data-edt-open')==='true')modal.setAttribute('data-edt-open','false');
+                    modal.style.removeProperty('display');
+                    modal.style.removeProperty('opacity');
+                    modal.style.removeProperty('visibility');
+                    modal.style.removeProperty('pointer-events');
                     document.documentElement.style.removeProperty('overflow');
                   }
                   fitToday747();
