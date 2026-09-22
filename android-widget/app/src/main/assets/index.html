@@ -1328,18 +1328,10 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
   function fixAdvancedBottom(){
     const a=document.getElementById('advancedSettings85'),c=document.getElementById('advancedContent85');
     if(!a||!c)return;
-    if(!a.open){
-      c.style.setProperty('display','none','important');
-      c.style.setProperty('padding','0','important');
-      c.style.setProperty('margin','0','important');
-      c.style.setProperty('height','0','important');
-      c.style.setProperty('min-height','0','important');
-      c.style.setProperty('overflow','hidden','important');
-    }else{
-      /* 7.07: remove the inline !important values written while closed.
-         They were surviving the native <details> toggle and made the panel look permanently closed. */
-      ['display','padding','margin','height','min-height','overflow'].forEach(p=>c.style.removeProperty(p));
-    }
+    /* 7.38 : ne plus écrire d'état fermé dans le style inline.
+       Le <details> + la règle CSS :not([open]) masquent déjà le contenu.
+       Ainsi, dès que l'attribut open apparaît, le contenu final est visible dans la même frame. */
+    ['display','padding','margin','height','min-height','overflow','visibility','opacity','pointer-events'].forEach(p=>c.style.removeProperty(p));
   }
   let q=false; function apply(){q=false;applySeparators();fixAdvancedBottom()}
   function schedule(){if(q)return;q=true;requestAnimationFrame(apply)}
