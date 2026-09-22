@@ -4141,13 +4141,9 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   }
 
   function centerSettingsTitle733(){
-    const sheet=document.getElementById('settingsSheet');
-    const head=sheet&&sheet.querySelector('.settingsHead');
-    const title=document.getElementById('settingsTitle');
-    if(!sheet||!head||!title)return;
-    const sr=sheet.getBoundingClientRect(),hr=head.getBoundingClientRect();
-    const target=((sr.left+sr.right)/2)-hr.left;
-    title.style.setProperty('left',target.toFixed(2)+'px','important');
+    const title=document.getElementById('settingsTitle');if(!title)return;
+    title.style.setProperty('left','50%','important');
+    title.style.setProperty('transform','translate(-50%,-50%)','important');
   }
 
   function verifySettingsCenter733(){
@@ -4364,6 +4360,14 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   }
   html body #settingsSheet #advancedSettings85 #schoolAutoFetch725{
     grid-column:auto!important;margin:0 auto!important;
+  }
+  html body #settingsSheet #advancedContent85>.holidayFlat725{
+    margin-top:-30px!important;
+    padding-top:0!important;
+  }
+  html body #settingsSheet #resetFooter692{
+    margin-top:14px!important;
+    padding-top:0!important;
   }
   html body #settingsSheet .midiDays692 .w658Day input[type=time]{
     -webkit-appearance:none!important;appearance:none!important;
