@@ -178,6 +178,11 @@ jobs:
                 report._holidayGap=+(holidayRow.getBoundingClientRect().top-status.getBoundingClientRect().bottom).toFixed(1);
               }
               report._advancedStable=advanced?!advanced.classList.contains('edtAdvStabilizing735'):false;
+              const advContent=document.getElementById('advancedContent85');
+              if(advContent){
+                const ar=advContent.getBoundingClientRect(),acs=getComputedStyle(advContent);
+                report._advancedContent={display:acs.display,visibility:acs.visibility,height:+ar.height.toFixed(1),overflow:acs.overflow};
+              }
               report._summaryEffects=[...document.querySelectorAll('#settingsSheet summary')].map(s=>{
                 const cs=getComputedStyle(s);return {transition:cs.transitionDuration,animation:cs.animationName,opacity:cs.opacity}
               });
@@ -261,6 +266,8 @@ jobs:
           if abs(lang)>1.0: raise SystemExit(f'word Réglages is not centered on Langue: sheet={center}px language={lang}px')
           if 'Réglages' not in str(report.get('_settingsGroupText','')): raise SystemExit(f'settings title invalid: {report.get("_settingsGroupText")}')
           if not report.get('_advancedStable'): raise SystemExit('advanced settings still has a transient first layout')
+          ac=report.get('_advancedContent') or {}
+          if ac.get('display')=='none' or ac.get('visibility')=='hidden' or float(ac.get('height',0))<=1: raise SystemExit(f'advanced settings final content is still hidden: {ac}')
           effects=report.get('_summaryEffects') or []
           if not effects or any(x.get('transition') not in ('0s','0ms') or x.get('animation') not in ('none','') or x.get('opacity')!='1' for x in effects): raise SystemExit(f'accordion title press effects still active: {effects}')
           holiday=float(report.get('_holidayGap',999))
