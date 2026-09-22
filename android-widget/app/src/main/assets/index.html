@@ -4483,5 +4483,269 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 })();
 </script>
 
+
+
+<style id="edt735Style">
+  /* 7.35 — stabilité des accordéons, centrages et restauration des horaires. */
+
+  /* Aucun flash / effet de pression sur les titres d'accordéon. */
+  html body #settingsSheet summary,
+  html body #settingsSheet summary *,
+  html body #settingsSheet summary:active,
+  html body #settingsSheet summary:focus,
+  html body #settingsSheet summary.press85,
+  html body #settingsSheet summary.press85 *{
+    transition:none!important;
+    animation:none!important;
+    transform:none!important;
+    opacity:1!important;
+    filter:none!important;
+    background-color:transparent!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
+
+  /* Pendant la mise en place finale de Réglages avancés, masquer l'ancien état. */
+  html body #settingsSheet #advancedSettings85.edtAdvStabilizing735 > :not(summary){
+    visibility:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+  }
+
+  /* Principal : supprimer la flèche ajoutée en 7.34. */
+  html body #settingsSheet #advancedSettings85 .profileArrow734{display:none!important}
+  html body #settingsSheet #advancedSettings85 .profileShell734{
+    position:relative!important;
+  }
+  html body #settingsSheet #advancedSettings85 .profileShell734 #advProfileSelect{
+    -webkit-appearance:auto!important;
+    appearance:auto!important;
+    background-image:none!important;
+    color:transparent!important;
+    -webkit-text-fill-color:transparent!important;
+    text-shadow:none!important;
+    padding-left:16px!important;
+    padding-right:30px!important;
+  }
+  html body #settingsSheet #advancedSettings85 .profileShell734 #advProfileSelect option{
+    color:#283244!important;
+    -webkit-text-fill-color:#283244!important;
+  }
+  html body #settingsSheet #advancedSettings85 .profileValue735{
+    position:absolute!important;
+    inset:0!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding:0 30px!important;
+    pointer-events:none!important;
+    color:#283244!important;
+    font:inherit!important;
+    font-weight:800!important;
+    line-height:1!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  /* Le MOT Réglages est centré ; la roue est placée à sa gauche sans entrer dans le calcul. */
+  html body #settingsSheet #settingsTitle::before{content:none!important;display:none!important}
+  html body #settingsSheet .settingsHead #settingsTitle{
+    position:absolute!important;
+    top:50%!important;
+    transform:translateY(-50%)!important;
+    width:max-content!important;
+    max-width:calc(100% - 96px)!important;
+    margin:0!important;
+    padding:0!important;
+    text-align:center!important;
+  }
+  html body #settingsSheet .settingsTitleGroup735{
+    position:relative!important;
+    display:block!important;
+    width:max-content!important;
+    max-width:100%!important;
+    white-space:nowrap!important;
+  }
+  html body #settingsSheet .settingsText735{
+    display:block!important;
+    width:max-content!important;
+    max-width:100%!important;
+    text-align:center!important;
+  }
+  html body #settingsSheet .settingsGear735{
+    position:absolute!important;
+    right:calc(100% + 7px)!important;
+    top:50%!important;
+    transform:translateY(-50%)!important;
+    pointer-events:none!important;
+  }
+
+  /* Horaires : le conteneur ne doit jamais être masqué quand l'accordéon est ouvert. */
+  html body #settingsSheet #settingsTypeWeek692[open] #slotSettings{
+    display:block!important;
+    visibility:visible!important;
+    opacity:1!important;
+    min-height:1px!important;
+  }
+
+  html body #appVersionInfo:after{content:none!important;display:none!important}
+</style>
+
+<script>
+(function(){
+  if(window.__edt735)return;window.__edt735=true;
+
+  function ensureVersion735(){
+    const v=document.getElementById('appVersionInfo');
+    if(v&&v.textContent!=='Version 7.35')v.textContent='Version 7.35';
+  }
+
+  function profile735(){
+    const select=document.getElementById('advProfileSelect');if(!select)return;
+    const shell=select.parentElement?.classList.contains('profileShell734')?select.parentElement:null;
+    if(!shell)return;
+    const extra=shell.querySelector('.profileArrow734');if(extra)extra.remove();
+    let value=shell.querySelector('.profileValue735');
+    if(!value){value=document.createElement('span');value.className='profileValue735';shell.appendChild(value)}
+    const update=()=>{value.textContent=select.selectedOptions?.[0]?.textContent||select.value||''};
+    update();
+    if(!select.__edt735Profile){
+      select.__edt735Profile=true;
+      select.addEventListener('change',()=>requestAnimationFrame(update));
+      select.addEventListener('input',()=>requestAnimationFrame(update));
+    }
+    try{
+      const cs=getComputedStyle(select),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+      ctx.font=cs.font||cs.fontSize+' '+cs.fontFamily;
+      let max=0;[...select.options].forEach(o=>max=Math.max(max,ctx.measureText(String(o.textContent||'')).width));
+      shell.style.setProperty('width',Math.max(132,Math.min(window.innerWidth-72,Math.ceil(max+78)))+'px','important');
+    }catch(e){}
+  }
+
+  function settingsTitle735(){
+    const title=document.getElementById('settingsTitle');
+    const sheet=document.getElementById('settingsSheet');
+    const head=sheet&&sheet.querySelector('.settingsHead');
+    if(!title||!sheet||!head)return;
+
+    const previous=title.querySelector('.settingsText734')?.textContent ||
+                   title.querySelector('.settingsText735')?.textContent ||
+                   String(title.textContent||'').replace(/^⚙\s*/,'').trim() || 'Réglages';
+    title.replaceChildren();
+    const group=document.createElement('span');group.className='settingsTitleGroup735';
+    const text=document.createElement('span');text.className='settingsText735';text.textContent=previous;
+    const gear=document.createElement('span');gear.className='settingsGear735';gear.textContent='⚙';
+    group.append(text,gear);title.appendChild(group);
+
+    const place=()=>{
+      const sr=sheet.getBoundingClientRect(),hr=head.getBoundingClientRect(),tr=text.getBoundingClientRect();
+      const left=((sr.left+sr.right)/2)-hr.left-(tr.width/2);
+      title.style.setProperty('left',left.toFixed(2)+'px','important');
+      const tr2=text.getBoundingClientRect();
+      document.documentElement.dataset.edt735SettingsWordDelta=
+        ((((tr2.left+tr2.right)/2)-((sr.left+sr.right)/2))).toFixed(2);
+    };
+    place();requestAnimationFrame(place);
+  }
+
+  function compactHoliday735(){
+    const status=document.getElementById('schoolAutoStatus725');
+    const label=document.getElementById('advHolidayLabel');
+    const row=label?.closest('.advRow')||label?.parentElement;
+    const box=label?.closest('.settingBox');
+    if(!status||!row||!box)return;
+    const sr=status.getBoundingClientRect(),rr=row.getBoundingClientRect();
+    if(!sr.height||!rr.height)return;
+    const wanted=6;
+    const current=rr.top-sr.bottom;
+    if(Math.abs(current-wanted)>.75){
+      const mt=parseFloat(getComputedStyle(box).marginTop)||0;
+      box.style.setProperty('margin-top',(mt-(current-wanted)).toFixed(1)+'px','important');
+    }
+    requestAnimationFrame(()=>{
+      const s=status.getBoundingClientRect(),r=row.getBoundingClientRect();
+      document.documentElement.dataset.edt735HolidayGap=(r.top-s.bottom).toFixed(1);
+    });
+  }
+
+  function ensureSlots735(){
+    try{
+      const box=document.getElementById('slotSettings');if(!box)return;
+      if(typeof slots!=='undefined'&&Array.isArray(slots)&&slots.length===0&&typeof DEFAULT_SLOTS!=='undefined'){
+        slots=JSON.parse(JSON.stringify(DEFAULT_SLOTS));slotConfigV2=true;
+        try{if(typeof save==='function')save({render:false})}catch(e){}
+      }
+      const expected=typeof slots!=='undefined'&&Array.isArray(slots)?slots.length:0;
+      const actual=box.querySelectorAll(':scope > .slotRow').length;
+      if(expected>0&&actual!==expected&&typeof renderSlots==='function')renderSlots();
+      document.documentElement.dataset.edt735SlotRows=String(box.querySelectorAll(':scope > .slotRow').length);
+    }catch(e){}
+  }
+
+  let advToken=0;
+  function finalizeAdvanced735(){
+    const adv=document.getElementById('advancedSettings85');if(!adv)return;
+    if(!adv.open){adv.classList.remove('edtAdvStabilizing735');return}
+    const token=++advToken;
+    adv.classList.add('edtAdvStabilizing735');
+    const refresh=()=>{
+      ['refreshAdvancedFeatures','refreshWorkflow85','refreshSettingsLayout','refreshStability78','refresh734'].forEach(n=>{
+        try{if(typeof window[n]==='function')window[n]()}catch(e){}
+      });
+      profile735();compactHoliday735();ensureSlots735();settingsTitle735();ensureVersion735();
+    };
+    refresh();
+    setTimeout(()=>{
+      if(token!==advToken||!adv.open)return;
+      refresh();
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        if(token===advToken&&adv.open)adv.classList.remove('edtAdvStabilizing735');
+      }));
+    },70);
+  }
+
+  function neutralizeAccordionFlash735(){
+    document.querySelectorAll('#settingsSheet summary').forEach(s=>{
+      s.classList.remove('press85');
+      s.style.setProperty('transition','none','important');
+      s.style.setProperty('animation','none','important');
+    });
+  }
+
+  function apply735(){
+    const style=document.getElementById('edt735Style');
+    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    ensureVersion735();neutralizeAccordionFlash735();profile735();settingsTitle735();compactHoliday735();ensureSlots735();
+  }
+  window.refresh735=apply735;
+
+  document.addEventListener('pointerdown',e=>{
+    const summary=e.target&&e.target.closest?e.target.closest('#settingsSheet summary'):null;
+    if(summary)summary.classList.remove('press85');
+    if(summary&&summary.parentElement?.id==='advancedSettings85'&&!summary.parentElement.open){
+      summary.parentElement.classList.add('edtAdvStabilizing735');
+    }
+  },true);
+
+  document.addEventListener('toggle',e=>{
+    const el=e.target;if(!el)return;
+    if(el.id==='advancedSettings85')finalizeAdvanced735();
+    if(el.id==='settingsTypeWeek692'&&el.open)setTimeout(ensureSlots735,0);
+  },true);
+
+  const sheet=document.getElementById('settingsSheet');
+  if(sheet)new MutationObserver(()=>requestAnimationFrame(apply735))
+    .observe(sheet,{childList:true,subtree:true,attributes:true,attributeFilter:['class','open']});
+
+  document.addEventListener('click',e=>{
+    if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))setTimeout(apply735,0);
+  },true);
+  window.addEventListener('resize',()=>requestAnimationFrame(apply735));
+
+  apply735();setTimeout(apply735,120);setTimeout(apply735,500);
+})();
+</script>
+
 </body>
 </html>
