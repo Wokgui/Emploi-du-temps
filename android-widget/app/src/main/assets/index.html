@@ -3493,6 +3493,9 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     try{if(window.refreshWeekAppearance658)window.refreshWeekAppearance658()}catch(e){}
   }
 
+  /* Stable calendar-capable renderers: later layers may wrap/rebind the public names. */
+  window.renderTodayCalendar728=renderToday728;
+  window.renderWeekCalendar728=renderWeek728;
   window.renderToday=renderToday728;try{renderToday=renderToday728}catch(e){}
   window.renderWeek=renderWeek728;try{renderWeek=renderWeek728}catch(e){}
 
