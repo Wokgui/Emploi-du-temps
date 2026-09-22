@@ -597,7 +597,7 @@ final class Layout747Ui {
                 balanceEdit748();
                 finalProfile748();
                 requestAnimationFrame(()=>{installRenderOwners748();bindDayNav748();fitToday748();balanceEdit748();finalProfile748()});
-              }catch(e){console.error('Layout748Ui',e)}
+              }catch(e){try{document.documentElement.dataset.edtLayout748Error=String(e);document.documentElement.dataset.edtLayout748Stack=String(e&&e.stack||'')}catch(_){}console.error('Layout748Ui',e)}
             })();
             """;
     }
