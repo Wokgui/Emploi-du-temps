@@ -407,6 +407,8 @@ final class Layout747Ui {
                   if(arrow)arrow.style.setProperty('z-index','4','important');
                 }
 
+                window.__edtMovePinnedDay748=movePinnedDay748;
+
                 function fitToday748(){
                   const view=document.getElementById('viewToday');
                   const list=document.getElementById('todayList');
@@ -558,6 +560,8 @@ final class Layout747Ui {
                   try{renderWeek=renderWeek748}catch(e){}
                   bindDayNav748();
                 }
+
+                window.__edtInstallOwners748=installRenderOwners748;
 
                 const legacyLunchRefresh748=window.refreshLunchBreakUi;
                 if(typeof legacyLunchRefresh748==='function'&&!legacyLunchRefresh748.__layout748Owner){
