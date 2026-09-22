@@ -157,8 +157,15 @@ jobs:
               }
               const profile=document.getElementById('advProfileSelect');
               if(profile){
-                const ps=getComputedStyle(profile);
-                report._profile={paddingLeft:parseFloat(ps.paddingLeft)||0,paddingRight:parseFloat(ps.paddingRight)||0,arrow:!!profile.parentElement?.querySelector('.profileArrow734'),value:profile.options[profile.selectedIndex]?.textContent||''};
+                const overlay=profile.parentElement?.querySelector('.profileValue735');
+                const pr=profile.getBoundingClientRect(),or=overlay&&overlay.getBoundingClientRect();
+                report._profile={
+                  customArrow734:!!profile.parentElement?.querySelector('.profileArrow734'),
+                  overlay:!!overlay,
+                  value:profile.options[profile.selectedIndex]?.textContent||'',
+                  overlayText:overlay?.textContent||'',
+                  centerDelta:or?+(((or.left+or.right)/2)-((pr.left+pr.right)/2)).toFixed(2):999
+                };
               }
               const mode=document.getElementById('widgetTopBarMode672');
               if(mode)report._widgetColorLabel=mode.options[1]?.textContent||'';
