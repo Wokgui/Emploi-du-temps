@@ -216,7 +216,10 @@ jobs:
                 };
               }
               document.querySelectorAll('#settingsSheet details').forEach(d=>d.open=false);
-              const weeks=document.getElementById('settingsTypeWeek692');if(weeks)weeks.open=true;
+              const weeks=document.getElementById('settingsTypeWeek692');if(weeks){weeks.open=true;try{if(window.refresh735)window.refresh735()}catch(e){}}
+              const slotBoxFinal=document.getElementById('slotSettings');
+              report._settingsSlotRows=slotBoxFinal?slotBoxFinal.querySelectorAll(':scope > .slotRow').length:0;
+              report._settingsSlotExpected=typeof slots!=='undefined'&&Array.isArray(slots)?slots.length:0;
               const pre=document.createElement('pre');pre.id='visual-report';pre.textContent=JSON.stringify(report);document.body.appendChild(pre);
               document.documentElement.dataset.visualDone='1';
               document.scrollingElement.scrollTop=Math.max(0,(weeks?.getBoundingClientRect().top||0)-100);
@@ -234,7 +237,7 @@ jobs:
             if(modal){modal.classList.add('show','edtForceVisible695');modal.setAttribute('data-edt-open','true');modal.style.display='block'}
             document.querySelectorAll('#settingsSheet details').forEach(d=>d.open=false);
             const adv=document.getElementById('advancedSettings85');
-            if(adv){adv.open=true;try{if(window.refresh734)window.refresh734()}catch(e){}}
+            if(adv){adv.open=true;try{if(window.refresh735)window.refresh735()}catch(e){}}
             setTimeout(()=>{if(sheet&&adv)sheet.scrollTop=Math.max(0,adv.offsetTop-35)},120);
           },4300);
           </script>'''
