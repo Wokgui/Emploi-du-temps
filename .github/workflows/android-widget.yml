@@ -1,8 +1,8 @@
-name: Clean Android 7.40 preserve-courses-settings-stability build
+name: Clean Android 7.41 first-frame-settings build
 
 on:
   push:
-    branches: [fix/740-settings-no-jump-preserve-courses]
+    branches: [fix/741-first-frame-settings]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 
@@ -90,7 +90,7 @@ jobs:
             if(n==='listProfiles')return JSON.stringify({current:'main',profiles:[{id:'main',name:'Principal'}]});
             if(n==='loadAdvancedSetting')return '';
             if(n==='getCurrentWeek')return 'B';
-            if(n==='getAppVersionName')return '7.40';
+            if(n==='getAppVersionName')return '7.41';
             if(n==='loadHolidays'||n==='loadSchoolHolidays')return '[]';
             if(n.startsWith('load'))return '{}';
             if(n.startsWith('get')||n.startsWith('is'))return '';
@@ -156,6 +156,26 @@ jobs:
                 const summary=advanced.querySelector(':scope>summary');
                 if(summary)summary.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));
                 const ar=ac&&ac.getBoundingClientRect(),acs=ac&&getComputedStyle(ac);
+                const geom741=()=>{
+                  const rem=document.querySelector('#advancedSettings85 .reminderLine725');
+                  const row=document.getElementById('schoolAutoRow739');
+                  const zone=document.getElementById('schoolZone');
+                  const rr=rem&&rem.getBoundingClientRect(),sr=row&&row.getBoundingClientRect(),zr=zone&&zone.getBoundingClientRect();
+                  return {
+                    reminderLeft:rr?+rr.left.toFixed(2):999,
+                    reminderWidth:rr?+rr.width.toFixed(2):999,
+                    schoolLeft:sr?+sr.left.toFixed(2):999,
+                    schoolWidth:sr?+sr.width.toFixed(2):999,
+                    zoneLeft:zr?+zr.left.toFixed(2):999,
+                    zoneWidth:zr?+zr.width.toFixed(2):999
+                  };
+                };
+                const firstGeom741=geom741();
+                try{if(window.refresh734)window.refresh734()}catch(e){}
+                try{if(window.refresh735)window.refresh735()}catch(e){}
+                try{if(window.refresh736)window.refresh736()}catch(e){}
+                try{if(window.refreshAdvancedFeatures)window.refreshAdvancedFeatures()}catch(e){}
+                const afterRefreshGeom741=geom741();
                 report._instantAdvanced={
                   open:advanced.open,
                   display:acs?.display||'',
@@ -166,7 +186,10 @@ jobs:
                   preHeight:preStyle.height||'',
                   preOverflow:preStyle.overflow||'',
                   stabilizing:advanced.classList.contains('edtAdvStabilizing735'),
-                  vacationTitle:(document.getElementById('schoolTitle')?.textContent||'').trim()
+                  vacationTitle:(document.getElementById('schoolTitle')?.textContent||'').trim(),
+                  frozen741:document.documentElement.dataset.edtAdvancedFrozen741||'',
+                  firstGeom741:firstGeom741,
+                  afterRefreshGeom741:afterRefreshGeom741
                 };
                 if(summary)summary.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));
                 report._instantAdvanced.closedAfterSecond=!advanced.open;
@@ -367,7 +390,11 @@ jobs:
           il=report.get('_instantLanguage') or {}
           if not il.get('open') or not il.get('catalog') or float(il.get('catalogWidth',0))<=1 or not il.get('gear') or (not il.get('gearSvg') and il.get('gearBackground') in ('none','')) or il.get('attached740')!='1' or float(il.get('height',0))<=72 or not il.get('closedAfterSecond') or not il.get('reopenedAfterThird'): raise SystemExit(f'language section is not immediately responsive/final: {il}')
           ia=report.get('_instantAdvanced') or {}
-          if ia.get('preDisplay')=='none' or ia.get('preHeight')=='0px' or ia.get('preOverflow')=='hidden' or not ia.get('open') or ia.get('display')=='none' or ia.get('visibility')=='hidden' or float(ia.get('height',0))<=1 or ia.get('overflow')=='hidden' or ia.get('stabilizing') or ia.get('vacationTitle')!='Vacances et jours sans cours' or not ia.get('closedAfterSecond') or not ia.get('reopenedAfterThird'): raise SystemExit(f'advanced settings is not pre-rendered/immediately responsive: {ia}')
+          if ia.get('preDisplay')=='none' or ia.get('preHeight')=='0px' or ia.get('preOverflow')=='hidden' or not ia.get('open') or ia.get('display')=='none' or ia.get('visibility')=='hidden' or float(ia.get('height',0))<=1 or ia.get('overflow')=='hidden' or ia.get('stabilizing') or ia.get('vacationTitle')!='Vacances et jours sans cours' or ia.get('frozen741')!='1' or not ia.get('closedAfterSecond') or not ia.get('reopenedAfterThird'): raise SystemExit(f'advanced settings is not pre-rendered/immediately responsive: {ia}')
+          g1=ia.get('firstGeom741') or {}
+          g2=ia.get('afterRefreshGeom741') or {}
+          for k in ('reminderLeft','reminderWidth','schoolLeft','schoolWidth','zoneLeft','zoneWidth'):
+              if abs(float(g1.get(k,999))-float(g2.get(k,-999)))>0.5: raise SystemExit(f'advanced layout still resizes after refresh: {k} {g1} -> {g2}')
           if not report.get('_advancedStable'): raise SystemExit('advanced settings still has a transient first layout')
           ac=report.get('_advancedContent') or {}
           if ac.get('display')=='none' or ac.get('visibility')=='hidden' or float(ac.get('height',0))<=1: raise SystemExit(f'advanced settings final content is still hidden: {ac}')
@@ -442,10 +469,10 @@ jobs:
       - name: Verify package metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='740001' versionName='7.40'" /tmp/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.40-tested-debug.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='741001' versionName='7.41'" /tmp/badging.txt
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.41-tested-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: EDT-7.40-tested
-          path: android-widget/app/build/outputs/apk/debug/EDT-7.40-tested-debug.apk
+          name: EDT-7.41-tested
+          path: android-widget/app/build/outputs/apk/debug/EDT-7.41-tested-debug.apk
           if-no-files-found: error
