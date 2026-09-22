@@ -4613,12 +4613,25 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     select.style.setProperty('-webkit-text-fill-color','transparent','important');
     let value=shell.querySelector('.profileValue735');
     if(!value){value=document.createElement('span');value.className='profileValue735';shell.appendChild(value)}
-    const update=()=>{value.textContent=select.selectedOptions?.[0]?.textContent||select.value||''};
-    update();
+    const update=()=>{
+      value.textContent=select.selectedOptions?.[0]?.textContent||select.value||'';
+      const sr=shell.getBoundingClientRect(),pr=select.getBoundingClientRect();
+      if(sr.width&&pr.width){
+        value.style.setProperty('left',(pr.left-sr.left).toFixed(2)+'px','important');
+        value.style.setProperty('right','auto','important');
+        value.style.setProperty('width',pr.width.toFixed(2)+'px','important');
+      }
+    };
+    update();requestAnimationFrame(update);
     if(!select.__edt735Profile){
       select.__edt735Profile=true;
       select.addEventListener('change',()=>requestAnimationFrame(update));
       select.addEventListener('input',()=>requestAnimationFrame(update));
+      let fixing=false;
+      new MutationObserver(()=>{
+        if(fixing)return;fixing=true;
+        requestAnimationFrame(()=>{update();fixing=false});
+      }).observe(select,{attributes:true,attributeFilter:['style']});
     }
     try{
       const cs=getComputedStyle(select),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
