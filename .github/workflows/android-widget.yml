@@ -1,8 +1,8 @@
-name: Clean Android 7.39 settings-stability-polish build
+name: Clean Android 7.40 preserve-courses-settings-stability build
 
 on:
   push:
-    branches: [fix/739-settings-stability-polish]
+    branches: [fix/740-settings-no-jump-preserve-courses]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 
@@ -90,7 +90,7 @@ jobs:
             if(n==='listProfiles')return JSON.stringify({current:'main',profiles:[{id:'main',name:'Principal'}]});
             if(n==='loadAdvancedSetting')return '';
             if(n==='getCurrentWeek')return 'B';
-            if(n==='getAppVersionName')return '7.39';
+            if(n==='getAppVersionName')return '7.40';
             if(n==='loadHolidays'||n==='loadSchoolHolidays')return '[]';
             if(n.startsWith('load'))return '{}';
             if(n.startsWith('get')||n.startsWith('is'))return '';
@@ -113,7 +113,8 @@ jobs:
                 ['advancedSettings85','#languageExtraTitle85,.edtLanguagesTitle696']
               ];
               const report={};
-              /* 7.39 functional/visual checks. */
+              report._initialOpenAccordions=[...document.querySelectorAll('#settingsSheet details[open]')].map(x=>x.id);
+              /* 7.40 functional/visual checks. */
               try{if(window.prewarmLanguage737)window.prewarmLanguage737()}catch(e){}
               try{if(window.prewarmAdvanced737)window.prewarmAdvanced737()}catch(e){}
               const langDetails=document.getElementById('settingsLanguage698');
@@ -123,12 +124,14 @@ jobs:
                 if(summary)summary.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));
                 const catalog=document.getElementById('languageCatalog81');
                 const gear=document.querySelector('#settingsTitle .settingsGear735,#settingsTitle .settingsGear734');
+                const gearSvg=!!(gear&&gear.querySelector('svg'));
                 const lr=langDetails.getBoundingClientRect();
                 report._instantLanguage={
                   open:langDetails.open,
                   catalog:!!catalog,
                   catalogWidth:catalog?+catalog.getBoundingClientRect().width.toFixed(1):0,
                   gear:!!gear,
+                  gearSvg:gearSvg,
                   height:+lr.height.toFixed(1)
                 };
                 if(summary)summary.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));
@@ -237,7 +240,15 @@ jobs:
               const midiTime=document.querySelector('#settingsDisplay692 .midiDays692 input[type=time]');
               if(midiTime){
                 const ms=getComputedStyle(midiTime);
-                report._midiTime={paddingLeft:+(parseFloat(ms.paddingLeft)||0).toFixed(1),paddingRight:+(parseFloat(ms.paddingRight)||0).toFixed(1),textAlign:ms.textAlign};
+                const shell=midiTime.closest('.timeShell740'),value=shell&&shell.querySelector('.timeValue740');
+                const vr=value&&value.getBoundingClientRect(),sr=shell&&shell.getBoundingClientRect();
+                report._midiTime={
+                  paddingLeft:+(parseFloat(ms.paddingLeft)||0).toFixed(1),
+                  paddingRight:+(parseFloat(ms.paddingRight)||0).toFixed(1),
+                  textAlign:ms.textAlign,
+                  overlay:!!value,
+                  centerDelta:(vr&&sr)?+((((vr.left+vr.right)/2)-((sr.left+sr.right)/2)).toFixed(2)):999
+                };
               }
 
               const range=document.querySelector('#advancedSettings85 .rangeDates725');
@@ -347,8 +358,10 @@ jobs:
           lang=float(report.get('_settingsVsLanguageDelta',999))
           if abs(lang)>1.0: raise SystemExit(f'word Réglages is not centered on Langue: sheet={center}px language={lang}px')
           if 'Réglages' not in str(report.get('_settingsGroupText','')): raise SystemExit(f'settings title invalid: {report.get("_settingsGroupText")}')
+          initial=report.get('_initialOpenAccordions') or []
+          if initial: raise SystemExit(f'settings accordions must all start collapsed: {initial}')
           il=report.get('_instantLanguage') or {}
-          if not il.get('open') or not il.get('catalog') or float(il.get('catalogWidth',0))<=1 or not il.get('gear') or float(il.get('height',0))<=72 or not il.get('closedAfterSecond') or not il.get('reopenedAfterThird'): raise SystemExit(f'language section is not immediately responsive/final: {il}')
+          if not il.get('open') or not il.get('catalog') or float(il.get('catalogWidth',0))<=1 or not il.get('gear') or not il.get('gearSvg') or float(il.get('height',0))<=72 or not il.get('closedAfterSecond') or not il.get('reopenedAfterThird'): raise SystemExit(f'language section is not immediately responsive/final: {il}')
           ia=report.get('_instantAdvanced') or {}
           if ia.get('preDisplay')=='none' or ia.get('preHeight')=='0px' or ia.get('preOverflow')=='hidden' or not ia.get('open') or ia.get('display')=='none' or ia.get('visibility')=='hidden' or float(ia.get('height',0))<=1 or ia.get('overflow')=='hidden' or ia.get('stabilizing') or ia.get('vacationTitle')!='Vacances et jours sans cours' or not ia.get('closedAfterSecond') or not ia.get('reopenedAfterThird'): raise SystemExit(f'advanced settings is not pre-rendered/immediately responsive: {ia}')
           if not report.get('_advancedStable'): raise SystemExit('advanced settings still has a transient first layout')
@@ -378,7 +391,7 @@ jobs:
           centered_select('widget bottom mode',report.get('_widgetBottomSelect') or {})
           if abs(float(report.get('_reminderCenterDelta',999)))>1.0: raise SystemExit(f'reminder group is not centered: delta={report.get("_reminderCenterDelta")} width={report.get("_reminderWidth")}')
           midi=report.get('_midiTime') or {}
-          if abs(float(midi.get('paddingLeft',999))-float(midi.get('paddingRight',0)))>0.5 or midi.get('textAlign')!='center': raise SystemExit(f'lunch time field is not independently centered: {midi}')
+          if abs(float(midi.get('paddingLeft',999))-float(midi.get('paddingRight',0)))>0.5 or midi.get('textAlign')!='center' or not midi.get('overlay') or abs(float(midi.get('centerDelta',999)))>0.5: raise SystemExit(f'lunch time field is not independently centered: {midi}')
           rf=report.get('_rangeFit') or {}
           if float(rf.get('rightOverflow',999))>0.5 or float(rf.get('leftOverflow',999))>0.5: raise SystemExit(f'day-off date row overflows horizontally: {rf}')
           slot=report.get('_slotDelete') or {}
@@ -386,7 +399,7 @@ jobs:
           if slot.get('slotLength') != slot.get('after'): raise SystemExit(f'slot array and rendered rows differ after deletion: {slot}')
           if slot.get('uniqueTimes') != slot.get('totalTimes'): raise SystemExit(f'slot delete produced duplicated time rows: {slot}')
           if slot.get('weekHasRemoved'): raise SystemExit(f'deleted slot still appears in week view: {slot}')
-          if slot.get('courseStillExists'): raise SystemExit(f'course from deleted slot still exists: {slot}')
+          if not slot.get('courseStillExists'): raise SystemExit(f'course from deleted slot was incorrectly deleted: {slot}')
           h=float(report.get('_rangeDateHeight',999))
           if h>28.5: raise SystemExit(f'date fields are not compact enough: height={h}px')
           if report.get('_rangeDateBackground') not in ('rgb(255, 255, 255)','rgba(255, 255, 255, 1)'): raise SystemExit(f'date fields are not white: {report.get("_rangeDateBackground")}')
@@ -423,10 +436,10 @@ jobs:
       - name: Verify package metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='739001' versionName='7.39'" /tmp/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.39-tested-debug.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='740001' versionName='7.40'" /tmp/badging.txt
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.40-tested-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: EDT-7.39-tested
-          path: android-widget/app/build/outputs/apk/debug/EDT-7.39-tested-debug.apk
+          name: EDT-7.40-tested
+          path: android-widget/app/build/outputs/apk/debug/EDT-7.40-tested-debug.apk
           if-no-files-found: error
