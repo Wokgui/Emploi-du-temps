@@ -1,8 +1,8 @@
-name: Clean Android 7.35 settings-stability-slots build
+name: Clean Android 7.36 centered-selects-layout build
 
 on:
   push:
-    branches: [fix/735-settings-stability-slots]
+    branches: [fix/736-centered-selects-layout]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 
@@ -90,7 +90,7 @@ jobs:
             if(n==='listProfiles')return JSON.stringify({current:'main',profiles:[{id:'main',name:'Principal'}]});
             if(n==='loadAdvancedSetting')return '';
             if(n==='getCurrentWeek')return 'B';
-            if(n==='getAppVersionName')return '7.35';
+            if(n==='getAppVersionName')return '7.36';
             if(n==='loadHolidays'||n==='loadSchoolHolidays')return '[]';
             if(n.startsWith('load'))return '{}';
             if(n.startsWith('get')||n.startsWith('is'))return '';
@@ -113,7 +113,7 @@ jobs:
                 ['advancedSettings85','#languageExtraTitle85,.edtLanguagesTitle696']
               ];
               const report={};
-              /* 7.35 functional/visual checks. */
+              /* 7.36 functional/visual checks. */
               const advanced=document.getElementById('advancedSettings85');
               if(advanced){advanced.open=true;try{if(window.refresh735)window.refresh735()}catch(e){}}
               const sheet0=document.getElementById('settingsSheet'),title0=document.getElementById('settingsTitle');
@@ -316,10 +316,10 @@ jobs:
       - name: Verify package metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='735001' versionName='7.35'" /tmp/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.35-tested-debug.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='736001' versionName='7.36'" /tmp/badging.txt
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.36-tested-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: EDT-7.35-tested
-          path: android-widget/app/build/outputs/apk/debug/EDT-7.35-tested-debug.apk
+          name: EDT-7.36-tested
+          path: android-widget/app/build/outputs/apk/debug/EDT-7.36-tested-debug.apk
           if-no-files-found: error
