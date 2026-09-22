@@ -79,7 +79,7 @@ jobs:
           runtime=Path('build/visual/runtime.js').read_text(encoding='utf-8').replace('</script>','<\\/script>')
           stub=r'''<script>
           window.AndroidSchedule=new Proxy({}, {get(t,p){const n=String(p);return (...a)=>{
-            if(n==='loadSchedule')return JSON.stringify({_version:2,_slots:[
+            if(n==='loadSchedule')return JSON.stringify({_version:2,_slotConfigV2:true,_slots:[
               {n:1,start:'08:00',end:'09:00'},{n:2,start:'09:00',end:'10:00'},{n:3,start:'10:00',end:'11:00'},
               {n:4,start:'11:00',end:'12:00'},{n:5,start:'13:00',end:'14:00'},{n:6,start:'14:00',end:'15:00'},
               {n:7,start:'16:00',end:'17:00'},{n:8,start:'17:00',end:'18:00'},{n:9,start:'18:00',end:'19:00'}],
