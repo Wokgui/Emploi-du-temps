@@ -208,6 +208,12 @@ final class Settings745Ui {
                       setImp745(reminderSelect,'text-align-last','center');
                     }
                   }
+                  const advancedContent=document.getElementById('advancedContent85');
+                  if(advancedContent){
+                    setImp745(advancedContent,'box-sizing','border-box');
+                    setImp745(advancedContent,'padding-left','0px');
+                    setImp745(advancedContent,'padding-right','0px');
+                  }
                   const schoolSetting=document.getElementById('schoolCalendarSetting');
                   if(schoolSetting){
                     schoolSetting.classList.add('edtAdvFlat724','edtAdvSep724');
