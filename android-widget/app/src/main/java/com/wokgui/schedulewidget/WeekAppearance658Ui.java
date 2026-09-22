@@ -45,6 +45,7 @@ final class WeekAppearance658Ui {
                 }
                 function lunchLabel(){const value=visibleBreakLabel('lunch',tr('Midi','Lunch','Mittag'));return /^(pause de midi|lunch break|mittagspause)$/i.test(value)?tr('Midi','Lunch','Mittag'):value}
                 function namedGapLabel(){const defaultValue=tr('Trou','Free period','Freistunde'),value=visibleBreakLabel('gap',defaultValue);return value||defaultValue}
+                function showLunchInWeek(){try{return nativeRoot().showLunchWeek!==false}catch(e){return true}}
                 function persistNative(settings,root){
                   try{
                     root=root&&typeof root==='object'?root:nativeRoot();root.weekAppearance658=settings;
@@ -81,6 +82,9 @@ final class WeekAppearance658Ui {
                   grid.style.setProperty('--week658-free',settings.free);grid.style.setProperty('--week658-course',settings.course);grid.style.setProperty('--week658-lunch',settings.lunch);
                   const gapText=namedGapLabel();
                   data.rows.forEach(row=>{row.time.classList.remove('week658LunchTime','week658LunchTop','week658LunchBottom','week658LunchRowTop','week658LunchRowBottom');cleanInline(row.time);row.cells.forEach(cell=>{cleanCell(cell);if(courseCell(cell))cell.classList.add('week658Course');else{cell.classList.add('week658Free');if(gapCell(cell)){cell.classList.add('week658Gap');if(gapText){cell.classList.add('week662NamedGap');const label=document.createElement('span');label.className='week662GapLabel';label.textContent=gapText;cell.appendChild(label)}}}})});
+                  const lunchVisible=showLunchInWeek();
+                  grid.classList.toggle('week658LunchHidden',!lunchVisible);
+                  if(!lunchVisible)return;
                   data.heads.forEach((head,dayIndex)=>{
                     const day=dayKey(head,dayIndex),cfg=settings.days[day]||{enabled:true,start:720,end:780};if(cfg.enabled===false||courseOverlaps(day,cfg.start,cfg.end))return;
                     const band=data.rows.filter(row=>row.start<cfg.end&&row.end>cfg.start);if(!band.length)return;
