@@ -228,11 +228,27 @@ jobs:
           print(json.dumps(report,indent=2,ensure_ascii=False))
           center=float(report.get('_settingsCenterDelta',999))
           if abs(center)>1.0: raise SystemExit(f'settings title group not centered: delta={center}px')
+          if 'Réglages' not in str(report.get('_settingsGroupText','')): raise SystemExit(f'settings group text invalid: {report.get("_settingsGroupText")}')
           slot=report.get('_slotDelete') or {}
           if slot.get('after') != slot.get('before',0)-1: raise SystemExit(f'slot delete did not remove exactly one row: {slot}')
+          if slot.get('slotLength') != slot.get('after'): raise SystemExit(f'slot array and rendered rows differ after deletion: {slot}')
           if slot.get('uniqueTimes') != slot.get('totalTimes'): raise SystemExit(f'slot delete produced duplicated time rows: {slot}')
+          if slot.get('weekHasRemoved'): raise SystemExit(f'deleted slot still appears in week view: {slot}')
+          if slot.get('courseStillExists'): raise SystemExit(f'course from deleted slot still exists: {slot}')
           h=float(report.get('_rangeDateHeight',999))
-          if h>32.5: raise SystemExit(f'date fields are not compact enough: height={h}px')
+          if h>28.5: raise SystemExit(f'date fields are not compact enough: height={h}px')
+          if report.get('_rangeDateBackground') not in ('rgb(255, 255, 255)','rgba(255, 255, 255, 1)'): raise SystemExit(f'date fields are not white: {report.get("_rangeDateBackground")}')
+          pads=report.get('_rangeDatePadding') or [999,0]
+          if abs(float(pads[0])-float(pads[1]))>0.5 or not report.get('_dateArrow'): raise SystemExit(f'date content is not symmetrically centered: padding={pads}, arrow={report.get("_dateArrow")}')
+          prof=report.get('_profile') or {}
+          if not prof.get('arrow') or abs(float(prof.get('paddingLeft',999))-float(prof.get('paddingRight',0)))>0.5: raise SystemExit(f'profile select is not independently centered from arrow: {prof}')
+          if report.get('_widgetColorLabel')!='Couleur': raise SystemExit(f'widget color option label is wrong: {report.get("_widgetColorLabel")}')
+          break_names=report.get('_breakNames') or []
+          if not break_names or any(x.get('justify')!='center' or x.get('align')!='center' or x.get('textAlign')!='center' for x in break_names): raise SystemExit(f'break labels are not centered: {break_names}')
+          hg=report.get('_holidayGap') or {}
+          if float(hg.get('before',0))>0:
+              ratio=float(hg.get('after',999))/float(hg['before'])
+              if not 0.35<=ratio<=0.65: raise SystemExit(f'holiday gap was not reduced by about half: {hg}')
           required=['settingsLanguage698','settingsTypeWeek692','settingsText692','settingsColors692','settingsDisplay692']
           missing=[k for k in required if k not in report]
           if missing: raise SystemExit('missing visual sections: '+','.join(missing))
