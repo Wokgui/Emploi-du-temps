@@ -16,12 +16,13 @@ final class Settings745Ui {
                 style.textContent=`
                   /* Midi par jour : même respiration visuelle que les autres sous-sections. */
                   html body #settingsSheet .midiDays692>.w658Title{
-                    margin:0 0 14px!important;
+                    margin:0 0 21px!important;
                   }
 
                   /* Affichage du widget / Condensation du widget. */
                   html body #settingsSheet #widgetDensity664{
-                    margin-top:14px!important;
+                    margin-top:0!important;
+                    padding-top:14px!important;
                   }
 
                   /* Pas de petit séparateur entre les deux tailles de texte. */
@@ -167,6 +168,51 @@ final class Settings745Ui {
                   const l=lang745();return l==='de'?de:(l==='en'?en:fr);
                 }
 
+                function stabilizeAdvancedRows745(){
+                  const reminder=document.querySelector('#advancedSettings85 .reminderLine725');
+                  if(reminder){
+                    reminder.style.setProperty('display','flex','important');
+                    reminder.style.setProperty('align-items','center','important');
+                    reminder.style.setProperty('justify-content','center','important');
+                    reminder.style.setProperty('gap','10px','important');
+                    reminder.style.setProperty('width','max-content','important');
+                    reminder.style.setProperty('max-width','100%','important');
+                    reminder.style.setProperty('min-height','36px','important');
+                    reminder.style.setProperty('margin','4px auto 0','important');
+                  }
+                  const zone=document.getElementById('schoolZone');
+                  const enabled=document.getElementById('schoolEnabled');
+                  const row=document.getElementById('schoolAutoRow739');
+                  const enableRow=enabled&&(enabled.closest('.schoolEnable')||enabled.parentElement);
+                  if(row){
+                    row.style.setProperty('display','flex','important');
+                    row.style.setProperty('align-items','center','important');
+                    row.style.setProperty('justify-content','center','important');
+                    row.style.setProperty('gap','10px','important');
+                    row.style.setProperty('width','max-content','important');
+                    row.style.setProperty('max-width','100%','important');
+                    row.style.setProperty('min-height','34px','important');
+                    row.style.setProperty('margin','0 auto 8px','important');
+                  }
+                  if(enableRow){
+                    enableRow.style.setProperty('display','flex','important');
+                    enableRow.style.setProperty('align-items','center','important');
+                    enableRow.style.setProperty('justify-content','center','important');
+                    enableRow.style.setProperty('gap','6px','important');
+                    enableRow.style.setProperty('width','auto','important');
+                    enableRow.style.setProperty('min-width','0','important');
+                    enableRow.style.setProperty('flex','0 0 auto','important');
+                    enableRow.style.setProperty('margin','0','important');
+                  }
+                  if(zone){
+                    zone.style.setProperty('flex','0 0 104px','important');
+                    zone.style.setProperty('width','104px','important');
+                    zone.style.setProperty('min-width','104px','important');
+                    zone.style.setProperty('max-width','104px','important');
+                    zone.style.setProperty('margin','0','important');
+                  }
+                }
+
                 function markTextBoxes745(){
                   const app=document.getElementById('appFontTitle')?.closest('.settingBox');
                   const widget=document.getElementById('widgetFontTitle')?.closest('.settingBox');
@@ -268,6 +314,7 @@ final class Settings745Ui {
                 }
 
                 function finalGeometry745(){
+                  stabilizeAdvancedRows745();
                   markTextBoxes745();
                   ensureRangeLabels745();
                   syncProfile745();
@@ -289,6 +336,20 @@ final class Settings745Ui {
                 }
                 window.prepareAdvanced745=prepareAdvanced745;
                 window.refreshSettings745=function(){prepareAdvanced745();finalGeometry745()};
+
+                /* Any legacy refresh must end in the same final geometry before paint. */
+                ['refresh734','refresh735','refresh736','refreshAdvancedFeatures','refreshFeedback664','refreshFeedback665','refresh743'].forEach(name=>{
+                  const old=window[name];
+                  if(typeof old!=='function'||old.__settings745)return;
+                  const wrapped=function(){
+                    const result=old.apply(this,arguments);
+                    finalGeometry745();
+                    return result;
+                  };
+                  wrapped.__settings745=true;
+                  window[name]=wrapped;
+                  try{eval(name+'=wrapped')}catch(e){}
+                });
 
                 /* Prepare while still hidden, before the native <details> changes state. */
                 document.addEventListener('pointerdown',event=>{
@@ -330,7 +391,7 @@ final class Settings745Ui {
                   observer.observe(sheet,{childList:true,subtree:true});
                 }
 
-                prepareAdvanced745();
+                /* Heavy advanced refreshes run only when Settings/Advanced is about to open. */
                 finalGeometry745();
               }catch(e){console.error('Settings745Ui',e)}
             })();
