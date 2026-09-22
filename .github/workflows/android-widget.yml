@@ -184,6 +184,7 @@ jobs:
                 const slotBox=document.getElementById('slotSettings');
                 if(typeof renderSlots==='function')renderSlots();
                 const before=slotBox?slotBox.querySelectorAll('.slotRow').length:0;
+                const courseExistsBefore=['A','B'].some(w=>weeks[w]&&weeks[w][2]&&weeks[w][2].courses.some(x=>(x.label||'').startsWith('Test ')));
                 const removedStart=typeof slots!=='undefined'&&slots[2]?slots[2].start:'10:00';
                 const removedEnd=typeof slots!=='undefined'&&slots[2]?slots[2].end:'11:00';
                 try{if(window.removeSlotAt680)window.removeSlotAt680(2)}catch(e){}
@@ -199,7 +200,7 @@ jobs:
                   weekHasRemoved=labels.some(t=>t.includes(removedStart)&&t.includes(removedEnd));
                   courseStillExists=['A','B'].some(w=>weeks[w]&&weeks[w][2]&&weeks[w][2].courses.some(x=>(x.label||'').startsWith('Test ')));
                 }catch(e){}
-                report._slotDelete={before,after,slotLength:typeof slots!=='undefined'?slots.length:null,uniqueTimes:new Set(times).size,totalTimes:times.length,weekHasRemoved,courseStillExists};
+                report._slotDelete={before,after,slotLength:typeof slots!=='undefined'?slots.length:null,uniqueTimes:new Set(times).size,totalTimes:times.length,weekHasRemoved,courseExistsBefore,courseStillExists};
               }catch(e){report._slotDelete={error:String(e)}}
               const dateInput=document.getElementById('advRangeStart');
               if(dateInput){
@@ -399,6 +400,7 @@ jobs:
           if slot.get('slotLength') != slot.get('after'): raise SystemExit(f'slot array and rendered rows differ after deletion: {slot}')
           if slot.get('uniqueTimes') != slot.get('totalTimes'): raise SystemExit(f'slot delete produced duplicated time rows: {slot}')
           if slot.get('weekHasRemoved'): raise SystemExit(f'deleted slot still appears in week view: {slot}')
+          if not slot.get('courseExistsBefore'): raise SystemExit(f'slot-preservation test did not start with a course: {slot}')
           if not slot.get('courseStillExists'): raise SystemExit(f'course from deleted slot was incorrectly deleted: {slot}')
           h=float(report.get('_rangeDateHeight',999))
           if h>28.5: raise SystemExit(f'date fields are not compact enough: height={h}px')
