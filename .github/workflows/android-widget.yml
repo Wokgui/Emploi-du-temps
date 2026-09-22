@@ -1,8 +1,8 @@
-name: Clean Android 7.47 page-layout build
+name: Clean Android 7.48 navigation-layout build
 
 on:
   push:
-    branches: [fix/747-page-layout-week-today]
+    branches: [fix/748-navigation-week-settings]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 
@@ -127,7 +127,7 @@ jobs:
             if(n==='listProfiles')return JSON.stringify({current:'main',profiles:[{id:'main',name:'Principal'}]});
             if(n==='loadAdvancedSetting')return '';
             if(n==='getCurrentWeek')return 'B';
-            if(n==='getAppVersionName')return '7.47';
+            if(n==='getAppVersionName')return '7.48';
             if(n==='loadHolidays'||n==='loadSchoolHolidays')return '[]';
             if(n.startsWith('load'))return '{}';
             if(n.startsWith('get')||n.startsWith('is'))return '';
@@ -140,7 +140,7 @@ jobs:
           setTimeout(()=>{
             try{
               const modal=document.getElementById('settingsModal');
-              if(modal){modal.classList.add('show','edtForceVisible695');modal.setAttribute('data-edt-open','true');modal.style.display='block'}
+              if(modal){modal.classList.remove('show');modal.classList.add('edtForceVisible695');modal.setAttribute('data-edt-open','true');modal.style.removeProperty('display')}
               const defs=[
                 ['settingsLanguage698','#languageSelect'],
                 ['settingsTypeWeek692','#settingsWeekCycle678>.settingTitle'],
@@ -400,7 +400,7 @@ jobs:
               }
               report._profile=selectGeom('advProfileSelect');
 
-              /* 7.47 final settings owner. */
+              /* 7.48 final settings owner. */
               try{
                 const profileShell=document.querySelector('#advancedSettings85 .profileShell745');
                 const profileVisual=profileShell&&profileShell.querySelector(':scope > .profileVisual745');
@@ -600,55 +600,92 @@ jobs:
               report._settingsSlotRows=slotBoxFinal?slotBoxFinal.querySelectorAll(':scope > .slotRow').length:0;
               report._settingsSlotExpected=typeof slots!=='undefined'&&Array.isArray(slots)?slots.length:0;
               try{
-                const m747=document.getElementById('settingsModal'),sh747=document.getElementById('settingsSheet');
-                const mr747=m747&&m747.getBoundingClientRect(),sr747=sh747&&sh747.getBoundingClientRect();
-                report._layout747={
-                  attached:!!window.__layout747,
-                  settingsOpen:!!(m747&&m747.classList.contains('show')),
-                  settingsLeft:mr747?+mr747.left.toFixed(1):999,
-                  settingsTop:mr747?+mr747.top.toFixed(1):999,
-                  settingsWidth:mr747?+mr747.width.toFixed(1):0,
-                  settingsHeight:mr747?+mr747.height.toFixed(1):0,
+                const m748=document.getElementById('settingsModal'),sh748=document.getElementById('settingsSheet');
+                const mr748=m748&&m748.getBoundingClientRect(),sr748=sh748&&sh748.getBoundingClientRect();
+                report._layout748={
+                  attached:!!window.__layout748,
+                  settingsOpen:!!(m748&&m748.getAttribute('data-edt-open')==='true'),
+                  settingsLeft:mr748?+mr748.left.toFixed(1):999,
+                  settingsTop:mr748?+mr748.top.toFixed(1):999,
+                  settingsWidth:mr748?+mr748.width.toFixed(1):0,
+                  settingsHeight:mr748?+mr748.height.toFixed(1):0,
                   viewportWidth:window.innerWidth,
                   viewportHeight:window.innerHeight,
-                  sheetWidth:sr747?+sr747.width.toFixed(1):0,
-                  sheetRadius:sh747?getComputedStyle(sh747).borderTopLeftRadius:'',
-                  sheetOverflowX:sh747?getComputedStyle(sh747).overflowX:''
+                  sheetWidth:sr748?+sr748.width.toFixed(1):0,
+                  sheetRadius:sh748?getComputedStyle(sh748).borderTopLeftRadius:'',
+                  sheetOverflowX:sh748?getComputedStyle(sh748).overflowX:''
                 };
-                if(m747){m747.classList.remove('show','edtForceVisible695');m747.setAttribute('data-edt-open','false')}
+
+                if(m748){m748.classList.remove('show','edtForceVisible695');m748.setAttribute('data-edt-open','false')}
                 try{if(window.refreshLayout747)window.refreshLayout747()}catch(e){}
-                const closed747=m747?getComputedStyle(m747):null;
-                report._layout747.closedDisplay=closed747?closed747.display:'';
-                report._layout747.closedOpacity=closed747?closed747.opacity:'';
-                report._layout747.closedPointer=closed747?closed747.pointerEvents:'';
+                const closed748=m748?getComputedStyle(m748):null;
+                report._layout748.closedVisibility=closed748?closed748.visibility:'';
+                report._layout748.closedOpacity=closed748?closed748.opacity:'';
+                report._layout748.closedPointer=closed748?closed748.pointerEvents:'';
+
+                /* Today: browse one day forward, then simulate the 30-second refresh. */
                 try{if(typeof window.setModeFromAndroid==='function')window.setModeFromAndroid('today')}catch(e){}
                 try{if(typeof window.renderToday==='function')window.renderToday()}catch(e){}
+                const dayNext748=document.getElementById('dayNext728');
+                if(dayNext748)dayNext748.click();
+                const browsedDate748=(document.getElementById('todayDate')?.textContent||'').trim();
+                try{if(typeof window.renderToday==='function')window.renderToday()}catch(e){}
+                const afterTickDate748=(document.getElementById('todayDate')?.textContent||'').trim();
                 try{if(window.refreshLayout747)window.refreshLayout747()}catch(e){}
                 const tv=document.getElementById('viewToday'),tl=document.getElementById('todayList'),bn=document.querySelector('.bottom');
                 const tvr=tv&&tv.getBoundingClientRect(),tlr=tl&&tl.getBoundingClientRect(),bnr=bn&&bn.getBoundingClientRect();
-                report._layout747.today={
+                report._layout748.today={
                   active:!!(tv&&tv.classList.contains('active')),
                   viewBottom:tvr?+tvr.bottom.toFixed(1):999,
                   listBottom:tlr?+tlr.bottom.toFixed(1):999,
                   navTop:bnr?+bnr.top.toFixed(1):0,
                   scrollHeight:document.scrollingElement?document.scrollingElement.scrollHeight:0,
                   innerHeight:window.innerHeight,
-                  fitted:document.documentElement.dataset.edtToday747||''
+                  fitted:document.documentElement.dataset.edtToday748||'',
+                  browsedDate:browsedDate748,
+                  afterTickDate:afterTickDate748,
+                  pinned:Number(window.__edt748PinnedDay||0)
                 };
-                try{if(typeof window.setModeFromAndroid==='function')window.setModeFromAndroid('week')}catch(e){}
+
+                /* Edit: requested button sizing and symmetric import/day spacing. */
+                try{if(typeof window.setModeFromAndroid==='function')window.setModeFromAndroid('edit')}catch(e){}
+                try{if(typeof window.renderEdit==='function')window.renderEdit()}catch(e){}
+                try{if(window.refreshLayout747)window.refreshLayout747()}catch(e){}
+                const imp748=document.getElementById('importPhoto'),editTop748=document.querySelector('#viewEdit .editTop'),header748=document.querySelector('.header');
+                const ir748=imp748&&imp748.getBoundingClientRect(),er748=editTop748&&editTop748.getBoundingClientRect(),hr748=header748&&header748.getBoundingClientRect();
+                const editView748=document.getElementById('viewEdit'),evr748=editView748&&editView748.getBoundingClientRect();
+                const buttonGeom748=id=>{const el=document.getElementById(id),r=el&&el.getBoundingClientRect();return r?{width:+r.width.toFixed(1),height:+r.height.toFixed(1)}:null};
+                report._layout748.edit={
+                  topGap:ir748&&hr748?+(ir748.top-hr748.bottom).toFixed(1):999,
+                  bottomGap:ir748&&er748?+(er748.top-ir748.bottom).toFixed(1):999,
+                  viewWidth:evr748?+evr748.width.toFixed(1):0,
+                  importButton:buttonGeom748('importPhoto'),
+                  addButton:buttonGeom748('addCourse'),
+                  bulkButton:buttonGeom748('addBulkCourses')
+                };
+
+                /* Week: start from a deliberately empty grid and use the real tab gesture. */
+                const g748=document.getElementById('weekGrid');if(g748)g748.replaceChildren();
+                const weekNav748=document.querySelector('.bottom .nav[data-mode="week"]');
+                if(weekNav748){
+                  weekNav748.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerType:'touch'}));
+                  weekNav748.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));
+                }else if(typeof window.setModeFromAndroid==='function')window.setModeFromAndroid('week');
                 try{if(typeof window.renderWeek==='function')window.renderWeek()}catch(e){}
                 try{if(window.refreshLayout747)window.refreshLayout747()}catch(e){}
-                const p747=document.getElementById('weekPrev728'),n747=document.getElementById('weekNext728'),t747=document.getElementById('weekTitleStable746');
-                const pr747=p747&&p747.getBoundingClientRect(),nr747=n747&&n747.getBoundingClientRect(),tr747=t747&&t747.getBoundingClientRect(),g747=document.getElementById('weekGrid');
-                report._layout747.week={
-                  valid:!!(g747&&g747.querySelectorAll(':scope>.wc').length),
-                  prevY:pr747?+((pr747.top+pr747.bottom)/2).toFixed(1):999,
-                  nextY:nr747?+((nr747.top+nr747.bottom)/2).toFixed(1):-999,
-                  titleY:tr747?+((tr747.top+tr747.bottom)/2).toFixed(1):999
+                const p748=document.getElementById('weekPrev728'),n748=document.getElementById('weekNext728'),t748=document.getElementById('weekTitleStable746');
+                const pr748=p748&&p748.getBoundingClientRect(),nr748=n748&&n748.getBoundingClientRect(),tr748=t748&&t748.getBoundingClientRect();
+                report._layout748.week={
+                  valid:!!(g748&&g748.querySelectorAll(':scope>.wc').length&&g748.querySelectorAll(':scope>.wh.day').length),
+                  cells:g748?g748.querySelectorAll(':scope>.wc').length:0,
+                  prevY:pr748?+((pr748.top+pr748.bottom)/2).toFixed(1):999,
+                  nextY:nr748?+((nr748.top+nr748.bottom)/2).toFixed(1):-999,
+                  titleY:tr748?+((tr748.top+tr748.bottom)/2).toFixed(1):999
                 };
-                if(m747){m747.classList.add('show','edtForceVisible695');m747.setAttribute('data-edt-open','true')}
+
+                if(m748){m748.classList.remove('show');m748.classList.add('edtForceVisible695');m748.setAttribute('data-edt-open','true')}
                 try{if(window.refreshLayout747)window.refreshLayout747()}catch(e){}
-              }catch(e){report._layout747={error:String(e),stack:e.stack}}
+              }catch(e){report._layout748={error:String(e),stack:e.stack}}
               const pre=document.createElement('pre');pre.id='visual-report';pre.textContent=JSON.stringify(report);document.body.appendChild(pre);
               document.documentElement.dataset.visualDone='1';
               document.scrollingElement.scrollTop=Math.max(0,(weeksPanel?.getBoundingClientRect().top||0)-100);
@@ -663,7 +700,7 @@ jobs:
           advanced=r'''<script>
           setTimeout(()=>{
             const modal=document.getElementById('settingsModal'),sheet=document.getElementById('settingsSheet');
-            if(modal){modal.classList.add('show','edtForceVisible695');modal.setAttribute('data-edt-open','true');modal.style.display='block'}
+            if(modal){modal.classList.remove('show');modal.classList.add('edtForceVisible695');modal.setAttribute('data-edt-open','true');modal.style.removeProperty('display')}
             document.querySelectorAll('#settingsSheet details').forEach(d=>d.open=false);
             const adv=document.getElementById('advancedSettings85');
             if(adv){adv.open=true;try{if(window.refresh735)window.refresh735()}catch(e){};try{if(window.refresh736)window.refresh736()}catch(e){}}
@@ -695,6 +732,15 @@ jobs:
           },4300);
           </script>'''
           Path('build/visual/harness-today.html').write_text(html.replace('</body>',today+'</body>'),encoding='utf-8')
+          edit=r'''<script>
+          setTimeout(()=>{
+            const modal=document.getElementById('settingsModal');if(modal){modal.classList.remove('show','edtForceVisible695');modal.setAttribute('data-edt-open','false')}
+            if(typeof window.setModeFromAndroid==='function')window.setModeFromAndroid('edit');
+            if(typeof window.renderEdit==='function')window.renderEdit();
+            if(window.refreshLayout747)window.refreshLayout747();
+          },4300);
+          </script>'''
+          Path('build/visual/harness-edit.html').write_text(html.replace('</body>',edit+'</body>'),encoding='utf-8')
           PY
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
           "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=6000 --window-size=360,780 --force-device-scale-factor=2             --dump-dom "file://$PWD/build/visual/harness.html" > build/visual/dom.html
@@ -702,6 +748,7 @@ jobs:
           "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=7000 --window-size=360,780 --force-device-scale-factor=2             --screenshot="$PWD/build/visual/advanced.png" "file://$PWD/build/visual/harness-advanced.html"
           "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=7000 --window-size=360,780 --force-device-scale-factor=2             --screenshot="$PWD/build/visual/week.png" "file://$PWD/build/visual/harness-week.html"
           "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=7000 --window-size=360,780 --force-device-scale-factor=2             --screenshot="$PWD/build/visual/today.png" "file://$PWD/build/visual/harness-today.html"
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=7000 --window-size=360,780 --force-device-scale-factor=2             --screenshot="$PWD/build/visual/edit.png" "file://$PWD/build/visual/harness-edit.html"
           python3 - <<'PY'
           import re, html as h, json, pathlib
           dom=pathlib.Path('build/visual/dom.html').read_text(errors='ignore')
@@ -711,17 +758,25 @@ jobs:
           report=json.loads(raw)
           pathlib.Path('build/visual/report.json').write_text(json.dumps(report,indent=2,ensure_ascii=False))
           print(json.dumps(report,indent=2,ensure_ascii=False))
-          l747=report.get('_layout747') or {}
-          if l747.get('error') or not l747.get('attached'): raise SystemExit(f'7.47 layout owner missing/error: {l747}')
-          if not l747.get('settingsOpen') or abs(float(l747.get('settingsLeft',999)))>0.5 or abs(float(l747.get('settingsTop',999)))>0.5 or abs(float(l747.get('settingsWidth',0))-float(l747.get('viewportWidth',-999)))>1 or abs(float(l747.get('settingsHeight',0))-float(l747.get('viewportHeight',-999)))>1: raise SystemExit(f'7.47 settings is not a full page: {l747}')
-          if l747.get('sheetRadius') not in ('0px','0') or l747.get('sheetOverflowX') not in ('hidden','clip'): raise SystemExit(f'7.47 settings sheet still looks/behaves like a floating tile: {l747}')
-          if not (l747.get('closedDisplay')=='none' or (l747.get('closedOpacity')=='0' and l747.get('closedPointer')=='none')): raise SystemExit(f'7.47 old settings overlay remains visible/interactive after close: {l747}')
-          td747=l747.get('today') or {}
-          try: fitted747=float(td747.get('fitted',0))
-          except: fitted747=0
-          if not td747.get('active') or float(td747.get('listBottom',999))>float(td747.get('navTop',0))+1 or fitted747<34 or float(td747.get('scrollHeight',999))>float(td747.get('innerHeight',0))+1: raise SystemExit(f'7.47 Today does not fit above bottom nav: {td747}')
-          wk747=l747.get('week') or {}
-          if not wk747.get('valid') or abs(float(wk747.get('prevY',999))-float(wk747.get('nextY',-999)))>1 or abs(float(wk747.get('titleY',999))-float(wk747.get('prevY',-999)))>8: raise SystemExit(f'7.47 week header is not one stable row: {wk747}')
+          l748=report.get('_layout748') or {}
+          if l748.get('error') or not l748.get('attached'): raise SystemExit(f'7.48 layout owner missing/error: {l748}')
+          if not l748.get('settingsOpen') or abs(float(l748.get('settingsLeft',999)))>0.5 or abs(float(l748.get('settingsTop',999)))>0.5 or abs(float(l748.get('settingsWidth',0))-float(l748.get('viewportWidth',-999)))>1 or abs(float(l748.get('settingsHeight',0))-float(l748.get('viewportHeight',-999)))>1: raise SystemExit(f'7.48 real HeavyPanel settings is not a full page: {l748}')
+          if l748.get('sheetRadius') not in ('0px','0') or l748.get('sheetOverflowX') not in ('hidden','clip'): raise SystemExit(f'7.48 settings still looks/behaves like a floating tile: {l748}')
+          if not (l748.get('closedVisibility')=='hidden' or (l748.get('closedOpacity')=='0' and l748.get('closedPointer')=='none')): raise SystemExit(f'7.48 settings remains visible/interactive after close: {l748}')
+          td748=l748.get('today') or {}
+          try: fitted748=float(td748.get('fitted',0))
+          except: fitted748=0
+          if not td748.get('active') or float(td748.get('listBottom',999))>float(td748.get('navTop',0))+1 or fitted748<34 or float(td748.get('scrollHeight',999))>float(td748.get('innerHeight',0))+1: raise SystemExit(f'7.48 Today does not fit above bottom nav: {td748}')
+          if not td748.get('browsedDate') or td748.get('afterTickDate')!=td748.get('browsedDate') or int(td748.get('pinned',0))<=0: raise SystemExit(f'7.48 Today browse date is not preserved across periodic render: {td748}')
+          ed748=l748.get('edit') or {}
+          if abs(float(ed748.get('topGap',999))-float(ed748.get('bottomGap',-999)))>2.0: raise SystemExit(f'7.48 import/day spacing is not symmetric: {ed748}')
+          vw748=float(ed748.get('viewWidth',0))
+          for key in ('importButton','addButton','bulkButton'):
+              b=ed748.get(key) or {}
+              if float(b.get('width',999))>=vw748-4 or float(b.get('height',0))<40: raise SystemExit(f'7.48 {key} is not fitted to its text: {ed748}')
+          wk748=l748.get('week') or {}
+          if not wk748.get('valid') or int(wk748.get('cells',0))<5: raise SystemExit(f'7.48 Week stayed blank after real navigation: {wk748}')
+          if abs(float(wk748.get('prevY',999))-float(wk748.get('nextY',-999)))>1 or abs(float(wk748.get('titleY',999))-float(wk748.get('prevY',-999)))>8: raise SystemExit(f'7.48 week header is not one stable row: {wk748}')
           week=report.get('_week744') or {}
           if week.get('error'): raise SystemExit(f'week 7.44 test error: {week}')
           if week.get('attached')!='1' or not week.get('navPrev') or not week.get('navNext'): raise SystemExit(f'week 7.44 owner/navigation missing: {week}')
@@ -738,8 +793,8 @@ jobs:
           hb=week.get('hiddenNoonCellBgs') or []
           if not hb or len(set(hb))!=1 or (vb and hb[0]==vb[0]): raise SystemExit(f'12:00 row remains lunch-coloured when hidden: {week}')
           week746=report.get('_week746') or {}
-          if week746.get('attached')!='1' or int(week746.get('goodCount',0))<1 or int(week746.get('recoveredCount',0))<1: raise SystemExit(f'week 7.47 blank-frame recovery failed: {week746}')
-          if not week746.get('stableTitle') or week746.get('stableTitleAfterRecovery')!=week746.get('stableTitle') or float(week746.get('stableHeight',0))<=0: raise SystemExit(f'week 7.47 title/height is not stable: {week746}')
+          if week746.get('attached')!='1' or int(week746.get('goodCount',0))<1 or int(week746.get('recoveredCount',0))<1: raise SystemExit(f'week 7.48 blank-frame recovery failed: {week746}')
+          if not week746.get('stableTitle') or week746.get('stableTitleAfterRecovery')!=week746.get('stableTitle') or float(week746.get('stableHeight',0))<=0: raise SystemExit(f'week 7.48 title/height is not stable: {week746}')
           center=float(report.get('_settingsWordCenterDelta',999))
           lang=float(report.get('_settingsVsLanguageDelta',999))
           if abs(lang)>1.0: raise SystemExit(f'word Réglages is not centered on Langue: sheet={center}px language={lang}px')
@@ -768,13 +823,13 @@ jobs:
               if obj.get('textAlign')!='center': raise SystemExit(f'{name} text is not centered: {obj}')
               if require_arrow and obj.get('backgroundImage') in ('none',''): raise SystemExit(f'{name} has no visible dropdown arrow: {obj}')
           s745=report.get('_settings745') or {}
-          if s745.get('error'): raise SystemExit(f'7.47 settings measurement error: {s745}')
-          if s745.get('attached')!='1': raise SystemExit(f'7.47 final settings owner is not active: {s745}')
+          if s745.get('error'): raise SystemExit(f'7.48 settings measurement error: {s745}')
+          if s745.get('attached')!='1': raise SystemExit(f'7.48 final settings owner is not active: {s745}')
           if s745.get('rangeFrom')!='Du' or s745.get('rangeTo')!='Au': raise SystemExit(f'Du/Au labels are missing: {s745}')
           if s745.get('profileText')!='Principal' or abs(float(s745.get('profileCenterDelta',999)))>0.5 or not s745.get('profileFits') or float(s745.get('profileShellWidth',0))<170: raise SystemExit(f'Principal is not stably centered/untruncated: {s745}')
           if int(s745.get('profileVisualCount',0))!=1 or int(s745.get('profileArrowCount',0))!=1 or not s745.get('profileArrowVisible'): raise SystemExit(f'profile custom control is duplicated or its arrow is missing: {s745}')
           if abs(float(s745.get('profileUnderTitleDelta',999)))>0.5: raise SystemExit(f'profile selector is not centered under Profils: {s745}')
-          if s745.get('version')!='Version 7.47' or not s745.get('versionBelowClose'): raise SystemExit(f'app version is not below Fermer: {s745}')
+          if s745.get('version')!='Version 7.48' or not s745.get('versionBelowClose'): raise SystemExit(f'app version is not below Fermer: {s745}')
           if float(s745.get('appFontBorderBottom',999))>0.1 or float(s745.get('widgetFontBorderTop',999))>0.1: raise SystemExit(f'text-size separator still visible: {s745}')
           if abs(float(s745.get('appFontGap',999))-float(s745.get('widgetFontGap',-999)))>0.5: raise SystemExit(f'app/widget text-size title-to-slider spacing differs: {s745}')
           if float(s745.get('schoolRightOverflow',999))>0.5 or float(s745.get('schoolLeftOverflow',999))>0.5: raise SystemExit(f'vacation auto row overflows advanced settings: {s745}')
@@ -784,13 +839,13 @@ jobs:
           if abs(float(s745.get('zoneVisualCenterDelta',999)))>0.5 or abs(float(s745.get('holidayVisualCenterDelta',999)))>0.5: raise SystemExit(f'vacation/holiday selector text is not independently centered from the arrow: {s745}')
 
           ia745=(report.get('_instantAdvanced') or {})
-          if ia745.get('final745')!='1': raise SystemExit(f'advanced panel was not finalized by 7.47 before open: {ia745}')
+          if ia745.get('final745')!='1': raise SystemExit(f'advanced panel was not finalized by 7.48 before open: {ia745}')
           before745=ia745.get('afterLegacy745') or {}
           after745=ia745.get('afterFinal745') or {}
           for k in ('profileLeft','profileWidth','rangeLeft','rangeWidth'):
-              if abs(float(before745.get(k,999))-float(after745.get(k,-999)))>0.5: raise SystemExit(f'advanced 7.47 geometry still changes after final refresh: {k} {before745} -> {after745}')
+              if abs(float(before745.get(k,999))-float(after745.get(k,-999)))>0.5: raise SystemExit(f'advanced 7.48 geometry still changes after final refresh: {k} {before745} -> {after745}')
           for k in ('profileText','from','to'):
-              if before745.get(k)!=after745.get(k): raise SystemExit(f'advanced 7.47 content still changes after final refresh: {k} {before745} -> {after745}')
+              if before745.get(k)!=after745.get(k): raise SystemExit(f'advanced 7.48 content still changes after final refresh: {k} {before745} -> {after745}')
 
           gaps=report.get('_displayGaps') or {}
           if abs(float(gaps.get('base',999))-float(gaps.get('interruptions',-999)))>1.0:
@@ -857,16 +912,17 @@ jobs:
             android-widget/build/visual/advanced.png
             android-widget/build/visual/week.png
             android-widget/build/visual/today.png
+            android-widget/build/visual/edit.png
             android-widget/build/visual/dom.html
           if-no-files-found: error
 
       - name: Verify package metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='747001' versionName='7.47'" /tmp/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.47-tested-debug.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='748001' versionName='7.48'" /tmp/badging.txt
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.48-tested-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: EDT-7.47-tested
-          path: android-widget/app/build/outputs/apk/debug/EDT-7.47-tested-debug.apk
+          name: EDT-7.48-tested
+          path: android-widget/app/build/outputs/apk/debug/EDT-7.48-tested-debug.apk
           if-no-files-found: error
