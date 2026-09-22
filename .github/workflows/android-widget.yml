@@ -103,8 +103,24 @@ jobs:
               {n:1,start:'08:00',end:'09:00'},{n:2,start:'09:00',end:'10:00'},{n:3,start:'10:00',end:'11:00'},
               {n:4,start:'11:00',end:'12:00'},{n:5,start:'13:00',end:'14:00'},{n:6,start:'14:00',end:'15:00'},
               {n:7,start:'16:00',end:'17:00'},{n:8,start:'17:00',end:'18:00'},{n:9,start:'18:00',end:'19:00'}],
-              _weeks:{A:{2:{courses:[{start:'10:00',end:'11:00',label:'Test A',room:'101',slot:3},{start:'14:00',end:'15:00',label:'Test A après-midi',room:'101',slot:6}]},3:{courses:[]},4:{courses:[]},5:{courses:[]},6:{courses:[]}},
-                      B:{2:{courses:[{start:'10:00',end:'11:00',label:'Test B',room:'102',slot:3},{start:'14:00',end:'15:00',label:'Test B après-midi',room:'102',slot:6}]},3:{courses:[]},4:{courses:[]},5:{courses:[]},6:{courses:[]}}}});
+              _weeks:{A:{2:{courses:[{start:'10:00',end:'11:00',label:'Test A',room:'101',slot:3},{start:'14:00',end:'15:00',label:'Test A après-midi',room:'101',slot:6}]},3:{courses:[
+                {start:'08:00',end:'09:00',label:'T1',room:'201',slot:1},
+                {start:'09:00',end:'10:00',label:'T2',room:'201',slot:2},
+                {start:'10:00',end:'11:00',label:'T3',room:'201',slot:3},
+                {start:'11:00',end:'12:00',label:'T4',room:'201',slot:4},
+                {start:'13:00',end:'14:00',label:'T5',room:'201',slot:5},
+                {start:'14:00',end:'15:00',label:'T6',room:'201',slot:6},
+                {start:'16:00',end:'17:00',label:'T7',room:'201',slot:7}
+              ]},4:{courses:[]},5:{courses:[]},6:{courses:[]}},
+                      B:{2:{courses:[{start:'10:00',end:'11:00',label:'Test B',room:'102',slot:3},{start:'14:00',end:'15:00',label:'Test B après-midi',room:'102',slot:6}]},3:{courses:[
+                {start:'08:00',end:'09:00',label:'T1',room:'201',slot:1},
+                {start:'09:00',end:'10:00',label:'T2',room:'201',slot:2},
+                {start:'10:00',end:'11:00',label:'T3',room:'201',slot:3},
+                {start:'11:00',end:'12:00',label:'T4',room:'201',slot:4},
+                {start:'13:00',end:'14:00',label:'T5',room:'201',slot:5},
+                {start:'14:00',end:'15:00',label:'T6',room:'201',slot:6},
+                {start:'16:00',end:'17:00',label:'T7',room:'201',slot:7}
+              ]},4:{courses:[]},5:{courses:[]},6:{courses:[]}}}});
             if(n==='loadAdvancedSettings')return JSON.stringify(window.__testAdvanced);
             if(n==='saveAdvancedSettings'){try{window.__testAdvanced=JSON.parse(a[0]||'{}')}catch(e){};return ''};
             if(n==='loadUiSettings')return JSON.stringify({language:'fr'});
@@ -593,12 +609,18 @@ jobs:
                   settingsTop:mr747?+mr747.top.toFixed(1):999,
                   settingsWidth:mr747?+mr747.width.toFixed(1):0,
                   settingsHeight:mr747?+mr747.height.toFixed(1):0,
+                  viewportWidth:window.innerWidth,
+                  viewportHeight:window.innerHeight,
                   sheetWidth:sr747?+sr747.width.toFixed(1):0,
                   sheetRadius:sh747?getComputedStyle(sh747).borderTopLeftRadius:'',
                   sheetOverflowX:sh747?getComputedStyle(sh747).overflowX:''
                 };
                 if(m747){m747.classList.remove('show','edtForceVisible695');m747.setAttribute('data-edt-open','false')}
                 try{if(window.refreshLayout747)window.refreshLayout747()}catch(e){}
+                const closed747=m747?getComputedStyle(m747):null;
+                report._layout747.closedDisplay=closed747?closed747.display:'';
+                report._layout747.closedOpacity=closed747?closed747.opacity:'';
+                report._layout747.closedPointer=closed747?closed747.pointerEvents:'';
                 try{if(typeof window.setModeFromAndroid==='function')window.setModeFromAndroid('today')}catch(e){}
                 try{if(typeof window.renderToday==='function')window.renderToday()}catch(e){}
                 try{if(window.refreshLayout747)window.refreshLayout747()}catch(e){}
@@ -661,12 +683,25 @@ jobs:
           },4300);
           </script>'''
           Path('build/visual/harness-week.html').write_text(html.replace('</body>',week+'</body>'),encoding='utf-8')
+          today=r'''<script>
+          setTimeout(()=>{
+            const modal=document.getElementById('settingsModal');if(modal){modal.classList.remove('show','edtForceVisible695');modal.setAttribute('data-edt-open','false')}
+            try{if(window.refreshLayout747)window.refreshLayout747()}catch(e){}
+            const nav=document.querySelector('.bottom .nav[data-mode="today"]');
+            if(nav){nav.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerType:'touch'}));nav.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}))}
+            else if(typeof window.setModeFromAndroid==='function')window.setModeFromAndroid('today');
+            if(typeof window.renderToday==='function')window.renderToday();
+            if(window.refreshLayout747)window.refreshLayout747();
+          },4300);
+          </script>'''
+          Path('build/visual/harness-today.html').write_text(html.replace('</body>',today+'</body>'),encoding='utf-8')
           PY
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
           "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=6000 --window-size=360,780 --force-device-scale-factor=2             --dump-dom "file://$PWD/build/visual/harness.html" > build/visual/dom.html
           "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=6000 --window-size=360,780 --force-device-scale-factor=2             --screenshot="$PWD/build/visual/settings.png" "file://$PWD/build/visual/harness.html"
           "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=7000 --window-size=360,780 --force-device-scale-factor=2             --screenshot="$PWD/build/visual/advanced.png" "file://$PWD/build/visual/harness-advanced.html"
           "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=7000 --window-size=360,780 --force-device-scale-factor=2             --screenshot="$PWD/build/visual/week.png" "file://$PWD/build/visual/harness-week.html"
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=7000 --window-size=360,780 --force-device-scale-factor=2             --screenshot="$PWD/build/visual/today.png" "file://$PWD/build/visual/harness-today.html"
           python3 - <<'PY'
           import re, html as h, json, pathlib
           dom=pathlib.Path('build/visual/dom.html').read_text(errors='ignore')
@@ -678,10 +713,13 @@ jobs:
           print(json.dumps(report,indent=2,ensure_ascii=False))
           l747=report.get('_layout747') or {}
           if l747.get('error') or not l747.get('attached'): raise SystemExit(f'7.47 layout owner missing/error: {l747}')
-          if not l747.get('settingsOpen') or abs(float(l747.get('settingsLeft',999)))>0.5 or abs(float(l747.get('settingsTop',999)))>0.5 or float(l747.get('settingsWidth',0))<359 or float(l747.get('settingsHeight',0))<779: raise SystemExit(f'7.47 settings is not a full page: {l747}')
+          if not l747.get('settingsOpen') or abs(float(l747.get('settingsLeft',999)))>0.5 or abs(float(l747.get('settingsTop',999)))>0.5 or abs(float(l747.get('settingsWidth',0))-float(l747.get('viewportWidth',-999)))>1 or abs(float(l747.get('settingsHeight',0))-float(l747.get('viewportHeight',-999)))>1: raise SystemExit(f'7.47 settings is not a full page: {l747}')
           if l747.get('sheetRadius') not in ('0px','0') or l747.get('sheetOverflowX') not in ('hidden','clip'): raise SystemExit(f'7.47 settings sheet still looks/behaves like a floating tile: {l747}')
+          if l747.get('closedDisplay')!='none': raise SystemExit(f'7.47 old settings overlay remains after close: {l747}')
           td747=l747.get('today') or {}
-          if not td747.get('active') or float(td747.get('listBottom',999))>float(td747.get('navTop',0))+1 or not td747.get('fitted'): raise SystemExit(f'7.47 Today does not fit above bottom nav: {td747}')
+          try: fitted747=float(td747.get('fitted',0))
+          except: fitted747=0
+          if not td747.get('active') or float(td747.get('listBottom',999))>float(td747.get('navTop',0))+1 or fitted747<34 or float(td747.get('scrollHeight',999))>float(td747.get('innerHeight',0))+1: raise SystemExit(f'7.47 Today does not fit above bottom nav: {td747}')
           wk747=l747.get('week') or {}
           if not wk747.get('valid') or abs(float(wk747.get('prevY',999))-float(wk747.get('nextY',-999)))>1 or abs(float(wk747.get('titleY',999))-float(wk747.get('prevY',-999)))>8: raise SystemExit(f'7.47 week header is not one stable row: {wk747}')
           week=report.get('_week744') or {}
@@ -818,6 +856,7 @@ jobs:
             android-widget/build/visual/settings.png
             android-widget/build/visual/advanced.png
             android-widget/build/visual/week.png
+            android-widget/build/visual/today.png
             android-widget/build/visual/dom.html
           if-no-files-found: error
 
