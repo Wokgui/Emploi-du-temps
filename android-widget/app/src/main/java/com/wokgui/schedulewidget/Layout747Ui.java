@@ -441,8 +441,9 @@ final class Layout747Ui {
                 }
 
                 const previousToday748=window.renderToday;
+                let renderToday748=null;
                 if(typeof previousToday748==='function'){
-                  const renderToday748=function(){
+                  renderToday748=function(){
                     restorePinnedDay748();
                     const result=previousToday748.apply(this,arguments);
                     restorePinnedDay748();
