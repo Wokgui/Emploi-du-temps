@@ -1,8 +1,8 @@
-name: Clean Android 7.44 week-calendar-lunch build
+name: Clean Android 7.45 settings-polish build
 
 on:
   push:
-    branches: [fix/744-week-calendar-lunch]
+    branches: [fix/745-settings-polish]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 
@@ -109,7 +109,7 @@ jobs:
             if(n==='listProfiles')return JSON.stringify({current:'main',profiles:[{id:'main',name:'Principal'}]});
             if(n==='loadAdvancedSetting')return '';
             if(n==='getCurrentWeek')return 'B';
-            if(n==='getAppVersionName')return '7.44';
+            if(n==='getAppVersionName')return '7.45';
             if(n==='loadHolidays'||n==='loadSchoolHolidays')return '[]';
             if(n.startsWith('load'))return '{}';
             if(n.startsWith('get')||n.startsWith('is'))return '';
@@ -273,6 +273,24 @@ jobs:
                 try{if(window.refresh736)window.refresh736()}catch(e){}
                 try{if(window.refreshAdvancedFeatures)window.refreshAdvancedFeatures()}catch(e){}
                 const afterRefreshGeom741=geom741();
+                const final745=()=>{
+                  const shell=document.querySelector('#advancedSettings85 .profileShell745');
+                  const visual=shell&&shell.querySelector('.profileVisual745');
+                  const range=document.querySelector('#advancedSettings85 .rangeDates725');
+                  const sr=shell&&shell.getBoundingClientRect(),rr=range&&range.getBoundingClientRect();
+                  return {
+                    profileText:(visual?.textContent||'').trim(),
+                    profileLeft:sr?+sr.left.toFixed(2):999,
+                    profileWidth:sr?+sr.width.toFixed(2):999,
+                    rangeLeft:rr?+rr.left.toFixed(2):999,
+                    rangeWidth:rr?+rr.width.toFixed(2):999,
+                    from:(range?.querySelector('.rangeFrom745')?.textContent||'').trim(),
+                    to:(range?.querySelector('.rangeTo745')?.textContent||'').trim()
+                  };
+                };
+                const afterLegacy745=final745();
+                try{if(window.refreshSettings745)window.refreshSettings745()}catch(e){}
+                const afterFinal745=final745();
                 report._instantAdvanced={
                   open:advanced.open,
                   display:acs?.display||'',
@@ -286,7 +304,10 @@ jobs:
                   vacationTitle:(document.getElementById('schoolTitle')?.textContent||'').trim(),
                   frozen741:document.documentElement.dataset.edtAdvancedFrozen741||'',
                   firstGeom741:firstGeom741,
-                  afterRefreshGeom741:afterRefreshGeom741
+                  afterRefreshGeom741:afterRefreshGeom741,
+                  afterLegacy745:afterLegacy745,
+                  afterFinal745:afterFinal745,
+                  final745:document.documentElement.dataset.edt745Final||''
                 };
                 if(summary)summary.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));
                 report._instantAdvanced.closedAfterSecond=!advanced.open;
@@ -347,6 +368,49 @@ jobs:
                 };
               }
               report._profile=selectGeom('advProfileSelect');
+
+              /* 7.45 final settings owner. */
+              try{
+                const profileShell=document.querySelector('#advancedSettings85 .profileShell745');
+                const profileVisual=profileShell&&profileShell.querySelector('.profileVisual745');
+                const psr=profileShell&&profileShell.getBoundingClientRect(),pvr=profileVisual&&profileVisual.getBoundingClientRect();
+                const range745=document.querySelector('#advancedSettings85 .rangeDates725');
+                const rangeFrom745=range745&&range745.querySelector('.rangeFrom745');
+                const rangeTo745=range745&&range745.querySelector('.rangeTo745');
+                const version745=document.getElementById('appVersionInfo745');
+                const actions745=document.querySelector('#settingsSheet .settingsActions');
+                const vr745=version745&&version745.getBoundingClientRect(),ar745=actions745&&actions745.getBoundingClientRect();
+                const appFontBox=document.getElementById('appFontTitle')?.closest('.settingBox');
+                const widgetFontBox=document.getElementById('widgetFontTitle')?.closest('.settingBox');
+                const appFontCs=appFontBox&&getComputedStyle(appFontBox),widgetFontCs=widgetFontBox&&getComputedStyle(widgetFontBox);
+                const midiTitle=document.querySelector('#settingsDisplay692 .midiDays692>.w658Title');
+                const midiHead=document.querySelector('#settingsDisplay692 .midiDays692>.w658DayHead');
+                const breakNamesTitle=document.getElementById('breakNamesTitle692');
+                const breakBox=document.querySelector('#settingsDisplay692 .breakSettings');
+                const advWidgetTitle=document.getElementById('advWidgetTitle');
+                const densityTitle=document.querySelector('#widgetDensity664 .feedback664DensityTitle');
+                const mtr=midiTitle&&midiTitle.getBoundingClientRect(),mhr=midiHead&&midiHead.getBoundingClientRect();
+                const btr=breakNamesTitle&&breakNamesTitle.getBoundingClientRect(),bbr=breakBox&&breakBox.getBoundingClientRect();
+                const awr=advWidgetTitle&&advWidgetTitle.getBoundingClientRect(),dtr=densityTitle&&densityTitle.getBoundingClientRect();
+
+                report._settings745={
+                  attached:document.documentElement.dataset.edt745Final||'',
+                  rangeFrom:(rangeFrom745?.textContent||'').trim(),
+                  rangeTo:(rangeTo745?.textContent||'').trim(),
+                  profileText:(profileVisual?.textContent||'').trim(),
+                  profileCenterDelta:(psr&&pvr)?+((((pvr.left+pvr.right)/2)-((psr.left+psr.right)/2)).toFixed(2)):999,
+                  profileFits:profileVisual?profileVisual.scrollWidth<=profileVisual.clientWidth+1:false,
+                  profileShellWidth:psr?+psr.width.toFixed(1):0,
+                  version:(version745?.textContent||'').trim(),
+                  versionBelowClose:(vr745&&ar745)?vr745.top>=ar745.bottom-0.5:false,
+                  appFontBorderBottom:appFontCs?parseFloat(appFontCs.borderBottomWidth)||0:999,
+                  widgetFontBorderTop:widgetFontCs?parseFloat(widgetFontCs.borderTopWidth)||0:999,
+                  midiTitleGap:(mtr&&mhr)?+(mhr.top-mtr.bottom).toFixed(1):999,
+                  breakTitleGap:(btr&&bbr)?+(bbr.top-btr.bottom).toFixed(1):999,
+                  widgetDensityGap:(awr&&dtr)?+(dtr.top-awr.bottom).toFixed(1):999
+                };
+              }catch(e){report._settings745={error:String(e)}}
+
               const baseTitle=document.getElementById('widgetBaseTitle706');
               const baseControls=document.getElementById('appBaseControls725');
               const interruptionTitle=document.querySelector('#breakDisplaySetting .feedback663Title');
@@ -561,6 +625,25 @@ jobs:
               if abs(float(obj.get('paddingLeft',999))-float(obj.get('paddingRight',0)))>0.5: raise SystemExit(f'{name} padding is asymmetric: {obj}')
               if obj.get('textAlign')!='center': raise SystemExit(f'{name} text is not centered: {obj}')
               if require_arrow and obj.get('backgroundImage') in ('none',''): raise SystemExit(f'{name} has no visible dropdown arrow: {obj}')
+          s745=report.get('_settings745') or {}
+          if s745.get('error'): raise SystemExit(f'7.45 settings measurement error: {s745}')
+          if s745.get('attached')!='1': raise SystemExit(f'7.45 final settings owner is not active: {s745}')
+          if s745.get('rangeFrom')!='Du' or s745.get('rangeTo')!='Au': raise SystemExit(f'Du/Au labels are missing: {s745}')
+          if s745.get('profileText')!='Principal' or abs(float(s745.get('profileCenterDelta',999)))>0.5 or not s745.get('profileFits') or float(s745.get('profileShellWidth',0))<170: raise SystemExit(f'Principal is not stably centered/untruncated: {s745}')
+          if s745.get('version')!='Version 7.45' or not s745.get('versionBelowClose'): raise SystemExit(f'app version is not below Fermer: {s745}')
+          if float(s745.get('appFontBorderBottom',999))>0.1 or float(s745.get('widgetFontBorderTop',999))>0.1: raise SystemExit(f'text-size separator still visible: {s745}')
+          if float(s745.get('midiTitleGap',-999)) + 1 < float(s745.get('breakTitleGap',999)): raise SystemExit(f'Midi par jour title gap is still smaller than break-name reference: {s745}')
+          if float(s745.get('widgetDensityGap',-999)) < 12: raise SystemExit(f'Affichage du widget / Condensation gap is still too small: {s745}')
+
+          ia745=(report.get('_instantAdvanced') or {})
+          if ia745.get('final745')!='1': raise SystemExit(f'advanced panel was not finalized by 7.45 before open: {ia745}')
+          before745=ia745.get('afterLegacy745') or {}
+          after745=ia745.get('afterFinal745') or {}
+          for k in ('profileLeft','profileWidth','rangeLeft','rangeWidth'):
+              if abs(float(before745.get(k,999))-float(after745.get(k,-999)))>0.5: raise SystemExit(f'advanced 7.45 geometry still changes after final refresh: {k} {before745} -> {after745}')
+          for k in ('profileText','from','to'):
+              if before745.get(k)!=after745.get(k): raise SystemExit(f'advanced 7.45 content still changes after final refresh: {k} {before745} -> {after745}')
+
           gaps=report.get('_displayGaps') or {}
           if abs(float(gaps.get('base',999))-float(gaps.get('interruptions',-999)))>1.0:
               raise SystemExit(f'Affichage de base gap does not match interruptions: {gaps}')
@@ -634,10 +717,10 @@ jobs:
       - name: Verify package metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='744001' versionName='7.44'" /tmp/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.44-tested-debug.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='745001' versionName='7.45'" /tmp/badging.txt
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.45-tested-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: EDT-7.44-tested
-          path: android-widget/app/build/outputs/apk/debug/EDT-7.44-tested-debug.apk
+          name: EDT-7.45-tested
+          path: android-widget/app/build/outputs/apk/debug/EDT-7.45-tested-debug.apk
           if-no-files-found: error
