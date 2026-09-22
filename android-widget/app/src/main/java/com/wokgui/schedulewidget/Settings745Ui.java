@@ -413,6 +413,9 @@ final class Settings745Ui {
                   if(open)prepareAdvanced745();
                   adv.open=open;
                   finalGeometry745();
+                  /* 7.46 is loaded after this handler. Delegate dynamically so a
+                     click-only/keyboard open also paints the final geometry immediately. */
+                  try{if(typeof window.refreshSettings746==='function')window.refreshSettings746()}catch(e){}
                 },true);
 
                 document.addEventListener('change',event=>{
