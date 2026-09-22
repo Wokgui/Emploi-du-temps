@@ -171,12 +171,16 @@ jobs:
               if(mode)report._widgetColorLabel=mode.options[1]?.textContent||'';
               const breakNames=[...document.querySelectorAll('#settingsDisplay692 .breakSettings .breakName')].map(el=>{const s=getComputedStyle(el);return {text:(el.textContent||'').trim(),justify:s.justifyContent,align:s.alignItems,textAlign:s.textAlign}});
               report._breakNames=breakNames;
-              const holiday=document.getElementById('advHolidayLabel')?.closest('.settingBox')||document.querySelector('#advancedContent85>.holidayFlat725');
-              if(holiday){
-                const parent=holiday.parentElement,sibs=parent?[...parent.children]:[],idx=sibs.indexOf(holiday);
-                let prev=null;for(let ii=idx-1;ii>=0;ii--){const el=sibs[ii],rr=el.getBoundingClientRect(),ss=getComputedStyle(el);if(rr.height>0&&ss.display!=='none'&&ss.visibility!=='hidden'){prev=el;break}}
-                if(prev){const afterGap=Math.max(0,holiday.getBoundingClientRect().top-prev.getBoundingClientRect().bottom);report._holidayGap={before:+(document.documentElement.dataset.edt734HolidayGapBefore||afterGap),after:+afterGap.toFixed(1)}}
+              const status=document.getElementById('schoolAutoStatus725');
+              const holidayLabel=document.getElementById('advHolidayLabel');
+              const holidayRow=holidayLabel?.closest('.advRow')||holidayLabel?.parentElement;
+              if(status&&holidayRow){
+                report._holidayGap=+(holidayRow.getBoundingClientRect().top-status.getBoundingClientRect().bottom).toFixed(1);
               }
+              report._advancedStable=advanced?!advanced.classList.contains('edtAdvStabilizing735'):false;
+              report._summaryEffects=[...document.querySelectorAll('#settingsSheet summary')].map(s=>{
+                const cs=getComputedStyle(s);return {transition:cs.transitionDuration,animation:cs.animationName,opacity:cs.opacity}
+              });
               for(const [id,sel] of defs){
                 document.querySelectorAll('#settingsSheet details').forEach(d=>d.open=false);
                 const d=document.getElementById(id); if(!d)continue;
