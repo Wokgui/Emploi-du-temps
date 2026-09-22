@@ -115,7 +115,7 @@ jobs:
               const report={};
               /* 7.36 functional/visual checks. */
               const advanced=document.getElementById('advancedSettings85');
-              if(advanced){advanced.open=true;try{if(window.refresh736)window.refresh736()}catch(e){}}
+              if(advanced){advanced.open=true;try{if(window.refresh735)window.refresh735()}catch(e){};try{if(window.refresh736)window.refresh736()}catch(e){}}
               const sheet0=document.getElementById('settingsSheet'),title0=document.getElementById('settingsTitle');
               const titleWord=title0&&title0.querySelector('.settingsText735');
               const langSummary=document.querySelector('#settingsLanguage698>summary .edtSummaryLabel700')||document.querySelector('#settingsLanguage698>summary');
@@ -158,8 +158,9 @@ jobs:
               function selectGeom(id){
                 const el=document.getElementById(id);if(!el)return null;
                 const cs=getComputedStyle(el),r=el.getBoundingClientRect();
+                const cssWidth=parseFloat(cs.width)||0;
                 return {
-                  width:+r.width.toFixed(1),
+                  width:+((r.width||cssWidth)).toFixed(1),
                   paddingLeft:+(parseFloat(cs.paddingLeft)||0).toFixed(1),
                   paddingRight:+(parseFloat(cs.paddingRight)||0).toFixed(1),
                   textAlign:cs.textAlign,
@@ -251,7 +252,7 @@ jobs:
                 };
               }
               document.querySelectorAll('#settingsSheet details').forEach(d=>d.open=false);
-              const weeks=document.getElementById('settingsTypeWeek692');if(weeks){weeks.open=true;try{if(window.refresh736)window.refresh736()}catch(e){}}
+              const weeks=document.getElementById('settingsTypeWeek692');if(weeks){weeks.open=true;try{if(window.refresh735)window.refresh735()}catch(e){};try{if(window.refresh736)window.refresh736()}catch(e){}}
               const slotBoxFinal=document.getElementById('slotSettings');
               report._settingsSlotRows=slotBoxFinal?slotBoxFinal.querySelectorAll(':scope > .slotRow').length:0;
               report._settingsSlotExpected=typeof slots!=='undefined'&&Array.isArray(slots)?slots.length:0;
@@ -272,7 +273,7 @@ jobs:
             if(modal){modal.classList.add('show','edtForceVisible695');modal.setAttribute('data-edt-open','true');modal.style.display='block'}
             document.querySelectorAll('#settingsSheet details').forEach(d=>d.open=false);
             const adv=document.getElementById('advancedSettings85');
-            if(adv){adv.open=true;try{if(window.refresh736)window.refresh736()}catch(e){}}
+            if(adv){adv.open=true;try{if(window.refresh735)window.refresh735()}catch(e){};try{if(window.refresh736)window.refresh736()}catch(e){}}
             setTimeout(()=>{if(sheet&&adv)sheet.scrollTop=Math.max(0,adv.offsetTop-35)},120);
           },4300);
           </script>'''
