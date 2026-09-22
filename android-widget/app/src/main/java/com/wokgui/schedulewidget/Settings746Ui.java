@@ -13,7 +13,7 @@ final class Settings746Ui {
 
                 const style=document.createElement('style');
                 style.id='settings746Style';
-                style.textContent=\`
+                style.textContent=`
                   /* Identical title-to-slider rhythm for both text-size controls. */
                   html body #settingsSheet #settingsText692 .fontApp745 .settingTitle,
                   html body #settingsSheet #settingsText692 .fontWidget745 .settingTitle{
@@ -194,7 +194,7 @@ final class Settings746Ui {
                     margin:10px auto 2px!important;
                     text-align:center!important;
                   }
-                \`;
+                `;
                 document.head.appendChild(style);
 
                 let busy746=false,canvas746=null;
