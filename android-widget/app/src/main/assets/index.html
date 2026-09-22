@@ -4369,10 +4369,17 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
       const arrow=document.createElement('span');arrow.className='profileArrow734';arrow.textContent='⌄';shell.appendChild(arrow);
     }
     try{
+      select.style.setProperty('-webkit-appearance','none','important');
+      select.style.setProperty('appearance','none','important');
+      select.style.setProperty('background-image','none','important');
+      select.style.setProperty('padding-left','34px','important');
+      select.style.setProperty('padding-right','34px','important');
+      select.style.setProperty('text-align','center','important');
+      select.style.setProperty('text-align-last','center','important');
       const cs=getComputedStyle(select),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
       ctx.font=cs.font||cs.fontSize+' '+cs.fontFamily;
       let w=0;[...select.options].forEach(o=>{w=Math.max(w,ctx.measureText(String(o.textContent||'')).width)});
-      const width=Math.max(128,Math.min(window.innerWidth-72,Math.ceil(w+78)));
+      const width=Math.max(128,Math.min(window.innerWidth-72,Math.ceil(w+82)));
       shell.style.setProperty('width',width+'px','important');
     }catch(e){}
   }
@@ -4400,18 +4407,15 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     const title=document.getElementById('settingsTitle');
     const group=title&&title.querySelector('.settingsTitleGroup734');
     if(!sheet||!head||!title||!group)return;
-    title.style.setProperty('left','50%','important');
-    title.style.setProperty('transform','translate(-50%,-50%)','important');
-    requestAnimationFrame(()=>{
-      const sr=sheet.getBoundingClientRect(),gr=group.getBoundingClientRect();
-      const delta=((gr.left+gr.right)/2)-((sr.left+sr.right)/2);
-      if(Math.abs(delta)>.25){
-        const current=parseFloat(getComputedStyle(title).left)||head.clientWidth/2;
-        title.style.setProperty('left',(current-delta)+'px','important');
-      }
+    title.style.setProperty('transform','translateY(-50%)','important');
+    const place=()=>{
+      const sr=sheet.getBoundingClientRect(),hr=head.getBoundingClientRect(),gr=group.getBoundingClientRect();
+      const left=((sr.left+sr.right)/2)-hr.left-(gr.width/2);
+      title.style.setProperty('left',left.toFixed(2)+'px','important');
       const g2=group.getBoundingClientRect(),s2=sheet.getBoundingClientRect();
       document.documentElement.dataset.edt734SettingsDelta=((((g2.left+g2.right)/2)-((s2.left+s2.right)/2))).toFixed(2);
-    });
+    };
+    place();requestAnimationFrame(place);
   }
 
   function halveHolidayGap734(){
