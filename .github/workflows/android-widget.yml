@@ -115,13 +115,16 @@ jobs:
               const report={};
               /* 7.35 functional/visual checks. */
               const advanced=document.getElementById('advancedSettings85');
-              if(advanced){advanced.open=true;try{if(window.refresh734)window.refresh734()}catch(e){}}
+              if(advanced){advanced.open=true;try{if(window.refresh735)window.refresh735()}catch(e){}}
               const sheet0=document.getElementById('settingsSheet'),title0=document.getElementById('settingsTitle');
-              const titleGroup=title0&&title0.querySelector('.settingsTitleGroup734');
-              if(sheet0&&(titleGroup||title0)){
-                const s0=sheet0.getBoundingClientRect(),t0=(titleGroup||title0).getBoundingClientRect();
-                report._settingsCenterDelta=+(((t0.left+t0.right)/2)-((s0.left+s0.right)/2)).toFixed(2);
-                report._settingsGroupText=(titleGroup?.textContent||title0.textContent||'').trim();
+              const titleWord=title0&&title0.querySelector('.settingsText735');
+              const langSummary=document.querySelector('#settingsLanguage698>summary .edtSummaryLabel700')||document.querySelector('#settingsLanguage698>summary');
+              if(sheet0&&(titleWord||title0)){
+                const s0=sheet0.getBoundingClientRect(),t0=(titleWord||title0).getBoundingClientRect();
+                const lang0=langSummary&&langSummary.getBoundingClientRect();
+                report._settingsWordCenterDelta=+(((t0.left+t0.right)/2)-((s0.left+s0.right)/2)).toFixed(2);
+                report._settingsVsLanguageDelta=lang0?+(((t0.left+t0.right)/2)-((lang0.left+lang0.right)/2)).toFixed(2):999;
+                report._settingsGroupText=(title0.textContent||'').trim();
               }
               try{
                 const slotBox=document.getElementById('slotSettings');
