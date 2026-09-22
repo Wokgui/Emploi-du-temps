@@ -139,12 +139,13 @@ jobs:
               const advanced=document.getElementById('advancedSettings85');
               if(advanced){
                 advanced.open=false;
+                try{if(window.refresh737)window.refresh737()}catch(e){}
                 const ac=document.getElementById('advancedContent85');
-                if(ac){
-                  ac.style.setProperty('display','none','important');
-                  ac.style.setProperty('height','0px','important');
-                  ac.style.setProperty('overflow','hidden','important');
-                }
+                const preStyle=ac?{
+                  display:ac.style.getPropertyValue('display'),
+                  height:ac.style.getPropertyValue('height'),
+                  overflow:ac.style.getPropertyValue('overflow')
+                }:{};
                 const summary=advanced.querySelector(':scope>summary');
                 if(summary)summary.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));
                 const ar=ac&&ac.getBoundingClientRect(),acs=ac&&getComputedStyle(ac);
@@ -154,6 +155,9 @@ jobs:
                   visibility:acs?.visibility||'',
                   height:ar?+ar.height.toFixed(1):0,
                   overflow:acs?.overflow||'',
+                  preDisplay:preStyle.display||'',
+                  preHeight:preStyle.height||'',
+                  preOverflow:preStyle.overflow||'',
                   stabilizing:advanced.classList.contains('edtAdvStabilizing735'),
                   vacationTitle:(document.getElementById('schoolTitle')?.textContent||'').trim()
                 };
@@ -345,7 +349,7 @@ jobs:
           il=report.get('_instantLanguage') or {}
           if not il.get('open') or not il.get('catalog') or float(il.get('catalogWidth',0))<=1 or not il.get('gear') or float(il.get('height',0))<=72 or not il.get('closedAfterSecond') or not il.get('reopenedAfterThird'): raise SystemExit(f'language section is not immediately responsive/final: {il}')
           ia=report.get('_instantAdvanced') or {}
-          if not ia.get('open') or ia.get('display')=='none' or ia.get('visibility')=='hidden' or float(ia.get('height',0))<=1 or ia.get('overflow')=='hidden' or ia.get('stabilizing') or ia.get('vacationTitle')!='Vacances et jours sans cours' or not ia.get('closedAfterSecond') or not ia.get('reopenedAfterThird'): raise SystemExit(f'advanced settings is not immediately responsive/final: {ia}')
+          if ia.get('preDisplay')=='none' or ia.get('preHeight')=='0px' or ia.get('preOverflow')=='hidden' or not ia.get('open') or ia.get('display')=='none' or ia.get('visibility')=='hidden' or float(ia.get('height',0))<=1 or ia.get('overflow')=='hidden' or ia.get('stabilizing') or ia.get('vacationTitle')!='Vacances et jours sans cours' or not ia.get('closedAfterSecond') or not ia.get('reopenedAfterThird'): raise SystemExit(f'advanced settings is not pre-rendered/immediately responsive: {ia}')
           if not report.get('_advancedStable'): raise SystemExit('advanced settings still has a transient first layout')
           ac=report.get('_advancedContent') or {}
           if ac.get('display')=='none' or ac.get('visibility')=='hidden' or float(ac.get('height',0))<=1: raise SystemExit(f'advanced settings final content is still hidden: {ac}')
