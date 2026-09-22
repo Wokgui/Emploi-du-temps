@@ -456,6 +456,8 @@ jobs:
                   profileVisualCount:profileShell?profileShell.querySelectorAll(':scope > .profileVisual745').length:0,
                   profileArrowCount:profileShell?profileShell.querySelectorAll(':scope > .profileArrow745').length:0,
                   profileArrowVisible:!!profileArrow&&profileArrowCs?.display!=='none'&&profileArrowCs?.visibility!=='hidden'&&parseFloat(profileArrowCs?.opacity||'1')>0,
+                  profileNativeOpacity:profileShell?getComputedStyle(document.getElementById('advProfileSelect')).opacity:'1',
+                  profileNativeColor:profileShell?getComputedStyle(document.getElementById('advProfileSelect')).color:'',
                   version:(version745?.textContent||'').trim(),
                   versionBelowClose:(vr745&&ar745)?vr745.top>=ar745.bottom-0.5:false,
                   appFontBorderBottom:appFontCs?parseFloat(appFontCs.borderBottomWidth)||0:999,
@@ -623,9 +625,12 @@ jobs:
                 report._layout748.closedOpacity=closed748?closed748.opacity:'';
                 report._layout748.closedPointer=closed748?closed748.pointerEvents:'';
 
-                /* Today: browse one day forward, then simulate the 30-second refresh. */
+                /* Today: start on 22/09, browse to 23/09, then simulate the 30-second refresh. */
                 try{if(typeof window.setModeFromAndroid==='function')window.setModeFromAndroid('today')}catch(e){}
+                window.__edt728DayDate=new Date(2026,8,22,12,0,0,0);
+                window.__edt748PinnedDay=0;
                 try{if(typeof window.renderToday==='function')window.renderToday()}catch(e){}
+                const baselineDate748=(document.getElementById('todayDate')?.textContent||'').trim();
                 const dayNext748=document.getElementById('dayNext728');
                 if(dayNext748)dayNext748.click();
                 const browsedDate748=(document.getElementById('todayDate')?.textContent||'').trim();
@@ -642,6 +647,8 @@ jobs:
                   scrollHeight:document.scrollingElement?document.scrollingElement.scrollHeight:0,
                   innerHeight:window.innerHeight,
                   fitted:document.documentElement.dataset.edtToday748||'',
+                  dayNextExists:!!dayNext748,
+                  baselineDate:baselineDate748,
                   browsedDate:browsedDate748,
                   afterTickDate:afterTickDate748,
                   pinned:Number(window.__edt748PinnedDay||0)
@@ -767,7 +774,7 @@ jobs:
           try: fitted748=float(td748.get('fitted',0))
           except: fitted748=0
           if not td748.get('active') or float(td748.get('listBottom',999))>float(td748.get('navTop',0))+1 or fitted748<34 or float(td748.get('scrollHeight',999))>float(td748.get('innerHeight',0))+1: raise SystemExit(f'7.48 Today does not fit above bottom nav: {td748}')
-          if not td748.get('browsedDate') or td748.get('afterTickDate')!=td748.get('browsedDate') or int(td748.get('pinned',0))<=0: raise SystemExit(f'7.48 Today browse date is not preserved across periodic render: {td748}')
+          if not td748.get('dayNextExists') or not td748.get('baselineDate') or td748.get('browsedDate')==td748.get('baselineDate') or td748.get('afterTickDate')!=td748.get('browsedDate') or int(td748.get('pinned',0))<=0: raise SystemExit(f'7.48 Today browse date is not preserved across periodic render: {td748}')
           ed748=l748.get('edit') or {}
           if abs(float(ed748.get('topGap',999))-float(ed748.get('bottomGap',-999)))>2.0: raise SystemExit(f'7.48 import/day spacing is not symmetric: {ed748}')
           vw748=float(ed748.get('viewWidth',0))
@@ -828,6 +835,7 @@ jobs:
           if s745.get('rangeFrom')!='Du' or s745.get('rangeTo')!='Au': raise SystemExit(f'Du/Au labels are missing: {s745}')
           if s745.get('profileText')!='Principal' or abs(float(s745.get('profileCenterDelta',999)))>0.5 or not s745.get('profileFits') or float(s745.get('profileShellWidth',0))<170: raise SystemExit(f'Principal is not stably centered/untruncated: {s745}')
           if int(s745.get('profileVisualCount',0))!=1 or int(s745.get('profileArrowCount',0))!=1 or not s745.get('profileArrowVisible'): raise SystemExit(f'profile custom control is duplicated or its arrow is missing: {s745}')
+          if float(s745.get('profileNativeOpacity',1))>0.01: raise SystemExit(f'native profile text is still visible under the custom label: {s745}')
           if abs(float(s745.get('profileUnderTitleDelta',999)))>0.5: raise SystemExit(f'profile selector is not centered under Profils: {s745}')
           if s745.get('version')!='Version 7.48' or not s745.get('versionBelowClose'): raise SystemExit(f'app version is not below Fermer: {s745}')
           if float(s745.get('appFontBorderBottom',999))>0.1 or float(s745.get('widgetFontBorderTop',999))>0.1: raise SystemExit(f'text-size separator still visible: {s745}')
