@@ -5153,5 +5153,170 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 })();
 </script>
 
+
+
+<style id="edt737Style">
+  /* 7.37 — aucun état intermédiaire visible à l'ouverture. */
+  html body #settingsSheet #advancedSettings85.edtAdvStabilizing735 > :not(summary){
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+  }
+  html body #settingsSheet #advancedSettings85[open] #advancedContent85{
+    visibility:visible!important;
+    opacity:1!important;
+  }
+  html body #appVersionInfo:after{content:none!important;display:none!important}
+</style>
+
+<script>
+(function(){
+  if(window.__edt737)return;window.__edt737=true;
+  let fixing=false;
+
+  function ensureVersion737(){
+    const v=document.getElementById('appVersionInfo');
+    if(v&&v.textContent!=='Version 7.37')v.textContent='Version 7.37';
+  }
+
+  function refreshKnown737(){
+    const names=['refreshAdvancedFeatures','refreshWorkflow85','refreshSettingsLayout','refreshStability78','refresh734','refresh735','refresh736'];
+    names.forEach(name=>{try{if(typeof window[name]==='function')window[name]()}catch(e){}});
+  }
+
+  function prepareHeader737(){
+    try{if(typeof window.refresh735==='function')window.refresh735()}catch(e){}
+    try{if(typeof window.refresh736==='function')window.refresh736()}catch(e){}
+    ensureVersion737();
+  }
+
+  function prepareLanguage737(){
+    const button=document.getElementById('languageDownloadBtn81');
+    const panel=document.getElementById('languagePackPanel81');
+    if(button){
+      button.style.setProperty('display','none','important');
+      if((!panel||!panel.classList.contains('show')||!document.getElementById('languageCatalog81'))&&!button.dataset.instant737){
+        button.dataset.instant737='1';
+        try{button.click()}catch(e){}
+        delete button.dataset.instant737;
+      }
+    }
+    try{if(typeof window.refresh736==='function')window.refresh736()}catch(e){}
+    ensureVersion737();
+  }
+
+  function prepareAdvanced737(){
+    const adv=document.getElementById('advancedSettings85');
+    const content=document.getElementById('advancedContent85');
+    if(content){
+      ['display','height','min-height','overflow','visibility','opacity','pointer-events'].forEach(p=>content.style.removeProperty(p));
+      content.style.setProperty('display','block','important');
+      content.style.setProperty('height','auto','important');
+      content.style.setProperty('min-height','0','important');
+      content.style.setProperty('overflow','visible','important');
+      content.style.setProperty('visibility','visible','important');
+      content.style.setProperty('opacity','1','important');
+    }
+
+    refreshKnown737();
+
+    const title=document.getElementById('schoolTitle');
+    if(title){
+      const t=String(title.textContent||'').trim().toLowerCase();
+      if(t==='jours sans cours'||t==='vacances scolaires')title.textContent='Vacances et jours sans cours';
+    }
+    document.querySelectorAll('#advancedSettings85 .settingTitle,#advancedSettings85 .schoolTitle,#advancedSettings85 .edtDaysOffTitle696').forEach(el=>{
+      const t=String(el.textContent||'').trim().toLowerCase();
+      if(t==='jours sans cours'||t==='vacances scolaires')el.textContent='Vacances et jours sans cours';
+    });
+
+    if(content){
+      content.style.setProperty('display','block','important');
+      content.style.setProperty('height','auto','important');
+      content.style.setProperty('overflow','visible','important');
+      content.style.setProperty('visibility','visible','important');
+      content.style.setProperty('opacity','1','important');
+    }
+    if(adv)adv.classList.remove('edtAdvStabilizing735');
+    try{if(typeof window.refresh736==='function')window.refresh736()}catch(e){}
+    ensureVersion737();
+  }
+
+  function finalise737(){
+    if(fixing)return;fixing=true;
+    try{
+      prepareHeader737();
+      prepareLanguage737();
+      const adv=document.getElementById('advancedSettings85');
+      if(adv&&adv.open)prepareAdvanced737();
+    }finally{fixing=false}
+  }
+  window.refresh737=finalise737;
+
+  /* Prépare tout AVANT l'action native : aucun premier affichage provisoire. */
+  document.addEventListener('click',e=>{
+    const target=e.target;
+    if(!target||!target.closest)return;
+
+    if(target.closest('#settingsBtn')){
+      prepareHeader737();
+      prepareLanguage737();
+      return;
+    }
+
+    const langSummary=target.closest('#settingsLanguage698>summary');
+    if(langSummary){
+      const details=document.getElementById('settingsLanguage698');
+      if(details){
+        e.preventDefault();
+        if(details.open){
+          details.open=false;
+        }else{
+          prepareHeader737();
+          prepareLanguage737();
+          details.open=true;
+          prepareLanguage737();
+        }
+      }
+      return;
+    }
+
+    const advSummary=target.closest('#advancedSettings85>summary');
+    if(advSummary){
+      const details=document.getElementById('advancedSettings85');
+      if(details){
+        e.preventDefault();
+        if(details.open){
+          details.open=false;
+        }else{
+          prepareHeader737();
+          details.open=true;
+          prepareAdvanced737();
+        }
+      }
+    }
+  },true);
+
+  /* Les anciens recalculs retardés sont corrigés dans la même micro-tâche, avant peinture. */
+  const sheet=document.getElementById('settingsSheet');
+  if(sheet){
+    new MutationObserver(()=>{
+      if(fixing)return;
+      finalise737();
+    }).observe(sheet,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['class','open','style']});
+  }
+
+  document.addEventListener('toggle',e=>{
+    const el=e.target;
+    if(el?.id==='settingsLanguage698'&&el.open)prepareLanguage737();
+    if(el?.id==='advancedSettings85'&&el.open)prepareAdvanced737();
+  },true);
+
+  prepareHeader737();
+  prepareLanguage737();
+  finalise737();
+})();
+</script>
+
 </body>
 </html>
