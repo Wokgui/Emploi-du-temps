@@ -5190,6 +5190,45 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     ensureVersion737();
   }
 
+  function buildLanguageCatalog737(){
+    const select=document.getElementById('languageSelect'),box=select&&select.closest('.settingBox');
+    if(!box)return;
+    let panel=document.getElementById('languagePackPanel81');
+    if(!panel){panel=document.createElement('div');panel.id='languagePackPanel81';panel.className='languagePackPanel81';box.appendChild(panel)}
+    panel.classList.add('show');
+
+    let supported=[];
+    try{
+      const raw=window.AndroidSchedule&&AndroidSchedule.supportedTranslationLanguages?AndroidSchedule.supportedTranslationLanguages():'[]';
+      const parsed=JSON.parse(raw||'[]');if(Array.isArray(parsed))supported=parsed;
+    }catch(e){}
+    let installed=[];
+    try{
+      const raw=window.AndroidSchedule&&AndroidSchedule.loadLanguagePacks?AndroidSchedule.loadLanguagePacks():'[]';
+      const parsed=JSON.parse(raw||'[]');if(Array.isArray(parsed))installed=parsed;
+    }catch(e){}
+    const installedCodes=new Set(['fr','de','en'].concat(installed.map(x=>String(x?.code||''))));
+    const all=supported.filter(x=>x&&x.code&&!installedCodes.has(String(x.code)))
+      .sort((a,b)=>String(a.name||a.code).localeCompare(String(b.name||b.code),'fr'));
+
+    panel.innerHTML='';
+    const title=document.createElement('div');title.className='languagePackTitle';title.textContent='Télécharger une langue';panel.appendChild(title);
+    const row=document.createElement('div');row.className='languageAny81';panel.appendChild(row);
+    const picker=document.createElement('select');picker.id='languageCatalog81';row.appendChild(picker);
+    all.forEach(x=>{const o=document.createElement('option');o.value=String(x.code);o.textContent=String(x.name||x.code);picker.appendChild(o)});
+    if(!picker.options.length){const o=document.createElement('option');o.value='';o.textContent='Aucune langue disponible';picker.appendChild(o)}
+    const dl=document.createElement('button');dl.id='languageGenerate81';dl.type='button';dl.textContent='Télécharger';row.appendChild(dl);
+    const status=document.createElement('div');status.className='languagePackStatus';panel.appendChild(status);
+    if(!all.length)dl.disabled=true;
+    dl.onclick=e=>{
+      e.preventDefault();e.stopPropagation();if(!picker.value)return;
+      const item=all.find(x=>String(x.code)===picker.value)||{code:picker.value,name:picker.options[picker.selectedIndex]?.textContent||picker.value};
+      dl.disabled=true;status.textContent='Téléchargement du modèle de langue et traduction de toute l’interface…';
+      try{AndroidSchedule.generateLanguagePack(String(item.code),String(item.name||item.code))}
+      catch(err){dl.disabled=false;status.textContent='Téléchargement impossible'}
+    };
+  }
+
   function prepareLanguage737(){
     /* Construire le bloc complet alors qu'il est encore hors écran/fermé. */
     try{if(typeof window.refreshStability81==='function')window.refreshStability81()}catch(e){}
@@ -5209,6 +5248,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
         delete button.dataset.instant737;
       }
     }
+    if(!document.getElementById('languageCatalog81'))buildLanguageCatalog737();
     try{if(typeof window.refresh736==='function')window.refresh736()}catch(e){}
     ensureVersion737();
   }
