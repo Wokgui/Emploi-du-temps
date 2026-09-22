@@ -41,7 +41,7 @@ final class Feedback672Ui {
                   const titleText=root.querySelector('.bar672Title'),labels=root.querySelectorAll('.bar672Label');
                   if(titleText)titleText.textContent=tr('Barres en haut et en bas','Top and bottom bars','Obere und untere Leiste');
                   if(labels[0])labels[0].textContent=tr('En haut','Top','Oben');if(labels[1])labels[1].textContent=tr('En bas','Bottom','Unten');
-                  const optionLabels=[tr('Progression','Progress','Fortschritt'),tr('Couleur fixe','Solid colour','Feste Farbe'),tr('Aucune','None','Keine')];
+                  const optionLabels=[tr('Progression','Progress','Fortschritt'),tr('Couleur','Colour','Farbe'),tr('Aucune','None','Keine')];
                   const topMode=document.getElementById('widgetTopBarMode672'),bottomMode=document.getElementById('widgetBottomBarMode672');
                   [topMode,bottomMode].forEach(select=>{if(select)[...select.options].forEach((option,index)=>option.textContent=optionLabels[index])});
                   const current=read(),topColor=document.getElementById('widgetTopBarColor672'),bottomColor=document.getElementById('widgetBottomBarColor672');
