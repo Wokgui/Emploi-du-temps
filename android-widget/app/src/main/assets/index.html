@@ -5546,15 +5546,22 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   if(window.__edt743)return;window.__edt743=true;
   function apply743(){
     const grid=document.querySelector('#schoolCalendarBlock .schoolGrid');
-    const zone=document.getElementById('schoolZone');
+    const row=document.getElementById('schoolAutoRow739');
+    const hint=document.getElementById('schoolHint');
+    const update=document.getElementById('schoolAutoFetch725');
+    const status=document.getElementById('schoolAutoStatus725');
     if(grid){
-      const visible=[...grid.children].filter(el=>{
-        if(el===zone)return true;
-        const cs=getComputedStyle(el);
-        return cs.display!=='none'&&cs.visibility!=='hidden';
-      });
-      grid.classList.toggle('edtUnusedSchoolGrid743',!visible.length);
+      grid.classList.add('edtUnusedSchoolGrid743');
+      grid.style.setProperty('display','none','important');
+      grid.style.setProperty('height','0','important');
+      grid.style.setProperty('min-height','0','important');
+      grid.style.setProperty('margin','0','important');
+      grid.style.setProperty('padding','0','important');
     }
+    if(row)row.style.setProperty('margin','0 auto','important');
+    if(hint)hint.style.setProperty('margin','6px 0 0','important');
+    if(update)update.style.setProperty('margin','14px auto 0','important');
+    if(status)status.style.setProperty('margin','12px 0 0','important');
     const v=document.getElementById('appVersionInfo');
     if(v&&v.textContent!=='Version 7.43')v.textContent='Version 7.43';
   }
