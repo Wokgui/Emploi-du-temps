@@ -60,6 +60,7 @@ final class ChunkedUiScripts {
         add(out, Settings745Ui.script());
         add(out, Settings746Ui.script());
         add(out, WeekView746Ui.script());
+        add(out, Layout747Ui.script());
         if (BuildConfig.DEBUG) add(out, HeavyPanelPerformanceUi648.script());
         add(out, UiRuntimeBundle.idleImportScript());
         return out.toArray(new String[0]);
