@@ -632,8 +632,11 @@ jobs:
                 try{if(typeof window.renderToday==='function')window.renderToday()}catch(e){}
                 const baselineDate748=(document.getElementById('todayDate')?.textContent||'').trim();
                 const dayNext748=document.getElementById('dayNext728');
-                if(dayNext748)dayNext748.click();
+                const dayNextOwned748=!!dayNext748?.__layout748DayOwner;
+                if(typeof window.__edtMovePinnedDay748==='function')window.__edtMovePinnedDay748(1);
                 const browsedDate748=(document.getElementById('todayDate')?.textContent||'').trim();
+                /* Reproduce the legacy refresh that used to overwrite final render owners. */
+                try{if(typeof window.refreshLunchBreakUi==='function')window.refreshLunchBreakUi()}catch(e){}
                 try{if(typeof window.renderToday==='function')window.renderToday()}catch(e){}
                 const afterTickDate748=(document.getElementById('todayDate')?.textContent||'').trim();
                 try{if(window.refreshLayout747)window.refreshLayout747()}catch(e){}
@@ -648,6 +651,9 @@ jobs:
                   innerHeight:window.innerHeight,
                   fitted:document.documentElement.dataset.edtToday748||'',
                   dayNextExists:!!dayNext748,
+                  dayNextOwned:dayNextOwned748,
+                  renderTodayOwner:!!window.renderToday?.__layout748,
+                  renderWeekOwner:!!window.renderWeek?.__layout748,
                   baselineDate:baselineDate748,
                   browsedDate:browsedDate748,
                   afterTickDate:afterTickDate748,
@@ -774,7 +780,7 @@ jobs:
           try: fitted748=float(td748.get('fitted',0))
           except: fitted748=0
           if not td748.get('active') or float(td748.get('listBottom',999))>float(td748.get('navTop',0))+1 or fitted748<34 or float(td748.get('scrollHeight',999))>float(td748.get('innerHeight',0))+1: raise SystemExit(f'7.48 Today does not fit above bottom nav: {td748}')
-          if not td748.get('dayNextExists') or not td748.get('baselineDate') or td748.get('browsedDate')==td748.get('baselineDate') or td748.get('afterTickDate')!=td748.get('browsedDate') or int(td748.get('pinned',0))<=0: raise SystemExit(f'7.48 Today browse date is not preserved across periodic render: {td748}')
+          if not td748.get('dayNextExists') or not td748.get('dayNextOwned') or not td748.get('renderTodayOwner') or not td748.get('renderWeekOwner') or not td748.get('baselineDate') or td748.get('browsedDate')==td748.get('baselineDate') or td748.get('afterTickDate')!=td748.get('browsedDate') or int(td748.get('pinned',0))<=0: raise SystemExit(f'7.48 Today browse date/final render ownership is not preserved: {td748}')
           ed748=l748.get('edit') or {}
           if abs(float(ed748.get('topGap',999))-float(ed748.get('bottomGap',-999)))>2.0: raise SystemExit(f'7.48 import/day spacing is not symmetric: {ed748}')
           vw748=float(ed748.get('viewWidth',0))
