@@ -213,10 +213,22 @@ jobs:
           </script>'''
           html=html.replace('</body>',f'<script>{runtime}</script>'+measure+'</body>')
           Path('build/visual/harness.html').write_text(html,encoding='utf-8')
+          advanced=r'''<script>
+          setTimeout(()=>{
+            const modal=document.getElementById('settingsModal'),sheet=document.getElementById('settingsSheet');
+            if(modal){modal.classList.add('show','edtForceVisible695');modal.setAttribute('data-edt-open','true');modal.style.display='block'}
+            document.querySelectorAll('#settingsSheet details').forEach(d=>d.open=false);
+            const adv=document.getElementById('advancedSettings85');
+            if(adv){adv.open=true;try{if(window.refresh734)window.refresh734()}catch(e){}}
+            setTimeout(()=>{if(sheet&&adv)sheet.scrollTop=Math.max(0,adv.offsetTop-35)},120);
+          },4300);
+          </script>'''
+          Path('build/visual/harness-advanced.html').write_text(html.replace('</body>',advanced+'</body>'),encoding='utf-8')
           PY
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
           "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=6000 --window-size=360,780 --force-device-scale-factor=2             --dump-dom "file://$PWD/build/visual/harness.html" > build/visual/dom.html
           "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=6000 --window-size=360,780 --force-device-scale-factor=2             --screenshot="$PWD/build/visual/settings.png" "file://$PWD/build/visual/harness.html"
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage             --virtual-time-budget=7000 --window-size=360,780 --force-device-scale-factor=2             --screenshot="$PWD/build/visual/advanced.png" "file://$PWD/build/visual/harness-advanced.html"
           python3 - <<'PY'
           import re, html as h, json, pathlib
           dom=pathlib.Path('build/visual/dom.html').read_text(errors='ignore')
@@ -269,6 +281,7 @@ jobs:
           path: |
             android-widget/build/visual/report.json
             android-widget/build/visual/settings.png
+            android-widget/build/visual/advanced.png
             android-widget/build/visual/dom.html
           if-no-files-found: error
 
