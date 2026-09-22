@@ -208,6 +208,18 @@ final class Settings745Ui {
                       setImp745(reminderSelect,'text-align-last','center');
                     }
                   }
+                  const schoolSetting=document.getElementById('schoolCalendarSetting');
+                  if(schoolSetting){
+                    schoolSetting.classList.add('edtAdvFlat724','edtAdvSep724');
+                    setImp745(schoolSetting,'box-sizing','border-box');
+                    setImp745(schoolSetting,'width','100%');
+                    setImp745(schoolSetting,'max-width','100%');
+                    setImp745(schoolSetting,'margin','0px');
+                    setImp745(schoolSetting,'padding-left','0px');
+                    setImp745(schoolSetting,'padding-right','0px');
+                    setImp745(schoolSetting,'border-left-width','0px');
+                    setImp745(schoolSetting,'border-right-width','0px');
+                  }
                   const zone=document.getElementById('schoolZone');
                   const enabled=document.getElementById('schoolEnabled');
                   const row=document.getElementById('schoolAutoRow739');
