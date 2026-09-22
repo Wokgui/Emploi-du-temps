@@ -5220,10 +5220,26 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
       }
       if(enableRow&&enableRow.parentElement!==row)row.appendChild(enableRow);
       if(zone.parentElement!==row)row.appendChild(zone);
+      row.style.setProperty('margin','0 auto','important');
+      const grid=block.querySelector('.schoolGrid');
+      if(grid){
+        grid.classList.add('edtUnusedSchoolGrid743');
+        grid.style.setProperty('display','none','important');
+        grid.style.setProperty('height','0','important');
+        grid.style.setProperty('min-height','0','important');
+        grid.style.setProperty('margin','0','important');
+        grid.style.setProperty('padding','0','important');
+      }
+      const hint=document.getElementById('schoolHint');
+      const update=document.getElementById('schoolAutoFetch725');
+      const status=document.getElementById('schoolAutoStatus725');
+      if(hint)hint.style.setProperty('margin','6px 0 0','important');
+      if(update)update.style.setProperty('margin','14px auto 0','important');
+      if(status)status.style.setProperty('margin','12px 0 0','important');
     }
     const holiday=document.getElementById('advHolidayLabel')?.closest('.settingBox');
     if(holiday){
-      holiday.style.setProperty('margin-top','-10px','important');
+      holiday.style.setProperty('margin-top','12px','important');
       holiday.style.setProperty('padding-top','0','important');
     }
     const footer=document.getElementById('resetFooter692');
@@ -5536,7 +5552,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     padding-bottom:0!important;
   }
   html body #settingsSheet #advancedSettings85 .holidayFlat725{
-    margin-top:-2px!important;
+    margin-top:12px!important;
     padding-top:0!important;
   }
 </style>
@@ -5565,10 +5581,33 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     const v=document.getElementById('appVersionInfo');
     if(v&&v.textContent!=='Version 7.43')v.textContent='Version 7.43';
   }
-  apply743();
-  const sheet=document.getElementById('settingsSheet');
-  if(sheet)new MutationObserver(()=>queueMicrotask(apply743)).observe(sheet,{childList:true,subtree:true});
-  window.refresh743=apply743;
+  let applying743=false;
+  function run743(){
+    if(applying743)return;applying743=true;
+    try{
+      apply743();
+      const holiday=document.getElementById('advHolidayLabel')?.closest('.settingBox');
+      if(holiday){
+        holiday.style.setProperty('margin-top','12px','important');
+        holiday.style.setProperty('padding-top','0','important');
+      }
+    }finally{applying743=false}
+  }
+  function attach743(){
+    const sheet=document.getElementById('settingsSheet');
+    if(!sheet)return false;
+    run743();
+    if(!sheet.__edt743Observer){
+      sheet.__edt743Observer=true;
+      new MutationObserver(()=>queueMicrotask(run743)).observe(sheet,{childList:true,subtree:true});
+    }
+    return true;
+  }
+  if(!attach743()){
+    const boot743=new MutationObserver(()=>{if(attach743())boot743.disconnect()});
+    boot743.observe(document.documentElement,{childList:true,subtree:true});
+  }
+  window.refresh743=run743;
 })();
 </script>
 
