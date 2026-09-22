@@ -419,12 +419,12 @@ final class Settings746Ui {
                   let from=row.querySelector('.rangeFrom746');
                   if(!from){
                     from=document.createElement('span');
-                    from.className='rangeConnector725 rangeConnector745 rangeConnector746 rangeFrom746';
+                    from.className='rangeConnector725 rangeConnector745 rangeConnector746 rangeFrom745 rangeFrom746';
                   }
                   let to=row.querySelector('.rangeTo746');
                   if(!to){
                     to=document.createElement('span');
-                    to.className='rangeConnector725 rangeConnector745 rangeConnector746 rangeTo746';
+                    to.className='rangeConnector725 rangeConnector745 rangeConnector746 rangeTo745 rangeTo746';
                   }
                   const fromText=tr746('Du','From','Von'),toText=tr746('Au','To','Bis');
                   if(from.textContent!==fromText)from.textContent=fromText;
@@ -434,14 +434,16 @@ final class Settings746Ui {
                 }
 
                 function equalizeTextSpacing746(){
-                  const appTitle=document.getElementById('appFontTitle');
-                  const widgetTitle=document.getElementById('widgetFontTitle');
-                  for(const title of [appTitle,widgetTitle]){
-                    if(!title)continue;
+                  const pairs=[
+                    {title:document.getElementById('appFontTitle'),slider:document.getElementById('appFont'),cls:'fontApp745'},
+                    {title:document.getElementById('widgetFontTitle'),slider:document.getElementById('widgetFont'),cls:'fontWidget745'}
+                  ];
+                  for(const pair of pairs){
+                    const title=pair.title;if(!title)continue;
                     const box=title.closest('.settingBox');
-                    if(box)box.classList.add(title===appTitle?'fontApp745':'fontWidget745');
+                    if(box)box.classList.add(pair.cls);
                     imp746(title,'margin-bottom','9px');
-                    const row=box&&box.querySelector('.settingRow');
+                    const row=pair.slider?.closest('.settingRow');
                     if(row){
                       imp746(row,'margin-top','0px');
                       imp746(row,'padding-top','0px');
