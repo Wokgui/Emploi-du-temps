@@ -113,23 +113,59 @@ jobs:
               ];
               const report={};
               /* 7.34 functional/visual checks. */
+              const advanced=document.getElementById('advancedSettings85');
+              if(advanced){advanced.open=true;try{if(window.refresh734)window.refresh734()}catch(e){}}
               const sheet0=document.getElementById('settingsSheet'),title0=document.getElementById('settingsTitle');
-              if(sheet0&&title0){
-                const s0=sheet0.getBoundingClientRect(),t0=title0.getBoundingClientRect();
+              const titleGroup=title0&&title0.querySelector('.settingsTitleGroup734');
+              if(sheet0&&(titleGroup||title0)){
+                const s0=sheet0.getBoundingClientRect(),t0=(titleGroup||title0).getBoundingClientRect();
                 report._settingsCenterDelta=+(((t0.left+t0.right)/2)-((s0.left+s0.right)/2)).toFixed(2);
+                report._settingsGroupText=(titleGroup?.textContent||title0.textContent||'').trim();
               }
               try{
                 const slotBox=document.getElementById('slotSettings');
                 if(typeof renderSlots==='function')renderSlots();
                 const before=slotBox?slotBox.querySelectorAll('.slotRow').length:0;
+                const removedStart=typeof slots!=='undefined'&&slots[2]?slots[2].start:'10:00';
+                const removedEnd=typeof slots!=='undefined'&&slots[2]?slots[2].end:'11:00';
                 try{if(window.removeSlotAt680)window.removeSlotAt680(2)}catch(e){}
+                try{if(window.refreshStability78)window.refreshStability78()}catch(e){}
+                try{if(window.refreshFinalPolish)window.refreshFinalPolish()}catch(e){}
                 try{if(typeof renderSlots==='function')renderSlots()}catch(e){}
                 const after=slotBox?slotBox.querySelectorAll('.slotRow').length:0;
                 const times=slotBox?[...slotBox.querySelectorAll('.slotRow')].map(r=>[...r.querySelectorAll('input[type=time]')].map(i=>i.value).join('-')):[];
-                report._slotDelete={before,after,uniqueTimes:new Set(times).size,totalTimes:times.length};
+                let weekHasRemoved=false,courseStillExists=false;
+                try{
+                  activeWeek='A';state=weeks.A;if(typeof renderWeek==='function')renderWeek();
+                  const labels=[...document.querySelectorAll('#weekGrid>.wh.timecol')].map(el=>(el.textContent||'').replace(/\s+/g,' '));
+                  weekHasRemoved=labels.some(t=>t.includes(removedStart)&&t.includes(removedEnd));
+                  courseStillExists=['A','B'].some(w=>weeks[w]&&weeks[w][2]&&weeks[w][2].courses.some(x=>(x.label||'').startsWith('Test ')));
+                }catch(e){}
+                report._slotDelete={before,after,slotLength:typeof slots!=='undefined'?slots.length:null,uniqueTimes:new Set(times).size,totalTimes:times.length,weekHasRemoved,courseStillExists};
               }catch(e){report._slotDelete={error:String(e)}}
               const dateInput=document.getElementById('advRangeStart');
-              if(dateInput)report._rangeDateHeight=+parseFloat(getComputedStyle(dateInput).height).toFixed(1);
+              if(dateInput){
+                const ds=getComputedStyle(dateInput);
+                report._rangeDateHeight=+parseFloat(ds.height).toFixed(1);
+                report._rangeDateBackground=ds.backgroundColor;
+                report._rangeDatePadding=[parseFloat(ds.paddingLeft)||0,parseFloat(ds.paddingRight)||0];
+                report._dateArrow=!!dateInput.parentElement?.querySelector('.dateArrow734');
+              }
+              const profile=document.getElementById('advProfileSelect');
+              if(profile){
+                const ps=getComputedStyle(profile);
+                report._profile={paddingLeft:parseFloat(ps.paddingLeft)||0,paddingRight:parseFloat(ps.paddingRight)||0,arrow:!!profile.parentElement?.querySelector('.profileArrow734'),value:profile.options[profile.selectedIndex]?.textContent||''};
+              }
+              const mode=document.getElementById('widgetTopBarMode672');
+              if(mode)report._widgetColorLabel=mode.options[1]?.textContent||'';
+              const breakNames=[...document.querySelectorAll('#settingsDisplay692 .breakSettings .breakName')].map(el=>{const s=getComputedStyle(el);return {text:(el.textContent||'').trim(),justify:s.justifyContent,align:s.alignItems,textAlign:s.textAlign}});
+              report._breakNames=breakNames;
+              const holiday=document.getElementById('advHolidayLabel')?.closest('.settingBox')||document.querySelector('#advancedContent85>.holidayFlat725');
+              if(holiday){
+                const parent=holiday.parentElement,sibs=parent?[...parent.children]:[],idx=sibs.indexOf(holiday);
+                let prev=null;for(let ii=idx-1;ii>=0;ii--){const el=sibs[ii],rr=el.getBoundingClientRect(),ss=getComputedStyle(el);if(rr.height>0&&ss.display!=='none'&&ss.visibility!=='hidden'){prev=el;break}}
+                if(prev){const afterGap=Math.max(0,holiday.getBoundingClientRect().top-prev.getBoundingClientRect().bottom);report._holidayGap={before:+(document.documentElement.dataset.edt734HolidayGapBefore||afterGap),after:+afterGap.toFixed(1)}}
+              }
               for(const [id,sel] of defs){
                 document.querySelectorAll('#settingsSheet details').forEach(d=>d.open=false);
                 const d=document.getElementById(id); if(!d)continue;
