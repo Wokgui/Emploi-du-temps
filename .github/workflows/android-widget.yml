@@ -1,8 +1,8 @@
-name: Clean Android 7.37 instant-settings-open build
+name: Clean Android 7.38 prewarm-no-click-hijack build
 
 on:
   push:
-    branches: [fix/737-instant-settings-open]
+    branches: [fix/738-prewarm-settings-no-click-hijack]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 
@@ -90,7 +90,7 @@ jobs:
             if(n==='listProfiles')return JSON.stringify({current:'main',profiles:[{id:'main',name:'Principal'}]});
             if(n==='loadAdvancedSetting')return '';
             if(n==='getCurrentWeek')return 'B';
-            if(n==='getAppVersionName')return '7.37';
+            if(n==='getAppVersionName')return '7.38';
             if(n==='loadHolidays'||n==='loadSchoolHolidays')return '[]';
             if(n.startsWith('load'))return '{}';
             if(n.startsWith('get')||n.startsWith('is'))return '';
@@ -113,7 +113,7 @@ jobs:
                 ['advancedSettings85','#languageExtraTitle85,.edtLanguagesTitle696']
               ];
               const report={};
-              /* 7.37 functional/visual checks. */
+              /* 7.38 functional/visual checks. */
               try{if(window.refresh737)window.refresh737()}catch(e){}
               const langDetails=document.getElementById('settingsLanguage698');
               if(langDetails){
@@ -410,10 +410,10 @@ jobs:
       - name: Verify package metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='737001' versionName='7.37'" /tmp/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.37-tested-debug.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='738001' versionName='7.38'" /tmp/badging.txt
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.38-tested-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: EDT-7.37-tested
-          path: android-widget/app/build/outputs/apk/debug/EDT-7.37-tested-debug.apk
+          name: EDT-7.38-tested
+          path: android-widget/app/build/outputs/apk/debug/EDT-7.38-tested-debug.apk
           if-no-files-found: error
