@@ -715,7 +715,7 @@ jobs:
           if l747.get('error') or not l747.get('attached'): raise SystemExit(f'7.47 layout owner missing/error: {l747}')
           if not l747.get('settingsOpen') or abs(float(l747.get('settingsLeft',999)))>0.5 or abs(float(l747.get('settingsTop',999)))>0.5 or abs(float(l747.get('settingsWidth',0))-float(l747.get('viewportWidth',-999)))>1 or abs(float(l747.get('settingsHeight',0))-float(l747.get('viewportHeight',-999)))>1: raise SystemExit(f'7.47 settings is not a full page: {l747}')
           if l747.get('sheetRadius') not in ('0px','0') or l747.get('sheetOverflowX') not in ('hidden','clip'): raise SystemExit(f'7.47 settings sheet still looks/behaves like a floating tile: {l747}')
-          if l747.get('closedDisplay')!='none': raise SystemExit(f'7.47 old settings overlay remains after close: {l747}')
+          if not (l747.get('closedDisplay')=='none' or (l747.get('closedOpacity')=='0' and l747.get('closedPointer')=='none')): raise SystemExit(f'7.47 old settings overlay remains visible/interactive after close: {l747}')
           td747=l747.get('today') or {}
           try: fitted747=float(td747.get('fitted',0))
           except: fitted747=0
