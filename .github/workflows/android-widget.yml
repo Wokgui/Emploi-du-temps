@@ -115,7 +115,7 @@ jobs:
               const report={};
               /* 7.36 functional/visual checks. */
               const advanced=document.getElementById('advancedSettings85');
-              if(advanced){advanced.open=true;try{if(window.refresh735)window.refresh735()}catch(e){}}
+              if(advanced){advanced.open=true;try{if(window.refresh736)window.refresh736()}catch(e){}}
               const sheet0=document.getElementById('settingsSheet'),title0=document.getElementById('settingsTitle');
               const titleWord=title0&&title0.querySelector('.settingsText735');
               const langSummary=document.querySelector('#settingsLanguage698>summary .edtSummaryLabel700')||document.querySelector('#settingsLanguage698>summary');
@@ -155,16 +155,46 @@ jobs:
                 report._rangeDatePadding=[parseFloat(ds.paddingLeft)||0,parseFloat(ds.paddingRight)||0];
                 report._dateArrow=!!dateInput.parentElement?.querySelector('.dateArrow734');
               }
-              const profile=document.getElementById('advProfileSelect');
-              if(profile){
-                const overlay=profile.parentElement?.querySelector('.profileValue735');
-                const pr=profile.getBoundingClientRect(),or=overlay&&overlay.getBoundingClientRect();
-                report._profile={
-                  customArrow734:!!profile.parentElement?.querySelector('.profileArrow734'),
-                  overlay:!!overlay,
-                  value:profile.options[profile.selectedIndex]?.textContent||'',
-                  overlayText:overlay?.textContent||'',
-                  centerDelta:or?+(((or.left+or.right)/2)-((pr.left+pr.right)/2)).toFixed(2):999
+              function selectGeom(id){
+                const el=document.getElementById(id);if(!el)return null;
+                const cs=getComputedStyle(el),r=el.getBoundingClientRect();
+                return {
+                  width:+r.width.toFixed(1),
+                  paddingLeft:+(parseFloat(cs.paddingLeft)||0).toFixed(1),
+                  paddingRight:+(parseFloat(cs.paddingRight)||0).toFixed(1),
+                  textAlign:cs.textAlign,
+                  backgroundImage:cs.backgroundImage,
+                  value:el.selectedOptions?.[0]?.textContent||el.value||''
+                };
+              }
+              report._profile=selectGeom('advProfileSelect');
+              report._languageSelect=selectGeom('languageSelect');
+              report._languageCatalog=selectGeom('languageCatalog81');
+              report._reminderSelect=selectGeom('advReminderMinutes');
+              report._zoneSelect=selectGeom('schoolZone');
+              report._widgetTopSelect=selectGeom('widgetTopBarMode672');
+              report._widgetBottomSelect=selectGeom('widgetBottomBarMode672');
+
+              const reminderLine=document.querySelector('#advancedSettings85 .reminderLine725');
+              if(reminderLine){
+                const rr=reminderLine.getBoundingClientRect(),host=document.getElementById('advancedContent85')?.getBoundingClientRect();
+                report._reminderCenterDelta=host?+(((rr.left+rr.right)/2)-((host.left+host.right)/2)).toFixed(2):999;
+                report._reminderWidth=+rr.width.toFixed(1);
+              }
+
+              const midiTime=document.querySelector('#settingsDisplay692 .midiDays692 input[type=time]');
+              if(midiTime){
+                const ms=getComputedStyle(midiTime);
+                report._midiTime={paddingLeft:+(parseFloat(ms.paddingLeft)||0).toFixed(1),paddingRight:+(parseFloat(ms.paddingRight)||0).toFixed(1),textAlign:ms.textAlign};
+              }
+
+              const range=document.querySelector('#advancedSettings85 .rangeDates725');
+              if(range){
+                const rr=range.getBoundingClientRect(),shells=[...range.querySelectorAll('.dateShell734')].map(x=>x.getBoundingClientRect());
+                report._rangeFit={
+                  width:+rr.width.toFixed(1),
+                  rightOverflow:shells.length?+Math.max(0,shells[shells.length-1].right-rr.right).toFixed(1):999,
+                  leftOverflow:shells.length?+Math.max(0,rr.left-shells[0].left).toFixed(1):999
                 };
               }
               const mode=document.getElementById('widgetTopBarMode672');
@@ -221,7 +251,7 @@ jobs:
                 };
               }
               document.querySelectorAll('#settingsSheet details').forEach(d=>d.open=false);
-              const weeks=document.getElementById('settingsTypeWeek692');if(weeks){weeks.open=true;try{if(window.refresh735)window.refresh735()}catch(e){}}
+              const weeks=document.getElementById('settingsTypeWeek692');if(weeks){weeks.open=true;try{if(window.refresh736)window.refresh736()}catch(e){}}
               const slotBoxFinal=document.getElementById('slotSettings');
               report._settingsSlotRows=slotBoxFinal?slotBoxFinal.querySelectorAll(':scope > .slotRow').length:0;
               report._settingsSlotExpected=typeof slots!=='undefined'&&Array.isArray(slots)?slots.length:0;
@@ -242,7 +272,7 @@ jobs:
             if(modal){modal.classList.add('show','edtForceVisible695');modal.setAttribute('data-edt-open','true');modal.style.display='block'}
             document.querySelectorAll('#settingsSheet details').forEach(d=>d.open=false);
             const adv=document.getElementById('advancedSettings85');
-            if(adv){adv.open=true;try{if(window.refresh735)window.refresh735()}catch(e){}}
+            if(adv){adv.open=true;try{if(window.refresh736)window.refresh736()}catch(e){}}
             setTimeout(()=>{if(sheet&&adv)sheet.scrollTop=Math.max(0,adv.offsetTop-35)},120);
           },4300);
           </script>'''
