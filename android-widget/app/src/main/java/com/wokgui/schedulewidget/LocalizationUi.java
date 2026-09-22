@@ -330,12 +330,11 @@ final class LocalizationUi {
                 }
                 function ensureNineSlots(){
                   try{
-                    if(typeof slots!=='undefined'&&Array.isArray(slots)&&slots.length<9){
-                      const defs=[['08:00','09:00'],['09:00','10:00'],['10:00','11:00'],['11:00','12:00'],['13:00','14:00'],['14:00','15:00'],['16:00','17:00'],['17:00','18:00'],['18:00','19:00']];
-                      for(let i=slots.length;i<9;i++)slots.push({n:i+1,start:defs[i][0],end:defs[i][1]});
-                    }
-                    const box=document.getElementById('slotSettings');
-                    if(box&&box.querySelectorAll(':scope > .slotRow').length!==9&&typeof renderSlots==='function')renderSlots();
+                    /* Historical compatibility hook only.
+                       The timetable no longer has a 9-hour minimum: never recreate
+                       deleted rows and never force the rendered row count. */
+                    if(typeof slots==='undefined'||!Array.isArray(slots))return;
+                    slots.forEach((slot,index)=>{if(slot)slot.n=index+1});
                   }catch(e){}
                 }
 
