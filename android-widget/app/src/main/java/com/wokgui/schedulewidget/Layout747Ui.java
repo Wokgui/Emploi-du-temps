@@ -408,6 +408,7 @@ final class Layout747Ui {
                 }
 
                 window.__edtMovePinnedDay748=movePinnedDay748;
+                window.__edtCalendarToday748=calendarToday748;
 
                 function fitToday748(){
                   const view=document.getElementById('viewToday');
@@ -443,11 +444,14 @@ final class Layout747Ui {
                 }
 
                 const previousToday748=window.renderToday;
+                const calendarToday748=window.renderTodayCalendar728;
                 let renderToday748=null;
                 if(typeof previousToday748==='function'){
                   renderToday748=function(){
                     restorePinnedDay748();
-                    const result=previousToday748.apply(this,arguments);
+                    let result;
+                    const renderer=pinnedDay748&&typeof calendarToday748==='function'?calendarToday748:previousToday748;
+                    result=renderer.apply(this,arguments);
                     restorePinnedDay748();
                     bindDayNav748();
                     fitToday748();
