@@ -114,7 +114,8 @@ jobs:
               ];
               const report={};
               /* 7.38 functional/visual checks. */
-              try{if(window.refresh737)window.refresh737()}catch(e){}
+              try{if(window.prewarmLanguage737)window.prewarmLanguage737()}catch(e){}
+              try{if(window.prewarmAdvanced737)window.prewarmAdvanced737()}catch(e){}
               const langDetails=document.getElementById('settingsLanguage698');
               if(langDetails){
                 langDetails.open=false;
@@ -139,7 +140,7 @@ jobs:
               const advanced=document.getElementById('advancedSettings85');
               if(advanced){
                 advanced.open=false;
-                try{if(window.refresh737)window.refresh737()}catch(e){}
+                try{if(window.prewarmAdvanced737)window.prewarmAdvanced737()}catch(e){}
                 const ac=document.getElementById('advancedContent85');
                 const preStyle=ac?{
                   display:ac.style.getPropertyValue('display'),
