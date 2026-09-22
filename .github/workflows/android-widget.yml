@@ -387,7 +387,9 @@ jobs:
               /* 7.46 final settings owner. */
               try{
                 const profileShell=document.querySelector('#advancedSettings85 .profileShell745');
-                const profileVisual=profileShell&&profileShell.querySelector('.profileVisual745');
+                const profileVisual=profileShell&&profileShell.querySelector(':scope > .profileVisual745');
+                const profileArrow=profileShell&&profileShell.querySelector(':scope > .profileArrow745');
+                const profileArrowCs=profileArrow&&getComputedStyle(profileArrow);
                 const psr=profileShell&&profileShell.getBoundingClientRect(),pvr=profileVisual&&profileVisual.getBoundingClientRect();
                 const range745=document.querySelector('#advancedSettings85 .rangeDates725');
                 const rangeFrom745=range745&&range745.querySelector('.rangeFrom745');
@@ -415,8 +417,10 @@ jobs:
                 const awr=advWidgetTitle&&advWidgetTitle.getBoundingClientRect(),dtr=densityTitle&&densityTitle.getBoundingClientRect();
                 const zoneShell746=document.getElementById('schoolZone')?.closest('.centerSelect746');
                 const zoneVisual746=zoneShell746?.querySelector('.centerSelect746Visual');
+                const zoneArrow746=zoneShell746?.querySelector('.centerSelect746Arrow');
                 const holidayShell746=document.getElementById('advHoliday')?.closest('.centerSelect746');
                 const holidayVisual746=holidayShell746?.querySelector('.centerSelect746Visual');
+                const holidayArrow746=holidayShell746?.querySelector('.centerSelect746Arrow');
                 const zsr746=zoneShell746&&zoneShell746.getBoundingClientRect(),zvr746=zoneVisual746&&zoneVisual746.getBoundingClientRect();
                 const hsr746=holidayShell746&&holidayShell746.getBoundingClientRect(),hvr746=holidayVisual746&&holidayVisual746.getBoundingClientRect();
                 const profileBox746=document.getElementById('advProfilesTitle')?.closest('.settingBox');
@@ -433,6 +437,9 @@ jobs:
                   profileCenterDelta:(psr&&pvr)?+((((pvr.left+pvr.right)/2)-((psr.left+psr.right)/2)).toFixed(2)):999,
                   profileFits:profileVisual?profileVisual.scrollWidth<=profileVisual.clientWidth+1:false,
                   profileShellWidth:psr?+psr.width.toFixed(1):0,
+                  profileVisualCount:profileShell?profileShell.querySelectorAll(':scope > .profileVisual745').length:0,
+                  profileArrowCount:profileShell?profileShell.querySelectorAll(':scope > .profileArrow745').length:0,
+                  profileArrowVisible:!!profileArrow&&profileArrowCs?.display!=='none'&&profileArrowCs?.visibility!=='hidden'&&parseFloat(profileArrowCs?.opacity||'1')>0,
                   version:(version745?.textContent||'').trim(),
                   versionBelowClose:(vr745&&ar745)?vr745.top>=ar745.bottom-0.5:false,
                   appFontBorderBottom:appFontCs?parseFloat(appFontCs.borderBottomWidth)||0:999,
@@ -446,6 +453,8 @@ jobs:
                   breakTitleGap:(btr&&bbr)?+(bbr.top-btr.bottom).toFixed(1):999,
                   widgetDensityGap:(awr&&dtr)?+(dtr.top-awr.bottom).toFixed(1):999,
                   zoneShellCount:document.querySelectorAll('#schoolAutoRow739 > .centerSelect746').length,
+                  zoneArrowCount:zoneShell746?zoneShell746.querySelectorAll(':scope > .centerSelect746Arrow').length:0,
+                  holidayArrowCount:holidayShell746?holidayShell746.querySelectorAll(':scope > .centerSelect746Arrow').length:0,
                   zoneVisualCenterDelta:(zsr746&&zvr746)?+((((zvr746.left+zvr746.right)/2)-((zsr746.left+zsr746.right)/2)).toFixed(2)):999,
                   holidayVisualCenterDelta:(hsr746&&hvr746)?+((((hvr746.left+hvr746.right)/2)-((hsr746.left+hsr746.right)/2)).toFixed(2)):999
                 };
@@ -638,6 +647,9 @@ jobs:
           if week.get('hiddenNoonTimeBg')!=week.get('normalTimeBg'): raise SystemExit(f'12:00 time cell remains specially coloured when lunch is hidden: {week}')
           hb=week.get('hiddenNoonCellBgs') or []
           if not hb or len(set(hb))!=1 or (vb and hb[0]==vb[0]): raise SystemExit(f'12:00 row remains lunch-coloured when hidden: {week}')
+          week746=report.get('_week746') or {}
+          if week746.get('attached')!='1' or int(week746.get('goodCount',0))<1 or int(week746.get('recoveredCount',0))<1: raise SystemExit(f'week 7.46 blank-frame recovery failed: {week746}')
+          if not week746.get('stableTitle') or week746.get('stableTitleAfterRecovery')!=week746.get('stableTitle') or float(week746.get('stableHeight',0))<=0: raise SystemExit(f'week 7.46 title/height is not stable: {week746}')
           center=float(report.get('_settingsWordCenterDelta',999))
           lang=float(report.get('_settingsVsLanguageDelta',999))
           if abs(lang)>1.0: raise SystemExit(f'word Réglages is not centered on Langue: sheet={center}px language={lang}px')
@@ -670,10 +682,16 @@ jobs:
           if s745.get('attached')!='1': raise SystemExit(f'7.46 final settings owner is not active: {s745}')
           if s745.get('rangeFrom')!='Du' or s745.get('rangeTo')!='Au': raise SystemExit(f'Du/Au labels are missing: {s745}')
           if s745.get('profileText')!='Principal' or abs(float(s745.get('profileCenterDelta',999)))>0.5 or not s745.get('profileFits') or float(s745.get('profileShellWidth',0))<170: raise SystemExit(f'Principal is not stably centered/untruncated: {s745}')
+          if int(s745.get('profileVisualCount',0))!=1 or int(s745.get('profileArrowCount',0))!=1 or not s745.get('profileArrowVisible'): raise SystemExit(f'profile custom control is duplicated or its arrow is missing: {s745}')
+          if abs(float(s745.get('profileUnderTitleDelta',999)))>0.5: raise SystemExit(f'profile selector is not centered under Profils: {s745}')
           if s745.get('version')!='Version 7.46' or not s745.get('versionBelowClose'): raise SystemExit(f'app version is not below Fermer: {s745}')
           if float(s745.get('appFontBorderBottom',999))>0.1 or float(s745.get('widgetFontBorderTop',999))>0.1: raise SystemExit(f'text-size separator still visible: {s745}')
+          if abs(float(s745.get('appFontGap',999))-float(s745.get('widgetFontGap',-999)))>0.5: raise SystemExit(f'app/widget text-size title-to-slider spacing differs: {s745}')
+          if float(s745.get('schoolRightOverflow',999))>0.5 or float(s745.get('schoolLeftOverflow',999))>0.5: raise SystemExit(f'vacation auto row overflows advanced settings: {s745}')
           if float(s745.get('midiTitleGap',-999)) + 1 < float(s745.get('breakTitleGap',999)): raise SystemExit(f'Midi par jour title gap is still smaller than break-name reference: {s745}')
           if float(s745.get('widgetDensityGap',-999)) < 20: raise SystemExit(f'Affichage du widget / Condensation gap is still too small: {s745}')
+          if int(s745.get('zoneShellCount',0))!=1 or int(s745.get('zoneArrowCount',0))!=1 or int(s745.get('holidayArrowCount',0))!=1: raise SystemExit(f'vacation/holiday custom selector structure is invalid: {s745}')
+          if abs(float(s745.get('zoneVisualCenterDelta',999)))>0.5 or abs(float(s745.get('holidayVisualCenterDelta',999)))>0.5: raise SystemExit(f'vacation/holiday selector text is not independently centered from the arrow: {s745}')
 
           ia745=(report.get('_instantAdvanced') or {})
           if ia745.get('final745')!='1': raise SystemExit(f'advanced panel was not finalized by 7.46 before open: {ia745}')
@@ -690,9 +708,6 @@ jobs:
           gear=report.get('_gear742') or {}
           if not gear.get('svg') or not gear.get('gradient') or not gear.get('shadow') or float(gear.get('width',0))<19 or gear.get('background') not in ('none',''):
               raise SystemExit(f'realistic first-frame settings gear invalid: {gear}')
-          prof=report.get('_profile') or {}
-          centered_select('profile',prof)
-          if float(prof.get('width',999))>155: raise SystemExit(f'profile selector is still too wide: {prof}')
           centered_select('language',report.get('_languageSelect') or {})
           if float((report.get('_languageSelect') or {}).get('width',999))>150: raise SystemExit(f'language selector is too wide for Français: {report.get("_languageSelect")}')
           cat=report.get('_languageCatalog')
