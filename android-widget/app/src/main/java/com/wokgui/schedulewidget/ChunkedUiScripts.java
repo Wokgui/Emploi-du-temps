@@ -16,7 +16,13 @@ final class ChunkedUiScripts {
         addLayers(out, BaseSettingsUi.class, 1);
         add(out, FastInteractionUi.script());
         add(out, LazyImportBootstrapUi.script());
-        addLayers(out, TimetableCoreUi.class, 10);
+        /* 7.42: Advanced reminders (layer 3) and school holidays (layer 4)
+         * must be created in the same WebView frame. ResilientWebView evaluates one
+         * UI chunk per animation frame, so keeping them as two chunks caused the
+         * visible "Rappels first, Vacances one frame later" effect. */
+        addLayers(out, TimetableCoreUi.class, 3);
+        add(out, invokeLayer(TimetableCoreUi.class, 3) + "\n" + invokeLayer(TimetableCoreUi.class, 4));
+        for (int i = 5; i < 10; i++) add(out, invokeLayer(TimetableCoreUi.class, i));
         add(out, WeekViewStabilityUi.script());
         addScheduleDisplayLayers(out);
         addLayers(out, LocalizationUi.class, 5);
