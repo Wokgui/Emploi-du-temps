@@ -5024,6 +5024,25 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     }catch(e){return 60}
   }
 
+  function styleSelect736(id,pad=28){
+    const sel=document.getElementById(id);if(!sel)return;
+    sel.style.setProperty('-webkit-appearance','none','important');
+    sel.style.setProperty('appearance','none','important');
+    sel.style.setProperty('box-sizing','border-box','important');
+    sel.style.setProperty('background-color','#fff','important');
+    sel.style.setProperty('background-image','linear-gradient(45deg,transparent 50%,#68738a 50%),linear-gradient(135deg,#68738a 50%,transparent 50%)','important');
+    sel.style.setProperty('background-position','calc(100% - 14px) 50%,calc(100% - 10px) 50%','important');
+    sel.style.setProperty('background-size','4px 4px,4px 4px','important');
+    sel.style.setProperty('background-repeat','no-repeat','important');
+    sel.style.setProperty('padding-left',pad+'px','important');
+    sel.style.setProperty('padding-right',pad+'px','important');
+    sel.style.setProperty('text-align','center','important');
+    sel.style.setProperty('text-align-last','center','important');
+    sel.style.setProperty('text-overflow','clip','important');
+    sel.style.setProperty('color','#283244','important');
+    sel.style.setProperty('-webkit-text-fill-color','#283244','important');
+  }
+
   function fitSelected736(id,minWidth,maxWidth,extra){
     const sel=document.getElementById(id);if(!sel||!sel.options?.length)return;
     const text=sel.selectedOptions?.[0]?.textContent||sel.value||'';
@@ -5034,9 +5053,40 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   }
 
   function fitSelectors736(){
+    styleSelect736('languageSelect',28);
+    styleSelect736('languageCatalog81',28);
+    styleSelect736('advReminderMinutes',27);
+    styleSelect736('schoolZone',27);
+    styleSelect736('advProfileSelect',28);
+    styleSelect736('widgetTopBarMode672',28);
+    styleSelect736('widgetBottomBarMode672',28);
+
     fitSelected736('languageSelect',104,250,56);
     fitSelected736('languageCatalog81',116,290,56);
     fitSelected736('advProfileSelect',108,240,56);
+
+    const reminder=document.getElementById('advReminderMinutes');
+    if(reminder){
+      reminder.style.setProperty('width','96px','important');
+      reminder.style.setProperty('min-width','96px','important');
+      reminder.style.setProperty('max-width','96px','important');
+      reminder.style.setProperty('margin','0','important');
+    }
+    const zone=document.getElementById('schoolZone');
+    if(zone){
+      zone.style.setProperty('width','108px','important');
+      zone.style.setProperty('min-width','108px','important');
+      zone.style.setProperty('max-width','108px','important');
+    }
+    const profile=document.getElementById('advProfileSelect');
+    const shell=profile?.parentElement?.classList.contains('profileShell734')?profile.parentElement:null;
+    if(shell&&profile){
+      shell.style.setProperty('width',profile.style.getPropertyValue('width')||getComputedStyle(profile).width,'important');
+      shell.style.setProperty('max-width','calc(100vw - 96px)','important');
+      shell.style.setProperty('margin','0 auto','important');
+      const overlay=shell.querySelector('.profileValue735');if(overlay)overlay.style.setProperty('display','none','important');
+      const extra=shell.querySelector('.profileArrow734');if(extra)extra.style.setProperty('display','none','important');
+    }
   }
 
   function centerReminder736(){
@@ -5070,6 +5120,17 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     centerReminder736();
     fitSelectors736();
     fitRange736();
+  }
+  const previousRefresh735=window.refresh735;
+  if(typeof previousRefresh735==='function'&&!previousRefresh735.__edt736Wrapped){
+    const wrapped=function(){
+      const result=previousRefresh735.apply(this,arguments);
+      queueMicrotask(apply736);
+      setTimeout(apply736,0);
+      return result;
+    };
+    wrapped.__edt736Wrapped=true;
+    window.refresh735=wrapped;
   }
   window.refresh736=apply736;
 
