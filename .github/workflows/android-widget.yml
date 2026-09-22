@@ -1,8 +1,8 @@
-name: Clean Android 7.41 first-frame-settings build
+name: Clean Android 7.42 advanced-first-frame build
 
 on:
   push:
-    branches: [fix/741-first-frame-settings]
+    branches: [fix/742-advanced-first-frame]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 
@@ -68,6 +68,18 @@ jobs:
           PY
           javac -encoding UTF-8 -d build/visual-classes             build/visual-src/com/wokgui/schedulewidget/BuildConfig.java             build/visual-src/com/wokgui/schedulewidget/DumpUiRuntime.java             $(cat build/visual/sources.txt)
           java -cp build/visual-classes com.wokgui.schedulewidget.DumpUiRuntime > build/visual/runtime.js
+          python3 - <<'PY'
+          from pathlib import Path
+          raw=Path('build/visual/runtime.js').read_text(encoding='utf-8')
+          chunks=raw.split('/*__EDT_UI_CHUNK__*/')
+          reminder=[i for i,c in enumerate(chunks) if 'advReminderMinutes' in c]
+          school=[i for i,c in enumerate(chunks) if 'schoolCalendarBlock' in c]
+          if not reminder or not school:
+              raise SystemExit(f'advanced source chunks missing: reminder={reminder} school={school}')
+          if reminder[0] != school[0]:
+              raise SystemExit(f'Rappels/Vacances still load on separate frames: reminder chunk {reminder[0]}, school chunk {school[0]}')
+          print('ADVANCED_FIRST_FRAME_OK', reminder[0])
+          PY
 
       - name: Render settings in headless Chrome and measure real visible gaps
         run: |
@@ -90,7 +102,7 @@ jobs:
             if(n==='listProfiles')return JSON.stringify({current:'main',profiles:[{id:'main',name:'Principal'}]});
             if(n==='loadAdvancedSetting')return '';
             if(n==='getCurrentWeek')return 'B';
-            if(n==='getAppVersionName')return '7.41';
+            if(n==='getAppVersionName')return '7.42';
             if(n==='loadHolidays'||n==='loadSchoolHolidays')return '[]';
             if(n.startsWith('load'))return '{}';
             if(n.startsWith('get')||n.startsWith('is'))return '';
@@ -250,6 +262,24 @@ jobs:
                 };
               }
               report._profile=selectGeom('advProfileSelect');
+              const baseTitle=document.getElementById('widgetBaseTitle706');
+              const baseControls=document.getElementById('appBaseControls725');
+              const interruptionTitle=document.querySelector('#breakDisplaySetting .feedback663Title');
+              const interruptionTable=document.getElementById('feedback663Visibility') || document.querySelector('#breakDisplaySetting .breakVisibility70,#breakDisplaySetting table,#breakDisplaySetting .breakDisplayGrid');
+              if(baseTitle&&baseControls&&interruptionTitle&&interruptionTable){
+                report._displayGaps={
+                  base:+(baseControls.getBoundingClientRect().top-baseTitle.getBoundingClientRect().bottom).toFixed(2),
+                  interruptions:+(interruptionTable.getBoundingClientRect().top-interruptionTitle.getBoundingClientRect().bottom).toFixed(2)
+                };
+              }
+              const gear742=document.querySelector('#settingsTitle .settingsGear741');
+              report._gear742={
+                svg:!!gear742?.querySelector('svg'),
+                gradient:!!gear742?.querySelector('linearGradient'),
+                shadow:!!gear742?.querySelector('filter'),
+                width:gear742?+gear742.getBoundingClientRect().width.toFixed(1):0,
+                background:gear742?getComputedStyle(gear742).backgroundImage:''
+              };
               report._languageSelect=selectGeom('languageSelect');
               report._languageCatalog=selectGeom('languageCatalog81');
               report._reminderSelect=selectGeom('advReminderMinutes');
@@ -408,6 +438,12 @@ jobs:
               if abs(float(obj.get('paddingLeft',999))-float(obj.get('paddingRight',0)))>0.5: raise SystemExit(f'{name} padding is asymmetric: {obj}')
               if obj.get('textAlign')!='center': raise SystemExit(f'{name} text is not centered: {obj}')
               if require_arrow and obj.get('backgroundImage') in ('none',''): raise SystemExit(f'{name} has no visible dropdown arrow: {obj}')
+          gaps=report.get('_displayGaps') or {}
+          if abs(float(gaps.get('base',999))-float(gaps.get('interruptions',-999)))>1.0:
+              raise SystemExit(f'Affichage de base gap does not match interruptions: {gaps}')
+          gear=report.get('_gear742') or {}
+          if not gear.get('svg') or not gear.get('gradient') or not gear.get('shadow') or float(gear.get('width',0))<19 or gear.get('background') not in ('none',''):
+              raise SystemExit(f'realistic first-frame settings gear invalid: {gear}')
           prof=report.get('_profile') or {}
           centered_select('profile',prof)
           if float(prof.get('width',999))>155: raise SystemExit(f'profile selector is still too wide: {prof}')
@@ -469,10 +505,10 @@ jobs:
       - name: Verify package metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='741001' versionName='7.41'" /tmp/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.41-tested-debug.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='742001' versionName='7.42'" /tmp/badging.txt
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.42-tested-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: EDT-7.41-tested
-          path: android-widget/app/build/outputs/apk/debug/EDT-7.41-tested-debug.apk
+          name: EDT-7.42-tested
+          path: android-widget/app/build/outputs/apk/debug/EDT-7.42-tested-debug.apk
           if-no-files-found: error
