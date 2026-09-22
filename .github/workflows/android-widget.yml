@@ -303,8 +303,28 @@ jobs:
           holiday=float(report.get('_holidayGap',999))
           if not -1.0 <= holiday <= 8.0: raise SystemExit(f'automatic holidays row is still too far from loaded-period status: gap={holiday}px')
           if int(report.get('_settingsSlotRows',-1)) != int(report.get('_settingsSlotExpected',-2)) or int(report.get('_settingsSlotRows',0))<1: raise SystemExit(f'class-time rows are missing in settings: rows={report.get("_settingsSlotRows")} expected={report.get("_settingsSlotExpected")}')
+          def centered_select(name,obj,require_arrow=True):
+              if not obj: raise SystemExit(f'{name} missing')
+              if abs(float(obj.get('paddingLeft',999))-float(obj.get('paddingRight',0)))>0.5: raise SystemExit(f'{name} padding is asymmetric: {obj}')
+              if obj.get('textAlign')!='center': raise SystemExit(f'{name} text is not centered: {obj}')
+              if require_arrow and obj.get('backgroundImage') in ('none',''): raise SystemExit(f'{name} has no visible dropdown arrow: {obj}')
           prof=report.get('_profile') or {}
-          if prof.get('customArrow734') or not prof.get('overlay') or prof.get('overlayText')!=prof.get('value') or abs(float(prof.get('centerDelta',999)))>0.5: raise SystemExit(f'profile text is not centered without the extra arrow: {prof}')
+          centered_select('profile',prof)
+          if float(prof.get('width',999))>155: raise SystemExit(f'profile selector is still too wide: {prof}')
+          centered_select('language',report.get('_languageSelect') or {})
+          if float((report.get('_languageSelect') or {}).get('width',999))>150: raise SystemExit(f'language selector is too wide for Français: {report.get("_languageSelect")}')
+          cat=report.get('_languageCatalog')
+          if cat:
+              centered_select('download-language selector',cat)
+          centered_select('reminder minutes',report.get('_reminderSelect') or {})
+          centered_select('school zone',report.get('_zoneSelect') or {})
+          centered_select('widget top mode',report.get('_widgetTopSelect') or {})
+          centered_select('widget bottom mode',report.get('_widgetBottomSelect') or {})
+          if abs(float(report.get('_reminderCenterDelta',999)))>1.0: raise SystemExit(f'reminder group is not centered: delta={report.get("_reminderCenterDelta")} width={report.get("_reminderWidth")}')
+          midi=report.get('_midiTime') or {}
+          if abs(float(midi.get('paddingLeft',999))-float(midi.get('paddingRight',0)))>0.5 or midi.get('textAlign')!='center': raise SystemExit(f'lunch time field is not independently centered: {midi}')
+          rf=report.get('_rangeFit') or {}
+          if float(rf.get('rightOverflow',999))>0.5 or float(rf.get('leftOverflow',999))>0.5: raise SystemExit(f'day-off date row overflows horizontally: {rf}')
           slot=report.get('_slotDelete') or {}
           if slot.get('after') != slot.get('before',0)-1: raise SystemExit(f'slot delete did not remove exactly one row: {slot}')
           if slot.get('slotLength') != slot.get('after'): raise SystemExit(f'slot array and rendered rows differ after deletion: {slot}')
