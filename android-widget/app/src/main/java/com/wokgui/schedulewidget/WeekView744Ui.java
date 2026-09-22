@@ -174,12 +174,16 @@ final class WeekView744Ui {
                   const js=d.getDay(),delta=js===0?-6:1-js;d.setDate(d.getDate()+delta);return d;
                 }
                 function selectedMonday744(){
-                  const d=window.__edt728WeekMonday;
-                  if(d instanceof Date&&!Number.isNaN(d.getTime()))return monday744(d);
-                  const now=monday744(new Date());window.__edt728WeekMonday=now;return now;
+                  const own=window.__edt744WeekMonday;
+                  if(own instanceof Date&&!Number.isNaN(own.getTime()))return monday744(own);
+                  const legacy=window.__edt728WeekMonday;
+                  const initial=legacy instanceof Date&&!Number.isNaN(legacy.getTime())?monday744(legacy):monday744(new Date());
+                  window.__edt744WeekMonday=initial;window.__edt728WeekMonday=initial;return initial;
                 }
                 function setMonday744(date){
-                  window.__edt728WeekMonday=monday744(date);
+                  const next=monday744(date);
+                  window.__edt744WeekMonday=next;
+                  window.__edt728WeekMonday=next;
                 }
                 function cycleLength744(){
                   try{
@@ -231,18 +235,9 @@ final class WeekView744Ui {
                   }
                   prev.setAttribute('aria-label','Semaine précédente');
                   next.setAttribute('aria-label','Semaine suivante');
-                  prev.onclick=function(event){
-                    event.preventDefault();event.stopPropagation();
-                    setMonday744(addDays744(selectedMonday744(),-7));
-                    render744();
-                    return false;
-                  };
-                  next.onclick=function(event){
-                    event.preventDefault();event.stopPropagation();
-                    setMonday744(addDays744(selectedMonday744(),7));
-                    render744();
-                    return false;
-                  };
+                  /* Navigation is owned by the capture handler below. Legacy onclick
+                     handlers are removed so no older layer can reset the selected week. */
+                  prev.onclick=null;next.onclick=null;
                 }
 
                 function decorateHeader744(){
@@ -365,6 +360,14 @@ final class WeekView744Ui {
                   new MutationObserver(schedule744).observe(top,{childList:true,subtree:true});
                 }
 
+                document.addEventListener('click',event=>{
+                  const button=event.target&&event.target.closest?event.target.closest('#weekPrev728,#weekNext728'):null;
+                  if(!button)return;
+                  event.preventDefault();event.stopPropagation();if(event.stopImmediatePropagation)event.stopImmediatePropagation();
+                  const delta=button.id==='weekPrev728'?-7:7;
+                  setMonday744(addDays744(selectedMonday744(),delta));
+                  render744();
+                },true);
                 document.addEventListener('change',event=>{
                   if(event.target&&event.target.id==='feedback663AppLunch')requestAnimationFrame(()=>{
                     try{if(document.getElementById('viewWeek')?.classList.contains('active'))render744();else finish744()}catch(e){}
