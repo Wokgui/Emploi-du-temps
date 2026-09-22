@@ -1,8 +1,8 @@
-name: Clean Android 7.42 advanced-first-frame build
+name: Clean Android 7.43 vacation-spacing build
 
 on:
   push:
-    branches: [fix/742-advanced-first-frame]
+    branches: [fix/743-vacation-spacing]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 
@@ -102,7 +102,7 @@ jobs:
             if(n==='listProfiles')return JSON.stringify({current:'main',profiles:[{id:'main',name:'Principal'}]});
             if(n==='loadAdvancedSetting')return '';
             if(n==='getCurrentWeek')return 'B';
-            if(n==='getAppVersionName')return '7.42';
+            if(n==='getAppVersionName')return '7.43';
             if(n==='loadHolidays'||n==='loadSchoolHolidays')return '[]';
             if(n.startsWith('load'))return '{}';
             if(n.startsWith('get')||n.startsWith('is'))return '';
@@ -321,11 +321,21 @@ jobs:
               if(mode)report._widgetColorLabel=mode.options[1]?.textContent||'';
               const breakNames=[...document.querySelectorAll('#settingsDisplay692 .breakSettings .breakName')].map(el=>{const s=getComputedStyle(el);return {text:(el.textContent||'').trim(),justify:s.justifyContent,align:s.alignItems,textAlign:s.textAlign}});
               report._breakNames=breakNames;
+              const autoRow743=document.getElementById('schoolAutoRow739');
+              const hint743=document.getElementById('schoolHint');
+              const update743=document.getElementById('schoolAutoFetch725');
               const status=document.getElementById('schoolAutoStatus725');
               const holidayLabel=document.getElementById('advHolidayLabel');
               const holidayRow=holidayLabel?.closest('.advRow')||holidayLabel?.parentElement;
-              if(status&&holidayRow){
-                report._holidayGap=+(holidayRow.getBoundingClientRect().top-status.getBoundingClientRect().bottom).toFixed(1);
+              if(autoRow743&&hint743&&update743&&status&&holidayRow){
+                const ar=autoRow743.getBoundingClientRect(),hr=hint743.getBoundingClientRect(),ur=update743.getBoundingClientRect(),sr=status.getBoundingClientRect(),or=holidayRow.getBoundingClientRect();
+                report._vacationSpacing743={
+                  autoToHint:+(hr.top-ar.bottom).toFixed(1),
+                  hintToUpdate:+(ur.top-hr.bottom).toFixed(1),
+                  updateToStatus:+(sr.top-ur.bottom).toFixed(1),
+                  statusToHolidays:+(or.top-sr.bottom).toFixed(1)
+                };
+                report._holidayGap=report._vacationSpacing743.statusToHolidays;
               }
               report._advancedStable=advanced?!advanced.classList.contains('edtAdvStabilizing735'):false;
               const advContent=document.getElementById('advancedContent85');
@@ -456,6 +466,11 @@ jobs:
           centered_select('school zone',report.get('_zoneSelect') or {})
           centered_select('widget top mode',report.get('_widgetTopSelect') or {})
           centered_select('widget bottom mode',report.get('_widgetBottomSelect') or {})
+          vacation=report.get('_vacationSpacing743') or {}
+          if not (2 <= float(vacation.get('autoToHint',999)) <= 10): raise SystemExit(f'vacation hint is not close enough to auto row: {vacation}')
+          if not (10 <= float(vacation.get('hintToUpdate',-999)) <= 20): raise SystemExit(f'vacation hint/update spacing is wrong: {vacation}')
+          if not (8 <= float(vacation.get('updateToStatus',-999)) <= 18): raise SystemExit(f'update/status spacing is wrong: {vacation}')
+          if not (12 <= float(vacation.get('statusToHolidays',999)) <= 32): raise SystemExit(f'status/automatic-holidays gap is not compact enough: {vacation}')
           if abs(float(report.get('_reminderCenterDelta',999)))>1.0: raise SystemExit(f'reminder group is not centered: delta={report.get("_reminderCenterDelta")} width={report.get("_reminderWidth")}')
           midi=report.get('_midiTime') or {}
           if abs(float(midi.get('paddingLeft',999))-float(midi.get('paddingRight',0)))>0.5 or midi.get('textAlign')!='center' or not midi.get('overlay') or abs(float(midi.get('centerDelta',999)))>0.5: raise SystemExit(f'lunch time field is not independently centered: {midi}')
@@ -505,10 +520,10 @@ jobs:
       - name: Verify package metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='742001' versionName='7.42'" /tmp/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.42-tested-debug.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='743001' versionName='7.43'" /tmp/badging.txt
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.43-tested-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: EDT-7.42-tested
-          path: android-widget/app/build/outputs/apk/debug/EDT-7.42-tested-debug.apk
+          name: EDT-7.43-tested
+          path: android-widget/app/build/outputs/apk/debug/EDT-7.43-tested-debug.apk
           if-no-files-found: error
