@@ -4774,16 +4774,19 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     advContent735.__edt735StyleObs=true;
     let fixing=false;
     new MutationObserver(()=>{
-      const adv=document.getElementById('advancedSettings85');
-      if(!adv?.open||fixing)return;
+      if(fixing)return;
       const hidden=advContent735.style.getPropertyValue('display')==='none' ||
                    advContent735.style.getPropertyValue('height')==='0px' ||
                    advContent735.style.getPropertyValue('overflow')==='hidden';
       if(hidden){
         fixing=true;
-        requestAnimationFrame(()=>{showAdvancedContent735();fixing=false});
+        /* Même fermé, le contenu reste prêt. <details> assure seul le masquage.
+           Ainsi l'ouverture n'attend aucun callback ni aucune frame. */
+        showAdvancedContent735();
+        fixing=false;
       }
     }).observe(advContent735,{attributes:true,attributeFilter:['style']});
+    showAdvancedContent735();
   }
 
   document.addEventListener('click',e=>{
