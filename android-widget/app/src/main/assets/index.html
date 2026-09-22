@@ -4811,5 +4811,286 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 })();
 </script>
 
+
+
+<style id="edt736Style">
+  /* 7.36 — centrage interne des sélecteurs et mise en page compacte. */
+
+  /* Rappels : case + libellé + durée forment un seul groupe réellement centré. */
+  html body #settingsSheet #advancedSettings85 .reminderLine725{
+    display:flex!important;
+    width:max-content!important;
+    max-width:100%!important;
+    min-height:36px!important;
+    margin:4px auto 0!important;
+    padding:0!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:10px!important;
+    white-space:nowrap!important;
+  }
+  html body #settingsSheet #advancedSettings85 .reminderLine725 #advReminders{
+    flex:0 0 auto!important;
+    margin:0!important;
+  }
+  html body #settingsSheet #advancedSettings85 .reminderLine725 #advReminderMinutes{
+    flex:0 0 auto!important;
+    margin:0!important;
+    width:96px!important;
+    min-width:96px!important;
+    max-width:96px!important;
+  }
+
+  /* Sélecteurs : texte centré indépendamment de la flèche. */
+  html body #settingsSheet #languageSelect,
+  html body #settingsSheet #languageCatalog81,
+  html body #settingsSheet #advancedSettings85 #advReminderMinutes,
+  html body #settingsSheet #advancedSettings85 #schoolZone,
+  html body #settingsSheet #advancedSettings85 #advProfileSelect,
+  html body #settingsSheet #settingsDisplay692 #widgetTopBarMode672,
+  html body #settingsSheet #settingsDisplay692 #widgetBottomBarMode672{
+    -webkit-appearance:none!important;
+    appearance:none!important;
+    box-sizing:border-box!important;
+    background-color:#fff!important;
+    background-image:
+      linear-gradient(45deg,transparent 50%,#68738a 50%),
+      linear-gradient(135deg,#68738a 50%,transparent 50%)!important;
+    background-position:
+      calc(100% - 14px) 50%,
+      calc(100% - 10px) 50%!important;
+    background-size:4px 4px,4px 4px!important;
+    background-repeat:no-repeat!important;
+    padding-left:28px!important;
+    padding-right:28px!important;
+    text-align:center!important;
+    text-align-last:center!important;
+    text-overflow:clip!important;
+    color:#283244!important;
+    -webkit-text-fill-color:#283244!important;
+  }
+
+  /* Langue principale et catalogue : largeur calée sur le texte affiché. */
+  html body #settingsSheet #languageSelect,
+  html body #settingsSheet #languageCatalog81{
+    min-width:0!important;
+    max-width:calc(100vw - 96px)!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+
+  /* Profil : une seule flèche, largeur compacte autour du nom. */
+  html body #settingsSheet #advancedSettings85 .profileArrow734,
+  html body #settingsSheet #advancedSettings85 .profileValue735{
+    display:none!important;
+  }
+  html body #settingsSheet #advancedSettings85 .profileShell734{
+    display:block!important;
+    width:max-content!important;
+    max-width:calc(100vw - 96px)!important;
+    margin:0 auto!important;
+  }
+  html body #settingsSheet #advancedSettings85 #advProfileSelect{
+    display:block!important;
+    width:auto!important;
+    min-width:0!important;
+    max-width:calc(100vw - 96px)!important;
+    height:32px!important;
+    min-height:32px!important;
+    margin:0!important;
+    padding-left:28px!important;
+    padding-right:28px!important;
+  }
+
+  /* Zone et rappel : même centrage indépendant de la flèche. */
+  html body #settingsSheet #advancedSettings85 #schoolZone{
+    width:108px!important;
+    min-width:108px!important;
+    max-width:108px!important;
+    padding-left:27px!important;
+    padding-right:27px!important;
+  }
+  html body #settingsSheet #advancedSettings85 #advReminderMinutes{
+    padding-left:27px!important;
+    padding-right:27px!important;
+  }
+
+  /* Affichage du widget : "Progression" est centré dans les deux sélecteurs. */
+  html body #settingsSheet #settingsDisplay692 #widgetEdgeBars672 select{
+    text-align:center!important;
+    text-align-last:center!important;
+    padding-left:28px!important;
+    padding-right:28px!important;
+  }
+
+  /* Midi par jour : heure centrée indépendamment de l'icône/flèche native. */
+  html body #settingsSheet .midiDays692 .w658Day input[type=time]{
+    position:relative!important;
+    box-sizing:border-box!important;
+    padding-left:27px!important;
+    padding-right:27px!important;
+    text-align:center!important;
+  }
+  html body #settingsSheet .midiDays692 .w658Day input[type=time]::-webkit-datetime-edit{
+    display:block!important;
+    width:100%!important;
+    padding:0!important;
+    text-align:center!important;
+  }
+  html body #settingsSheet .midiDays692 .w658Day input[type=time]::-webkit-calendar-picker-indicator{
+    position:absolute!important;
+    right:7px!important;
+    margin:0!important;
+  }
+
+  /* Ajouter une période sans cours : les deux dates tiennent entièrement dans la largeur. */
+  html body #settingsSheet #advancedSettings85 .rangeDates725{
+    box-sizing:border-box!important;
+    grid-template-columns:max-content minmax(0,1fr) max-content minmax(0,1fr)!important;
+    gap:6px!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    padding:0!important;
+    overflow:visible!important;
+  }
+  html body #settingsSheet #advancedSettings85 .rangeDates725 .dateShell734{
+    position:relative!important;
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+  html body #settingsSheet #advancedSettings85 .rangeDates725 .dateShell734 input[type=date]{
+    display:block!important;
+    box-sizing:border-box!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    padding-left:28px!important;
+    padding-right:28px!important;
+    text-align:center!important;
+    text-align-last:center!important;
+  }
+  html body #settingsSheet #advancedSettings85 .rangeDates725 .dateShell734 input[type=date]::-webkit-datetime-edit{
+    display:block!important;
+    width:100%!important;
+    padding:0!important;
+    text-align:center!important;
+  }
+  html body #settingsSheet #advancedSettings85 .rangeDates725 .dateShell734 input[type=date]::-webkit-calendar-picker-indicator{
+    position:absolute!important;
+    right:0!important;
+    top:0!important;
+    width:34px!important;
+    height:100%!important;
+    margin:0!important;
+    opacity:0!important;
+  }
+  html body #settingsSheet #advancedSettings85 .rangeDates725 .dateArrow734{
+    right:9px!important;
+    pointer-events:none!important;
+  }
+
+  @media(max-width:380px){
+    html body #settingsSheet #advancedSettings85 .rangeDates725{
+      gap:4px!important;
+    }
+    html body #settingsSheet #advancedSettings85 .rangeDates725 .dateShell734 input[type=date]{
+      padding-left:22px!important;
+      padding-right:22px!important;
+      font-size:.67rem!important;
+    }
+  }
+
+  html body #appVersionInfo:after{content:none!important;display:none!important}
+</style>
+
+<script>
+(function(){
+  if(window.__edt736)return;window.__edt736=true;
+
+  function ensureVersion736(){
+    const v=document.getElementById('appVersionInfo');
+    if(v&&v.textContent!=='Version 7.36')v.textContent='Version 7.36';
+  }
+
+  function measureText736(el,text){
+    try{
+      const cs=getComputedStyle(el),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+      ctx.font=cs.font||cs.fontSize+' '+cs.fontFamily;
+      return Math.ceil(ctx.measureText(String(text||'')).width);
+    }catch(e){return 60}
+  }
+
+  function fitSelected736(id,minWidth,maxWidth,extra){
+    const sel=document.getElementById(id);if(!sel||!sel.options?.length)return;
+    const text=sel.selectedOptions?.[0]?.textContent||sel.value||'';
+    const wanted=Math.max(minWidth,Math.min(maxWidth,measureText736(sel,text)+extra));
+    sel.style.setProperty('width',wanted+'px','important');
+    sel.style.setProperty('min-width',wanted+'px','important');
+    sel.style.setProperty('max-width',wanted+'px','important');
+  }
+
+  function fitSelectors736(){
+    fitSelected736('languageSelect',104,250,56);
+    fitSelected736('languageCatalog81',116,290,56);
+    fitSelected736('advProfileSelect',108,240,56);
+  }
+
+  function centerReminder736(){
+    const check=document.getElementById('advReminders');
+    const select=document.getElementById('advReminderMinutes');
+    if(!check||!select)return;
+    const label=check.closest('label');if(!label)return;
+    label.classList.add('reminderLine725');
+    if(select.parentElement!==label){
+      const old=select.parentElement;
+      label.appendChild(select);
+      if(old&&old!==label&&old.classList?.contains('advRow')&&!old.children.length)old.remove();
+    }
+  }
+
+  function fitRange736(){
+    const row=document.querySelector('#advancedSettings85 .rangeDates725');
+    if(!row)return;
+    row.style.setProperty('width','100%','important');
+    row.style.setProperty('max-width','100%','important');
+    row.querySelectorAll('.dateShell734').forEach(shell=>{
+      shell.style.setProperty('width','100%','important');
+      shell.style.setProperty('min-width','0','important');
+    });
+  }
+
+  function apply736(){
+    const style=document.getElementById('edt736Style');
+    if(style&&style!==document.head.lastElementChild)document.head.appendChild(style);
+    ensureVersion736();
+    centerReminder736();
+    fitSelectors736();
+    fitRange736();
+  }
+  window.refresh736=apply736;
+
+  document.addEventListener('change',e=>{
+    if(!e.target)return;
+    if(['languageSelect','languageCatalog81','advProfileSelect','advReminderMinutes','schoolZone','widgetTopBarMode672','widgetBottomBarMode672'].includes(e.target.id)){
+      requestAnimationFrame(apply736);
+    }
+  },true);
+  document.addEventListener('click',e=>{
+    if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))setTimeout(apply736,0);
+  },true);
+
+  const sheet=document.getElementById('settingsSheet');
+  if(sheet)new MutationObserver(()=>requestAnimationFrame(apply736))
+    .observe(sheet,{childList:true,subtree:true,attributes:true,attributeFilter:['class','open']});
+
+  window.addEventListener('resize',()=>requestAnimationFrame(apply736));
+  apply736();setTimeout(apply736,120);setTimeout(apply736,500);
+})();
+</script>
+
 </body>
 </html>
