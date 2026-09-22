@@ -21,7 +21,7 @@ final class Layout747Ui {
                   style.id='layout747Style';
                   document.head.appendChild(style);
                 }
-                style.textContent=\`
+                style.textContent=`
                   /* Settings is a real page. HeavyPanel owns open/close through data-edt-open. */
                   html body #settingsModal.edtHeavyPanel648[data-edt-open="true"],
                   html body #settingsModal.show{
@@ -227,7 +227,7 @@ final class Layout747Ui {
                     bottom:0!important;
                     z-index:50!important;
                   }
-                \`;
+                `;
 
                 const weekView=()=>document.getElementById('viewWeek');
                 const weekGrid=()=>document.getElementById('weekGrid');
