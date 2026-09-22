@@ -125,6 +125,7 @@ jobs:
                 const catalog=document.getElementById('languageCatalog81');
                 const gear=document.querySelector('#settingsTitle .settingsGear735,#settingsTitle .settingsGear734');
                 const gearSvg=!!(gear&&gear.querySelector('svg'));
+                const gearBackground=gear?getComputedStyle(gear).backgroundImage:'';
                 const lr=langDetails.getBoundingClientRect();
                 report._instantLanguage={
                   open:langDetails.open,
@@ -132,6 +133,8 @@ jobs:
                   catalogWidth:catalog?+catalog.getBoundingClientRect().width.toFixed(1):0,
                   gear:!!gear,
                   gearSvg:gearSvg,
+                  gearBackground:gearBackground,
+                  attached740:document.documentElement.dataset.edt740Attached||'',
                   height:+lr.height.toFixed(1)
                 };
                 if(summary)summary.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));
@@ -315,13 +318,13 @@ jobs:
                 };
               }
               document.querySelectorAll('#settingsSheet details').forEach(d=>d.open=false);
-              const weeks=document.getElementById('settingsTypeWeek692');if(weeks){weeks.open=true;try{if(window.refresh735)window.refresh735()}catch(e){};try{if(window.refresh736)window.refresh736()}catch(e){}}
+              const weeksPanel=document.getElementById('settingsTypeWeek692');if(weeksPanel){weeksPanel.open=true;try{if(window.refresh735)window.refresh735()}catch(e){};try{if(window.refresh736)window.refresh736()}catch(e){}}
               const slotBoxFinal=document.getElementById('slotSettings');
               report._settingsSlotRows=slotBoxFinal?slotBoxFinal.querySelectorAll(':scope > .slotRow').length:0;
               report._settingsSlotExpected=typeof slots!=='undefined'&&Array.isArray(slots)?slots.length:0;
               const pre=document.createElement('pre');pre.id='visual-report';pre.textContent=JSON.stringify(report);document.body.appendChild(pre);
               document.documentElement.dataset.visualDone='1';
-              document.scrollingElement.scrollTop=Math.max(0,(weeks?.getBoundingClientRect().top||0)-100);
+              document.scrollingElement.scrollTop=Math.max(0,(weeksPanel?.getBoundingClientRect().top||0)-100);
             }catch(e){
               const pre=document.createElement('pre');pre.id='visual-report';pre.textContent=JSON.stringify({error:String(e),stack:e.stack});document.body.appendChild(pre);
               document.documentElement.dataset.visualDone='1';
@@ -362,7 +365,7 @@ jobs:
           initial=report.get('_initialOpenAccordions') or []
           if initial: raise SystemExit(f'settings accordions must all start collapsed: {initial}')
           il=report.get('_instantLanguage') or {}
-          if not il.get('open') or not il.get('catalog') or float(il.get('catalogWidth',0))<=1 or not il.get('gear') or not il.get('gearSvg') or float(il.get('height',0))<=72 or not il.get('closedAfterSecond') or not il.get('reopenedAfterThird'): raise SystemExit(f'language section is not immediately responsive/final: {il}')
+          if not il.get('open') or not il.get('catalog') or float(il.get('catalogWidth',0))<=1 or not il.get('gear') or (not il.get('gearSvg') and il.get('gearBackground') in ('none','')) or il.get('attached740')!='1' or float(il.get('height',0))<=72 or not il.get('closedAfterSecond') or not il.get('reopenedAfterThird'): raise SystemExit(f'language section is not immediately responsive/final: {il}')
           ia=report.get('_instantAdvanced') or {}
           if ia.get('preDisplay')=='none' or ia.get('preHeight')=='0px' or ia.get('preOverflow')=='hidden' or not ia.get('open') or ia.get('display')=='none' or ia.get('visibility')=='hidden' or float(ia.get('height',0))<=1 or ia.get('overflow')=='hidden' or ia.get('stabilizing') or ia.get('vacationTitle')!='Vacances et jours sans cours' or not ia.get('closedAfterSecond') or not ia.get('reopenedAfterThird'): raise SystemExit(f'advanced settings is not pre-rendered/immediately responsive: {ia}')
           if not report.get('_advancedStable'): raise SystemExit('advanced settings still has a transient first layout')
