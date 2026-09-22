@@ -620,7 +620,7 @@ final class TimetableCoreUi {
                 }
                 if(typeof window.reloadSchedule==='function'&&!window.reloadSchedule.__advanced){
                   const oldReload=window.reloadSchedule;
-                  const wrapped=function(){oldReload();restoreCycleFromNative();if(typeof render==='function')render();setTimeout(refreshAdvancedFeatures,18)};
+                  const wrapped=function(){oldReload();restoreCycleFromNative();refreshAdvancedFeatures();if(typeof render==='function')render()};
                   wrapped.__advanced=true;window.reloadSchedule=wrapped;
                 }
 
@@ -776,7 +776,7 @@ final class TimetableCoreUi {
                 function loadProfiles(){
                   const sel=document.getElementById('advProfileSelect');if(!sel)return;try{const root=JSON.parse(window.AndroidSchedule&&AndroidSchedule.listProfiles?AndroidSchedule.listProfiles():'{}');sel.innerHTML='';for(const p of root.profiles||[]){const o=document.createElement('option');o.value=p.id;o.textContent=p.name;sel.appendChild(o)}sel.value=root.current||''}catch(e){}
                 }
-                function activateProfile(id){if(!(window.AndroidSchedule&&AndroidSchedule.activateProfile))return;AndroidSchedule.activateProfile(id);if(window.reloadSchedule)window.reloadSchedule();if(window.refreshCourseWidgetLabelCache648)window.refreshCourseWidgetLabelCache648();loadProfiles();setTimeout(refreshAdvancedFeatures,18)}
+                function activateProfile(id){if(!(window.AndroidSchedule&&AndroidSchedule.activateProfile))return;AndroidSchedule.activateProfile(id);if(window.reloadSchedule)window.reloadSchedule();if(window.refreshCourseWidgetLabelCache648)window.refreshCourseWidgetLabelCache648();loadProfiles();refreshAdvancedFeatures()}
 
                 function bind(){
                   const selectMap={advDensity:'density',advFormat:'widgetFormat',advAccess:'accessibility',advHoliday:'holidayMode'};for(const id in selectMap){const el=document.getElementById(id);if(el)el.onchange=e=>{adv[selectMap[id]]=e.target.value;saveAdv();if(typeof render==='function')render()}}
@@ -802,7 +802,7 @@ final class TimetableCoreUi {
                 window.refreshAdvancedFeatures=refreshAdvancedFeatures;
 
                 const oldSettingsClick=document.getElementById('settingsBtn')?document.getElementById('settingsBtn').onclick:null;
-                if(document.getElementById('settingsBtn'))document.getElementById('settingsBtn').onclick=function(e){if(oldSettingsClick)oldSettingsClick.call(this,e);setTimeout(refreshAdvancedFeatures,18)};
+                if(document.getElementById('settingsBtn'))document.getElementById('settingsBtn').onclick=function(e){refreshAdvancedFeatures();if(oldSettingsClick)oldSettingsClick.call(this,e)};
 
                 refreshAdvancedFeatures();
               } catch(e) { console.log('Advanced features',e); }
