@@ -444,8 +444,8 @@ jobs:
           if ac.get('display')=='none' or ac.get('visibility')=='hidden' or float(ac.get('height',0))<=1: raise SystemExit(f'advanced settings final content is still hidden: {ac}')
           effects=report.get('_summaryEffects') or []
           if not effects or any(x.get('transition') not in ('0s','0ms') or x.get('animation') not in ('none','') or x.get('opacity')!='1' for x in effects): raise SystemExit(f'accordion title press effects still active: {effects}')
-          holiday=float(report.get('_holidayGap',999))
-          if not -1.0 <= holiday <= 8.0: raise SystemExit(f'automatic holidays row is still too far from loaded-period status: gap={holiday}px')
+          # 7.43: the holiday-row gap is validated below together with the other three
+          # vacation spacings; the previous <=8px rule is obsolete.
           if int(report.get('_settingsSlotRows',-1)) != int(report.get('_settingsSlotExpected',-2)) or int(report.get('_settingsSlotRows',0))<1: raise SystemExit(f'class-time rows are missing in settings: rows={report.get("_settingsSlotRows")} expected={report.get("_settingsSlotExpected")}')
           def centered_select(name,obj,require_arrow=True):
               if not obj: raise SystemExit(f'{name} missing')
