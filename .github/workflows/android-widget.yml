@@ -395,9 +395,15 @@ jobs:
                 const version745=document.getElementById('appVersionInfo745');
                 const actions745=document.querySelector('#settingsSheet .settingsActions');
                 const vr745=version745&&version745.getBoundingClientRect(),ar745=actions745&&actions745.getBoundingClientRect();
-                const appFontBox=document.getElementById('appFontTitle')?.closest('.settingBox');
-                const widgetFontBox=document.getElementById('widgetFontTitle')?.closest('.settingBox');
+                const appFontTitle745=document.getElementById('appFontTitle');
+                const widgetFontTitle745=document.getElementById('widgetFontTitle');
+                const appFontBox=appFontTitle745?.closest('.settingBox');
+                const widgetFontBox=widgetFontTitle745?.closest('.settingBox');
+                const appFontRow745=appFontBox?.querySelector('.settingRow');
+                const widgetFontRow745=widgetFontBox?.querySelector('.settingRow');
                 const appFontCs=appFontBox&&getComputedStyle(appFontBox),widgetFontCs=widgetFontBox&&getComputedStyle(widgetFontBox);
+                const aftr745=appFontTitle745&&appFontTitle745.getBoundingClientRect(),afrr745=appFontRow745&&appFontRow745.getBoundingClientRect();
+                const wftr745=widgetFontTitle745&&widgetFontTitle745.getBoundingClientRect(),wfrr745=widgetFontRow745&&widgetFontRow745.getBoundingClientRect();
                 const midiTitle=document.querySelector('#settingsDisplay692 .midiDays692>.w658Title');
                 const midiHead=document.querySelector('#settingsDisplay692 .midiDays692>.w658DayHead');
                 const breakNamesTitle=document.getElementById('breakNamesTitle692');
@@ -413,6 +419,11 @@ jobs:
                 const holidayVisual746=holidayShell746?.querySelector('.centerSelect746Visual');
                 const zsr746=zoneShell746&&zoneShell746.getBoundingClientRect(),zvr746=zoneVisual746&&zoneVisual746.getBoundingClientRect();
                 const hsr746=holidayShell746&&holidayShell746.getBoundingClientRect(),hvr746=holidayVisual746&&holidayVisual746.getBoundingClientRect();
+                const profileBox746=document.getElementById('advProfilesTitle')?.closest('.settingBox');
+                const pbr746=profileBox746&&profileBox746.getBoundingClientRect();
+                const schoolRow746=document.getElementById('schoolAutoRow739');
+                const advancedContent746=document.getElementById('advancedContent85');
+                const srr746=schoolRow746&&schoolRow746.getBoundingClientRect(),acr746=advancedContent746&&advancedContent746.getBoundingClientRect();
 
                 report._settings745={
                   attached:document.documentElement.dataset.edt745Final||'',
@@ -426,6 +437,11 @@ jobs:
                   versionBelowClose:(vr745&&ar745)?vr745.top>=ar745.bottom-0.5:false,
                   appFontBorderBottom:appFontCs?parseFloat(appFontCs.borderBottomWidth)||0:999,
                   widgetFontBorderTop:widgetFontCs?parseFloat(widgetFontCs.borderTopWidth)||0:999,
+                  appFontGap:(aftr745&&afrr745)?+(afrr745.top-aftr745.bottom).toFixed(1):999,
+                  widgetFontGap:(wftr745&&wfrr745)?+(wfrr745.top-wftr745.bottom).toFixed(1):999,
+                  profileUnderTitleDelta:(psr&&pbr746)?+((((psr.left+psr.right)/2)-((pbr746.left+pbr746.right)/2)).toFixed(2)):999,
+                  schoolRightOverflow:(srr746&&acr746)?+Math.max(0,srr746.right-acr746.right).toFixed(1):999,
+                  schoolLeftOverflow:(srr746&&acr746)?+Math.max(0,acr746.left-srr746.left).toFixed(1):999,
                   midiTitleGap:(mtr&&mhr)?+(mhr.top-mtr.bottom).toFixed(1):999,
                   breakTitleGap:(btr&&bbr)?+(bbr.top-btr.bottom).toFixed(1):999,
                   widgetDensityGap:(awr&&dtr)?+(dtr.top-awr.bottom).toFixed(1):999,
