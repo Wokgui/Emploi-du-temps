@@ -167,6 +167,21 @@ final class Settings745Ui {
                 function tr745(fr,en,de){
                   const l=lang745();return l==='de'?de:(l==='en'?en:fr);
                 }
+                function setImp745(el,prop,value){
+                  if(!el)return;
+                  if(el.style.getPropertyValue(prop)===value&&el.style.getPropertyPriority(prop)==='important')return;
+                  el.style.setProperty(prop,value,'important');
+                }
+
+                function applySpacing745(){
+                  const midiTitle=document.querySelector('#settingsDisplay692 .midiDays692>.w658Title');
+                  if(midiTitle)setImp745(midiTitle,'margin-bottom','20px');
+                  const density=document.getElementById('widgetDensity664');
+                  if(density){
+                    setImp745(density,'margin-top','0px');
+                    setImp745(density,'padding-top','14px');
+                  }
+                }
 
                 function stabilizeAdvancedRows745(){
                   const reminder=document.querySelector('#advancedSettings85 .reminderLine725');
@@ -179,6 +194,19 @@ final class Settings745Ui {
                     reminder.style.setProperty('max-width','100%','important');
                     reminder.style.setProperty('min-height','36px','important');
                     reminder.style.setProperty('margin','4px auto 0','important');
+                    const reminderSelect=document.getElementById('advReminderMinutes');
+                    if(reminderSelect){
+                      setImp745(reminderSelect,'flex','0 0 96px');
+                      setImp745(reminderSelect,'width','96px');
+                      setImp745(reminderSelect,'min-width','96px');
+                      setImp745(reminderSelect,'max-width','96px');
+                      setImp745(reminderSelect,'box-sizing','border-box');
+                      setImp745(reminderSelect,'padding-left','27px');
+                      setImp745(reminderSelect,'padding-right','27px');
+                      setImp745(reminderSelect,'margin','0px');
+                      setImp745(reminderSelect,'text-align','center');
+                      setImp745(reminderSelect,'text-align-last','center');
+                    }
                   }
                   const zone=document.getElementById('schoolZone');
                   const enabled=document.getElementById('schoolEnabled');
@@ -205,11 +233,12 @@ final class Settings745Ui {
                     enableRow.style.setProperty('margin','0','important');
                   }
                   if(zone){
-                    zone.style.setProperty('flex','0 0 104px','important');
-                    zone.style.setProperty('width','104px','important');
-                    zone.style.setProperty('min-width','104px','important');
-                    zone.style.setProperty('max-width','104px','important');
-                    zone.style.setProperty('margin','0','important');
+                    setImp745(zone,'flex','0 0 108px');
+                    setImp745(zone,'width','108px');
+                    setImp745(zone,'min-width','108px');
+                    setImp745(zone,'max-width','108px');
+                    setImp745(zone,'box-sizing','border-box');
+                    setImp745(zone,'margin','0px');
                   }
                 }
 
@@ -284,14 +313,25 @@ final class Settings745Ui {
                   if(value.textContent!==text)value.textContent=text;
 
                   const props={
+                    position:'absolute',inset:'0px',display:'block',boxSizing:'border-box',
                     width:'100%',minWidth:'100%',maxWidth:'100%',height:'36px',minHeight:'36px',
-                    margin:'0',padding:'0 32px'
+                    margin:'0px',padding:'0px 32px',appearance:'none',webkitAppearance:'none',
+                    backgroundImage:'none',color:'transparent',webkitTextFillColor:'transparent',
+                    textShadow:'none',textAlign:'center',textAlignLast:'center',textOverflow:'clip'
                   };
                   for(const [key,val] of Object.entries(props)){
-                    const css=key.replace(/[A-Z]/g,m=>'-'+m.toLowerCase());
-                    if(select.style.getPropertyValue(css)!==val||select.style.getPropertyPriority(css)!=='important')
-                      select.style.setProperty(css,val,'important');
+                    let css=key.replace(/[A-Z]/g,m=>'-'+m.toLowerCase());
+                    if(css==='webkit-appearance')css='-webkit-appearance';
+                    if(css==='webkit-text-fill-color')css='-webkit-text-fill-color';
+                    setImp745(select,css,val);
                   }
+                  setImp745(shell,'position','relative');
+                  setImp745(shell,'display','block');
+                  setImp745(shell,'width','180px');
+                  setImp745(shell,'min-width','180px');
+                  setImp745(shell,'max-width','calc(100vw - 84px)');
+                  setImp745(shell,'height','36px');
+                  setImp745(shell,'margin','0px auto');
                 }
 
                 function ensureVersion745(){
@@ -314,6 +354,7 @@ final class Settings745Ui {
                 }
 
                 function finalGeometry745(){
+                  applySpacing745();
                   stabilizeAdvancedRows745();
                   markTextBoxes745();
                   ensureRangeLabels745();
@@ -388,7 +429,7 @@ final class Settings745Ui {
                       finalGeometry745();
                     });
                   });
-                  observer.observe(sheet,{childList:true,subtree:true});
+                  observer.observe(sheet,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
                 }
 
                 /* Heavy advanced refreshes run only when Settings/Advanced is about to open. */
