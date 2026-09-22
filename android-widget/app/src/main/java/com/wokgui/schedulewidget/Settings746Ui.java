@@ -54,7 +54,10 @@ final class Settings746Ui {
                   }
                   html body #settingsSheet #widgetDensity664{
                     margin-top:0!important;
-                    padding-top:30px!important;
+                    padding-top:0!important;
+                  }
+                  html body #settingsSheet #settingsDisplay692 #widgetDensity664 .feedback664DensityTitle{
+                    margin-top:10px!important;
                   }
 
                   /* Profile selector is centered as a whole under "Profils". */
@@ -149,7 +152,28 @@ final class Settings746Ui {
                     z-index:2!important;
                   }
                   html body #settingsSheet #schoolAutoRow739{
+                    display:grid!important;
+                    grid-template-columns:minmax(0,1fr) auto!important;
                     align-items:center!important;
+                    justify-content:stretch!important;
+                    gap:10px!important;
+                    width:100%!important;
+                    max-width:100%!important;
+                    box-sizing:border-box!important;
+                    margin-left:auto!important;
+                    margin-right:auto!important;
+                  }
+                  html body #settingsSheet #schoolAutoRow739 .schoolEnable{
+                    width:100%!important;
+                    min-width:0!important;
+                    justify-content:flex-start!important;
+                  }
+                  html body #settingsSheet #schoolAutoRow739 .schoolEnable span{
+                    min-width:0!important;
+                    white-space:normal!important;
+                  }
+                  html body #settingsSheet #schoolAutoRow739 .zoneSelect746{
+                    justify-self:end!important;
                   }
                   html body #settingsSheet #holidayRow746{
                     align-items:center!important;
@@ -395,7 +419,7 @@ final class Settings746Ui {
                   const density=document.getElementById('widgetDensity664');
                   if(density){
                     imp746(density,'margin-top','0px');
-                    imp746(density,'padding-top','30px');
+                    imp746(density,'padding-top','0px');
                   }
                 }
 
