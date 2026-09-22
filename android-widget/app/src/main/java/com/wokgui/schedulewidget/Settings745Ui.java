@@ -190,17 +190,24 @@ final class Settings745Ui {
                   const startNode=start.closest('.dateShell734')||start;
                   const endNode=end.closest('.dateShell734')||end;
 
-                  row.querySelectorAll('.rangeFrom725,.rangeTo725,.rangeFrom745,.rangeTo745').forEach(el=>el.remove());
+                  row.querySelectorAll('.rangeFrom725:not(.rangeFrom745),.rangeTo725:not(.rangeTo745)').forEach(el=>el.remove());
 
-                  const from=document.createElement('span');
-                  from.className='rangeConnector725 rangeConnector745 rangeFrom745';
-                  from.textContent=tr745('Du','From','Von');
-                  const to=document.createElement('span');
-                  to.className='rangeConnector725 rangeConnector745 rangeTo745';
-                  to.textContent=tr745('Au','To','Bis');
+                  let from=row.querySelector('.rangeFrom745');
+                  if(!from){
+                    from=document.createElement('span');
+                    from.className='rangeConnector725 rangeConnector745 rangeFrom745';
+                  }
+                  let to=row.querySelector('.rangeTo745');
+                  if(!to){
+                    to=document.createElement('span');
+                    to.className='rangeConnector725 rangeConnector745 rangeTo745';
+                  }
+                  const fromText=tr745('Du','From','Von'),toText=tr745('Au','To','Bis');
+                  if(from.textContent!==fromText)from.textContent=fromText;
+                  if(to.textContent!==toText)to.textContent=toText;
 
-                  row.insertBefore(from,startNode);
-                  row.insertBefore(to,endNode);
+                  if(from.nextSibling!==startNode)row.insertBefore(from,startNode);
+                  if(to.nextSibling!==endNode)row.insertBefore(to,endNode);
                 }
 
                 function selectedProfileText745(select){
