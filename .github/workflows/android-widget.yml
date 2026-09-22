@@ -1,8 +1,8 @@
-name: Clean Android 7.33 slot-delete-settings-centering build
+name: Clean Android 7.34 widget-color-slot-removal-polish build
 
 on:
   push:
-    branches: [fix/733-slot-delete-settings-centering]
+    branches: [fix/734-widget-color-slot-removal-polish]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 
@@ -89,7 +89,7 @@ jobs:
             if(n==='loadUiSettings')return JSON.stringify({language:'fr'});
             if(n==='loadAdvancedSetting')return '';
             if(n==='getCurrentWeek')return 'B';
-            if(n==='getAppVersionName')return '7.33';
+            if(n==='getAppVersionName')return '7.34';
             if(n==='loadHolidays'||n==='loadSchoolHolidays')return '[]';
             if(n.startsWith('load'))return '{}';
             if(n.startsWith('get')||n.startsWith('is'))return '';
@@ -112,7 +112,7 @@ jobs:
                 ['advancedSettings85','#languageExtraTitle85,.edtLanguagesTitle696']
               ];
               const report={};
-              /* 7.33 functional/visual checks. */
+              /* 7.34 functional/visual checks. */
               const sheet0=document.getElementById('settingsSheet'),title0=document.getElementById('settingsTitle');
               if(sheet0&&title0){
                 const s0=sheet0.getBoundingClientRect(),t0=title0.getBoundingClientRect();
@@ -223,10 +223,10 @@ jobs:
       - name: Verify package metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee /tmp/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='733001' versionName='7.33'" /tmp/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.33-tested-debug.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='734001' versionName='7.34'" /tmp/badging.txt
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/EDT-7.34-tested-debug.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: EDT-7.33-tested
-          path: android-widget/app/build/outputs/apk/debug/EDT-7.33-tested-debug.apk
+          name: EDT-7.34-tested
+          path: android-widget/app/build/outputs/apk/debug/EDT-7.34-tested-debug.apk
           if-no-files-found: error
