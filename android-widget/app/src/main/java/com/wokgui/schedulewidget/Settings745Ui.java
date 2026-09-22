@@ -22,7 +22,7 @@ final class Settings745Ui {
                   /* Affichage du widget / Condensation du widget. */
                   html body #settingsSheet #widgetDensity664{
                     margin-top:0!important;
-                    padding-top:14px!important;
+                    padding-top:0!important;
                   }
 
                   /* Pas de petit séparateur entre les deux tailles de texte. */
@@ -179,7 +179,7 @@ final class Settings745Ui {
                   const density=document.getElementById('widgetDensity664');
                   if(density){
                     setImp745(density,'margin-top','0px');
-                    setImp745(density,'padding-top','14px');
+                    setImp745(density,'padding-top','0px');
                   }
                 }
 
@@ -213,23 +213,25 @@ final class Settings745Ui {
                   const row=document.getElementById('schoolAutoRow739');
                   const enableRow=enabled&&(enabled.closest('.schoolEnable')||enabled.parentElement);
                   if(row){
-                    row.style.setProperty('display','flex','important');
+                    row.style.setProperty('display','grid','important');
+                    row.style.setProperty('grid-template-columns','minmax(0,1fr) auto','important');
                     row.style.setProperty('align-items','center','important');
-                    row.style.setProperty('justify-content','center','important');
+                    row.style.setProperty('justify-content','stretch','important');
                     row.style.setProperty('gap','10px','important');
-                    row.style.setProperty('width','max-content','important');
+                    row.style.setProperty('width','100%','important');
                     row.style.setProperty('max-width','100%','important');
+                    row.style.setProperty('box-sizing','border-box','important');
                     row.style.setProperty('min-height','34px','important');
                     row.style.setProperty('margin','0 auto 8px','important');
                   }
                   if(enableRow){
                     enableRow.style.setProperty('display','flex','important');
                     enableRow.style.setProperty('align-items','center','important');
-                    enableRow.style.setProperty('justify-content','center','important');
+                    enableRow.style.setProperty('justify-content','flex-start','important');
                     enableRow.style.setProperty('gap','6px','important');
-                    enableRow.style.setProperty('width','auto','important');
+                    enableRow.style.setProperty('width','100%','important');
                     enableRow.style.setProperty('min-width','0','important');
-                    enableRow.style.setProperty('flex','0 0 auto','important');
+                    enableRow.style.setProperty('flex','1 1 auto','important');
                     enableRow.style.setProperty('margin','0','important');
                   }
                   if(zone){
