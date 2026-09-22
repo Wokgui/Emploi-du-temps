@@ -123,7 +123,7 @@ final class WorkflowUi {
                     if(extra)extra.remove();
                   }finally{arranging=false}
                 }
-                function scheduleArrange85(){if(arrangeTimer)return;arrangeTimer=setTimeout(()=>{arrangeTimer=0;arrangeAdvanced85()},24)}
+                function scheduleArrange85(){if(arrangeTimer)return;arrangeTimer=1;queueMicrotask(()=>{arrangeTimer=0;arrangeAdvanced85()})}
 
                 function installFastPress85(){
                   let active=null;
