@@ -260,6 +260,20 @@ final class Layout747Ui {
                   document.documentElement.dataset.edtWeek748=weekValid748()?'1':'0';
                 }
 
+                function ensureLegacyWeekLetter748(){
+                  let letter=document.getElementById('weekTitleLetter');
+                  if(letter)return letter;
+                  const h2=document.querySelector('#viewWeek .weekTop>h2');
+                  if(!h2)return null;
+                  letter=document.createElement('span');
+                  letter.id='weekTitleLetter';
+                  letter.className='weekLetter';
+                  letter.setAttribute('aria-hidden','true');
+                  letter.style.setProperty('display','none','important');
+                  h2.appendChild(letter);
+                  return letter;
+                }
+
                 const previousWeek748=window.renderWeek;
                 function scheduleWeekRepair748(){
                   if(weekValid748()||weekRetryRaf748)return;
@@ -286,6 +300,7 @@ final class Layout747Ui {
                   weekRendering748=true;
                   let result;
                   try{
+                    ensureLegacyWeekLetter748();
                     if(typeof previousWeek748==='function')result=previousWeek748.apply(this,arguments);
                   }catch(e){
                     console.error('Layout748Ui week',e);
@@ -303,12 +318,33 @@ final class Layout747Ui {
                   try{renderWeek=renderWeek748}catch(e){}
                 }
 
+                function capturePinnedDay748(date){
+                  try{
+                    const d=date instanceof Date?date:window.__edt728DayDate;
+                    if(!(d instanceof Date)||Number.isNaN(d.getTime()))return false;
+                    pinnedDay748=new Date(d.getFullYear(),d.getMonth(),d.getDate(),12,0,0,0).getTime();
+                    window.__edt748PinnedDay=pinnedDay748;
+                    window.__edt728DayDate=new Date(pinnedDay748);
+                    return true;
+                  }catch(e){return false}
+                }
                 function restorePinnedDay748(){
                   if(!pinnedDay748)return;
                   try{
                     window.__edt728DayDate=new Date(pinnedDay748);
                     window.__edt748PinnedDay=pinnedDay748;
                   }catch(e){}
+                }
+                function movePinnedDay748(delta){
+                  try{
+                    const source=(window.__edt728DayDate instanceof Date&&!Number.isNaN(window.__edt728DayDate.getTime()))
+                      ?window.__edt728DayDate:new Date();
+                    const next=new Date(source.getFullYear(),source.getMonth(),source.getDate(),12,0,0,0);
+                    next.setDate(next.getDate()+delta);
+                    capturePinnedDay748(next);
+                    if(typeof window.renderToday==='function')window.renderToday();
+                    return true;
+                  }catch(e){return false}
                 }
 
                 function fitToday748(){
@@ -387,10 +423,14 @@ final class Layout747Ui {
                   if(open&&!settingsWasOpen748){
                     settingsWasOpen748=true;
                     queueMicrotask(()=>{
-                      try{if(typeof window.refreshSettings745==='function')window.refreshSettings745()}catch(e){}
-                      try{if(typeof window.refreshSettings746==='function')window.refreshSettings746()}catch(e){}
                       try{if(typeof window.prepareSettingsOpen665==='function')window.prepareSettingsOpen665()}catch(e){}
                       try{if(typeof window.refreshWorkflow85==='function')window.refreshWorkflow85()}catch(e){}
+                      try{if(typeof window.refreshSettings745==='function')window.refreshSettings745()}catch(e){}
+                      try{if(typeof window.refreshSettings746==='function')window.refreshSettings746()}catch(e){}
+                      requestAnimationFrame(()=>{
+                        try{if(typeof window.refreshSettings745==='function')window.refreshSettings745()}catch(e){}
+                        try{if(typeof window.refreshSettings746==='function')window.refreshSettings746()}catch(e){}
+                      });
                     });
                   }else if(!open){
                     settingsWasOpen748=false;
@@ -409,6 +449,7 @@ final class Layout747Ui {
                   if(nav&&nav.dataset.mode==='today'){
                     pinnedDay748=0;
                     window.__edt748PinnedDay=0;
+                    window.__edt728DayDate=new Date();
                   }
                   if(nav&&nav.dataset.mode==='week'){
                     /* Build the real grid before the tab becomes visible. */
@@ -418,18 +459,12 @@ final class Layout747Ui {
 
                 document.addEventListener('click',event=>{
                   const dayNav=event.target&&event.target.closest?event.target.closest('#dayPrev728,#dayNext728'):null;
-                  if(dayNav){
-                    queueMicrotask(()=>{
-                      try{
-                        const d=window.__edt728DayDate;
-                        if(d instanceof Date&&!Number.isNaN(d.getTime())){
-                          pinnedDay748=d.getTime();
-                          window.__edt748PinnedDay=pinnedDay748;
-                        }
-                      }catch(e){}
-                      fitToday748();
-                    });
-                  }
+                  if(!dayNav)return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if(event.stopImmediatePropagation)event.stopImmediatePropagation();
+                  movePinnedDay748(dayNav.id==='dayPrev728'?-1:1);
+                  fitToday748();
                 },true);
 
                 const activeObserver=new MutationObserver(()=>{
