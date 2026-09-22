@@ -5446,12 +5446,30 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     const v=document.getElementById('appVersionInfo');if(v&&v.textContent!=='Version 7.40')v.textContent='Version 7.40';
   }
 
-  /* Synchronous: before the first user-visible settings frame. */
-  collapseAtLaunch740();
-  final740();
+  /* The native runtime creates Settings after this HTML script.
+     Observe only until the real sheet exists, then stabilise it before paint. */
+  let launchCollapsed740=false;
+  function attach740(){
+    const sheet=document.getElementById('settingsSheet');
+    if(!sheet)return false;
+    if(!launchCollapsed740){
+      launchCollapsed740=true;
+      collapseAtLaunch740();
+    }
+    final740();
+    if(!sheet.__edt740Observer){
+      sheet.__edt740Observer=true;
+      new MutationObserver(()=>queueMicrotask(final740)).observe(sheet,{childList:true,subtree:true});
+    }
+    return true;
+  }
+  if(!attach740()){
+    const bootObserver740=new MutationObserver(()=>{
+      if(attach740())bootObserver740.disconnect();
+    });
+    bootObserver740.observe(document.documentElement,{childList:true,subtree:true});
+  }
 
-  const sheet=document.getElementById('settingsSheet');
-  if(sheet)new MutationObserver(()=>queueMicrotask(final740)).observe(sheet,{childList:true,subtree:true});
   document.addEventListener('change',e=>{
     if(e.target&&e.target.id==='advProfileSelect')queueMicrotask(stabilizeProfile740);
   },true);
