@@ -4606,6 +4606,11 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     const shell=select.parentElement?.classList.contains('profileShell734')?select.parentElement:null;
     if(!shell)return;
     const extra=shell.querySelector('.profileArrow734');if(extra)extra.remove();
+    select.style.setProperty('-webkit-appearance','auto','important');
+    select.style.setProperty('appearance','auto','important');
+    select.style.setProperty('background-image','none','important');
+    select.style.setProperty('color','transparent','important');
+    select.style.setProperty('-webkit-text-fill-color','transparent','important');
     let value=shell.querySelector('.profileValue735');
     if(!value){value=document.createElement('span');value.className='profileValue735';shell.appendChild(value)}
     const update=()=>{value.textContent=select.selectedOptions?.[0]?.textContent||select.value||''};
@@ -4629,22 +4634,39 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     const head=sheet&&sheet.querySelector('.settingsHead');
     if(!title||!sheet||!head)return;
 
+    let group=title.querySelector('.settingsTitleGroup735');
+    let text=title.querySelector('.settingsText735');
+    let gear=title.querySelector('.settingsGear735');
     const previous=title.querySelector('.settingsText734')?.textContent ||
-                   title.querySelector('.settingsText735')?.textContent ||
-                   String(title.textContent||'').replace(/^⚙\s*/,'').trim() || 'Réglages';
-    title.replaceChildren();
-    const group=document.createElement('span');group.className='settingsTitleGroup735';
-    const text=document.createElement('span');text.className='settingsText735';text.textContent=previous;
-    const gear=document.createElement('span');gear.className='settingsGear735';gear.textContent='⚙';
-    group.append(text,gear);title.appendChild(group);
+                   text?.textContent ||
+                   String(title.textContent||'').replace(/^⚙\s*/,'').replace(/⚙+$/,'').trim() || 'Réglages';
+
+    if(!group||!text||!gear){
+      title.replaceChildren();
+      group=document.createElement('span');group.className='settingsTitleGroup734 settingsTitleGroup735';
+      gear=document.createElement('span');gear.className='settingsGear734 settingsGear735';gear.textContent='⚙';
+      text=document.createElement('span');text.className='settingsText734 settingsText735';text.textContent=previous;
+      group.append(gear,text);title.appendChild(group);
+    }else{
+      group.classList.add('settingsTitleGroup734');
+      text.classList.add('settingsText734');
+      gear.classList.add('settingsGear734');
+      if(text.textContent!==previous)text.textContent=previous;
+      [...group.querySelectorAll('.settingsGear734,.settingsGear735')].slice(1).forEach(x=>x.remove());
+    }
 
     const place=()=>{
-      const sr=sheet.getBoundingClientRect(),hr=head.getBoundingClientRect(),tr=text.getBoundingClientRect();
-      const left=((sr.left+sr.right)/2)-hr.left-(tr.width/2);
+      const hr=head.getBoundingClientRect(),tr=text.getBoundingClientRect();
+      const lang=document.querySelector('#settingsLanguage698>summary .edtSummaryLabel700') ||
+                 document.querySelector('#settingsLanguage698>summary');
+      const lr=lang&&lang.getBoundingClientRect();
+      const sr=sheet.getBoundingClientRect();
+      const target=lr?((lr.left+lr.right)/2):((sr.left+sr.right)/2);
+      const left=target-hr.left-(tr.width/2);
       title.style.setProperty('left',left.toFixed(2)+'px','important');
       const tr2=text.getBoundingClientRect();
       document.documentElement.dataset.edt735SettingsWordDelta=
-        ((((tr2.left+tr2.right)/2)-((sr.left+sr.right)/2))).toFixed(2);
+        ((((tr2.left+tr2.right)/2)-target)).toFixed(2);
     };
     place();requestAnimationFrame(place);
   }
