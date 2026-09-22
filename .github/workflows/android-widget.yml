@@ -83,8 +83,8 @@ jobs:
               {n:1,start:'08:00',end:'09:00'},{n:2,start:'09:00',end:'10:00'},{n:3,start:'10:00',end:'11:00'},
               {n:4,start:'11:00',end:'12:00'},{n:5,start:'13:00',end:'14:00'},{n:6,start:'14:00',end:'15:00'},
               {n:7,start:'16:00',end:'17:00'},{n:8,start:'17:00',end:'18:00'},{n:9,start:'18:00',end:'19:00'}],
-              _weeks:{A:{2:{courses:[]},3:{courses:[]},4:{courses:[]},5:{courses:[]},6:{courses:[]}},
-                      B:{2:{courses:[]},3:{courses:[]},4:{courses:[]},5:{courses:[]},6:{courses:[]}}}});
+              _weeks:{A:{2:{courses:[{start:'10:00',end:'11:00',label:'Test A',room:'101',slot:3}]},3:{courses:[]},4:{courses:[]},5:{courses:[]},6:{courses:[]}},
+                      B:{2:{courses:[{start:'10:00',end:'11:00',label:'Test B',room:'102',slot:3}]},3:{courses:[]},4:{courses:[]},5:{courses:[]},6:{courses:[]}}}});
             if(n==='loadAdvancedSettings')return JSON.stringify({singleWeek:false,cycleLength:2});
             if(n==='loadUiSettings')return JSON.stringify({language:'fr'});
             if(n==='loadAdvancedSetting')return '';
