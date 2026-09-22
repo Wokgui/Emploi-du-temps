@@ -4463,7 +4463,8 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   }
 
   const sheet=document.getElementById('settingsSheet');
-  if(sheet)new MutationObserver(schedule734).observe(sheet,{childList:true,subtree:true,characterData:true});
+  if(sheet)new MutationObserver(schedule734).observe(sheet,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['open','class']});
+  document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='advancedSettings85')setTimeout(schedule734,0)},true);
   document.addEventListener('click',e=>{
     if(e.target&&e.target.closest&&e.target.closest('#settingsBtn,#settingsSheet'))setTimeout(schedule734,0);
   },true);
