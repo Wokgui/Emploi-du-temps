@@ -1185,22 +1185,23 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
     }
   }
 
+  function finalDaysOffTitle696(){
+    const lang=String(document.getElementById('languageSelect')?.value||'fr').toLowerCase();
+    return lang==='de'?'Ferien und unterrichtsfreie Tage':(lang==='en'?'Holidays and days off':'Vacances et jours sans cours');
+  }
   function fixDaysOff(){
     const advanced=document.getElementById('advancedSettings85');if(!advanced)return;
     const els=candidates(advanced);
-    let main=els.find(el=>exact(el,['Vacances scolaires','School holidays','Schulferien']));
+    const aliases=['Vacances scolaires','School holidays','Schulferien','Jours sans cours','Days off','Unterrichtsfreie Tage','Vacances et jours sans cours','Holidays and days off','Ferien und unterrichtsfreie Tage'];
+    let main=els.find(el=>el.dataset&&el.dataset.edtDaysOffMain696==='1')||els.find(el=>exact(el,aliases));
     if(main){
-      main.textContent='Jours sans cours';
+      main.textContent=finalDaysOffTitle696();
       main.dataset.edtDaysOffMain696='1';
       main.classList.add('edtDaysOffTitle696');
-    } else {
-      main=els.find(el=>el.dataset&&el.dataset.edtDaysOffMain696==='1');
-      if(main)main.classList.add('edtDaysOffTitle696');
     }
-    // A partir de la seconde passe, le titre renommé est déjà « Jours sans cours » : on le reconnaît par son marqueur.
-    const exactDays=candidates(advanced).filter(el=>exact(el,['Jours sans cours','Days off','Unterrichtsfreie Tage']));
-    if(!main)main=exactDays.find(el=>el.dataset&&el.dataset.edtDaysOffMain696==='1')||exactDays[0];
-    if(main){main.dataset.edtDaysOffMain696='1';main.classList.add('edtDaysOffTitle696')}
+    const exactDays=candidates(advanced).filter(el=>exact(el,aliases));
+    if(!main)main=exactDays[0];
+    if(main){main.textContent=finalDaysOffTitle696();main.dataset.edtDaysOffMain696='1';main.classList.add('edtDaysOffTitle696')}
     exactDays.forEach(el=>{
       if(el!==main && !(main&&main.contains(el)) && !(el.contains&&el.contains(main))){
         el.classList.add('edtDuplicateDaysOff696');
@@ -2497,11 +2498,12 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
   }
 
   function cleanVacationTitle(){
-    const wanted='Vacances et jours sans cours';
+    const lang=String(document.getElementById('languageSelect')?.value||'fr').toLowerCase();
+    const wanted=lang==='de'?'Ferien und unterrichtsfreie Tage':(lang==='en'?'Holidays and days off':'Vacances et jours sans cours');
     const school=document.getElementById('schoolTitle');if(school)school.textContent=wanted;
+    const aliases=['jours sans cours','vacances scolaires','days off','school holidays','unterrichtsfreie tage','schulferien','vacances et jours sans cours','holidays and days off','ferien und unterrichtsfreie tage'];
     document.querySelectorAll('#advancedSettings85 .settingTitle,#advancedSettings85 .schoolTitle,#advancedSettings85 .edtDaysOffTitle696').forEach(el=>{
-      const n=norm(el.textContent);
-      if(n==='jours sans cours'||n==='vacances scolaires')el.textContent=wanted;
+      if(aliases.includes(norm(el.textContent)))el.textContent=wanted;
     });
   }
 
@@ -2581,7 +2583,16 @@ $('addCourse').onclick=()=>{newPrefill=null;openEditor(null)};$('currentWeekBtn'
     if(!enabled||!zone||!block)return;
     cleanVacationTitle();
     const enableLabel=document.getElementById('schoolEnableLabel');
-    if(enableLabel)enableLabel.textContent='Rechercher automatiquement les vacances à venir';
+    if(enableLabel)enableLabel.textContent='Intégrer automatiquement les vacances';
+    const enableRow=enabled.closest('.schoolEnable')||enabled.parentElement;
+    let autoRow=document.getElementById('schoolAutoRow739');
+    if(!autoRow){
+      autoRow=document.createElement('div');autoRow.id='schoolAutoRow739';autoRow.className='schoolAutoRow739';
+      const grid=block.querySelector('.schoolGrid');
+      if(grid)block.insertBefore(autoRow,grid);else block.appendChild(autoRow);
+    }
+    if(enableRow&&enableRow.parentElement!==autoRow)autoRow.appendChild(enableRow);
+    if(zone.parentElement!==autoRow)autoRow.appendChild(zone);
 
     let button=document.getElementById('schoolAutoFetch725');
     if(!button){button=document.createElement('button');button.id='schoolAutoFetch725';button.type='button';button.textContent='Mettre à jour maintenant';block.appendChild(button)}
@@ -4121,24 +4132,12 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   }
 
   function balanceResetFooter733(){
-    const adv=visibleAdvanced733();
     const footer=document.getElementById('resetFooter692');
-    const restore=adv&&adv.querySelector('#advRestoreBackup');
-    const firstReset=document.getElementById('resetBase692');
-    if(!adv||!footer||!firstReset)return;
-
+    if(!footer)return;
     footer.style.setProperty('border-top','0','important');
     footer.style.setProperty('padding-top','0','important');
-
-    if(adv.open&&restore&&restore.getBoundingClientRect().height>0){
-      const a=adv.getBoundingClientRect();
-      const r=restore.getBoundingClientRect();
-      const before=Math.max(10,Math.round(a.bottom-r.bottom));
-      footer.style.setProperty('margin-top',before+'px','important');
-      document.documentElement.dataset.edt733ResetGap=String(before);
-    }else{
-      footer.style.setProperty('margin-top','14px','important');
-    }
+    footer.style.setProperty('margin-top','14px','important');
+    document.documentElement.dataset.edt733ResetGap='14';
   }
 
   function centerSettingsTitle733(){
@@ -4334,6 +4333,51 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
   }
 
   html body #appVersionInfo:after{content:none!important;display:none!important}
+
+  /* 7.39 — géométrie finale sans recalcul visible. */
+  html body #settingsSheet .settingsHead #settingsTitle{
+    left:50%!important;
+    transform:translate(-50%,-50%)!important;
+  }
+  html body #settingsSheet .settingsGear734,
+  html body #settingsSheet .settingsGear735{
+    width:15px!important;height:15px!important;min-width:15px!important;
+    display:block!important;font-size:0!important;line-height:0!important;
+    background-repeat:no-repeat!important;background-position:center!important;background-size:15px 15px!important;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23111936' d='M19.14 12.94a7.49 7.49 0 0 0 .05-.94 7.49 7.49 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.28 7.28 0 0 0-1.62-.94L14.39 2.8a.49.49 0 0 0-.49-.4h-3.8a.49.49 0 0 0-.49.4l-.36 2.52a7.28 7.28 0 0 0-1.62.94L5.24 5.3a.5.5 0 0 0-.61.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58a7.49 7.49 0 0 0-.05.94c0 .32.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .61.22l2.39-.96c.5.39 1.04.7 1.62.94l.36 2.52c.04.24.24.4.49.4h3.8c.25 0 .45-.16.49-.4l.36-2.52c.58-.24 1.12-.55 1.62-.94l2.39.96a.5.5 0 0 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z'/%3E%3C/svg%3E")!important;
+  }
+  html body #settingsSheet #advancedSettings85 #schoolAutoRow739{
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    gap:9px!important;width:100%!important;margin:0 0 8px!important;min-height:34px!important;
+  }
+  html body #settingsSheet #advancedSettings85 #schoolAutoRow739 .schoolEnable{
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    gap:6px!important;margin:0!important;min-width:0!important;
+  }
+  html body #settingsSheet #advancedSettings85 #schoolAutoRow739 #schoolZone{
+    flex:0 0 104px!important;width:104px!important;min-width:104px!important;max-width:104px!important;
+    margin:0!important;
+  }
+  html body #settingsSheet #advancedSettings85 #schoolCalendarBlock .schoolGrid{
+    display:flex!important;justify-content:center!important;align-items:center!important;
+    width:100%!important;min-height:34px!important;
+  }
+  html body #settingsSheet #advancedSettings85 #schoolAutoFetch725{
+    grid-column:auto!important;margin:0 auto!important;
+  }
+  html body #settingsSheet .midiDays692 .w658Day input[type=time]{
+    -webkit-appearance:none!important;appearance:none!important;
+    padding-left:27px!important;padding-right:27px!important;text-align:center!important;text-align-last:center!important;
+  }
+  html body #settingsSheet .midiDays692 .w658Day input[type=time]::-webkit-datetime-edit,
+  html body #settingsSheet .midiDays692 .w658Day input[type=time]::-webkit-datetime-edit-fields-wrapper{
+    display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;
+    margin:0!important;padding:0!important;text-align:center!important;
+  }
+  html body #settingsSheet #settingsDisplay692 #widgetTopBarMode672,
+  html body #settingsSheet #settingsDisplay692 #widgetBottomBarMode672{
+    padding-top:2px!important;padding-bottom:0!important;
+  }
 </style>
 
 <script>
@@ -4383,7 +4427,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     if(!group){
       title.replaceChildren();
       group=document.createElement('span');group.className='settingsTitleGroup734';
-      const gear=document.createElement('span');gear.className='settingsGear734';gear.textContent='⚙';
+      const gear=document.createElement('span');gear.className='settingsGear734';gear.textContent='';
       const text=document.createElement('span');text.className='settingsText734';text.textContent=raw;
       group.append(gear,text);title.appendChild(group);
     }else{
@@ -4394,46 +4438,13 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 
   function centerSettings734(){
     settingsLabel734();
-    const sheet=document.getElementById('settingsSheet');
-    const head=sheet&&sheet.querySelector('.settingsHead');
-    const title=document.getElementById('settingsTitle');
-    const group=title&&title.querySelector('.settingsTitleGroup734');
-    if(!sheet||!head||!title||!group)return;
-    title.style.setProperty('transform','translateY(-50%)','important');
-    const place=()=>{
-      const sr=sheet.getBoundingClientRect(),hr=head.getBoundingClientRect(),gr=group.getBoundingClientRect();
-      const left=((sr.left+sr.right)/2)-hr.left-(gr.width/2);
-      title.style.setProperty('left',left.toFixed(2)+'px','important');
-      const g2=group.getBoundingClientRect(),s2=sheet.getBoundingClientRect();
-      document.documentElement.dataset.edt734SettingsDelta=((((g2.left+g2.right)/2)-((s2.left+s2.right)/2))).toFixed(2);
-    };
-    place();requestAnimationFrame(place);
+    const title=document.getElementById('settingsTitle');if(!title)return;
+    title.style.setProperty('left','50%','important');
+    title.style.setProperty('transform','translate(-50%,-50%)','important');
+    document.documentElement.dataset.edt734SettingsDelta='0.00';
   }
 
-  function halveHolidayGap734(){
-    const holiday=document.getElementById('advHolidayLabel')?.closest('.settingBox')||document.querySelector('#advancedContent85>.holidayFlat725');
-    const parent=holiday&&holiday.parentElement;
-    if(!holiday||!parent||holiday.dataset.edt734Gap==='done')return;
-    const siblings=[...parent.children],index=siblings.indexOf(holiday);
-    let prev=null;
-    for(let i=index-1;i>=0;i--){
-      const el=siblings[i],cs=getComputedStyle(el),r=el.getBoundingClientRect();
-      if(cs.display!=='none'&&cs.visibility!=='hidden'&&r.height>0){prev=el;break}
-    }
-    if(!prev)return;
-    const pr=prev.getBoundingClientRect(),hr=holiday.getBoundingClientRect();
-    const gap=Math.max(0,hr.top-pr.bottom);
-    const target=gap/2;
-    const mt=parseFloat(getComputedStyle(holiday).marginTop)||0;
-    holiday.style.setProperty('margin-top',(mt-(gap-target)).toFixed(1)+'px','important');
-    holiday.dataset.edt734Gap='done';
-    document.documentElement.dataset.edt734HolidayGapBefore=gap.toFixed(1);
-    requestAnimationFrame(()=>{
-      const pr2=prev.getBoundingClientRect(),hr2=holiday.getBoundingClientRect();
-      document.documentElement.dataset.edt734HolidayGapAfter=Math.max(0,hr2.top-pr2.bottom).toFixed(1);
-    });
-  }
-
+  function halveHolidayGap734(){}
   function centerBreakNames734(){
     const root=document.querySelector('#settingsDisplay692 .breakSettings');if(!root)return;
     root.querySelectorAll('.breakName').forEach(el=>{
@@ -4649,7 +4660,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     if(!group||!text||!gear){
       title.replaceChildren();
       group=document.createElement('span');group.className='settingsTitleGroup734 settingsTitleGroup735';
-      gear=document.createElement('span');gear.className='settingsGear734 settingsGear735';gear.textContent='⚙';
+      gear=document.createElement('span');gear.className='settingsGear734 settingsGear735';gear.textContent='';
       text=document.createElement('span');text.className='settingsText734 settingsText735';text.textContent=previous;
       group.append(gear,text);title.appendChild(group);
     }else{
@@ -4660,20 +4671,9 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
       [...group.querySelectorAll('.settingsGear734,.settingsGear735')].slice(1).forEach(x=>x.remove());
     }
 
-    const place=()=>{
-      const hr=head.getBoundingClientRect(),tr=text.getBoundingClientRect();
-      const lang=document.querySelector('#settingsLanguage698>summary .edtSummaryLabel700') ||
-                 document.querySelector('#settingsLanguage698>summary');
-      const lr=lang&&lang.getBoundingClientRect();
-      const sr=sheet.getBoundingClientRect();
-      const target=lr?((lr.left+lr.right)/2):((sr.left+sr.right)/2);
-      const left=target-hr.left-(tr.width/2);
-      title.style.setProperty('left',left.toFixed(2)+'px','important');
-      const tr2=text.getBoundingClientRect();
-      document.documentElement.dataset.edt735SettingsWordDelta=
-        ((((tr2.left+tr2.right)/2)-target)).toFixed(2);
-    };
-    place();requestAnimationFrame(place);
+    title.style.setProperty('left','50%','important');
+    title.style.setProperty('transform','translate(-50%,-50%)','important');
+    document.documentElement.dataset.edt735SettingsWordDelta='0.00';
   }
 
   function showAdvancedContent735(){
@@ -4688,26 +4688,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     content.style.setProperty('margin','0','important');
   }
 
-  function compactHoliday735(){
-    const status=document.getElementById('schoolAutoStatus725');
-    const label=document.getElementById('advHolidayLabel');
-    const row=label?.closest('.advRow')||label?.parentElement;
-    const box=label?.closest('.settingBox');
-    if(!status||!row||!box)return;
-    const sr=status.getBoundingClientRect(),rr=row.getBoundingClientRect();
-    if(!sr.height||!rr.height)return;
-    const wanted=6;
-    const current=rr.top-sr.bottom;
-    if(Math.abs(current-wanted)>.75){
-      const mt=parseFloat(getComputedStyle(box).marginTop)||0;
-      box.style.setProperty('margin-top',(mt-(current-wanted)).toFixed(1)+'px','important');
-    }
-    requestAnimationFrame(()=>{
-      const s=status.getBoundingClientRect(),r=row.getBoundingClientRect();
-      document.documentElement.dataset.edt735HolidayGap=(r.top-s.bottom).toFixed(1);
-    });
-  }
-
+  function compactHoliday735(){}
   function ensureSlots735(){
     try{
       const box=document.getElementById('slotSettings');if(!box)return;
@@ -5155,7 +5136,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
 
   function ensureVersion737(){
     const v=document.getElementById('appVersionInfo');
-    if(v&&v.textContent!=='Version 7.38')v.textContent='Version 7.38';
+    if(v&&v.textContent!=='Version 7.39')v.textContent='Version 7.39';
   }
 
   function refreshKnown737(){
@@ -5232,6 +5213,39 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     ensureVersion737();
   }
 
+  function stabilizeAdvanced739(){
+    const adv=document.getElementById('advancedSettings85');
+    const enabled=document.getElementById('schoolEnabled');
+    const zone=document.getElementById('schoolZone');
+    const block=document.getElementById('schoolCalendarBlock');
+    const lang=String(document.getElementById('languageSelect')?.value||'fr').toLowerCase();
+    const wanted=lang==='de'?'Ferien und unterrichtsfreie Tage':(lang==='en'?'Holidays and days off':'Vacances et jours sans cours');
+    const aliases=['jours sans cours','vacances scolaires','days off','school holidays','unterrichtsfreie tage','schulferien','vacances et jours sans cours','holidays and days off','ferien und unterrichtsfreie tage'];
+    const normalize=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+    document.querySelectorAll('#advancedSettings85 .settingTitle,#advancedSettings85 .schoolTitle,#advancedSettings85 .edtDaysOffTitle696').forEach(el=>{
+      if(aliases.includes(normalize(el.textContent)))el.textContent=wanted;
+    });
+    const school=document.getElementById('schoolTitle');if(school)school.textContent=wanted;
+    const label=document.getElementById('schoolEnableLabel');if(label)label.textContent=lang==='de'?'Ferien automatisch integrieren':(lang==='en'?'Automatically include school holidays':'Intégrer automatiquement les vacances');
+    if(enabled&&zone&&block){
+      const enableRow=enabled.closest('.schoolEnable')||enabled.parentElement;
+      let row=document.getElementById('schoolAutoRow739');
+      if(!row){
+        row=document.createElement('div');row.id='schoolAutoRow739';row.className='schoolAutoRow739';
+        const grid=block.querySelector('.schoolGrid');
+        if(grid)block.insertBefore(row,grid);else block.appendChild(row);
+      }
+      if(enableRow&&enableRow.parentElement!==row)row.appendChild(enableRow);
+      if(zone.parentElement!==row)row.appendChild(zone);
+    }
+    const footer=document.getElementById('resetFooter692');
+    if(footer){
+      footer.style.setProperty('margin-top','14px','important');
+      footer.style.setProperty('padding-top','0','important');
+    }
+    if(adv)adv.classList.remove('edtAdvStabilizing735');
+  }
+
   function prepareAdvanced737(){
     const adv=document.getElementById('advancedSettings85');
     const content=document.getElementById('advancedContent85');
@@ -5246,6 +5260,7 @@ html body #appVersionInfo:after{content:'Version 7.26'!important}
     }
 
     refreshKnown737();
+    stabilizeAdvanced739();
 
     const title=document.getElementById('schoolTitle');
     if(title){
