@@ -50,12 +50,14 @@ final class Feedback678Ui {
 
                 function ensureSettings(){
                   const sheet=document.getElementById('settingsSheet');if(!sheet)return null;
-                  let box=document.getElementById('settingsWeekCycle678');
+                  let box=document.getElementById('settingsWeekCycle678'),created=false;
                   if(!box){
                     box=document.createElement('div');box.id='settingsWeekCycle678';box.className='settingBox';
                     box.innerHTML='<div class="settingTitle"></div><div class="weekCycleChoices678"></div><div class="weekCurrentSettings678"><div class="weekCurrentLabel678"></div><div class="weekCurrentChoices678"></div></div>';
                     const head=sheet.querySelector('.settingsHead');if(head&&head.nextSibling)sheet.insertBefore(box,head.nextSibling);else sheet.insertBefore(box,sheet.firstChild);
+                    created=true;
                   }
+                  if(created&&window.refreshSettingsLayout)window.refreshSettingsLayout();
                   const cycle=box.querySelector('.weekCycleChoices678'),defs=[['1','1 seule'],['2','A / B'],['3','A / B / C'],['4','A / B / C / D']];
                   defs.forEach(([value,label])=>{let button=cycle.querySelector('[data-count="'+value+'"]');if(!button){button=document.createElement('button');button.type='button';button.className='weekCycleChoice678';button.dataset.count=value;cycle.appendChild(button)}button.textContent=value==='1'?tr('1 seule','1 week','1 Woche'):label;button.onclick=()=>applyCycle(Number(value))});
                   const current=box.querySelector('.weekCurrentChoices678');['A','B','C','D'].forEach(value=>{let button=current.querySelector('[data-week="'+value+'"]');if(!button){button=document.createElement('button');button.type='button';button.className='weekCurrentChoice678';button.dataset.week=value;button.textContent=value;current.appendChild(button)}button.onclick=()=>selectCurrent(value)});
