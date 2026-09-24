@@ -96,6 +96,7 @@ async function interactions() {
   assert.equal(await p.evaluate(()=>state[selected].courses[0].start),'08:10');
   assert.equal(await p.evaluate(()=>state[selected].courses[0].end),'08:55');
   await p.locator('#settingsBtn').tap();
+  await p.locator('#languageSettings86 > summary').tap();
   await p.locator('#languageSelect').tap();await p.keyboard.press('Escape');
   assert.equal(await p.evaluate(()=>__edtHeavyPanels648.isOpen('settings')),true);
   await p.screenshot({path:path.join(out,'settings.png')});
