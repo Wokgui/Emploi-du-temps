@@ -1565,14 +1565,10 @@ final class TimetableCoreUi {
                 }
                 window.syncBreakCells=syncBreakCells;
 
+                /* Week break labels use one deterministic CSS size. Measuring and rewriting
+                   font-size after layout caused a visible second paint on every A/B switch. */
                 function fitBreakLabel(el){
-                  try{
-                    if(!el)return;
-                    let size=document.body.classList.contains('largeAppText')?.60:.58;
-                    el.style.setProperty('font-size',size+'rem','important');
-                    const holder=el.parentElement||el,max=Math.max(8,holder.clientWidth-6);
-                    while(el.scrollWidth>max&&size>.38){size-=.02;el.style.setProperty('font-size',size.toFixed(2)+'rem','important')}
-                  }catch(e){}
+                  try{if(el)el.style.removeProperty('font-size')}catch(e){}
                 }
                 function fitBreakLabels(){document.querySelectorAll('#weekGrid .breakFitLabel').forEach(fitBreakLabel)}
 
@@ -1739,7 +1735,10 @@ final class TimetableCoreUi {
                 bindOverrides();wireBreakSettings();ensureCourseBadgeField();wrapCourseSubmit();
                 const modal=document.getElementById('modal');
                 if(modal)new MutationObserver(()=>{if(modal.classList.contains('show'))setTimeout(()=>{syncCourseBadgeField();wrapCourseSubmit()},0)}).observe(modal,{attributes:true,attributeFilter:['class']});
-                for(const id of ['todayList','weekGrid','editList']){const el=document.getElementById(id);if(el)new MutationObserver(()=>setTimeout(()=>{syncBreakCells();decorateCourseBadges();fitBreakLabels()},0)).observe(el,{childList:true,subtree:true})}
+                /* Week rendering already applies break labels and badges synchronously.
+                   Do not observe weekGrid: that observer used to mutate the finished grid on
+                   the next task and was the remaining source of week-switch flicker. */
+                for(const id of ['todayList','editList']){const el=document.getElementById(id);if(el)new MutationObserver(()=>setTimeout(()=>{syncBreakCells();decorateCourseBadges()},0)).observe(el,{childList:true,subtree:true})}
                 window.addEventListener('resize',()=>setTimeout(()=>{fitBreakLabels();polishWeekNowMarker();decorateCourseBadges()},30));
                 setInterval(()=>setTimeout(polishWeekNowMarker,45),60000);
 
