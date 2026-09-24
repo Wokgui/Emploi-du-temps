@@ -121,6 +121,7 @@ const attrs = xml => Object.fromEntries([...xml.matchAll(/(?:android:)?([A-Za-z_
   assert.equal(initial.topColorHidden, true);
   assert.equal(initial.courseProgressLabel, 'Progression du cours en cours');
 
+  await page.evaluate(()=>{const section=document.getElementById('widgetSettings86');if(section)section.open=true});
   await page.locator('#widgetTopBarMode672').selectOption('color');
   await page.evaluate(() => {
     const input = document.getElementById('widgetTopBarColor672');
