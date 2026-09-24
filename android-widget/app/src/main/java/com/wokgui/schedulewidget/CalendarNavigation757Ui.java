@@ -75,7 +75,8 @@ final class CalendarNavigation757Ui {
                 function wrap757(name,before,after){const old=window[name];if(typeof old!=='function'||old.__calendar757)return;const w=function(){if(before)try{before()}catch(e){}const r=old.apply(this,arguments);if(after)try{after()}catch(e){}return r};w.__calendar757=true;window[name]=w;try{eval(name+'=w')}catch(e){}}
                 function install757(){wrap757('renderToday',null,renderViewedToday757);wrap757('renderWeek',()=>{try{activeWeek=weekLetter757(viewedMonday757())}catch(e){}},weekHead757)}
                 function offset757(letter){const count=cycle757();if(count===1)return 0;const letters=['A','B','C','D'].slice(0,count),a=Math.max(0,letters.indexOf(current757())),b=letters.indexOf(String(letter||'A').toUpperCase());if(b<0)return 0;let d=(b-a+count)%count;if(d>count/2)d-=count;return d}
-                document.addEventListener('pointerdown',e=>{const t=e.target&&e.target.closest?e.target.closest('.weekTab[data-week]'):null;if(t)weekOffset757=offset757(t.dataset.week);const p=e.target&&e.target.closest?e.target.closest('#weekPicker79 button'):null;if(p)weekOffset757=0},true);
+                function prepareWeekChoice757(e){const t=e.target&&e.target.closest?e.target.closest('.weekTab[data-week]'):null;if(t)weekOffset757=offset757(t.dataset.week);const p=e.target&&e.target.closest?e.target.closest('#weekPicker79 button'):null;if(p)weekOffset757=0}
+                document.addEventListener('pointerdown',prepareWeekChoice757,true);document.addEventListener('click',prepareWeekChoice757,true);
                 document.addEventListener('change',e=>{if(e.target&&e.target.id==='languageSelect')requestAnimationFrame(()=>{renderViewedToday757();weekHead757()})},true);
                 function refresh757(){install757();ensureToday757();ensureWeek757();renderViewedToday757();weekHead757()}
                 window.refreshCalendarNavigation757=refresh757;refresh757();
