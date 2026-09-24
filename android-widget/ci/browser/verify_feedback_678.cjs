@@ -61,7 +61,8 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
   await page.locator('#settingsBtn').tap();
   await page.waitForFunction(() => document.getElementById('settingsModal').getAttribute('data-edt-open') === 'true' || document.getElementById('settingsModal').classList.contains('show'));
   await page.screenshot({ path: path.resolve('smoke-browser/feedback-678-settings.png'), fullPage: false });
-  await page.locator('#weekTypeSettings86 > summary').tap();
+  if (!(await page.locator('#weekTypeSettings86').evaluate(el => el.open))) await page.locator('#weekTypeSettings86 > summary').tap();
+  await page.waitForFunction(() => document.getElementById('weekTypeSettings86')?.open === true);
   await page.locator('.weekCurrentChoice678[data-week="B"]').tap();
   await page.waitForFunction(() => /semaine B/i.test(document.getElementById('todayTitle').textContent));
   await page.locator('#settingsDone').tap();
@@ -75,7 +76,8 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
 
   await page.locator('#settingsBtn').tap();
   await page.waitForFunction(() => document.getElementById('settingsModal').getAttribute('data-edt-open') === 'true' || document.getElementById('settingsModal').classList.contains('show'));
-  await page.locator('#weekTypeSettings86 > summary').tap();
+  if (!(await page.locator('#weekTypeSettings86').evaluate(el => el.open))) await page.locator('#weekTypeSettings86 > summary').tap();
+  await page.waitForFunction(() => document.getElementById('weekTypeSettings86')?.open === true);
   await page.locator('.weekCycleChoice678[data-count="1"]').tap();
   await page.waitForFunction(() => document.documentElement.classList.contains('singleWeek678'));
   await page.locator('#settingsDone').tap();
@@ -88,7 +90,8 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
 
   await page.locator('#settingsBtn').tap();
   await page.waitForFunction(() => document.getElementById('settingsModal').getAttribute('data-edt-open') === 'true' || document.getElementById('settingsModal').classList.contains('show'));
-  await page.locator('#weekTypeSettings86 > summary').tap();
+  if (!(await page.locator('#weekTypeSettings86').evaluate(el => el.open))) await page.locator('#weekTypeSettings86 > summary').tap();
+  await page.waitForFunction(() => document.getElementById('weekTypeSettings86')?.open === true);
   await page.locator('.weekCycleChoice678[data-count="2"]').tap();
   await page.waitForFunction(() => !document.documentElement.classList.contains('singleWeek678'));
   await page.locator('.weekCurrentChoice678[data-week="A"]').tap();
