@@ -143,8 +143,8 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
   assert.match(styles31, /windowSplashScreenAnimatedIcon">@drawable\/ic_splash_mark_safe/);
   assert.match(splash, /android:insetLeft="24dp"[\s\S]*android:insetBottom="24dp"/);
   assert.match(chunkSource, /Feedback678Ui\.script\(\)/);
-  assert.match(gradle, /versionCode 757001/);
-  assert.match(gradle, /versionName '7\.57'/);
+  assert.match(gradle, /versionCode 758001/);
+  assert.match(gradle, /versionName '7\.58'/);
   assert.deepEqual(errors, []);
   console.log('feedback_678_week_type_is_settings_only=passed');
   console.log('feedback_678_day_and_week_labels_follow_cycle=passed');
