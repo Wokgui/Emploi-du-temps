@@ -268,7 +268,7 @@ final class WorkflowUi {
                 const modal=document.getElementById('settingsModal');
                 if(modal&&!modal.__settingsLayoutObserved){
                   modal.__settingsLayoutObserved=true;
-                  new MutationObserver(()=>{if(modal.classList.contains('show')){schedule();requestAnimationFrame(closeSections)}}).observe(modal,{attributes:true,attributeFilter:['class']});
+                  new MutationObserver(()=>{if(modal.classList.contains('show')){closeSections();schedule()}}).observe(modal,{attributes:true,attributeFilter:['class']});
                 }
                 arrange();
               }catch(e){console.log('SettingsLayoutUi',e)}
