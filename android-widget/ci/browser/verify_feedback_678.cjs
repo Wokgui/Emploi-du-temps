@@ -74,6 +74,7 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
   await page.screenshot({ path: path.resolve('smoke-browser/feedback-678-week.png'), fullPage: false });
 
   await page.locator('#settingsBtn').tap();
+  await page.waitForFunction(() => document.getElementById('settingsModal').getAttribute('data-edt-open') === 'true' || document.getElementById('settingsModal').classList.contains('show'));
   await page.locator('#weekTypeSettings86 > summary').tap();
   await page.locator('.weekCycleChoice678[data-count="1"]').tap();
   await page.waitForFunction(() => document.documentElement.classList.contains('singleWeek678'));
@@ -86,6 +87,7 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
   assert.equal(single.currentRow, 'none', JSON.stringify(single));
 
   await page.locator('#settingsBtn').tap();
+  await page.waitForFunction(() => document.getElementById('settingsModal').getAttribute('data-edt-open') === 'true' || document.getElementById('settingsModal').classList.contains('show'));
   await page.locator('#weekTypeSettings86 > summary').tap();
   await page.locator('.weekCycleChoice678[data-count="2"]').tap();
   await page.waitForFunction(() => !document.documentElement.classList.contains('singleWeek678'));
