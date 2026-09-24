@@ -79,10 +79,13 @@ final class Feedback678Ui {
                 }
                 function refreshIndicators(){
                   const n=count(),single=n===1,w=letter();document.documentElement.classList.toggle('singleWeek678',single);
-                  const today=document.getElementById('todayTitle');if(today){const base=String(today.textContent||tr('Aujourd’hui','Today','Heute')).split('·')[0].trim();today.textContent=single?base:(base+' · '+tr('Jour ','Day ','Tag ')+w)}
-                  const week=document.querySelector('#viewWeek .weekTop h2');if(week){week.textContent=single?tr('Aperçu semaine','Week overview','Wochenübersicht'):(tr('Aperçu · Semaine ','Overview · Week ','Übersicht · Woche '));if(!single){const span=document.createElement('span');span.id='weekTitleLetter';span.className='weekLetter';span.textContent=w;week.appendChild(span)}}
+                  if(!window.__calendarNavigation757){
+                    const today=document.getElementById('todayTitle');if(today){const base=String(today.textContent||tr('Aujourd’hui','Today','Heute')).split('·')[0].trim();today.textContent=single?base:(base+' · '+tr('Jour ','Day ','Tag ')+w)}
+                    const week=document.querySelector('#viewWeek .weekTop h2');if(week){week.textContent=single?tr('Aperçu semaine','Week overview','Wochenübersicht'):(tr('Aperçu · Semaine ','Overview · Week ','Übersicht · Woche '));if(!single){const span=document.createElement('span');span.id='weekTitleLetter';span.className='weekLetter';span.textContent=w;week.appendChild(span)}}
+                  }
                   const edit=document.getElementById('editDayTitle');if(edit){const base=String(edit.textContent||'').split('·')[0].trim();edit.textContent=single?base:(base+' · '+tr('Semaine ','Week ','Woche ')+w)}
                   syncSettings();arrangeDaysOff();
+                  if(window.__calendarNavigation757&&window.refreshCalendarNavigation757)window.refreshCalendarNavigation757();
                 }
 
                 function unlockNavigation(){
