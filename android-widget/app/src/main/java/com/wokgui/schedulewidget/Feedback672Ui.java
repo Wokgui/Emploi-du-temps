@@ -14,13 +14,13 @@ final class Feedback672Ui {
                 const style=document.createElement('style');style.id='feedback672Style';style.textContent=`
                   #widgetEdgeBars672{margin:2px 0 10px;padding:9px 8px 10px;border:1px solid #dce4ee;border-radius:13px;background:#f8fbfe}
                   #widgetEdgeBars672 .bar672Title{text-align:center;font-size:.76rem;font-weight:850;color:#233047;margin:0 0 8px}
-                  #widgetEdgeBars672 .bar672Grid{display:grid;grid-template-columns:minmax(76px,.8fr) minmax(124px,1.35fr) 50px;gap:8px;align-items:center}
+                  #widgetEdgeBars672 .bar672Grid{display:grid;grid-template-columns:minmax(68px,.75fr) minmax(100px,1.05fr) 46px;gap:7px;align-items:center}
                   #widgetEdgeBars672 .bar672Label{text-align:center;font-size:.72rem;font-weight:800;color:#586579}
-                  #widgetEdgeBars672 select{width:100%;min-width:0;text-align:center;text-align-last:center;border:1px solid #cfd9e5;border-radius:11px;background:#fff;color:#233047;padding:8px 25px 8px 8px;font-weight:750}
+                  #widgetEdgeBars672 select{width:100%;max-width:150px;min-width:0;min-height:30px;justify-self:center;text-align:center;text-align-last:center;border:1px solid #cfd9e5;border-radius:8px;background:#fff;color:#233047;padding:5px 22px 5px 7px;font-size:.68rem;font-weight:750}
                   #widgetEdgeBars672 input[type=color]{width:46px;height:36px;padding:2px;border:1px solid #cfd9e5;border-radius:9px;background:#fff;justify-self:center;transition:opacity .12s ease}
                   #widgetEdgeBars672 input[type=color]:not(.bar672Active){visibility:hidden;opacity:0;pointer-events:none}
                   #widgetEdgeBars672 .bar672Divider{grid-column:1/-1;height:1px;background:#e4eaf1;margin:0}
-                  @media(max-width:370px){#widgetEdgeBars672 .bar672Grid{grid-template-columns:68px minmax(112px,1fr) 44px;gap:6px}#widgetEdgeBars672 input[type=color]{width:42px}}
+                  @media(max-width:370px){#widgetEdgeBars672 .bar672Grid{grid-template-columns:64px minmax(94px,1fr) 42px;gap:5px}#widgetEdgeBars672 input[type=color]{width:40px}}
                 `;document.head.appendChild(style);
 
                 function language(){const value=document.getElementById('languageSelect')?.value||document.documentElement.lang||'fr';return String(value).toLowerCase().startsWith('de')?'de':(String(value).toLowerCase().startsWith('en')?'en':'fr')}

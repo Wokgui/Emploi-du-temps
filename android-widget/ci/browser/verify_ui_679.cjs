@@ -113,7 +113,11 @@ const baseline=process.env.EDT_BASELINE==='1';
     const selects=[...widget.querySelectorAll('select')].filter(x=>getComputedStyle(x).display!=='none').map(x=>({id:x.id,h:x.getBoundingClientRect().height,font:parseFloat(getComputedStyle(x).fontSize)}));
     widget.open=false;
     const summaries=expected.map(id=>({id,font:parseFloat(getComputedStyle(document.querySelector('#'+id+'>summary')).fontSize)}));
-    return {expected,order,collapsed,languageWidth,parents,legacyLanguageExtra:!!document.getElementById('languageExtra85'),selects,summaries};
+    const advanced=document.getElementById('advancedSettings85');advanced.open=true;
+    const advancedBoxes=[...document.querySelectorAll('#advancedContent85>:scope.settingBox')];
+    const advancedSeparators=advancedBoxes.slice(1).map(x=>parseFloat(getComputedStyle(x).borderTopWidth)||0);
+    advanced.open=false;
+    return {expected,order,collapsed,languageWidth,parents,legacyLanguageExtra:!!document.getElementById('languageExtra85'),legacyLanguagePanel:!!document.getElementById('languagePackPanel'),selects,summaries,advancedSeparators};
   });
   report.calendarNavigation=await page.evaluate(async()=>{
     document.getElementById('settingsDone')?.click();
@@ -134,7 +138,9 @@ const baseline=process.env.EDT_BASELINE==='1';
     document.getElementById('settingsDone')?.click();document.querySelector('.nav[data-mode="week"]').click();
     const grid=document.getElementById('weekGrid');
     const state=()=>({lunch:grid.querySelectorAll('.week658Lunch').length,gap:grid.querySelectorAll('.week658Gap').length,
-      labels:grid.querySelectorAll('.week658LunchLabel,.week662GapLabel').length,lines:grid.classList.contains('week662LunchLines')});
+      labels:grid.querySelectorAll('.week658LunchLabel,.week662GapLabel').length,
+      gapLabels:[...grid.querySelectorAll('.week662GapLabel')].map(x=>x.textContent.trim()),
+      lines:grid.classList.contains('week662LunchLines')});
     const initial=state(),change=(id,value)=>{const input=document.getElementById(id);input.checked=value;input.dispatchEvent(new Event('change',{bubbles:true}))};
     change('feedback663AppLunch',false);change('feedback663AppGaps',false);
     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
@@ -188,15 +194,15 @@ const baseline=process.env.EDT_BASELINE==='1';
   if(!baseline){assert.deepEqual(errors,[]);assert.ok(report.navigation.active.every(x=>x.length===1));
     assert.equal(report.navigation.staleToday,0);
     assert.deepEqual(report.settingsLayout.order,report.settingsLayout.expected);assert.equal(report.settingsLayout.collapsed,true);
-    assert.equal(report.settingsLayout.legacyLanguageExtra,false);assert.ok(report.settingsLayout.languageWidth>0&&report.settingsLayout.languageWidth<220);
+    assert.equal(report.settingsLayout.legacyLanguageExtra,false);assert.equal(report.settingsLayout.legacyLanguagePanel,false);assert.ok(report.settingsLayout.languageWidth>0&&report.settingsLayout.languageWidth<118);
     assert.deepEqual(report.settingsLayout.parents,{language:'languageSettings86',download:'languageSettings86',week:'weekTypeSettings86',weekColors:'colorSettings86',breaks:'breakSettings86',widget:'widgetSettings86',density:'widgetSettings86'});
     assert.ok(report.settingsLayout.summaries.every(x=>Math.abs(x.font-report.settingsLayout.summaries[0].font)<0.1));
-    assert.ok(report.settingsLayout.selects.every(x=>x.h<=35&&x.font<=12));
+    assert.ok(report.settingsLayout.selects.every(x=>x.h<=32&&x.font<=11.5));assert.ok(report.settingsLayout.advancedSeparators.length>0&&report.settingsLayout.advancedSeparators.every(x=>x>=1));
     assert.equal(report.calendarNavigation.arrows,true);assert.notEqual(report.calendarNavigation.todayBefore.date,report.calendarNavigation.todayNext.date);
     assert.match(report.calendarNavigation.weekBefore.title,/Semaine du [0-9]{2}\/[0-9]{2} au [0-9]{2}\/[0-9]{2}/);
     assert.notEqual(report.calendarNavigation.weekBefore.title,report.calendarNavigation.weekNext.title);assert.ok(report.calendarNavigation.weekBefore.dates.length>=5);assert.ok(report.calendarNavigation.weekBefore.dates.every(x=>/^[0-9]{2}\/[0-9]{2}$/.test(x)));
     assert.equal(report.breaks.disabled.lunch,0);assert.equal(report.breaks.disabled.gap,0);assert.equal(report.breaks.disabled.labels,0);
-    assert.equal(report.breaks.disabled.lines,false);assert.ok(report.breaks.restored.lunch>0);assert.ok(report.breaks.restored.gap>0);
+    assert.equal(report.breaks.disabled.lines,false);assert.ok(report.breaks.restored.lunch>0);assert.ok(report.breaks.restored.gap>0);assert.ok(report.breaks.restored.gapLabels.some(x=>x==='Trou'));
     assert.ok(Math.abs(report.profileGeometry.titleCenter-report.profileGeometry.selectCenter)<1);
     assert.equal(report.weekSwap.covers,0);assert.equal(report.weekSwap.changedAfterFrame,0);
     assert.equal(report.editSwap.covers,0);assert.equal(report.editSwap.changedAfterFrame,0);

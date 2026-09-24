@@ -123,6 +123,7 @@ final class WorkflowUi {
                     const languageSelect=document.getElementById('languageSelect'),languageBox=languageSelect&&languageSelect.closest?languageSelect.closest('.settingBox'):null;
                     if(languageBox){if(dl&&dl.parentNode!==languageBox)languageBox.appendChild(dl);if(panel&&panel.parentNode!==languageBox)languageBox.appendChild(panel)}
                     const legacyLanguageExtra=document.getElementById('languageExtra85');if(legacyLanguageExtra)legacyLanguageExtra.remove();
+                    const legacyLanguagePanel=document.getElementById('languagePackPanel');if(legacyLanguagePanel)legacyLanguagePanel.remove();
                   }finally{arranging=false}
                 }
                 function scheduleArrange85(){if(arrangeTimer)return;arrangeTimer=setTimeout(()=>{arrangeTimer=0;arrangeAdvanced85()},24)}
@@ -188,7 +189,7 @@ final class WorkflowUi {
                   #settingsSheet>.settingsSection86>.settingsSectionBody86>.settingBox+.settingBox{border-top:1px solid #e7edf3!important}
                   #settingsSheet>.settingsSection86>.settingsSectionBody86>.settingBox>.settingTitle{text-align:left!important;margin:0 0 6px!important;font-size:.74rem!important;color:#586579!important}
                   #languageSettings86 #languageTitle{display:none!important}
-                  #languageSettings86 #languageSelect{display:block!important;width:auto!important;min-width:118px!important;max-width:100%!important;field-sizing:content!important;margin:0 auto!important;padding:7px 28px 7px 10px!important;font-size:.74rem!important;text-align:center!important;text-align-last:center!important}
+                  #languageSettings86 #languageSelect{display:block!important;width:auto!important;min-width:0!important;max-width:100%!important;field-sizing:content!important;margin:0 auto!important;padding:6px 25px 6px 9px!important;font-size:.74rem!important;text-align:center!important;text-align-last:center!important}
                   #languageSettings86 #languageDownloadBtn81{display:block!important;width:auto!important;max-width:100%!important;margin:8px auto 0!important;padding:7px 11px!important;font-size:.72rem!important;white-space:nowrap!important}
                   #languageSettings86 #languagePackPanel81{margin-top:8px!important}
                   #breakSettings86 #feedback663Visibility>.feedback663Title{display:none!important}
