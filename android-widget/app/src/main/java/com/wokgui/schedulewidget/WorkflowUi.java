@@ -52,17 +52,15 @@ final class WorkflowUi {
                   #advancedSettings85>summary::-webkit-details-marker{display:none}
                   #advancedSettings85>summary:after{content:'⌄';position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.95rem}
                   #advancedSettings85[open]>summary:after{content:'⌃'}
-                  #advancedContent85{padding:0 8px 8px}
-                  #advancedContent85>.settingBox{margin:8px 0!important;border:1px solid #dbe3ed!important;box-shadow:none!important}
+                  #advancedContent85{padding:0 10px 9px}
+                  #advancedContent85>.settingBox{margin:0!important;padding:10px 0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+                  #advancedContent85>.settingBox+.settingBox{border-top:1px solid #dfe6ee!important}
                   #advancedContent85 .advRangeDates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:7px}
                   #advancedContent85 .advRangeDates label{display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px;align-items:center;min-width:0;font-size:.74rem;font-weight:750}
                   #advancedContent85 .advRangeDates input{width:100%;min-width:0;min-height:35px;padding:5px 3px;border:1px solid #d8e0e8;border-radius:7px;background:#fff;font-size:.70rem;line-height:1.1}
                   #advancedContent85 .advButtons:has(#advAddRange){justify-content:center;margin-top:8px!important}
                   #advancedContent85 #advAddRange{width:auto;min-width:112px;min-height:34px;padding:7px 16px;line-height:1.1}
-                  #languageExtra85{padding:9px 0 2px}
-                  #languageExtra85 .settingTitle{text-align:center!important;margin-bottom:6px!important}
-                  #languageExtra85 #languageDownloadBtn81{display:block!important;margin:0 auto!important}
-                  #languageExtra85 #languagePackPanel81{margin-top:8px!important}
+                  #languageExtra85{display:none!important}
                 `;
                 document.head.appendChild(style);
 
@@ -110,8 +108,7 @@ final class WorkflowUi {
                       const summary=document.createElement('summary');summary.id='advancedSummary85';details.appendChild(summary);
                       content=document.createElement('div');content.id='advancedContent85';details.appendChild(content);
                       sheet.insertBefore(details,actions||null);
-                      details.addEventListener('toggle',()=>{try{localStorage.setItem('edt-advanced-open85',details.open?'1':'0')}catch(e){}});
-                      try{details.open=localStorage.getItem('edt-advanced-open85')==='1'}catch(e){}
+                      details.open=false;
                     }
                     const summary=document.getElementById('advancedSummary85');if(summary)summary.textContent=advancedTitle85();
                     ['advReminderTitle','advCalendarTitle','advExceptionsTitle','advProfilesTitle','advBackupTitle'].forEach(id=>{
@@ -123,12 +120,9 @@ final class WorkflowUi {
                     else if(school&&calendarBox&&school.nextSibling!==calendarBox)content.insertBefore(school,calendarBox);
 
                     const dl=document.getElementById('languageDownloadBtn81'),panel=document.getElementById('languagePackPanel81');
-                    if(dl||panel){
-                      let lb=document.getElementById('languageExtra85');
-                      if(!lb){lb=document.createElement('div');lb.id='languageExtra85';lb.className='settingBox';const h=document.createElement('div');h.id='languageExtraTitle85';h.className='settingTitle';lb.appendChild(h);content.insertBefore(lb,content.firstChild)}
-                      const h=document.getElementById('languageExtraTitle85');if(h)h.textContent=tr85('Langues supplémentaires','Additional languages','Zusätzliche Sprachen');
-                      if(dl&&dl.parentNode!==lb)lb.appendChild(dl);if(panel&&panel.parentNode!==lb)lb.appendChild(panel);
-                    }
+                    const languageSelect=document.getElementById('languageSelect'),languageBox=languageSelect&&languageSelect.closest?languageSelect.closest('.settingBox'):null;
+                    if(languageBox){if(dl&&dl.parentNode!==languageBox)languageBox.appendChild(dl);if(panel&&panel.parentNode!==languageBox)languageBox.appendChild(panel)}
+                    const legacyLanguageExtra=document.getElementById('languageExtra85');if(legacyLanguageExtra)legacyLanguageExtra.remove();
                   }finally{arranging=false}
                 }
                 function scheduleArrange85(){if(arrangeTimer)return;arrangeTimer=setTimeout(()=>{arrangeTimer=0;arrangeAdvanced85()},24)}
@@ -179,31 +173,35 @@ final class WorkflowUi {
                 const style=document.createElement('style');
                 style.id='settingsLayoutStyle';
                 style.textContent=`
-                  #settingsSheet>.settingsSection86{padding:9px 10px!important}
-                  #settingsSheet>.settingsSection86>.settingsSectionTitle86{
-                    margin:0 0 3px!important;text-align:center!important;font-size:.82rem!important;
-                    font-weight:900!important;color:var(--ink,#111936)!important
+                  #settingsSheet>.settingsSection86,#settingsSheet>#advancedSettings85{padding:0!important;margin-top:8px!important;overflow:hidden!important}
+                  #settingsSheet>.settingsSection86>summary.settingsSectionTitle86,#settingsSheet>#advancedSettings85>summary{
+                    list-style:none!important;cursor:pointer!important;position:relative!important;margin:0!important;padding:10px 34px!important;
+                    text-align:center!important;font-size:.82rem!important;line-height:1.15!important;font-weight:900!important;color:var(--ink,#111936)!important
                   }
-                  #settingsSheet>.settingsSection86>.settingsSectionBody86{display:block!important}
+                  #settingsSheet>.settingsSection86>summary.settingsSectionTitle86::-webkit-details-marker,#settingsSheet>#advancedSettings85>summary::-webkit-details-marker{display:none!important}
+                  #settingsSheet>.settingsSection86>summary.settingsSectionTitle86:after,#settingsSheet>#advancedSettings85>summary:after{content:'⌄'!important;position:absolute!important;right:12px!important;top:50%!important;transform:translateY(-50%)!important;color:var(--muted,#68738a)!important;font-size:.95rem!important}
+                  #settingsSheet>.settingsSection86[open]>summary.settingsSectionTitle86:after,#settingsSheet>#advancedSettings85[open]>summary:after{content:'⌃'!important}
+                  #settingsSheet>.settingsSection86>.settingsSectionBody86{display:block!important;padding:0 10px 9px!important}
                   #settingsSheet>.settingsSection86>.settingsSectionBody86>.settingBox{
-                    margin:0!important;padding:8px 0!important;border:0!important;border-radius:0!important;
-                    box-shadow:none!important;background:transparent!important
+                    margin:0!important;padding:8px 0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important
                   }
-                  #settingsSheet>.settingsSection86>.settingsSectionBody86>.settingBox+.settingBox{
-                    border-top:1px solid #e7edf3!important;margin-top:8px!important;padding-top:8px!important
-                  }
-                  #settingsSheet>.settingsSection86>.settingsSectionBody86>.settingBox>.settingTitle{
-                    text-align:left!important;margin:0 0 6px!important;font-size:.74rem!important;color:#586579!important
-                  }
-                  #settingsSheet>.settingsSection86 #appFontTitle,
-                  #settingsSheet>.settingsSection86 #widgetFontTitle{font-weight:800!important}
-                  #settingsSheet>.settingsSection86 #themeTitle,
-                  #settingsSheet>.settingsSection86 #advWidgetTitle{font-weight:800!important}
+                  #settingsSheet>.settingsSection86>.settingsSectionBody86>.settingBox+.settingBox{border-top:1px solid #e7edf3!important}
+                  #settingsSheet>.settingsSection86>.settingsSectionBody86>.settingBox>.settingTitle{text-align:left!important;margin:0 0 6px!important;font-size:.74rem!important;color:#586579!important}
+                  #languageSettings86 #languageTitle{display:none!important}
+                  #languageSettings86 #languageSelect{display:block!important;width:auto!important;min-width:118px!important;max-width:100%!important;field-sizing:content!important;margin:0 auto!important;padding:7px 28px 7px 10px!important;font-size:.74rem!important;text-align:center!important;text-align-last:center!important}
+                  #languageSettings86 #languageDownloadBtn81{display:block!important;width:auto!important;max-width:100%!important;margin:8px auto 0!important;padding:7px 11px!important;font-size:.72rem!important;white-space:nowrap!important}
+                  #languageSettings86 #languagePackPanel81{margin-top:8px!important}
+                  #breakSettings86 #feedback663Visibility>.feedback663Title{display:none!important}
+                  #widgetSettings86 .advRow{min-height:30px!important;margin:5px 0!important}
+                  #widgetSettings86 .advRow>span{font-size:.70rem!important}
+                  #widgetSettings86 .advRow>select{width:auto!important;min-width:96px!important;max-width:176px!important;min-height:31px!important;justify-self:end!important;padding:5px 24px 5px 8px!important;border-radius:8px!important;font-size:.68rem!important;text-align:center!important;text-align-last:center!important}
+                  #widgetSettings86 .feedback665DensityValue{font-size:.68rem!important;min-width:96px!important;padding:4px 9px!important}
+                  #widgetSettings86 .feedback665DensityControl input[type=range]{height:26px!important}
+                  #widgetSettings86 .feedback665DensityAuto{font-size:.68rem!important;margin-top:6px!important}
                   #settingsSheet>.settingsSection86 .settingRow{min-height:32px!important}
                   #settingsSheet>.settingsSection86 .settingValue{min-width:48px!important}
                   #settingsSheet>.settingsSection86 .coursePaletteHint{margin-top:2px!important}
                   #settingsSheet>.settingsSection86 .themeGrid{margin-top:2px!important}
-                  #settingsSheet>#advancedSettings85{margin-top:9px!important}
                   #settingsSheet .settingsActions{margin-top:10px!important}
                 `;
                 document.head.appendChild(style);
@@ -223,22 +221,38 @@ final class WorkflowUi {
                   const boxes=uniqueBoxes(ids);if(!boxes.length)return null;
                   let group=document.getElementById(id),body;
                   if(!group){
-                    group=document.createElement('div');group.id=id;group.className='settingBox settingsSection86';
-                    const h=document.createElement('div');h.className='settingsSectionTitle86';group.appendChild(h);
+                    group=document.createElement('details');group.id=id;group.className='settingBox settingsSection86';group.open=false;
+                    const h=document.createElement('summary');h.className='settingsSectionTitle86';group.appendChild(h);
                     body=document.createElement('div');body.className='settingsSectionBody86';group.appendChild(body);
-                    boxes[0].parentNode.insertBefore(group,boxes[0]);
+                    sheet.insertBefore(group,sheet.querySelector('.settingsActions')||null);
                   }else body=group.querySelector('.settingsSectionBody86');
                   const h=group.querySelector('.settingsSectionTitle86');if(h)h.textContent=title;
                   boxes.forEach(b=>{if(b.parentNode!==body)body.appendChild(b)});
                   return group;
                 }
+                function moveTopLevelAdvanced(){
+                  const sheet=document.getElementById('settingsSheet'),content=document.getElementById('advancedContent85');if(!sheet||!content)return;
+                  const owned=new Set(['languageSettings86','textSettings86','weekTypeSettings86','colorSettings86','breakSettings86','widgetSettings86','advancedSettings85']);
+                  [...sheet.children].forEach(node=>{if(!node.classList||!node.classList.contains('settingBox')||owned.has(node.id))return;if(node.parentNode===sheet)content.appendChild(node)});
+                }
+                function orderSections(){
+                  const sheet=document.getElementById('settingsSheet'),actions=sheet&&sheet.querySelector('.settingsActions');if(!sheet)return;
+                  ['languageSettings86','textSettings86','weekTypeSettings86','colorSettings86','breakSettings86','widgetSettings86','advancedSettings85'].forEach(id=>{const node=document.getElementById(id);if(node)sheet.insertBefore(node,actions||null)});
+                }
+                function closeSections(){
+                  ['languageSettings86','textSettings86','weekTypeSettings86','colorSettings86','breakSettings86','widgetSettings86','advancedSettings85'].forEach(id=>{const node=document.getElementById(id);if(node&&node.tagName==='DETAILS')node.open=false});
+                }
 
                 function arrange(){
                   timer=0;if(arranging)return;arranging=true;
                   try{
+                    ensureGroup('languageSettings86',tr('Langue','Language','Sprache'),['languageSelect']);
                     ensureGroup('textSettings86',tr('Taille du texte','Text size','Textgröße'),['appFont','widgetFont']);
-                    ensureGroup('colorSettings86',tr('Couleurs','Colors','Farben'),['themeTitle','paletteSettingRoot','fineSpecialColors']);
-                    ensureGroup('widgetSettings86',tr('Widget','Widget','Widget'),['advWidgetTitle','breakDisplaySetting']);
+                    ensureGroup('weekTypeSettings86',tr('Type de semaine','Week type','Wochentyp'),['settingsWeekCycle678']);
+                    ensureGroup('colorSettings86',tr('Couleurs','Colors','Farben'),['themeTitle','paletteSettingRoot','fineSpecialColors','week658Settings']);
+                    ensureGroup('breakSettings86',tr('Affichage des interruptions','Break display','Pausenanzeige'),['breakDisplaySetting']);
+                    ensureGroup('widgetSettings86',tr('Affichage du widget','Widget display','Widget-Anzeige'),['advWidgetTitle','widgetDensity664']);
+                    moveTopLevelAdvanced();orderSections();
                     const v=document.getElementById('appVersionInfo');if(v)v.textContent='Version '+APP_VERSION;
                   }finally{arranging=false}
                 }
@@ -254,7 +268,7 @@ final class WorkflowUi {
                 const modal=document.getElementById('settingsModal');
                 if(modal&&!modal.__settingsLayoutObserved){
                   modal.__settingsLayoutObserved=true;
-                  new MutationObserver(()=>{if(modal.classList.contains('show'))schedule()}).observe(modal,{attributes:true,attributeFilter:['class']});
+                  new MutationObserver(()=>{if(modal.classList.contains('show')){schedule();requestAnimationFrame(closeSections)}}).observe(modal,{attributes:true,attributeFilter:['class']});
                 }
                 arrange();
               }catch(e){console.log('SettingsLayoutUi',e)}
