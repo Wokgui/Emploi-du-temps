@@ -43,12 +43,7 @@ final class ChunkedUiScripts {
         add(out, Feedback663Ui.script());
         add(out, Feedback664Ui.script());
         add(out, Feedback665Ui.script());
-        add(out, Feedback666Ui.script());
         add(out, Feedback672Ui.script());
-        add(out, Feedback673Ui.script());
-        add(out, Feedback674Ui.script());
-        add(out, Feedback675Ui.script());
-        add(out, Feedback676Ui.script());
         add(out, Feedback678Ui.script());
         if (BuildConfig.DEBUG) add(out, HeavyPanelPerformanceUi648.script());
         add(out, UiRuntimeBundle.idleImportScript());
@@ -103,6 +98,7 @@ final class ChunkedUiScripts {
                       .replace("APP_VERSION='6.74'", "APP_VERSION='6.75'")
                       .replace("APP_VERSION='6.75'", "APP_VERSION='6.76'")
                       .replace("APP_VERSION='6.76'", "APP_VERSION='6.77'")
-                      .replace("APP_VERSION='6.77'", "APP_VERSION='6.78'"));
+                      .replace("APP_VERSION='6.77'", "APP_VERSION='6.78'")
+                      .replace("APP_VERSION='6.78'", "APP_VERSION='6.79'"));
     }
 }

@@ -12,9 +12,6 @@ final class Feedback665Ui {
                 window.__feedback665=true;
 
                 const style=document.createElement('style');style.id='feedback665Style';style.textContent=`
-                  /* The raw week renderer writes the default gap label before the final week
-                     painter runs. Never expose that unfinished label for a single frame. */
-                  html body #viewWeek #weekGrid .wc.gapCell>.cellLabel{display:none!important;visibility:hidden!important}
                   #widgetDensity664 .feedback664DensityRow{display:block!important}
                   #widgetDensity664 #advDensityLabel,#widgetDensity664 #advDensity{display:none!important}
                   #widgetDensity664 .feedback665DensityControl{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center;width:100%;max-width:390px;margin:0 auto}
@@ -35,10 +32,6 @@ final class Feedback665Ui {
                 function autoLabel(){const l=language();return l==='de'?'Automatisch an die Widget-Größe anpassen, um den ganzen Tag anzuzeigen':(l==='en'?'Automatically adapt to widget size to show the whole day':'Adapter automatiquement à la taille du widget pour afficher toute la journée')}
                 function advanced(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
 
-                function applyWeekVisibilityBeforePaint(){
-                  const grid=document.getElementById('weekGrid');if(!grid)return;
-                  const a=advanced();grid.classList.toggle('hideWeekLunch70',a.showLunchWeek===false);grid.classList.toggle('hideWeekGaps70',a.showBreaksWeek===false);
-                }
                 function installDensitySlider(){
                   const select=document.getElementById('advDensity'),box=document.getElementById('widgetDensity664');if(!select||!box)return;
                   const row=select.closest('.advRow');if(!row)return;
@@ -74,7 +67,7 @@ final class Feedback665Ui {
                 }
 
                 let preparing=false,settingsPrepared=false;
-                function refresh(){installDensitySlider();applyWeekVisibilityBeforePaint()}
+                function refresh(){installDensitySlider()}
                 function prepareSettings(){
                   if(preparing)return;if(settingsPrepared){refresh();return}preparing=true;
                   try{
@@ -89,11 +82,6 @@ final class Feedback665Ui {
                 window.prepareSettingsOpen665=prepareSettings;
                 window.refreshFeedback665=refresh;
 
-                const oldWeek=window.renderWeek;
-                if(typeof oldWeek==='function'&&!oldWeek.__feedback665){
-                  const wrapped=function(){applyWeekVisibilityBeforePaint();return oldWeek.apply(this,arguments)};
-                  wrapped.__feedback665=true;window.renderWeek=wrapped;try{renderWeek=wrapped}catch(e){}
-                }
                 ['refreshSettingsLayout','refreshAdvancedFeatures','refreshSettingsV3'].forEach(name=>{
                   const old=window[name];if(typeof old!=='function'||old.__feedback665)return;
                   const wrapped=function(){const result=old.apply(this,arguments);queueMicrotask(refresh);return result};

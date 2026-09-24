@@ -622,85 +622,16 @@ final class ScheduleDisplayUi {
                     const sel=document.getElementById('advCycle');if(sel&&n>1)sel.value=String(n);
                     syncCycleDom(n);
                     if(changedWeek){try{if(typeof render==='function')render()}catch(e){}syncCycleDom(n)}
-                    else if(typeof mode!=='undefined'&&mode==='week'){paintWeek69()}
                   }catch(e){}finally{
                     document.body.classList.remove('cycle69Busy');switching=false;markCycleChoices();
                   }
                 }
                 window.switchCycle69=switchCycle;
 
-                function rowsOf(grid){
-                  const rows=[];if(!grid)return rows;
-                  const dayCount=(typeof DAYS!=='undefined'&&Array.isArray(DAYS))?DAYS.length:5;
-                  for(const time of Array.from(grid.querySelectorAll(':scope > .wh.timecol'))){
-                    const found=(time.textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[];if(found.length<2)continue;
-                    const cells=[];let n=time.nextElementSibling;
-                    while(n&&cells.length<dayCount){if(n.classList&&n.classList.contains('wc'))cells.push(n);n=n.nextElementSibling}
-                    if(cells.length===dayCount)rows.push({time,start:toMin(found[0]),end:toMin(found[1]),cells});
-                  }
-                  rows.sort((a,b)=>a.time.offsetTop-b.time.offsetTop);return rows;
-                }
-
-                function clearLunchLines(grid){
-                  grid.querySelectorAll('.lunch69TopLine').forEach(x=>x.classList.remove('lunch69TopLine'));
-                  grid.querySelectorAll('.lunch69BottomLine').forEach(x=>x.classList.remove('lunch69BottomLine'));
-                  grid.querySelectorAll('.finalLunchCell,.finalLunchJoinedRight').forEach(c=>{
-                    c.classList.remove('finalLunchCell','finalLunchJoinedRight');c.style.removeProperty('box-shadow');c.style.removeProperty('border-right-color');
-                  });
-                  grid.querySelectorAll('[data-midi-edge-v14="1"]').forEach(c=>{
-                    c.style.removeProperty('border-right-color');c.style.removeProperty('border-bottom-color');c.removeAttribute('data-midi-edge-v14');
-                  });
-                }
-
-                function isLunchCell(c){return !!(c&&(c.classList.contains('lunchCell')||c.classList.contains('dynamicLunchCell')||c.classList.contains('nativeLunchCell')))}
-                function paintLunchLines(grid,rows){
-                  clearLunchLines(grid);
-                  rows.forEach((row,ri)=>row.cells.forEach((cell,di)=>{
-                    if(!isLunchCell(cell))return;
-                    cell.style.setProperty('box-shadow','none','important');cell.style.removeProperty('border-right-color');
-                    cell.classList.add('lunch69BottomLine');
-                    const above=ri>0?rows[ri-1].cells[di]:grid.querySelectorAll(':scope > .wh.day')[di];
-                    if(above)above.classList.add('lunch69TopLine');
-                  }));
-                }
-
-                function clearNow(grid){
-                  grid.querySelectorAll('.now69Bar,.now69Dot,.finalNowBar,.finalNowDot').forEach(x=>x.remove());
-                  grid.querySelectorAll('.now69Course,.finalNowCourse').forEach(x=>x.classList.remove('now69Course','finalNowCourse'));
-                  grid.querySelectorAll('.nativeNowFull,.nativeNowPartial,.nativeNowDot,.scheduleNowRail,.scheduleNowDot').forEach(x=>x.remove());
-                  grid.querySelectorAll('[id*="weekNow"],[id*="WeekNow"]').forEach(x=>x.remove());
-                }
-
-                function paintHorizontalNow(grid,rows){
-                  clearNow(grid);if(!rows.length)return;
-                  if(typeof mode!=='undefined'&&mode!=='week')return;
-                  try{if(typeof activeWeek!=='undefined'&&typeof currentWeek!=='undefined'&&activeWeek!==currentWeek)return}catch(e){}
-                  const js=new Date(),day=js.getDay(),d=day===0?1:day+1;
-                  const di=(typeof DAYS!=='undefined'&&Array.isArray(DAYS))?DAYS.indexOf(d):-1;if(di<0)return;
-                  const minute=js.getHours()*60+js.getMinutes();let row=null,frac=0;
-                  for(const r of rows){if(minute>=r.start&&minute<r.end){row=r;frac=(minute-r.start)/Math.max(1,r.end-r.start);break}}
-                  if(!row)return;const cell=row.cells[di];if(!cell||!cell.classList.contains('has'))return;
-                  cell.classList.add('now69Course');const top=Math.max(0,Math.min(100,frac*100)).toFixed(4)+'%';
-                  const bar=document.createElement('span');bar.className='now69Bar';bar.style.setProperty('top',top,'important');cell.appendChild(bar);
-                  const dot=document.createElement('span');dot.className='now69Dot';dot.style.setProperty('top',top,'important');cell.appendChild(dot);
-                }
-
-                function paintWeek69(){
-                  const grid=document.getElementById('weekGrid');if(!grid)return;const rows=rowsOf(grid);paintLunchLines(grid,rows);paintHorizontalNow(grid,rows);
-                }
-                window.paintWeek69=paintWeek69;
-
-                function wrapWeekRender(){
-                  if(typeof window.renderWeek==='function'&&!window.renderWeek.__stability69){
-                    const old=window.renderWeek;const w=function(){const r=old.apply(this,arguments);paintWeek69();return r};w.__stability69=true;window.renderWeek=w;try{renderWeek=w}catch(e){}
-                  }
-                }
-
                 function setVersion(){const v=document.getElementById('appVersionInfo');if(v)v.textContent='Version '+APP_VERSION}
-                function refresh(){ensureCycleChoices();syncCycleDom(currentMode());wrapWeekRender();paintWeek69();setVersion()}
+                function refresh(){ensureCycleChoices();syncCycleDom(currentMode());setVersion()}
                 window.refreshStability69=refresh;
                 refresh();
-                setInterval(()=>{if(typeof mode!=='undefined'&&mode==='week')paintWeek69()},30000);
               }catch(e){console.log('Stability69Ui',e)}
             })();
             """;
@@ -944,7 +875,7 @@ final class ScheduleDisplayUi {
 
                 function paintWeek70(){
                   if(painting)return;painting=true;
-                  try{const grid=document.getElementById('weekGrid');if(!grid)return;applyBreakVisibility();const rows=rowsOf(grid);paintLunchEdges(grid,rows);paintHorizontalNow(grid,rows)}finally{painting=false}
+                  try{const grid=document.getElementById('weekGrid');if(!grid)return;applyBreakVisibility();const rows=rowsOf(grid);paintHorizontalNow(grid,rows)}finally{painting=false}
                 }
                 window.paintWeek70=paintWeek70;
 
@@ -980,20 +911,9 @@ final class ScheduleDisplayUi {
                   wrap('refreshFineTuneUi',()=>{polishSettings();if(typeof mode!=='undefined'&&mode==='week')paintWeek70()});
                 }
 
-                const grid=document.getElementById('weekGrid');
-                if(grid&&!grid.__stability70Observed){
-                  grid.__stability70Observed=true;
-                  new MutationObserver(ms=>{
-                    if(painting)return;
-                    const external=ms.some(m=>Array.from(m.addedNodes||[]).some(n=>!(n.nodeType===1&&(n.classList.contains('now70Bar')||n.classList.contains('now70Dot')))));
-                    if(external)paintWeek70();
-                  }).observe(grid,{childList:true,subtree:true});
-                }
-
                 function refresh(){installWrappers();syncCycleUi();polishSettings();applyBreakVisibility();paintWeek70()}
                 window.refreshStability70=refresh;
                 refresh();
-                setInterval(()=>{if(typeof mode!=='undefined'&&mode==='week')paintWeek70()},30000);
               }catch(e){console.log('Stability70Ui',e)}
             })();
             """;

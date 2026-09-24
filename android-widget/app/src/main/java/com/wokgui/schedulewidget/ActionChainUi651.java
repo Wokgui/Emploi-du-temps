@@ -144,19 +144,13 @@ final class ActionChainUi651 {
                 }
                 function selectWeek(letter){
                   const letters=weekLetters();if(!letters.includes(letter))return true;
-                  let cover=null,editCover=null,changing=false;
-                  try{
-                    changing=typeof activeWeek!=='undefined'&&activeWeek!==letter;
-                    if(changing&&modeNow()==='edit'&&window.beginEditSwap673)editCover=window.beginEditSwap673();
-                    else if(changing&&modeNow()==='week'&&window.beginWeekSwap669)cover=window.beginWeekSwap669();
-                  }catch(e){}
                   run('select-week',function(){
                     if(typeof activeWeek!=='undefined'&&activeWeek===letter)return;
                     try{activeWeek=letter}catch(e){}
                     stats.weekSelections++;mark(['week','edit'],true,modeNow()==='edit');markSyncContext();
                   },{});
-                  try{if(changing&&cover&&window.finishWeekSwap671)window.finishWeekSwap671(cover)}catch(e){}
-                  try{if(changing&&editCover&&window.finishEditSwap673)window.finishEditSwap673(editCover)}catch(e){}
+                  const grid=document.getElementById('weekGrid');
+                  if(modeNow()==='week'&&grid&&grid.__weekAppearanceLastNode!==grid.lastElementChild&&window.fitActiveWeek658)window.fitActiveWeek658();
                   return true;
                 }
                 function advanceCurrentWeek(){

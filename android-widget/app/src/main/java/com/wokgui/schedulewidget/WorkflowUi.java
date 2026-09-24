@@ -53,7 +53,12 @@ final class WorkflowUi {
                   #advancedSettings85>summary:after{content:'⌄';position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.95rem}
                   #advancedSettings85[open]>summary:after{content:'⌃'}
                   #advancedContent85{padding:0 8px 8px}
-                  #advancedContent85>.settingBox{margin:7px 0!important;box-shadow:none!important}
+                  #advancedContent85>.settingBox{margin:8px 0!important;border:1px solid #dbe3ed!important;box-shadow:none!important}
+                  #advancedContent85 .advRangeDates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:7px}
+                  #advancedContent85 .advRangeDates label{display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px;align-items:center;min-width:0;font-size:.74rem;font-weight:750}
+                  #advancedContent85 .advRangeDates input{width:100%;min-width:0;min-height:35px;padding:5px 3px;border:1px solid #d8e0e8;border-radius:7px;background:#fff;font-size:.70rem;line-height:1.1}
+                  #advancedContent85 .advButtons:has(#advAddRange){justify-content:center;margin-top:8px!important}
+                  #advancedContent85 #advAddRange{width:auto;min-width:112px;min-height:34px;padding:7px 16px;line-height:1.1}
                   #languageExtra85{padding:9px 0 2px}
                   #languageExtra85 .settingTitle{text-align:center!important;margin-bottom:6px!important}
                   #languageExtra85 #languageDownloadBtn81{display:block!important;margin:0 auto!important}
@@ -185,7 +190,7 @@ final class WorkflowUi {
                     box-shadow:none!important;background:transparent!important
                   }
                   #settingsSheet>.settingsSection86>.settingsSectionBody86>.settingBox+.settingBox{
-                    border-top:1px solid #e7edf3!important
+                    border-top:1px solid #e7edf3!important;margin-top:8px!important;padding-top:8px!important
                   }
                   #settingsSheet>.settingsSection86>.settingsSectionBody86>.settingBox>.settingTitle{
                     text-align:left!important;margin:0 0 6px!important;font-size:.74rem!important;color:#586579!important

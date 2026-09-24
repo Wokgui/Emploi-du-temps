@@ -116,9 +116,6 @@ final class UiRuntimeBundle {
                 "setInterval(paintWeek,15000);",
                 "/* EDT 6.44: legacy FinalPolish clock removed. */");
         script = script.replace(
-                "setInterval(()=>{if(typeof mode!=='undefined'&&mode==='week')paintWeek69()},30000);",
-                "/* EDT 6.44: legacy Stability69 clock removed. */");
-        script = script.replace(
                 "setInterval(()=>{if(typeof mode!=='undefined'&&mode==='week')paintWeek70()},30000);",
                 "if(!window.__edtWeekClockTimer){window.__edtWeekClockTimer=setInterval(()=>{if(!document.hidden&&typeof mode!=='undefined'&&mode==='week')paintWeek70()},60000)}");
         script = script.replace(
@@ -127,21 +124,12 @@ final class UiRuntimeBundle {
         script = script.replace(
                 "setInterval(()=>setTimeout(polishWeekNowMarker,45),60000);",
                 "/* EDT 6.44: Stability70 owns the minute clock. */");
-        script = script.replace(
-                "setInterval(()=>{if(window.paintWeek69)window.paintWeek69()},30000);",
-                "/* EDT 6.44: legacy WeekGeometry clock removed. */");
 
         // FineTune: install its form submit wrapper once. Calling refreshFineTuneUi no
         // longer adds the same wrapper again after later form wrappers become outermost.
         script = script.replace(
                 "function refresh(){\n                  applySpecialCss();renderSpecialControls();ensureFullCoursePicker();wrapCourseSubmit();bindSyncToggle();repaintLiteralCourses();\n                }\n                window.refreshFineTuneUi=refresh;",
                 "function refresh(){\n                  applySpecialCss();renderSpecialControls();ensureFullCoursePicker();bindSyncToggle();repaintLiteralCourses();\n                }\n                wrapCourseSubmit();window.refreshFineTuneUi=refresh;");
-
-        // Stability69: its renderWeek hook is structural and must be installed once,
-        // not every time another stability layer asks it to refresh.
-        script = script.replace(
-                "function refresh(){ensureCycleChoices();syncCycleDom(currentMode());wrapWeekRender();paintWeek69();setVersion()}\n                window.refreshStability69=refresh;",
-                "function refresh(){ensureCycleChoices();syncCycleDom(currentMode());paintWeek69();setVersion()}\n                wrapWeekRender();window.refreshStability69=refresh;");
 
         // Stability70 was the largest multiplier: refresh() used to revisit five hooks.
         script = script.replace(

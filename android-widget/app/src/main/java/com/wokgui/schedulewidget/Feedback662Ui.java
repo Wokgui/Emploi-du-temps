@@ -29,15 +29,11 @@ final class Feedback662Ui {
                 function wireLabels(){
                   ['gapLabel','lunchLabel','gapLabelWidget','lunchLabelWidget'].forEach(id=>{
                     const input=document.getElementById(id);if(!input||input.__feedback662)return;input.__feedback662=true;
-                    input.addEventListener('input',()=>requestAnimationFrame(repaint));
-                    input.addEventListener('change',()=>setTimeout(repaint,0));
-                    input.addEventListener('blur',()=>setTimeout(repaint,0));
+                    input.addEventListener('input',repaint);
                   });
                 }
-                function refresh(){removeDuplicateWidgetRows();wireLabels();requestAnimationFrame(repaint)}
+                function refresh(){removeDuplicateWidgetRows();wireLabels();repaint()}
                 window.refreshFeedback662=refresh;
-                const breakCard=document.querySelector('#viewEdit .breakSettings');
-                if(breakCard)new MutationObserver(()=>requestAnimationFrame(()=>{removeDuplicateWidgetRows();wireLabels()})).observe(breakCard,{childList:true});
                 refresh();
               }catch(e){console.error('Feedback662Ui',e)}
             })();

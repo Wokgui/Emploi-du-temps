@@ -71,16 +71,21 @@ final class Feedback678Ui {
                   box.querySelectorAll('.weekCurrentChoice678').forEach(button=>{const visible=letters().includes(button.dataset.week),active=button.dataset.week===current;button.hidden=!visible;button.style.display=visible?'flex':'none';button.style.alignItems='center';button.style.justifyContent='center';button.classList.toggle('active',active);button.setAttribute('aria-pressed',active?'true':'false')});
                 }
 
+                function arrangeDaysOff(){
+                  const title=document.getElementById('advCalendarTitle'),calendar=title&&title.closest('.settingBox');
+                  const school=document.getElementById('schoolCalendarSetting'),content=document.getElementById('advancedContent85');
+                  if(title)title.textContent=tr('Jours sans cours','Days off','Unterrichtsfreie Tage');
+                  if(school&&calendar&&content&&school.parentNode===content&&calendar.parentNode===content&&school.nextSibling!==calendar)content.insertBefore(school,calendar);
+                }
                 function refreshIndicators(){
                   const n=count(),single=n===1,w=letter();document.documentElement.classList.toggle('singleWeek678',single);
                   const today=document.getElementById('todayTitle');if(today){const base=String(today.textContent||tr('Aujourd’hui','Today','Heute')).split('·')[0].trim();today.textContent=single?base:(base+' · '+tr('Jour ','Day ','Tag ')+w)}
                   const week=document.querySelector('#viewWeek .weekTop h2');if(week){week.textContent=single?tr('Aperçu semaine','Week overview','Wochenübersicht'):(tr('Aperçu · Semaine ','Overview · Week ','Übersicht · Woche '));if(!single){const span=document.createElement('span');span.id='weekTitleLetter';span.className='weekLetter';span.textContent=w;week.appendChild(span)}}
                   const edit=document.getElementById('editDayTitle');if(edit){const base=String(edit.textContent||'').split('·')[0].trim();edit.textContent=single?base:(base+' · '+tr('Semaine ','Week ','Woche ')+w)}
-                  syncSettings();
+                  syncSettings();arrangeDaysOff();
                 }
 
                 function unlockNavigation(){
-                  document.querySelectorAll('.weekSwapCover669').forEach(node=>node.remove());
                   document.body.classList.remove('cycle69Busy','cycleSwitchBusy');
                   document.querySelectorAll('.nav[data-mode]').forEach(nav=>{nav.disabled=false;nav.style.setProperty('pointer-events','auto','important')});
                   const bottom=document.querySelector('.bottom');if(bottom)bottom.style.setProperty('pointer-events','auto','important');
@@ -99,13 +104,9 @@ final class Feedback678Ui {
                   try{activeWeek=letter();if(typeof weeks!=='undefined'&&weeks[activeWeek])state=weeks[activeWeek]}catch(e){}
                   try{if(typeof window.setModeFromAndroid==='function')window.setModeFromAndroid(target);else if(typeof window.setMode==='function')window.setMode(target)}catch(e){}
                   enforceView(target);
-                  try{
-                    if(target==='today'&&typeof renderToday==='function')renderToday();
-                    else if(target==='week'&&typeof renderWeek==='function')renderWeek();
-                    else if(target==='edit'&&typeof renderEdit==='function')renderEdit();
-                  }catch(e){console.log('Feedback678Ui navigation render',e)}
+                  if(window.fitActiveWeek658)window.fitActiveWeek658();
                   refreshIndicators();
-                  requestAnimationFrame(()=>requestAnimationFrame(()=>{unlockNavigation();enforceView(target);refreshIndicators();if(target==='week'&&window.fitActiveWeek676)window.fitActiveWeek676();navigating=false}));
+                  navigating=false;
                 }
                 window.navigateStable678=navigate;
 
@@ -120,7 +121,7 @@ final class Feedback678Ui {
                 function applyCycle(n){
                   if(![1,2,3,4].includes(n))return;
                   try{if(typeof window.applyWeekMode73==='function')window.applyWeekMode73(n);else{const a=advanced();a.singleWeek=n===1;a.cycleLength=n===1?2:n;AndroidSchedule.saveAdvancedSettings(JSON.stringify(a))}}catch(e){}
-                  requestAnimationFrame(()=>requestAnimationFrame(()=>{try{activeWeek=letter()}catch(e){}refreshIndicators();unlockNavigation()}));
+                  try{activeWeek=letter()}catch(e){}refreshIndicators();unlockNavigation();
                 }
 
                 document.addEventListener('pointerdown',event=>{const nav=event.target&&event.target.closest?event.target.closest('.nav[data-mode]'):null;if(nav)unlockNavigation()},true);
@@ -129,12 +130,10 @@ final class Feedback678Ui {
                   event.preventDefault();event.stopPropagation();if(event.stopImmediatePropagation)event.stopImmediatePropagation();
                   const target=nav.dataset.mode,now=Date.now();if(target===lastNavTarget&&now-lastNavAt<180)return;lastNavTarget=target;lastNavAt=now;navigate(target);
                 },true);
-                document.addEventListener('click',event=>{const action=event.target&&event.target.closest?event.target.closest('#edtImportReview .irApply,#edtImportReview .irCancel,#ocrPreviewImport86,#ocrPreviewCorrect86,#ocrPreviewCancel86'):null;if(action)setTimeout(()=>{unlockNavigation();refreshIndicators()},0)},true);
 
                 function wrap(name){const old=window[name];if(typeof old!=='function'||old.__feedback678)return;const wrapped=function(){const result=old.apply(this,arguments);refreshIndicators();return result};wrapped.__feedback678=true;window[name]=wrapped;try{eval(name+'=wrapped')}catch(e){}}
                 ['renderToday','renderWeek','renderEdit','renderContext'].forEach(wrap);
-                const languageSelect=document.getElementById('languageSelect');if(languageSelect)languageSelect.addEventListener('change',()=>requestAnimationFrame(refreshIndicators));
-                const settings=document.getElementById('settingsModal');if(settings&&!settings.__feedback678Observed){settings.__feedback678Observed=true;new MutationObserver(()=>{if(settings.classList.contains('show')||settings.getAttribute('data-edt-open')==='true')refreshIndicators()}).observe(settings,{attributes:true,attributeFilter:['class','data-edt-open']})}
+                const languageSelect=document.getElementById('languageSelect');if(languageSelect)languageSelect.addEventListener('change',refreshIndicators);
 
                 try{activeWeek=letter();if(typeof weeks!=='undefined'&&weeks[activeWeek])state=weeks[activeWeek]}catch(e){}
                 function refresh(){unlockNavigation();ensureSettings();refreshIndicators();enforceView(modeName())}

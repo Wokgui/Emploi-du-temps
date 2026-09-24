@@ -2,7 +2,7 @@ name: Build and validate Android timetable
 
 on:
   push:
-    branches: [feature/widget-week-polish-658, fix/user-feedback-659, fix/calendar-polish-660, fix/widget-compact-661]
+    branches: [refactor/ui-single-owner-679]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 concurrency:
@@ -23,7 +23,7 @@ jobs:
       - run: |
           npm install --no-save --package-lock=false playwright@1.62.1
           npx playwright install --with-deps chromium
-      - run: bash android-widget/ci/run_browser_651.sh
+      - run: bash android-widget/ci/run_browser_679.sh
 
   build:
     runs-on: ubuntu-latest
@@ -52,13 +52,12 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with: {gradle-version: '8.10.2'}
       - run: gradle clean :app:assembleDebug --stacktrace
-      - name: Verify and package 6.61
+      - name: Verify 6.79 debug build
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='661001' versionName='6.61'" app/build/outputs/apk/debug/badging.txt
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/emploi-du-temps-widget-6.61.apk
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='679001' versionName='6.79'" app/build/outputs/apk/debug/badging.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: emploi-du-temps-widget-apk
-          path: android-widget/app/build/outputs/apk/debug/emploi-du-temps-widget-6.61.apk
+          name: ci-debug-apk-not-for-updates
+          path: android-widget/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error

@@ -431,87 +431,16 @@ final class TimetableCoreUi {
                   const breaks=document.getElementById('breakDisplaySetting');if(widgetBox&&breaks)widgetBox.insertAdjacentElement('afterend',breaks);
                 }
 
-                function rowsOf(grid){
-                  const rows=[];if(!grid)return rows;
-                  const dayCount=(typeof DAYS!=='undefined'&&Array.isArray(DAYS))?DAYS.length:5;
-                  const times=Array.from(grid.querySelectorAll(':scope > .wh.timecol'));
-                  for(const time of times){
-                    const found=(time.textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[];if(found.length<2)continue;
-                    const cells=[];let n=time.nextElementSibling;
-                    while(n&&cells.length<dayCount){if(n.classList&&n.classList.contains('wc'))cells.push(n);n=n.nextElementSibling}
-                    if(cells.length===dayCount)rows.push({time,start:toMin(found[0]),end:toMin(found[1]),cells});
-                  }
-                  rows.sort((a,b)=>a.time.offsetTop-b.time.offsetTop);return rows;
-                }
-
-                function clearFinalNow(grid){
-                  grid.querySelectorAll('.finalNowBar,.finalNowDot').forEach(x=>x.remove());
-                  grid.querySelectorAll('.finalNowCourse').forEach(x=>x.classList.remove('finalNowCourse'));
-                }
-                function paintFinalNow(grid,rows){
-                  clearFinalNow(grid);if(!rows.length)return;
-                  try{if(typeof activeWeek!=='undefined'&&typeof currentWeek!=='undefined'&&activeWeek!==currentWeek)return}catch(e){}
-                  const d=dayKeyNow(),dayIndex=(typeof DAYS!=='undefined'&&Array.isArray(DAYS))?DAYS.indexOf(d):-1;if(dayIndex<0)return;
-                  const now=new Date(),minute=now.getHours()*60+now.getMinutes();let row=null,frac=0;
-                  for(const r of rows){if(minute>=r.start&&minute<r.end){row=r;frac=(minute-r.start)/Math.max(1,r.end-r.start);break}}
-                  if(!row)return;const cell=row.cells[dayIndex];if(!cell||!cell.classList.contains('has'))return;
-                  cell.classList.add('finalNowCourse');
-                  const pct=Math.max(0,Math.min(100,frac*100)).toFixed(4)+'%';
-                  const bar=document.createElement('span');bar.className='finalNowBar';bar.style.setProperty('top',pct,'important');cell.appendChild(bar);
-                  const dot=document.createElement('span');dot.className='finalNowDot';dot.style.setProperty('top',pct,'important');cell.appendChild(dot);
-                }
-
-                function shouldLunch(row,dayIndex){
-                  try{
-                    const d=DAYS[dayIndex],list=state&&state[d]&&Array.isArray(state[d].courses)?state[d].courses:[];
-                    if(typeof lunchForDay==='function'){
-                      const l=lunchForDay(list);return !!(l&&l.startM===row.start&&l.endM===row.end);
-                    }
-                    const before=list.some(c=>toMin(c.end)<=row.start),after=list.some(c=>toMin(c.start)>=row.end),overlap=list.some(c=>toMin(c.start)<row.end&&toMin(c.end)>row.start);
-                    return before&&after&&!overlap;
-                  }catch(e){return false}
-                }
-                function paintLunchGroups(grid,rows){
-                  grid.querySelectorAll('.finalLunchCell,.finalLunchJoinedRight').forEach(c=>{
-                    c.classList.remove('finalLunchCell','finalLunchJoinedRight');
-                    c.style.removeProperty('box-shadow');c.style.removeProperty('border-right-color');
-                  });
-                  grid.querySelectorAll('.lunch69TopLine,.lunch69BottomLine').forEach(c=>c.classList.remove('lunch69TopLine','lunch69BottomLine'));
-                  rows.forEach((row,ri)=>row.cells.forEach((cell,di)=>{
-                    if(!shouldLunch(row,di)||!(cell.classList.contains('lunchCell')||cell.classList.contains('dynamicLunchCell')||cell.classList.contains('nativeLunchCell')))return;
-                    cell.classList.add('lunch69BottomLine');
-                    cell.style.setProperty('box-shadow','none','important');cell.style.removeProperty('border-right-color');
-                    const above=ri>0?rows[ri-1].cells[di]:grid.querySelectorAll(':scope > .wh.day')[di];
-                    if(above)above.classList.add('lunch69TopLine');
-                  }));
-                }
-
-                function paintWeek(){
-                  const grid=document.getElementById('weekGrid');if(!grid)return;
-                  const rows=rowsOf(grid);paintLunchGroups(grid,rows);paintFinalNow(grid,rows);
-                }
-                function wrapWeekRender(){
-                  if(typeof window.renderWeek==='function'&&!window.renderWeek.__finalPolish){
-                    const old=window.renderWeek;const w=function(){const r=old.apply(this,arguments);paintWeek();return r};w.__finalPolish=true;window.renderWeek=w;
-                  }
-                  if(typeof window.render==='function'&&!window.render.__finalPolish){
-                    const old=window.render;const w=function(){const r=old.apply(this,arguments);if(typeof mode!=='undefined'&&mode==='week')paintWeek();return r};w.__finalPolish=true;window.render=w;
-                  }
-                }
-
                 function refresh(){
                   if(refreshing)return;refreshing=true;
                   try{
-                    ensureNineSlots();wrapSlots();wrapWeekRender();installCycleBar();reorderSettings();prettySlotRows();updatePreviews();paintWeek();
+                    ensureNineSlots();wrapSlots();installCycleBar();reorderSettings();prettySlotRows();updatePreviews();
                     if(window.refreshWeekendUi)window.refreshWeekendUi();
                   }catch(e){}finally{refreshing=false}
                 }
                 window.refreshFinalPolish=refresh;
 
                 document.addEventListener('input',e=>{if(e.target&&(['appFont','widgetFont'].includes(e.target.id)))setTimeout(updatePreviews,0)},true);
-                const grid=document.getElementById('weekGrid');if(grid){new MutationObserver(()=>paintWeek()).observe(grid,{childList:true,subtree:false})}
-                document.addEventListener('visibilitychange',()=>{if(!document.hidden)paintWeek()});
-                setInterval(paintWeek,15000);
                 refresh();
               }catch(e){console.log('FinalPolishUi',e)}
             })();
@@ -735,7 +664,7 @@ final class TimetableCoreUi {
                     </div>
                     <div class="settingBox"><div id="advCycleTitle" class="settingTitle"></div><div class="advRow"><span id="advCycleLabel"></span><select id="advCycle"><option value="2"></option><option value="3"></option><option value="4"></option></select></div><div class="advButtons"><button id="advCopyWeek" type="button" class="advButton"></button></div><div class="advSectionTitle" id="advCopyDayTitle"></div><div class="advInline"><select id="advCopyFrom"></select><select id="advCopyTo"></select></div><div class="advButtons" style="margin-top:6px"><button id="advCopyDay" type="button" class="advButton"></button></div></div>
                     <div class="settingBox"><div id="advReminderTitle" class="settingTitle"></div><label class="advCheck"><input id="advReminders" type="checkbox"><span id="advReminderLabel"></span></label><div class="advRow"><span></span><select id="advReminderMinutes"><option value="0">0 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option><option value="20">20 min</option><option value="30">30 min</option></select></div></div>
-                    <div class="settingBox"><div id="advCalendarTitle" class="settingTitle"></div><div class="advRow"><span id="advHolidayLabel"></span><select id="advHoliday"><option value="off"></option><option value="france"></option><option value="alsace_moselle"></option></select></div><div class="advSectionTitle" id="advRangeTitle"></div><div class="advInline"><input id="advRangeStart" type="date"><input id="advRangeEnd" type="date"></div><div class="advInline full"><input id="advRangeLabel" type="text" maxlength="45"></div><div class="advButtons" style="margin-top:6px"><button id="advAddRange" type="button" class="advButton"></button></div><div id="advRangeList" class="advList"></div></div>
+                    <div class="settingBox"><div id="advCalendarTitle" class="settingTitle"></div><div class="advRow"><span id="advHolidayLabel"></span><select id="advHoliday"><option value="off"></option><option value="france"></option><option value="alsace_moselle"></option></select></div><div class="advSectionTitle" id="advRangeTitle"></div><div class="advRangeDates"><label><span id="advRangeFromLabel">Du</span><input id="advRangeStart" type="date"></label><label><span id="advRangeToLabel">au</span><input id="advRangeEnd" type="date"></label></div><div class="advInline full"><input id="advRangeLabel" type="text" maxlength="45"></div><div class="advButtons" style="margin-top:6px"><button id="advAddRange" type="button" class="advButton"></button></div><div id="advRangeList" class="advList"></div></div>
                     <div class="settingBox"><div id="advExceptionsTitle" class="settingTitle"></div><div class="advButtons"><button id="advAddException" type="button" class="advButton primary"></button></div><div id="advExceptionList" class="advList"></div></div>
                     <div class="settingBox"><div id="advProfilesTitle" class="settingTitle"></div><div class="advRow"><select id="advProfileSelect" style="width:100%"></select></div><div class="advButtons"><button id="advNewProfile" type="button" class="advButton"></button><button id="advRenameProfile" type="button" class="advButton"></button><button id="advDeleteProfile" type="button" class="advButton danger"></button></div></div>
                     <div class="settingBox"><div id="advBackupTitle" class="settingTitle"></div><div class="advButtons"><button id="advShareBackup" type="button" class="advButton"></button><button id="advRestoreBackup" type="button" class="advButton"></button></div></div>`;
@@ -750,6 +679,8 @@ final class TimetableCoreUi {
                 function locAdv(){
                   const t=T();setTxt('advWidgetTitle',t.widgetDisplay);setTxt('advDensityLabel',t.density);setTxt('advFormatLabel',t.format);setTxt('advFollowingLabel',t.following);setTxt('advShowRoomLabel',t.room);setTxt('advShowTimesLabel',t.times);setTxt('advShowRemainingLabel',t.remaining);setTxt('advShowPercentLabel',t.percent);setTxt('advShowProgressLabel',t.progress);setTxt('advShowBreaksLabel',t.gaps);setTxt('advShowLunchLabel',t.lunch);setTxt('advShowWeekInfoLabel',t.weekInfo);setTxt('advClassColorsLabel',t.classColors);setTxt('advAccessLabel',t.access);setTxt('advCycleTitle',t.cycle);setTxt('advCycleLabel',t.cycle);setTxt('advCopyWeek',t.copyWeek);setTxt('advCopyDayTitle',t.copyDay);setTxt('advCopyDay',t.copy);setTxt('advReminderTitle',t.reminders);setTxt('advReminderLabel',t.notify);setTxt('advCalendarTitle',t.calendar);setTxt('advHolidayLabel',t.holidays);setTxt('advRangeTitle',t.addRange);setTxt('advAddRange',t.add);setTxt('advExceptionsTitle',t.exceptions);setTxt('advAddException',t.addException);setTxt('advProfilesTitle',t.profiles);setTxt('advNewProfile',t.newProfile);setTxt('advRenameProfile',t.rename);setTxt('advDeleteProfile',t.delete);setTxt('advBackupTitle',t.backup);setTxt('advShareBackup',t.share);setTxt('advRestoreBackup',t.restore);setTxt('advExceptionFormTitle',t.addException);setTxt('advFDateLabel',t.date);setTxt('advFRefStartLabel',t.referenceStart);setTxt('advFRefLabelLabel',t.referenceLabel);setTxt('advFStartLabel',t.newStart);setTxt('advFEndLabel',t.newEnd);setTxt('advFLabelLabel',t.newLabel);setTxt('advFRoomLabel',t.newRoom);setTxt('advFCancel',uiLang()==='de'?'Abbrechen':(uiLang()==='en'?'Cancel':'Annuler'));setTxt('advFSave',t.save);
                   const den=document.getElementById('advDensity');if(den){den.options[0].text=t.compact;den.options[1].text=t.normal;den.options[2].text=t.comfortable}const fmt=document.getElementById('advFormat');if(fmt){fmt.options[0].text=t.timeline;fmt.options[1].text=t.nowNext}const fol=document.getElementById('advFollowing');if(fol)fol.options[0].text=t.auto;const ac=document.getElementById('advAccess');if(ac){ac.options[0].text=t.accessNormal;ac.options[1].text=t.contrast;ac.options[2].text=t.colorblind}const cyc=document.getElementById('advCycle');if(cyc){cyc.options[0].text=t.cycle2;cyc.options[1].text=t.cycle3;cyc.options[2].text=t.cycle4}const hol=document.getElementById('advHoliday');if(hol){hol.options[0].text=t.holOff;hol.options[1].text=t.holFrance;hol.options[2].text=t.holAlsace}const typ=document.getElementById('advFType');if(typ){typ.options[0].text=t.cancelCourse;typ.options[1].text=t.roomChange;typ.options[2].text=t.moveCourse;typ.options[3].text=t.extraCourse}
+                  setTxt('advRangeFromLabel',uiLang()==='de'?'Von':(uiLang()==='en'?'From':'Du'));
+                  setTxt('advRangeToLabel',uiLang()==='de'?'bis':(uiLang()==='en'?'to':'au'));
                   const rl=document.getElementById('advRangeLabel');if(rl)rl.placeholder=t.label;
                   renderCopyDayOptions();
                 }
@@ -773,7 +704,7 @@ final class TimetableCoreUi {
                 function loadProfiles(){
                   const sel=document.getElementById('advProfileSelect');if(!sel)return;try{const root=JSON.parse(window.AndroidSchedule&&AndroidSchedule.listProfiles?AndroidSchedule.listProfiles():'{}');sel.innerHTML='';for(const p of root.profiles||[]){const o=document.createElement('option');o.value=p.id;o.textContent=p.name;sel.appendChild(o)}sel.value=root.current||''}catch(e){}
                 }
-                function activateProfile(id){if(!(window.AndroidSchedule&&AndroidSchedule.activateProfile))return;AndroidSchedule.activateProfile(id);if(window.reloadSchedule)window.reloadSchedule();if(window.refreshCourseWidgetLabelCache648)window.refreshCourseWidgetLabelCache648();loadProfiles();setTimeout(refreshAdvancedFeatures,18)}
+                function activateProfile(id){if(!(window.AndroidSchedule&&AndroidSchedule.activateProfile))return;AndroidSchedule.activateProfile(id);if(window.reloadSchedule)window.reloadSchedule();if(window.refreshCourseWidgetLabelCache648)window.refreshCourseWidgetLabelCache648();loadProfiles();refreshAdvancedFeatures()}
 
                 function bind(){
                   const selectMap={advDensity:'density',advFormat:'widgetFormat',advAccess:'accessibility',advHoliday:'holidayMode'};for(const id in selectMap){const el=document.getElementById(id);if(el)el.onchange=e=>{adv[selectMap[id]]=e.target.value;saveAdv();if(typeof render==='function')render()}}
@@ -799,7 +730,7 @@ final class TimetableCoreUi {
                 window.refreshAdvancedFeatures=refreshAdvancedFeatures;
 
                 const oldSettingsClick=document.getElementById('settingsBtn')?document.getElementById('settingsBtn').onclick:null;
-                if(document.getElementById('settingsBtn'))document.getElementById('settingsBtn').onclick=function(e){if(oldSettingsClick)oldSettingsClick.call(this,e);setTimeout(refreshAdvancedFeatures,18)};
+                if(document.getElementById('settingsBtn'))document.getElementById('settingsBtn').onclick=function(e){if(oldSettingsClick)oldSettingsClick.call(this,e);refreshAdvancedFeatures()};
 
                 refreshAdvancedFeatures();
               } catch(e) { console.log('Advanced features',e); }
@@ -1917,128 +1848,6 @@ final class TimetableCoreUi {
                 `;
                 document.head.appendChild(style);
 
-                let raf=0;
-                let lateTimer=0;
-                let syncing=false;
-                let gridObserver=null;
-
-                function keepStyleLast(){}
-
-                function toMin(v){
-                  const p=String(v||'').split(':').map(Number);
-                  return (p[0]||0)*60+(p[1]||0);
-                }
-
-                function lunchText(){
-                  try{
-                    if(typeof lunchLabelText==='function')return String(lunchLabelText()||'').trim();
-                    if(typeof breaks!=='undefined'&&breaks)return String(breaks.lunchLabel||'Midi').trim();
-                  }catch(e){}
-                  return 'Midi';
-                }
-
-                function rowsOf(grid){
-                  const rows=[];
-                  if(!grid)return rows;
-                  const times=Array.from(grid.querySelectorAll(':scope > .wh.timecol'));
-                  for(const time of times){
-                    const found=(time.textContent||'').match(/[0-2]?[0-9]:[0-5][0-9]/g)||[];
-                    if(found.length<2)continue;
-                    const cells=[];
-                    const dayCount=(typeof DAYS!=='undefined'&&Array.isArray(DAYS))?DAYS.length:5;
-                    let n=time.nextElementSibling;
-                    while(n&&cells.length<dayCount){
-                      if(n.classList&&n.classList.contains('wc'))cells.push(n);
-                      n=n.nextElementSibling;
-                    }
-                    if(cells.length===dayCount)rows.push({time,start:toMin(found[0]),end:toMin(found[1]),cells});
-                  }
-                  rows.sort((a,b)=>a.time.offsetTop-b.time.offsetTop);
-                  return rows;
-                }
-
-                function clearMidiEdges(grid){
-                  grid.querySelectorAll('[data-midi-edge-v14="1"]').forEach(el=>{
-                    el.style.removeProperty('border-right-color');
-                    el.style.removeProperty('border-bottom-color');
-                    el.removeAttribute('data-midi-edge-v14');
-                  });
-                }
-
-                function edge(el,prop,color){
-                  if(!el)return;
-                  el.style.setProperty(prop,color,'important');
-                  el.setAttribute('data-midi-edge-v14','1');
-                }
-
-                function normalizeLunch(cell,label){
-                  if(!cell)return;
-                  cell.classList.add('nativeLunchCell');
-                  cell.querySelectorAll('.geoLunchLabel').forEach(x=>x.remove());
-                  const holder=cell.querySelector('.dynamicLunchOverlay')||cell;
-                  let text=holder.querySelector('.cellLabel');
-                  if(label){
-                    if(!text){text=document.createElement('span');text.className='cellLabel breakFitLabel';holder.appendChild(text)}
-                    if(text.textContent!==label)text.textContent=label;
-                  }else if(text){text.remove()}
-                  cell.style.setProperty('background','var(--ft-midi)','important');
-                  cell.style.setProperty('box-shadow','none','important');
-                  cell.style.setProperty('outline','0','important');
-                  cell.style.setProperty('border-left','0','important');
-                  cell.style.setProperty('border-top','0','important');
-                  cell.style.setProperty('border-radius','0','important');
-                  cell.style.setProperty('padding','0','important');
-                  cell.style.setProperty('margin','0','important');
-                }
-
-                function paintLunch(grid,rows){
-                  const label=lunchText();
-                  clearMidiEdges(grid);
-                  rows.forEach(row=>row.cells.forEach(cell=>{
-                    if(!(cell.classList.contains('lunchCell')||cell.classList.contains('dynamicLunchCell')||cell.classList.contains('nativeLunchCell')))return;
-                    normalizeLunch(cell,label);
-                    cell.style.removeProperty('border-right-color');
-                    cell.style.removeProperty('border-bottom-color');
-                    cell.style.setProperty('box-shadow','none','important');
-                    cell.style.setProperty('outline','0','important');
-                  }));
-                }
-
-                function removeLegacyNow(grid){
-                  grid.querySelectorAll('[id*="weekNow"],[id*="WeekNow"],.scheduleNowRail,.scheduleNowDot').forEach(x=>x.remove());
-                  grid.querySelectorAll('.nativeNowFull,.nativeNowPartial,.nativeNowDot').forEach(x=>x.remove());
-                  grid.querySelectorAll('.nativeNowTrackCell').forEach(x=>x.classList.remove('nativeNowTrackCell'));
-                }
-
-                function paintNow(grid,rows){
-                  // 6.9: the final layer owns the only current-time indicator.
-                  removeLegacyNow(grid);
-                }
-
-                function observeGrid(grid){
-                  if(gridObserver)gridObserver.disconnect();
-                  gridObserver=new MutationObserver(()=>{if(!syncing)scheduleGrid()});
-                  gridObserver.observe(grid,{childList:true,subtree:false});
-                }
-
-                function syncGrid(){
-                  const grid=document.getElementById('weekGrid');if(!grid||syncing)return;
-                  syncing=true;
-                  try{
-                    keepStyleLast();
-                    grid.style.setProperty('position','relative','important');
-                    const rows=rowsOf(grid);
-                    if(rows.length){paintLunch(grid,rows);paintNow(grid,rows)}
-                    observeGrid(grid);
-                  }finally{syncing=false}
-                }
-
-                function scheduleGrid(){
-                  if(raf)cancelAnimationFrame(raf);
-                  if(lateTimer)clearTimeout(lateTimer);
-                  syncGrid();
-                }
-                window.refreshDoubleLunchUi=scheduleGrid;
 
                 function loadAdv(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
                 function saveAdv(o){try{AndroidSchedule.saveAdvancedSettings(JSON.stringify(o))}catch(e){}}
@@ -2123,17 +1932,8 @@ final class TimetableCoreUi {
                   }
                 }
 
-                const grid=document.getElementById('weekGrid');
-                if(grid){observeGrid(grid);if(window.ResizeObserver)new ResizeObserver(scheduleGrid).observe(grid)}
-                window.addEventListener('resize',scheduleGrid);
-                document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleGrid()});
-                if(document.fonts&&document.fonts.ready)document.fonts.ready.then(scheduleGrid);
-
                 refreshWidgetCourseLabels();installLabelUi();
                 (window.__edtCoursePanelPreparers648||(window.__edtCoursePanelPreparers648=[])).push({id:'widget-label',run:function(){const input=document.getElementById('fWidgetLabel'),c=editedCourse();if(input)input.value=c?String(widgetCourseLabels()[keyFor(activeWeek,selected,c.start,c.end)]||''):''}});
-                scheduleGrid();
-                syncGrid();
-                setInterval(()=>{if(window.paintWeek69)window.paintWeek69()},30000);
               }catch(e){console.log('Week geometry V14',e)}
             })();
             """;

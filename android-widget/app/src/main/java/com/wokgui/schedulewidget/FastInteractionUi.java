@@ -159,6 +159,9 @@ final class FastInteractionUi {
                   try{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()}catch(ignore){}
                   const n=++state.clicks,started=performance.now(),label=labelFor(el);
                   console.log('EDT_FAST_INPUT|'+label+'|visual|delegated');
+                  if(el.classList&&el.classList.contains('weekTab')){
+                    invokeClick(el,e,fn);logSettle('click',label,n,started);return;
+                  }
                   const group=groupFor(el);
                   afterPaint(group,function(){invokeClick(el,e,fn);logSettle('click',label,n,started)});
                 },true);

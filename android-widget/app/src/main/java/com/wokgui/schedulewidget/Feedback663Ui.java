@@ -42,7 +42,7 @@ final class Feedback663Ui {
                     ['feedback663WidgetLunch',a.showLunch!==false,['showLunch']],
                     ['feedback663WidgetGaps',a.showBreaks!==false,['showBreaks']]
                   ];
-                  defs.forEach(([id,checked,keys])=>{const input=document.getElementById(id);if(!input)return;input.checked=checked;input.tabIndex=0;if(input.__feedback663)return;input.__feedback663=true;input.addEventListener('change',()=>{const next=read();keys.forEach(key=>next[key]=input.checked);write(next);if(window.applyBreakVisibility)window.applyBreakVisibility();if(typeof renderToday==='function')renderToday();if(typeof renderWeek==='function'&&document.getElementById('viewWeek')?.classList.contains('active'))renderWeek()})});
+                  defs.forEach(([id,checked,keys])=>{const input=document.getElementById(id);if(!input)return;input.checked=checked;input.tabIndex=0;if(input.__feedback663)return;input.__feedback663=true;input.addEventListener('change',()=>{const next=read();keys.forEach(key=>next[key]=input.checked);write(next);if(window.applyBreakVisibility)window.applyBreakVisibility();if(window.invalidateTimetableViews)window.invalidateTimetableViews(['today','week']);if(typeof mode!=='undefined'&&mode==='today'&&typeof renderToday==='function')renderToday();if(typeof mode!=='undefined'&&mode==='week'&&typeof renderWeek==='function')renderWeek()})});
                 }
                 function refresh(){install()}
                 window.refreshFeedback663=refresh;
