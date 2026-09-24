@@ -114,7 +114,7 @@ const baseline=process.env.EDT_BASELINE==='1';
     widget.open=false;
     const summaries=expected.map(id=>({id,font:parseFloat(getComputedStyle(document.querySelector('#'+id+'>summary')).fontSize)}));
     const advanced=document.getElementById('advancedSettings85');advanced.open=true;
-    const advancedBoxes=[...document.querySelectorAll('#advancedContent85>:scope.settingBox')];
+    const advancedBoxes=[...document.querySelectorAll('#advancedContent85>.settingBox')];
     const advancedSeparators=advancedBoxes.slice(1).map(x=>parseFloat(getComputedStyle(x).borderTopWidth)||0);
     advanced.open=false;
     return {expected,order,collapsed,languageWidth,parents,legacyLanguageExtra:!!document.getElementById('languageExtra85'),legacyLanguagePanel:!!document.getElementById('languagePackPanel'),selects,summaries,advancedSeparators};
