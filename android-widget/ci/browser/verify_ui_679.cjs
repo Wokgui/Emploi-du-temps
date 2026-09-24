@@ -97,7 +97,9 @@ const baseline=process.env.EDT_BASELINE==='1';
     const order=[...sheet.children].filter(x=>expected.includes(x.id)).map(x=>x.id);
     const collapsed=expected.every(id=>{const el=document.getElementById(id);return el&&el.tagName==='DETAILS'&&!el.open});
     const language=document.getElementById('languageSettings86'),select=document.getElementById('languageSelect'),download=document.getElementById('languageDownloadBtn81');
+    if(language)language.open=true;
     const languageWidth=select?.getBoundingClientRect().width||0;
+    if(language)language.open=false;
     const parents={
       language:select?.closest('.settingsSection86')?.id||null,
       download:download?.closest('.settingsSection86')?.id||null,
