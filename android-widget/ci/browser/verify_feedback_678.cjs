@@ -56,22 +56,25 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
   assert.equal(initial.settingsControls, 1, JSON.stringify(initial));
   assert.equal(initial.cycleOutsideSettings, 0, JSON.stringify(initial));
   assert.equal(initial.cycle.find(item => item.value === '2').active, true, JSON.stringify(initial));
-  assert.match(initial.today, /Jour A/);
+  assert.match(initial.today, /semaine A/i);
 
   await page.locator('#settingsBtn').tap();
   await page.waitForFunction(() => document.getElementById('settingsModal').getAttribute('data-edt-open') === 'true' || document.getElementById('settingsModal').classList.contains('show'));
   await page.screenshot({ path: path.resolve('smoke-browser/feedback-678-settings.png'), fullPage: false });
+  await page.locator('#weekTypeSettings86 > summary').tap();
   await page.locator('.weekCurrentChoice678[data-week="B"]').tap();
-  await page.waitForFunction(() => /Jour B/.test(document.getElementById('todayTitle').textContent));
+  await page.waitForFunction(() => /semaine B/i.test(document.getElementById('todayTitle').textContent));
   await page.locator('#settingsDone').tap();
   await settle(page);
   await page.locator('.nav[data-mode="week"]').tap();
   await page.waitForFunction(() => document.getElementById('viewWeek').classList.contains('active'));
   await settle(page);
-  assert.match(await page.locator('#viewWeek .weekTop h2').textContent(), /Semaine B/);
+  assert.match(await page.locator('#viewWeek .weekTop h2').textContent(), /Semaine du/i);
+  assert.match(await page.locator('#weekCycleLabel757').textContent(), /Semaine B/i);
   await page.screenshot({ path: path.resolve('smoke-browser/feedback-678-week.png'), fullPage: false });
 
   await page.locator('#settingsBtn').tap();
+  await page.locator('#weekTypeSettings86 > summary').tap();
   await page.locator('.weekCycleChoice678[data-count="1"]').tap();
   await page.waitForFunction(() => document.documentElement.classList.contains('singleWeek678'));
   await page.locator('#settingsDone').tap();
@@ -83,6 +86,7 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
   assert.equal(single.currentRow, 'none', JSON.stringify(single));
 
   await page.locator('#settingsBtn').tap();
+  await page.locator('#weekTypeSettings86 > summary').tap();
   await page.locator('.weekCycleChoice678[data-count="2"]').tap();
   await page.waitForFunction(() => !document.documentElement.classList.contains('singleWeek678'));
   await page.locator('.weekCurrentChoice678[data-week="A"]').tap();
