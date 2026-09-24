@@ -37,7 +37,7 @@ final class Feedback664Ui {
                 }
 
                 function installDensity(){
-                  const group=document.getElementById('textSettings86'),body=group&&group.querySelector('.settingsSectionBody86');
+                  const group=document.getElementById('widgetSettings86'),body=group&&group.querySelector('.settingsSectionBody86');
                   const select=document.getElementById('advDensity'),row=select&&select.closest('.advRow');
                   if(!body||!row)return;
                   let box=document.getElementById('widgetDensity664');
