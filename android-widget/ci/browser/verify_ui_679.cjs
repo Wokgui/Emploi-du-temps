@@ -91,6 +91,43 @@ const baseline=process.env.EDT_BASELINE==='1';
   await page.screenshot({path:path.resolve('smoke-browser/ui-679-dates.png')});
   await page.evaluate(()=>{document.getElementById('advancedSettings85').open=false;document.getElementById('settingsSheet').scrollTop=0});
   await page.screenshot({path:path.resolve('smoke-browser/ui-679-settings.png')});
+  report.settingsLayout=await page.evaluate(()=>{
+    const expected=['languageSettings86','textSettings86','weekTypeSettings86','colorSettings86','breakSettings86','widgetSettings86','advancedSettings85'];
+    const sheet=document.getElementById('settingsSheet');
+    const order=[...sheet.children].filter(x=>expected.includes(x.id)).map(x=>x.id);
+    const collapsed=expected.every(id=>{const el=document.getElementById(id);return el&&el.tagName==='DETAILS'&&!el.open});
+    const language=document.getElementById('languageSettings86'),select=document.getElementById('languageSelect'),download=document.getElementById('languageDownloadBtn81');
+    const languageWidth=select?.getBoundingClientRect().width||0;
+    const parents={
+      language:select?.closest('.settingsSection86')?.id||null,
+      download:download?.closest('.settingsSection86')?.id||null,
+      week:document.getElementById('settingsWeekCycle678')?.closest('.settingsSection86')?.id||null,
+      weekColors:document.getElementById('week658Settings')?.closest('.settingsSection86')?.id||null,
+      breaks:document.getElementById('breakDisplaySetting')?.closest('.settingsSection86')?.id||null,
+      widget:document.getElementById('advWidgetTitle')?.closest('.settingsSection86')?.id||null,
+      density:document.getElementById('widgetDensity664')?.closest('.settingsSection86')?.id||null
+    };
+    const widget=document.getElementById('widgetSettings86');widget.open=true;
+    const selects=[...widget.querySelectorAll('select')].filter(x=>getComputedStyle(x).display!=='none').map(x=>({id:x.id,h:x.getBoundingClientRect().height,font:parseFloat(getComputedStyle(x).fontSize)}));
+    widget.open=false;
+    const summaries=expected.map(id=>({id,font:parseFloat(getComputedStyle(document.querySelector('#'+id+'>summary')).fontSize)}));
+    return {expected,order,collapsed,languageWidth,parents,legacyLanguageExtra:!!document.getElementById('languageExtra85'),selects,summaries};
+  });
+  report.calendarNavigation=await page.evaluate(async()=>{
+    document.getElementById('settingsDone')?.click();
+    document.querySelector('.nav[data-mode="today"]').click();
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    const todayBefore={title:document.getElementById('todayTitle').textContent,date:document.getElementById('todayDate').textContent};
+    document.getElementById('todayNext757').click();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    const todayNext={title:document.getElementById('todayTitle').textContent,date:document.getElementById('todayDate').textContent};
+    document.getElementById('todayPrev757').click();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    document.querySelector('.nav[data-mode="week"]').click();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    const weekBefore={title:document.querySelector('#viewWeek .weekTop h2').childNodes[0]?.textContent||document.querySelector('#viewWeek .weekTop h2').textContent,cycle:document.getElementById('weekCycleLabel757').textContent,dates:[...document.querySelectorAll('#weekGrid .weekDayDate757')].map(x=>x.textContent)};
+    document.getElementById('weekNext757').click();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    const weekNext={title:document.querySelector('#viewWeek .weekTop h2').childNodes[0]?.textContent||document.querySelector('#viewWeek .weekTop h2').textContent,cycle:document.getElementById('weekCycleLabel757').textContent,dates:[...document.querySelectorAll('#weekGrid .weekDayDate757')].map(x=>x.textContent)};
+    document.getElementById('weekPrev757').click();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    return {todayBefore,todayNext,weekBefore,weekNext,arrows:['todayPrev757','todayNext757','weekPrev757','weekNext757'].every(id=>!!document.getElementById(id))};
+  });
   report.breaks=await page.evaluate(async()=>{
     document.getElementById('settingsDone')?.click();document.querySelector('.nav[data-mode="week"]').click();
     const grid=document.getElementById('weekGrid');
@@ -147,9 +184,17 @@ const baseline=process.env.EDT_BASELINE==='1';
   const output=path.resolve(process.env.EDT_UI_REPORT||'smoke-browser/ui-679-report.json');
   fs.writeFileSync(output,JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
   if(!baseline){assert.deepEqual(errors,[]);assert.ok(report.navigation.active.every(x=>x.length===1));
-    assert.equal(report.navigation.staleToday,0);assert.equal(report.breaks.disabled.lunch,0);
-    assert.equal(report.breaks.disabled.gap,0);assert.equal(report.breaks.disabled.labels,0);
-    assert.equal(report.breaks.disabled.lines,false);assert.ok(report.breaks.restored.lunch>0);
+    assert.equal(report.navigation.staleToday,0);
+    assert.deepEqual(report.settingsLayout.order,report.settingsLayout.expected);assert.equal(report.settingsLayout.collapsed,true);
+    assert.equal(report.settingsLayout.legacyLanguageExtra,false);assert.ok(report.settingsLayout.languageWidth>0&&report.settingsLayout.languageWidth<220);
+    assert.deepEqual(report.settingsLayout.parents,{language:'languageSettings86',download:'languageSettings86',week:'weekTypeSettings86',weekColors:'colorSettings86',breaks:'breakSettings86',widget:'widgetSettings86',density:'widgetSettings86'});
+    assert.ok(report.settingsLayout.summaries.every(x=>Math.abs(x.font-report.settingsLayout.summaries[0].font)<0.1));
+    assert.ok(report.settingsLayout.selects.every(x=>x.h<=35&&x.font<=12));
+    assert.equal(report.calendarNavigation.arrows,true);assert.notEqual(report.calendarNavigation.todayBefore.date,report.calendarNavigation.todayNext.date);
+    assert.match(report.calendarNavigation.weekBefore.title,/Semaine du [0-9]{2}\/[0-9]{2} au [0-9]{2}\/[0-9]{2}/);
+    assert.notEqual(report.calendarNavigation.weekBefore.title,report.calendarNavigation.weekNext.title);assert.ok(report.calendarNavigation.weekBefore.dates.length>=5);assert.ok(report.calendarNavigation.weekBefore.dates.every(x=>/^[0-9]{2}\/[0-9]{2}$/.test(x)));
+    assert.equal(report.breaks.disabled.lunch,0);assert.equal(report.breaks.disabled.gap,0);assert.equal(report.breaks.disabled.labels,0);
+    assert.equal(report.breaks.disabled.lines,false);assert.ok(report.breaks.restored.lunch>0);assert.ok(report.breaks.restored.gap>0);
     assert.ok(Math.abs(report.profileGeometry.titleCenter-report.profileGeometry.selectCenter)<1);
     assert.equal(report.weekSwap.covers,0);assert.equal(report.weekSwap.changedAfterFrame,0);
     assert.equal(report.editSwap.covers,0);assert.equal(report.editSwap.changedAfterFrame,0);
