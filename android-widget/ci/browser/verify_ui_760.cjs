@@ -89,6 +89,7 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
       mainSize,
       summarySizes: summaries.map(node => ({ text: node.textContent.trim(), size: parseFloat(getComputedStyle(node).fontSize) })),
       requestedSizes: requested.map(selector => ({ selector, size: parseFloat(getComputedStyle(document.querySelector(selector)).fontSize) })),
+      subcategorySize: parseFloat(getComputedStyle(document.getElementById('advRangeTitle')).fontSize),
       advancedSizes: advanced.map(selector => ({ selector, size: parseFloat(getComputedStyle(document.querySelector(selector)).fontSize) })),
       schoolSize: parseFloat(getComputedStyle(document.getElementById('schoolTitle')).fontSize),
       calendarDisplay: getComputedStyle(document.getElementById('advCalendarTitle')).display,
@@ -99,7 +100,7 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
   });
   assert.ok(settingsTitles.mainSize >= 13, JSON.stringify(settingsTitles));
   settingsTitles.summarySizes.forEach(title => assert.ok(Math.abs(title.size - settingsTitles.mainSize) <= 0.1, JSON.stringify(settingsTitles)));
-  settingsTitles.requestedSizes.forEach(title => assert.ok(Math.abs(title.size - settingsTitles.mainSize) <= 0.1, JSON.stringify(settingsTitles)));
+  settingsTitles.requestedSizes.forEach(title => assert.ok(Math.abs(title.size - settingsTitles.subcategorySize) <= 0.1, JSON.stringify(settingsTitles)));
   settingsTitles.advancedSizes.forEach(title => assert.ok(Math.abs(title.size - settingsTitles.schoolSize) <= 0.1, JSON.stringify(settingsTitles)));
   assert.equal(settingsTitles.calendarDisplay, 'none', JSON.stringify(settingsTitles));
   assert.equal(settingsTitles.widgetDisplay, 'list-item', JSON.stringify(settingsTitles));
