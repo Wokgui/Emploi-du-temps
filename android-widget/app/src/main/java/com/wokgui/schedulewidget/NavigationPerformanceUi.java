@@ -105,9 +105,9 @@ final class NavigationPerformanceUi {
                         });
                       });
                     };
-                    // Edit receives one complete pre-paint cycle while the previous tab
-                    // remains visible, so Android never exposes its transitional frame.
-                    if(target==='edit')requestAnimationFrame(reveal);else reveal();
+                    // The destination is complete now: publish it in this same interaction.
+                    // Delaying Edit by one frame made the tab feel progressively unresponsive.
+                    reveal();
                     return false;
                   };
                 }

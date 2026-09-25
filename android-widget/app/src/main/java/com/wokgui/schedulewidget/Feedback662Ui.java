@@ -14,9 +14,9 @@ final class Feedback662Ui {
                   html body main.wrap.edtInstantViews647>#viewWeek.view:not(.active) #weekGrid#weekGrid .week658LunchLabel,
                   html body main.wrap.edtInstantViews647>#viewWeek.view:not(.active) #weekGrid#weekGrid .week662GapLabel{display:none!important;visibility:hidden!important}
                   #viewEdit .breakNamesScope78,#viewEdit .breakWidgetRow78{display:none!important}
-                  #viewEdit .breakSettings .breakRow{align-items:stretch!important}
-                  #viewEdit .breakSettings .breakName{display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;align-self:stretch!important;padding:0 2px!important}
-                  #viewEdit .breakSettings .dualBreakInputs .dualLabel{text-align:center!important;align-self:center!important}
+                  #breakNamesSettings763 .breakSettings .breakRow{align-items:stretch!important}
+                  #breakNamesSettings763 .breakSettings .breakName{display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;align-self:stretch!important;padding:0 2px!important}
+                  #breakNamesSettings763 .breakSettings .dualBreakInputs .dualLabel{text-align:center!important;align-self:center!important}
                 `;document.head.appendChild(style);
 
                 function removeDuplicateWidgetRows(){

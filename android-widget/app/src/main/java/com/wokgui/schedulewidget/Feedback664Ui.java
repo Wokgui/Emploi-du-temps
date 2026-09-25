@@ -81,15 +81,19 @@ final class Feedback664Ui {
                     }
                   }catch(e){}
                 }
+                let editPreparedForClick=false;
 
                 document.addEventListener('pointerdown',event=>{
                   const edit=event.target&&event.target.closest?event.target.closest('.nav[data-mode="edit"]'):null;
-                  if(edit)prepareEdit();
+                  if(edit){editPreparedForClick=true;prepareEdit()}
                 },true);
                 document.addEventListener('click',event=>{
                   const edit=event.target&&event.target.closest?event.target.closest('.nav[data-mode="edit"]'):null;
-                  if(edit)prepareEdit();
+                  if(!edit)return;
+                  if(editPreparedForClick){editPreparedForClick=false;return}
+                  prepareEdit();
                 },true);
+                document.addEventListener('pointercancel',()=>{editPreparedForClick=false},{capture:true,passive:true});
 
                 function refresh(){removePreviews();installDensity();installProfiles()}
                 window.refreshFeedback664=refresh;

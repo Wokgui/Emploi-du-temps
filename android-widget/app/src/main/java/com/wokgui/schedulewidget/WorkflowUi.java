@@ -213,6 +213,14 @@ final class WorkflowUi {
                   #languageSettings86 #languageDownloadBtn81{display:block!important;width:auto!important;max-width:100%!important;margin:8px auto 0!important;padding:7px 11px!important;font-size:.72rem!important;white-space:nowrap!important}
                   #languageSettings86 #languagePackPanel81{margin-top:8px!important}
                   #breakSettings86 #feedback663Visibility>.feedback663Title{display:none!important}
+                  #widgetSettings86 #advWidgetTitle{display:none!important}
+                  #viewEdit #importPhoto{display:flex!important;width:fit-content!important;max-width:100%!important;margin:5px auto!important;padding:8px 12px!important}
+                  #viewEdit #addCourse,#viewEdit #addBulkCourses{display:block!important;width:fit-content!important;max-width:100%!important;margin:7px auto 0!important;padding:9px 13px!important}
+                  #breakNamesSettings763>.settingTitle{
+                    text-align:center!important;font-size:var(--settings86-heading-size)!important;line-height:1.15!important;
+                    font-weight:900!important;color:var(--ink,#111936)!important
+                  }
+                  #breakNamesSettings763 .breakSettings{margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important}
                   #widgetSettings86 .advRow{min-height:30px!important;margin:5px 0!important}
                   #widgetSettings86 .advRow>span{font-size:.70rem!important}
                   #widgetSettings86 .advRow>select{width:auto!important;min-width:96px!important;max-width:176px!important;min-height:31px!important;justify-self:end!important;padding:5px 24px 5px 8px!important;border-radius:8px!important;font-size:.68rem!important;text-align:center!important;text-align-last:center!important}
@@ -268,6 +276,22 @@ final class WorkflowUi {
                   document.querySelectorAll('#viewEdit .sectionHead h3').forEach(h=>{if(/Horaires|period times|Zeiten/i.test(h.textContent||''))h.closest('.sectionHead').hidden=true});
                   return box;
                 }
+                function ensureBreakNamesSettings(){
+                  const card=document.querySelector('.breakSettings');if(!card)return null;
+                  let box=document.getElementById('breakNamesSettings763');
+                  if(!box){
+                    box=document.createElement('div');box.id='breakNamesSettings763';box.className='settingBox';
+                    const title=document.createElement('div');title.id='breakNamesTitle763';title.className='settingTitle';box.appendChild(title);
+                    if(card.parentNode)card.parentNode.insertBefore(box,card);
+                  }
+                  const title=box.querySelector('.settingTitle');if(title)title.textContent=tr('Noms des interruptions','Break names','Namen der Unterbrechungen');
+                  if(card.parentNode!==box)box.appendChild(card);
+                  const names=card.querySelectorAll('.breakName');
+                  if(names[0])names[0].textContent=tr('Trou','Free period','Freistunde');
+                  if(names[1])names[1].textContent=tr('Midi','Lunch','Mittag');
+                  document.querySelectorAll('#viewEdit .sectionHead h3').forEach(h=>{if(/Noms des interruptions|Break names|Unterbrechungen/i.test(h.textContent||''))h.closest('.sectionHead').remove()});
+                  return box;
+                }
                 function moveAdaptiveTextControl(){
                   const body=document.querySelector('#textSettings86>.settingsSectionBody86'),row=document.getElementById('advDensityAutoRow665');if(!body||!row)return;
                   const label=row.querySelector('span');if(label)label.textContent=tr('Adapter la taille du texte pour tout afficher dans le widget','Adapt text size to show everything in the widget','Textgröße anpassen, um alles im Widget anzuzeigen');
@@ -291,11 +315,12 @@ final class WorkflowUi {
                   timer=0;if(arranging)return;arranging=true;
                   try{
                     ensureSlotSettings();
+                    ensureBreakNamesSettings();
                     ensureGroup('languageSettings86',tr('Langue','Language','Sprache'),['languageSelect']);
                     ensureGroup('textSettings86',tr('Taille du texte','Text size','Textgröße'),['appFont','widgetFont']);
                     ensureGroup('weekTypeSettings86',tr('Semaines et horaires','Weeks and times','Wochen und Zeiten'),['settingsWeekCycle678','slotSettingsGroup759']);
                     ensureGroup('colorSettings86',tr('Couleurs','Colors','Farben'),['themeTitle','paletteSettingRoot','fineSpecialColors','week658Settings']);
-                    ensureGroup('breakSettings86',tr('Affichage des interruptions','Break display','Pausenanzeige'),['breakDisplaySetting','week658LunchSettings']);
+                    ensureGroup('breakSettings86',tr('Affichage des interruptions','Break display','Pausenanzeige'),['breakDisplaySetting','breakNamesSettings763','week658LunchSettings']);
                     ensureGroup('widgetSettings86',tr('Affichage du widget','Widget display','Widget-Anzeige'),['advWidgetTitle','widgetDensity664']);
                     moveAdaptiveTextControl();
                     moveTopLevelAdvanced();orderSections();
@@ -370,13 +395,14 @@ final class WorkflowUi {
 
                 function ensureButtons(){
                   const add=document.getElementById('addCourse');if(!add)return;
+                  const anchor=document.getElementById('addBulkCourses')||add;
                   let row=document.getElementById('editHistoryActions86');
                   if(!row){
                     row=document.createElement('div');row.id='editHistoryActions86';
                     const u=document.createElement('button');u.id='undoEdit86';u.type='button';u.onclick=doUndo;row.appendChild(u);
                     const r=document.createElement('button');r.id='redoEdit86';r.type='button';r.onclick=doRedo;row.appendChild(r);
-                    add.insertAdjacentElement('afterend',row);
                   }
+                  if(row.previousElementSibling!==anchor)anchor.insertAdjacentElement('afterend',row);
                   refreshButtons();
                 }
                 function refreshButtons(){

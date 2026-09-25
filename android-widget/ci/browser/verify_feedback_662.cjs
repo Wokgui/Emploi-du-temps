@@ -36,17 +36,21 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   }
   await page.waitForFunction(() => window.__feedback662 && window.__weekAppearance658);
 
-  await page.locator('.nav[data-mode="edit"]').tap();
+  await page.locator('#settingsBtn').tap();
+  await page.waitForFunction(() => window.__edtHeavyPanels648.isOpen('settings'));
+  await page.locator('#breakSettings86 > summary').tap();
   await page.locator('#gapLabel').fill('Récréation');
   await page.locator('#lunchLabel').fill('Repas');
-  await page.locator('#gapLabelWidget').fill('Pause widget');
-  await page.locator('#lunchLabelWidget').fill('Déjeuner widget');
-  await page.locator('#lunchLabelWidget').press('Tab');
+  await page.evaluate(() => {
+    for (const [id,value] of [['gapLabelWidget','Pause widget'],['lunchLabelWidget','Déjeuner widget']]) {
+      const input=document.getElementById(id);input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+  });
   await page.waitForTimeout(150);
   const editor = await page.evaluate(() => ({
     duplicateTitles: document.querySelectorAll('#viewEdit .breakNamesScope78').length,
     duplicateRows: document.querySelectorAll('#viewEdit .breakWidgetRow78').length,
-    names: [...document.querySelectorAll('#viewEdit .breakSettings>.breakRow>.breakName')].map(node => ({ text: node.textContent.trim(), align: getComputedStyle(node).textAlign })),
+    names: [...document.querySelectorAll('#breakNamesSettings763 .breakSettings>.breakRow>.breakName')].map(node => ({ text: node.textContent.trim(), align: getComputedStyle(node).textAlign })),
     advanced: JSON.parse(AndroidSchedule.loadAdvancedSettings() || '{}'),
   }));
   assert.equal(editor.duplicateTitles, 0);
@@ -56,6 +60,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   assert.equal(editor.advanced.gapWidgetLabel, 'Pause widget');
   assert.equal(editor.advanced.lunchWidgetLabel, 'Déjeuner widget');
 
+  await page.locator('#settingsDone').tap();
   await page.locator('.nav[data-mode="week"]').tap();
   await page.evaluate(() => { renderWeek(); window.refreshWeekAppearance658(); });
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -64,18 +69,18 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
     return {
       lunchLabels: [...grid.querySelectorAll('.week658LunchLabel')].map(node => node.textContent.trim()),
       gapLabels: [...grid.querySelectorAll('.week662GapLabel')].map(node => node.textContent.trim()),
-      lineLayers: grid.style.getPropertyValue('--week662-lunch-lines'),
-      hasLines: grid.classList.contains('week662LunchLines'),
-      pseudoBackground: getComputedStyle(grid, '::before').backgroundImage,
+      topEdges: grid.querySelectorAll('.week658LunchRowTop').length,
+      bottomEdges: grid.querySelectorAll('.week658LunchRowBottom').length,
+      timeCells: grid.querySelectorAll('.wh.timecol.week658LunchTime').length,
     };
   });
   assert.ok(week.lunchLabels.length > 0);
   assert.ok(week.lunchLabels.every(text => text === 'Repas'));
   assert.ok(week.gapLabels.length > 0);
   assert.ok(week.gapLabels.every(text => text === 'Récréation'));
-  assert.equal(week.hasLines, true);
-  assert.match(week.lineLayers, /100% 2px/);
-  assert.notEqual(week.pseudoBackground, 'none');
+  assert.ok(week.topEdges >= 6);
+  assert.ok(week.bottomEdges >= 6);
+  assert.ok(week.timeCells > 0);
 
   await page.locator('.nav[data-mode="today"]').tap();
   await page.waitForFunction(() => document.getElementById('viewToday').classList.contains('active'));
