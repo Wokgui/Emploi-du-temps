@@ -18,6 +18,14 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
   page.on('pageerror', error => errors.push(String(error)));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
   await page.addInitScript(() => {
+    const NativeDate = Date;
+    const fixedNow = NativeDate.parse('2026-10-01T12:00:00Z');
+    class FixedDate extends NativeDate {
+      constructor(...args) { super(...(args.length ? args : [fixedNow])); }
+      static now() { return fixedNow; }
+    }
+    Object.setPrototypeOf(FixedDate, NativeDate);
+    window.Date = FixedDate;
     const data = { AdvancedSettings: '{"cycleLength":2,"singleWeek":false,"density":"normal","widgetAutoDensity":true}', UiSettings: '{"language":"fr","theme":"blue"}' };
     window.confirm = () => true;
     window.alert = () => {};
@@ -56,7 +64,8 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
   assert.equal(initial.settingsControls, 1, JSON.stringify(initial));
   assert.equal(initial.cycleOutsideSettings, 0, JSON.stringify(initial));
   assert.equal(initial.cycle.find(item => item.value === '2').active, true, JSON.stringify(initial));
-  assert.match(initial.today, /semaine A/i);
+  assert.equal(initial.today, 'Jeudi le 1er octobre 2026');
+  assert.equal(await page.locator('#todayDate').textContent(), 'Semaine A');
 
   await page.locator('#settingsBtn').tap();
   await page.waitForFunction(() => document.getElementById('settingsModal').getAttribute('data-edt-open') === 'true' || document.getElementById('settingsModal').classList.contains('show'));
@@ -64,7 +73,7 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
   if (!(await page.locator('#weekTypeSettings86').evaluate(el => el.open))) await page.locator('#weekTypeSettings86 > summary').tap();
   await page.waitForFunction(() => document.getElementById('weekTypeSettings86')?.open === true);
   await page.locator('.weekCurrentChoice678[data-week="B"]').tap();
-  await page.waitForFunction(() => /semaine B/i.test(document.getElementById('todayTitle').textContent));
+  await page.waitForFunction(() => /semaine B/i.test(document.getElementById('todayDate').textContent));
   await page.locator('#settingsDone').tap();
   await settle(page);
   await page.locator('.nav[data-mode="week"]').tap();
@@ -148,8 +157,8 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
   assert.match(styles31, /windowSplashScreenAnimatedIcon">@drawable\/ic_splash_mark_safe/);
   assert.match(splash, /android:insetLeft="24dp"[\s\S]*android:insetBottom="24dp"/);
   assert.match(chunkSource, /Feedback678Ui\.script\(\)/);
-  assert.match(gradle, /versionCode 758001/);
-  assert.match(gradle, /versionName '7\.58'/);
+  assert.match(gradle, /versionCode 760001/);
+  assert.match(gradle, /versionName '7[.]60'/);
   assert.deepEqual(errors, []);
   console.log('feedback_678_week_type_is_settings_only=passed');
   console.log('feedback_678_day_and_week_labels_follow_cycle=passed');

@@ -29,7 +29,7 @@ final class Feedback665Ui {
                 function legacyPercent(value){return value==='compact'?20:(value==='comfortable'?80:50)}
                 function densityValue(percent){return Number(percent)<34?'compact':(Number(percent)>66?'comfortable':'normal')}
                 function clampPercent(value){return Math.max(0,Math.min(100,Math.round(Number(value)||0)))}
-                function autoLabel(){const l=language();return l==='de'?'Automatisch an die Widget-Größe anpassen, um den ganzen Tag anzuzeigen':(l==='en'?'Automatically adapt to widget size to show the whole day':'Adapter automatiquement à la taille du widget pour afficher toute la journée')}
+                function autoLabel(){const l=language();return l==='de'?'Textgröße anpassen, um alles im Widget anzuzeigen':(l==='en'?'Adapt text size to show everything in the widget':'Adapter la taille du texte pour tout afficher dans le widget')}
                 function advanced(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
 
                 function installDensitySlider(){

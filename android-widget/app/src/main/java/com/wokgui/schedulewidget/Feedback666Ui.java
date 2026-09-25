@@ -17,16 +17,17 @@ final class Feedback666Ui {
                 }
                 function dayOffTitle(){
                   const l=language();
-                  return l==='de'?'Unterrichtsfreie Tage':(l==='en'?'Days off':'Jours sans cours');
+                  return l==='de'?'Ferien und Feiertage':(l==='en'?'Holidays and public holidays':'Vacances et jours fériés');
                 }
                 function arrangeDaysOff(){
                   const title=document.getElementById('advCalendarTitle');
                   const calendar=title&&title.closest?title.closest('.settingBox'):null;
                   const school=document.getElementById('schoolCalendarSetting');
-                  const content=document.getElementById('advancedContent85')||(calendar&&calendar.parentNode);
                   if(title)title.textContent=dayOffTitle();
-                  if(school&&calendar&&content&&school.parentNode===content&&calendar.parentNode===content&&school.nextSibling!==calendar){
-                    content.insertBefore(school,calendar);
+                  if(school&&calendar){
+                    school.classList.add('schoolCalendarInline759');
+                    const anchor=title&&title.parentNode===calendar?title.nextSibling:calendar.firstChild;
+                    if(school.parentNode!==calendar||school.previousSibling!==title)calendar.insertBefore(school,anchor);
                   }
                 }
 

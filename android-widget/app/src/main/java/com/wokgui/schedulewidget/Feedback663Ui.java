@@ -11,7 +11,7 @@ final class Feedback663Ui {
                 if(window.__feedback663){window.refreshFeedback663&&window.refreshFeedback663();return}
                 window.__feedback663=true;
                 const style=document.createElement('style');style.id='feedback663Style';style.textContent=`
-                  html body #settingsSheet #breakDisplaySetting{display:block!important;visibility:visible!important;text-align:center!important;padding:14px 12px!important}
+                  html body #settingsSheet #breakDisplaySetting{display:block!important;visibility:inherit!important;text-align:center!important;padding:14px 12px!important}
                   #breakDisplaySetting>.settingTitle,#breakDisplaySetting>.coursePaletteHint,#breakDisplaySetting>#breakVisibility70,#breakDisplaySetting>#breakDisplayHint,#breakDisplaySetting>#breakWidget70{display:none!important}
                   #breakDisplaySetting .feedback663Matrix{display:grid!important;grid-template-columns:minmax(92px,1.2fr) repeat(2,minmax(72px,1fr));align-items:center;gap:0;width:100%;max-width:430px;margin:0 auto;border:1px solid #d9e0ea;border-radius:14px;overflow:hidden;background:#fff}
                   #breakDisplaySetting .feedback663Title{font-size:17px;font-weight:800;text-align:center;margin:0 0 11px;color:#17213a}

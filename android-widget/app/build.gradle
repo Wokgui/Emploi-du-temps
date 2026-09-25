@@ -10,8 +10,8 @@ android {
         applicationId 'com.wokgui.schedulewidget'
         minSdk 26
         targetSdk 35
-        versionCode 758001
-        versionName '7.58'
+        versionCode 760001
+        versionName '7.60'
     }
 
     buildFeatures {

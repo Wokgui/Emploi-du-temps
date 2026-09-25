@@ -75,9 +75,13 @@ final class Feedback678Ui {
 
                 function arrangeDaysOff(){
                   const title=document.getElementById('advCalendarTitle'),calendar=title&&title.closest('.settingBox');
-                  const school=document.getElementById('schoolCalendarSetting'),content=document.getElementById('advancedContent85');
-                  if(title)title.textContent=tr('Jours sans cours','Days off','Unterrichtsfreie Tage');
-                  if(school&&calendar&&content&&school.parentNode===content&&calendar.parentNode===content&&school.nextSibling!==calendar)content.insertBefore(school,calendar);
+                  const school=document.getElementById('schoolCalendarSetting');
+                  if(title)title.textContent=tr('Vacances et jours fériés','Holidays and public holidays','Ferien und Feiertage');
+                  if(school&&calendar){
+                    school.classList.add('schoolCalendarInline759');
+                    const anchor=title&&title.parentNode===calendar?title.nextSibling:calendar.firstChild;
+                    if(school.parentNode!==calendar||school.previousSibling!==title)calendar.insertBefore(school,anchor);
+                  }
                 }
                 function refreshIndicators(){
                   const n=count(),single=n===1,w=letter();document.documentElement.classList.toggle('singleWeek678',single);

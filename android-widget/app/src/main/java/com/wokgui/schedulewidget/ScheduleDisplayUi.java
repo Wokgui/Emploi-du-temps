@@ -892,7 +892,7 @@ final class ScheduleDisplayUi {
 
                 function polishSettings(){
                   installBreakVisibility();
-                  const title=document.querySelectorAll('#viewEdit .sectionHead h3');title.forEach(h=>{const s=(h.textContent||'').toLowerCase();if(s.includes('horaire')||s.includes('period')||s.includes('stunden'))h.textContent=tr('Horaires des 9 heures','9 period times','Zeiten der 9 Stunden')});
+                  const title=document.querySelectorAll('#viewEdit .sectionHead h3');title.forEach(h=>{const s=(h.textContent||'').toLowerCase();if(s.includes('horaire')||s.includes('period')||s.includes('stunden'))h.textContent=tr('Horaires des cours','Class times','Unterrichtszeiten')});
                   const v=document.getElementById('appVersionInfo');if(v)v.textContent='Version '+APP_VERSION;
                 }
 
@@ -1581,6 +1581,7 @@ final class ScheduleDisplayUi {
 
                 function arrangeOrder(){
                   const sheet=document.getElementById('settingsSheet');if(!sheet)return;
+                  if(window.__settingsLayoutV1)return;
                   const theme=findThemeBox(),preview=sheet.querySelector('.previewGrid'),palette=document.getElementById('paletteSettingRoot'),breaks=document.getElementById('breakDisplaySetting');
                   if(theme&&preview&&preview.nextElementSibling!==theme)sheet.insertBefore(preview,theme);
                   if(theme&&palette&&theme.nextElementSibling!==palette)theme.insertAdjacentElement('afterend',palette);

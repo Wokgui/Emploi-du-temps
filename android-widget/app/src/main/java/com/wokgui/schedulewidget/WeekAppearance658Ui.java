@@ -71,6 +71,7 @@ final class WeekAppearance658Ui {
                 }
                 function paint(){
                   const grid=document.getElementById('weekGrid');if(!grid)return;const settings=load(),advanced=nativeRoot(),showLunch=advanced.showLunchWeek!==false,showGaps=advanced.showBreaksWeek!==false,data=rowsOf(grid);if(!data.rows.length)return;
+                  grid.classList.add('week658RailHost');grid.querySelectorAll(':scope > .week658LunchRail').forEach(node=>node.remove());
                   grid.style.setProperty('--week658-free',settings.free);grid.style.setProperty('--week658-course',settings.course);grid.style.setProperty('--week658-lunch',settings.lunch);
                   const gapText=namedGapLabel();
                   data.rows.forEach(row=>{row.time.classList.remove('week658LunchTime','week658LunchTop','week658LunchBottom','week658LunchRowTop','week658LunchRowBottom');cleanInline(row.time);row.cells.forEach(cell=>{cleanCell(cell);if(courseCell(cell))cell.classList.add('week658Course');else{cell.classList.add('week658Free');if(gapCell(cell)){if(showGaps){cell.classList.add('week658Gap');if(gapText){cell.classList.add('week662NamedGap');const label=document.createElement('span');label.className='week662GapLabel';label.textContent=gapText;cell.appendChild(label)}}else{cell.classList.remove('week658Gap','week662NamedGap')}}if(!showLunch&&cell.classList.contains('lunchCell')){cell.classList.remove('lunchCell','dynamicLunchCell');cell.classList.add('emptyCell');cell.textContent=''}}})});
@@ -89,6 +90,8 @@ final class WeekAppearance658Ui {
                     const top=data.rows[index],bottom=data.rows[last];
                     [top.time,...top.cells].forEach(cell=>cell.classList.add('week658LunchRowTop'));
                     [bottom.time,...bottom.cells].forEach(cell=>cell.classList.add('week658LunchRowBottom'));
+                    const addRail=(edge,y)=>{const rail=document.createElement('i');rail.className='week658LunchRail week658LunchRail'+edge;rail.setAttribute('aria-hidden','true');rail.style.top=Math.max(0,Math.round(y))+'px';grid.appendChild(rail)};
+                    addRail('Top',top.time.offsetTop);addRail('Bottom',bottom.time.offsetTop+bottom.time.offsetHeight-2);
                     index=last+1;
                   }
                 }
@@ -109,31 +112,44 @@ final class WeekAppearance658Ui {
                   html body #viewWeek #weekGrid#weekGrid .wc.week658Lunch:before,html body #viewWeek #weekGrid#weekGrid .wc.week658Lunch:after{content:none!important;display:none!important}
                   html body #viewWeek #weekGrid#weekGrid .week658LunchLabel{position:absolute!important;inset:0!important;display:flex!important;visibility:visible!important;align-items:center!important;justify-content:center!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;color:#59491d!important;font-family:inherit!important;font-weight:800!important;font-size:13px!important;line-height:1!important;text-align:center!important;white-space:nowrap!important;z-index:10!important}
                   html body #viewWeek #weekGrid#weekGrid .wh.timecol.week658LunchTime{background:var(--week658-lunch,#FFE08A)!important;color:#59491d!important;border-right-color:transparent!important}
-                  html body #viewWeek #weekGrid#weekGrid .week658LunchRowTop{box-shadow:inset 0 2px #D5B84D!important;border-top-color:transparent!important}
-                  html body #viewWeek #weekGrid#weekGrid .week658LunchRowBottom{box-shadow:inset 0 -2px #D5B84D!important;border-bottom-color:transparent!important}
-                  html body #viewWeek #weekGrid#weekGrid .week658LunchRowTop.week658LunchRowBottom{box-shadow:inset 0 2px #D5B84D,inset 0 -2px #D5B84D!important}
+                  html body #viewWeek #weekGrid#weekGrid .week658LunchRowTop{box-shadow:none!important;border-top-color:transparent!important}
+                  html body #viewWeek #weekGrid#weekGrid .week658LunchRowBottom{box-shadow:none!important;border-bottom-color:transparent!important}
+                  html body #viewWeek #weekGrid#weekGrid.week658RailHost{position:relative!important}
+                  html body #viewWeek #weekGrid#weekGrid>.week658LunchRail{position:absolute!important;left:-1px!important;right:-1px!important;width:auto!important;height:2px!important;margin:0!important;padding:0!important;border:0!important;background:#D5B84D!important;box-shadow:none!important;z-index:80!important;pointer-events:none!important;display:block!important}
                   html body #viewWeek #weekGrid#weekGrid .week658LunchTop{border-top-color:transparent!important}
                   html body #viewWeek #weekGrid#weekGrid .week658LunchBottom{border-bottom-color:transparent!important}
-                  #week658Settings{margin:8px 0 0!important;padding:10px!important;border:1px solid #dbe3ef!important;border-radius:10px!important;background:#f8fafc!important;position:static!important;inset:auto!important;width:auto!important;height:auto!important;max-width:none!important;box-shadow:none!important;transform:none!important;z-index:auto!important}
-                  #week658Settings .w658Title{text-align:center;font-weight:850;margin:4px 0 9px}
+                  #week658Settings,#week658LunchSettings{margin:8px 0 0!important;padding:10px!important;border:1px solid #dbe3ef!important;border-radius:10px!important;background:#f8fafc!important;position:static!important;inset:auto!important;width:auto!important;height:auto!important;max-width:none!important;box-shadow:none!important;transform:none!important;z-index:auto!important}
+                  #week658Settings .w658Title,#week658LunchSettings .w658Title{text-align:center;font-weight:850;margin:4px 0 9px}
                   #week658Settings .w658Colors{display:grid;grid-template-columns:1fr 52px;gap:7px 10px;align-items:center}
                   #week658Settings input[type=color]{width:48px;height:34px;padding:2px;border:1px solid #ccd5e2;border-radius:7px;background:#fff}
-                  #week658Settings .w658Days{margin-top:12px;display:grid;gap:6px}
-                  #week658Settings .w658DayHead,#week658Settings .w658Day{display:grid;grid-template-columns:34px 70px minmax(74px,1fr) minmax(74px,1fr);gap:5px;align-items:center}
-                  #week658Settings .w658DayHead{font-size:.66rem;color:#667085;text-align:center;font-weight:750}
-                  #week658Settings .w658Day label{display:flex;align-items:center;justify-content:center;gap:4px;font-size:.74rem}
-                  #week658Settings .w658Day input[type=time]{width:100%;min-width:0;box-sizing:border-box;min-height:34px;border:1px solid #ccd5e2;border-radius:7px;background:#fff;padding:2px;font-size:.70rem}
-                  @media(max-width:380px){#week658Settings{padding:8px!important}#week658Settings .w658DayHead,#week658Settings .w658Day{grid-template-columns:30px 56px minmax(68px,1fr) minmax(68px,1fr);gap:3px}#week658Settings .w658Day label{font-size:.68rem;gap:2px}#week658Settings .w658Day input[type=time]{font-size:.64rem;padding:1px}}
+                  #week658LunchSettings .w658Days{display:grid;gap:6px}
+                  #week658LunchSettings .w658DayHead,#week658LunchSettings .w658Day{display:grid;grid-template-columns:34px 70px minmax(74px,1fr) minmax(74px,1fr);gap:5px;align-items:center}
+                  #week658LunchSettings .w658DayHead{font-size:.66rem;color:#667085;text-align:center;font-weight:750}
+                  #week658LunchSettings .w658Day label{display:flex;align-items:center;justify-content:center;gap:4px;font-size:.74rem}
+                  #week658LunchSettings .w658Day input[type=time]{width:100%;min-width:0;box-sizing:border-box;min-height:34px;border:1px solid #ccd5e2;border-radius:7px;background:#fff;padding:2px;font-size:.70rem}
+                  @media(max-width:380px){#week658Settings,#week658LunchSettings{padding:8px!important}#week658LunchSettings .w658DayHead,#week658LunchSettings .w658Day{grid-template-columns:30px 56px minmax(68px,1fr) minmax(68px,1fr);gap:3px}#week658LunchSettings .w658Day label{font-size:.68rem;gap:2px}#week658LunchSettings .w658Day input[type=time]{font-size:.64rem;padding:1px}}
                 `;document.head.appendChild(style);
-                function settingsHost(){const sheet=document.getElementById('settingsSheet');if(!sheet)return null;return sheet.querySelector('#colorSettings86 .settingsSectionBody86')||sheet}
+                function settingsHost(kind){const sheet=document.getElementById('settingsSheet');if(!sheet)return null;return sheet.querySelector(kind==='lunch'?'#breakSettings86 .settingsSectionBody86':'#colorSettings86 .settingsSectionBody86')||sheet}
                 function installSettings(){
-                  const host=settingsHost();if(!host)return;let box=document.getElementById('week658Settings');if(box&&box.querySelector('.w658Start')){if(box.parentNode!==host)host.appendChild(box);return}if(box)box.remove();
-                  const settings=load();box=document.createElement('section');box.id='week658Settings';box.className='settingBox';
-                  box.innerHTML='<div class="w658Title">'+tr('Couleurs de la vue semaine','Week view colours','Farben der Wochenansicht')+'</div><div class="w658Colors"><span>'+tr('Cases libres','Free cells','Freie Felder')+'</span><input id="w658Free" type="color"><span>'+tr('Cours','Classes','Unterricht')+'</span><input id="w658Course" type="color"><span>'+tr('Midi','Lunch','Mittag')+'</span><input id="w658Lunch" type="color"></div><div class="w658Days"><div class="w658Title">'+tr('Midi par jour','Lunch by day','Mittag pro Tag')+'</div><div class="w658DayHead"><span></span><span>'+tr('Afficher','Show','Anzeigen')+'</span><span>'+tr('Début','Start','Beginn')+'</span><span>'+tr('Fin','End','Ende')+'</span></div></div>';
-                  const actions=document.querySelector('#settingsSheet .settingsActions');if(host.id==='settingsSheet'&&actions)host.insertBefore(box,actions);else host.appendChild(box);
-                  box.querySelector('#w658Free').value=settings.free;box.querySelector('#w658Course').value=settings.course;box.querySelector('#w658Lunch').value=settings.lunch;
-                  [['w658Free','free'],['w658Course','course'],['w658Lunch','lunch']].forEach(([id,key])=>box.querySelector('#'+id).addEventListener('input',event=>{const value=load();value[key]=event.target.value;save(value)}));
-                  const days=box.querySelector('.w658Days');[2,3,4,5,6,7,1].forEach(day=>{
+                  const colorHost=settingsHost('color'),lunchHost=settingsHost('lunch');if(!colorHost||!lunchHost)return;
+                  let colorBox=document.getElementById('week658Settings'),lunchBox=document.getElementById('week658LunchSettings');
+                  if(colorBox&&colorBox.querySelector('.w658Days')){colorBox.remove();colorBox=null}
+                  const settings=load();
+                  if(!colorBox){
+                    colorBox=document.createElement('section');colorBox.id='week658Settings';colorBox.className='settingBox';
+                    colorBox.innerHTML='<div class="w658Title">'+tr('Couleurs de la vue semaine','Week view colours','Farben der Wochenansicht')+'</div><div class="w658Colors"><span>'+tr('Cases libres','Free cells','Freie Felder')+'</span><input id="w658Free" type="color"><span>'+tr('Cours','Classes','Unterricht')+'</span><input id="w658Course" type="color"><span>'+tr('Midi','Lunch','Mittag')+'</span><input id="w658Lunch" type="color"></div>';
+                    colorBox.querySelector('#w658Free').value=settings.free;colorBox.querySelector('#w658Course').value=settings.course;colorBox.querySelector('#w658Lunch').value=settings.lunch;
+                    [['w658Free','free'],['w658Course','course'],['w658Lunch','lunch']].forEach(([id,key])=>colorBox.querySelector('#'+id).addEventListener('input',event=>{const value=load();value[key]=event.target.value;save(value)}));
+                  }
+                  if(colorBox.parentNode!==colorHost)colorHost.appendChild(colorBox);
+                  if(!lunchBox){
+                    lunchBox=document.createElement('section');lunchBox.id='week658LunchSettings';lunchBox.className='settingBox';
+                    lunchBox.innerHTML='<div class="w658Days"><div class="w658Title">'+tr('Midi par jour','Lunch by day','Mittag pro Tag')+'</div><div class="w658DayHead"><span></span><span>'+tr('Afficher','Show','Anzeigen')+'</span><span>'+tr('Début','Start','Beginn')+'</span><span>'+tr('Fin','End','Ende')+'</span></div></div>';
+                  }
+                  const display=document.getElementById('breakDisplaySetting');
+                  if(lunchBox.parentNode!==lunchHost||display&&display.nextElementSibling!==lunchBox)lunchHost.insertBefore(lunchBox,display&&display.parentNode===lunchHost?display.nextSibling:null);
+                  const days=lunchBox.querySelector('.w658Days');if(days.querySelector('.w658Start'))return;
+                  [2,3,4,5,6,7,1].forEach(day=>{
                     if(!document.documentElement.classList.contains('weekendScheduleEnabled')&&(day===7||day===1))return;
                     const cfg=settings.days[day]||{enabled:true,start:720,end:780},row=document.createElement('div');row.className='w658Day';
                     row.innerHTML='<b>'+DAYN[day]+'</b><label><input class="w658Enabled" type="checkbox" '+(cfg.enabled===false?'':'checked')+'><span>'+tr('Midi','Lunch','Mittag')+'</span></label><input class="w658Start" type="time" step="300" value="'+clock(cfg.start)+'"><input class="w658End" type="time" step="300" value="'+clock(cfg.end)+'">';
@@ -151,7 +167,7 @@ final class WeekAppearance658Ui {
                   document.documentElement.classList.toggle('edtWeekFit658',active);
                   if(!active){document.documentElement.classList.remove('edtWeekCompact658');grid.style.removeProperty('height');grid.style.removeProperty('grid-auto-rows');scroller.style.removeProperty('height');view.style.removeProperty('height');stage.style.removeProperty('height');return}
                   const available=Math.max(120,Math.floor(bottom.getBoundingClientRect().top-scroller.getBoundingClientRect().top-2));
-                  const columns=Math.max(1,grid.querySelectorAll(':scope > .wh.day').length+1),rows=Math.max(1,Math.ceil(grid.children.length/columns));
+                  const columns=Math.max(1,grid.querySelectorAll(':scope > .wh.day').length+1),laidOut=grid.querySelectorAll(':scope > .wh,:scope > .wc').length,rows=Math.max(1,Math.ceil(laidOut/columns));
                   grid.style.height=available+'px';grid.style.gridAutoRows='minmax(0,1fr)';scroller.style.height=available+'px';
                   document.documentElement.classList.toggle('edtWeekCompact658',available/rows<38);
                   view.style.height=Math.ceil(scroller.getBoundingClientRect().top-view.getBoundingClientRect().top+available)+'px';

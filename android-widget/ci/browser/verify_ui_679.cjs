@@ -198,7 +198,7 @@ const baseline=process.env.EDT_BASELINE==='1';
     assert.deepEqual(report.settingsLayout.parents,{language:'languageSettings86',download:'languageSettings86',week:'weekTypeSettings86',weekColors:'colorSettings86',breaks:'breakSettings86',widget:'widgetSettings86',density:'widgetSettings86'});
     assert.ok(report.settingsLayout.summaries.every(x=>Math.abs(x.font-report.settingsLayout.summaries[0].font)<0.1));
     assert.ok(report.settingsLayout.selects.every(x=>x.h<=32&&x.font<=11.5));assert.ok(report.settingsLayout.advancedSeparators.length>0&&report.settingsLayout.advancedSeparators.every(x=>x>=1));
-    assert.equal(report.calendarNavigation.arrows,true);assert.notEqual(report.calendarNavigation.todayBefore.date,report.calendarNavigation.todayNext.date);
+    assert.equal(report.calendarNavigation.arrows,true);assert.notEqual(report.calendarNavigation.todayBefore.title,report.calendarNavigation.todayNext.title);assert.match(report.calendarNavigation.todayBefore.date,/^Semaine [A-D]$/);
     assert.match(report.calendarNavigation.weekBefore.title,/Semaine du [0-9]{2}\/[0-9]{2} au [0-9]{2}\/[0-9]{2}/);
     assert.notEqual(report.calendarNavigation.weekBefore.title,report.calendarNavigation.weekNext.title);assert.ok(report.calendarNavigation.weekBefore.dates.length>=5);assert.ok(report.calendarNavigation.weekBefore.dates.every(x=>/^[0-9]{2}\/[0-9]{2}$/.test(x)));
     assert.equal(report.breaks.disabled.lunch,0);assert.equal(report.breaks.disabled.gap,0);assert.equal(report.breaks.disabled.labels,0);

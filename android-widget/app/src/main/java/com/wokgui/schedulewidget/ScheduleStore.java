@@ -25,6 +25,7 @@ final class ScheduleStore {
     private static final String LUNCH_LABEL = "lunch_label";
     private static final String SHOW_GAP_BADGE = "show_gap_badge";
     private static final String SHOW_LUNCH_BADGE = "show_lunch_badge";
+    private static final String SLOT_CONFIG = "slot_config_json_v2";
     private static final String[] LETTERS = {"A", "B", "C", "D"};
     private static final int[] ALL_DAYS = {Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY, Calendar.THURSDAY, Calendar.FRIDAY, Calendar.SATURDAY, Calendar.SUNDAY};
 
@@ -102,14 +103,58 @@ final class ScheduleStore {
         return prefs(context).getBoolean("enabled_" + day, false);
     }
 
+    private static JSONArray configuredSlots(Context context) {
+        JSONArray out = new JSONArray();
+        String raw = prefs(context).getString(SLOT_CONFIG, null);
+        if (raw != null && !raw.trim().isEmpty()) {
+            try {
+                JSONArray saved = new JSONArray(raw);
+                for (int i = 0; i < saved.length() && out.length() < 10; i++) {
+                    JSONObject s = saved.optJSONObject(i);
+                    if (s == null) continue;
+                    int n = out.length() + 1;
+                    JSONObject clean = new JSONObject();
+                    clean.put("n", n);
+                    clean.put("start", s.optString("start", n <= 9 ? DEFAULT_START[n - 1] : "19:00"));
+                    clean.put("end", s.optString("end", n <= 9 ? DEFAULT_END[n - 1] : "20:00"));
+                    out.put(clean);
+                }
+                if (out.length() > 0) return out;
+            } catch (Exception ignored) {}
+        }
+        try {
+            for (int n = 1; n <= 9; n++) {
+                JSONObject s = new JSONObject();
+                s.put("n", n);
+                s.put("start", prefs(context).getString("slot_" + n + "_start", DEFAULT_START[n - 1]));
+                s.put("end", prefs(context).getString("slot_" + n + "_end", DEFAULT_END[n - 1]));
+                out.put(s);
+            }
+        } catch (Exception ignored) {}
+        return out;
+    }
+
+    private static JSONObject configuredSlot(Context context, int slot) {
+        JSONArray slots = configuredSlots(context);
+        for (int i = 0; i < slots.length(); i++) {
+            JSONObject s = slots.optJSONObject(i);
+            if (s != null && s.optInt("n", -1) == slot) return s;
+        }
+        return null;
+    }
+
     static String getSlotStart(Context context, int slot) {
         ensureInitialized(context);
+        JSONObject configured = configuredSlot(context, slot);
+        if (configured != null) return configured.optString("start", slot <= 9 ? DEFAULT_START[Math.max(0, slot - 1)] : "19:00");
         int i = Math.max(1, Math.min(9, slot)) - 1;
         return prefs(context).getString("slot_" + (i + 1) + "_start", DEFAULT_START[i]);
     }
 
     static String getSlotEnd(Context context, int slot) {
         ensureInitialized(context);
+        JSONObject configured = configuredSlot(context, slot);
+        if (configured != null) return configured.optString("end", slot <= 9 ? DEFAULT_END[Math.max(0, slot - 1)] : "20:00");
         int i = Math.max(1, Math.min(9, slot)) - 1;
         return prefs(context).getString("slot_" + (i + 1) + "_end", DEFAULT_END[i]);
     }
@@ -178,14 +223,9 @@ final class ScheduleStore {
         ensureInitialized(context);
         try {
             JSONObject root = new JSONObject();
-            JSONArray slots = new JSONArray();
-            for (int i = 1; i <= 9; i++) {
-                JSONObject slot = new JSONObject();
-                slot.put("start", getSlotStart(context, i));
-                slot.put("end", getSlotEnd(context, i));
-                slots.put(slot);
-            }
+            JSONArray slots = configuredSlots(context);
             root.put("_slots", slots);
+            root.put("_slotConfigV2", true);
 
             JSONObject breaks = new JSONObject();
             breaks.put("gapLabel", getGapLabel(context));
@@ -237,12 +277,24 @@ final class ScheduleStore {
 
             JSONArray slots = root.optJSONArray("_slots");
             if (slots != null) {
-                for (int i = 0; i < Math.min(9, slots.length()); i++) {
+                JSONArray savedSlots = new JSONArray();
+                for (int i = 0; i < slots.length() && savedSlots.length() < 10; i++) {
                     JSONObject s = slots.optJSONObject(i);
                     if (s == null) continue;
-                    editor.putString("slot_" + (i + 1) + "_start", s.optString("start", DEFAULT_START[i]));
-                    editor.putString("slot_" + (i + 1) + "_end", s.optString("end", DEFAULT_END[i]));
+                    int n = savedSlots.length() + 1;
+                    String start = s.optString("start", n <= 9 ? DEFAULT_START[n - 1] : "19:00");
+                    String end = s.optString("end", n <= 9 ? DEFAULT_END[n - 1] : "20:00");
+                    JSONObject clean = new JSONObject();
+                    clean.put("n", n);
+                    clean.put("start", start);
+                    clean.put("end", end);
+                    savedSlots.put(clean);
+                    if (n <= 9) {
+                        editor.putString("slot_" + n + "_start", start);
+                        editor.putString("slot_" + n + "_end", end);
+                    }
                 }
+                if (savedSlots.length() > 0) editor.putString(SLOT_CONFIG, savedSlots.toString());
             }
 
             JSONObject breaks = root.optJSONObject("_breaks");
@@ -345,11 +397,6 @@ final class ScheduleStore {
                 boolean uncertain = o.optBoolean("uncertain", false);
                 String color = o.optString("color", "");
                 String badge = o.optString("badge", "");
-                if (slot == 0) {
-                    for (int n = 0; n < 9; n++) {
-                        if (DEFAULT_START[n].equals(start) && DEFAULT_END[n].equals(end)) { slot = n + 1; break; }
-                    }
-                }
                 out.add(new ScheduleData.Course(start, end, label, room, slot, uncertain, color, badge));
             }
         } catch (Exception ignored) {}

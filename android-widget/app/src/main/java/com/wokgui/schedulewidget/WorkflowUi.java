@@ -116,8 +116,11 @@ final class WorkflowUi {
                     });
                     const calendarTitle=document.getElementById('advCalendarTitle'),calendarBox=calendarTitle&&calendarTitle.closest?calendarTitle.closest('.settingBox'):null;
                     const school=document.getElementById('schoolCalendarSetting')||document.getElementById('schoolCalendarBlock');
-                    if(school&&school.parentNode!==content)content.insertBefore(school,calendarBox&&calendarBox.parentNode===content?calendarBox:null);
-                    else if(school&&calendarBox&&school.nextSibling!==calendarBox)content.insertBefore(school,calendarBox);
+                    if(school&&calendarBox){
+                      school.classList.add('schoolCalendarInline759');
+                      const anchor=calendarTitle&&calendarTitle.parentNode===calendarBox?calendarTitle.nextSibling:calendarBox.firstChild;
+                      if(school.parentNode!==calendarBox||school.previousSibling!==calendarTitle)calendarBox.insertBefore(school,anchor);
+                    }
 
                     const dl=document.getElementById('languageDownloadBtn81'),panel=document.getElementById('languagePackPanel81');
                     const languageSelect=document.getElementById('languageSelect'),languageBox=languageSelect&&languageSelect.closest?languageSelect.closest('.settingBox'):null;
@@ -188,6 +191,14 @@ final class WorkflowUi {
                   }
                   #settingsSheet>.settingsSection86>.settingsSectionBody86>.settingBox+.settingBox{border-top:1px solid #e7edf3!important}
                   #settingsSheet>.settingsSection86>.settingsSectionBody86>.settingBox>.settingTitle{text-align:left!important;margin:0 0 6px!important;font-size:.74rem!important;color:#586579!important}
+                  #weekTypeSettings86 #settingsWeekCycle678>.settingTitle,
+                  #colorSettings86 #themeTitle,
+                  #colorSettings86 #paletteSettingRoot>.settingTitle{text-align:center!important}
+                  #textSettings86>.settingsSectionBody86{padding-bottom:14px!important}
+                  #textSettings86 #advDensityAutoRow665{display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;margin:8px auto 0!important;padding:8px 10px!important;border:1px solid #cbd8e7!important;border-radius:9px!important;background:#f8fbff!important;color:#40516a!important;font-size:.70rem!important;font-weight:800!important;text-align:center!important}
+                  #textSettings86 #advDensityAutoRow665 input{width:18px!important;height:18px!important;accent-color:#1689e8!important}
+                  #slotSettingsGroup759>.settingTitle{text-align:center!important}
+                  #slotSettingsGroup759 #slotSettings{margin:0!important;border:0!important;box-shadow:none!important}
                   #languageSettings86 #languageTitle{display:none!important}
                   #languageSettings86 #languageSelect{display:block!important;width:auto!important;min-width:0!important;max-width:100%!important;field-sizing:content!important;margin:0 auto!important;padding:6px 25px 6px 9px!important;font-size:.74rem!important;text-align:center!important;text-align-last:center!important}
                   #languageSettings86 #languageDownloadBtn81{display:block!important;width:auto!important;max-width:100%!important;margin:8px auto 0!important;padding:7px 11px!important;font-size:.72rem!important;white-space:nowrap!important}
@@ -228,8 +239,31 @@ final class WorkflowUi {
                     sheet.insertBefore(group,sheet.querySelector('.settingsActions')||null);
                   }else body=group.querySelector('.settingsSectionBody86');
                   const h=group.querySelector('.settingsSectionTitle86');if(h)h.textContent=title;
-                  boxes.forEach(b=>{if(b.parentNode!==body)body.appendChild(b)});
+                  let cursor=body.firstElementChild;
+                  boxes.forEach(b=>{
+                    if(b!==cursor)body.insertBefore(b,cursor);
+                    cursor=b.nextElementSibling;
+                  });
                   return group;
+                }
+                function ensureSlotSettings(){
+                  const slots=document.getElementById('slotSettings');if(!slots)return null;
+                  let box=document.getElementById('slotSettingsGroup759');
+                  if(!box){
+                    box=document.createElement('div');box.id='slotSettingsGroup759';box.className='settingBox';
+                    const title=document.createElement('div');title.className='settingTitle';box.appendChild(title);
+                    if(slots.parentNode)slots.parentNode.insertBefore(box,slots);
+                  }
+                  box.querySelector('.settingTitle').textContent=tr('Horaires des cours','Class times','Unterrichtszeiten');
+                  if(slots.parentNode!==box)box.appendChild(slots);
+                  document.querySelectorAll('#viewEdit .sectionHead h3').forEach(h=>{if(/Horaires|period times|Zeiten/i.test(h.textContent||''))h.closest('.sectionHead').hidden=true});
+                  return box;
+                }
+                function moveAdaptiveTextControl(){
+                  const body=document.querySelector('#textSettings86>.settingsSectionBody86'),row=document.getElementById('advDensityAutoRow665');if(!body||!row)return;
+                  const label=row.querySelector('span');if(label)label.textContent=tr('Adapter la taille du texte pour tout afficher dans le widget','Adapt text size to show everything in the widget','Textgröße anpassen, um alles im Widget anzuzeigen');
+                  const reset=document.getElementById('resetText87');
+                  if(row.parentNode!==body||reset&&row.nextSibling!==reset)body.insertBefore(row,reset&&reset.parentNode===body?reset:null);
                 }
                 function moveTopLevelAdvanced(){
                   const sheet=document.getElementById('settingsSheet'),content=document.getElementById('advancedContent85');if(!sheet||!content)return;
@@ -247,12 +281,14 @@ final class WorkflowUi {
                 function arrange(){
                   timer=0;if(arranging)return;arranging=true;
                   try{
+                    ensureSlotSettings();
                     ensureGroup('languageSettings86',tr('Langue','Language','Sprache'),['languageSelect']);
                     ensureGroup('textSettings86',tr('Taille du texte','Text size','Textgröße'),['appFont','widgetFont']);
-                    ensureGroup('weekTypeSettings86',tr('Type de semaine','Week type','Wochentyp'),['settingsWeekCycle678']);
+                    ensureGroup('weekTypeSettings86',tr('Semaines et horaires','Weeks and times','Wochen und Zeiten'),['settingsWeekCycle678','slotSettingsGroup759']);
                     ensureGroup('colorSettings86',tr('Couleurs','Colors','Farben'),['themeTitle','paletteSettingRoot','fineSpecialColors','week658Settings']);
-                    ensureGroup('breakSettings86',tr('Affichage des interruptions','Break display','Pausenanzeige'),['breakDisplaySetting']);
+                    ensureGroup('breakSettings86',tr('Affichage des interruptions','Break display','Pausenanzeige'),['breakDisplaySetting','week658LunchSettings']);
                     ensureGroup('widgetSettings86',tr('Affichage du widget','Widget display','Widget-Anzeige'),['advWidgetTitle','widgetDensity664']);
+                    moveAdaptiveTextControl();
                     moveTopLevelAdvanced();orderSections();
                     const v=document.getElementById('appVersionInfo');if(v)v.textContent='Version '+APP_VERSION;
                   }finally{arranging=false}
@@ -572,7 +608,9 @@ final class WorkflowUi {
 
                 function addButton(groupId,id,handler){
                   const group=document.getElementById(groupId);if(!group)return;
-                  let b=document.getElementById(id);if(!b){b=document.createElement('button');b.id=id;b.type='button';b.className='settingsSectionReset87';b.onclick=handler;group.appendChild(b)}
+                  const body=group.querySelector('.settingsSectionBody86')||group;
+                  let b=document.getElementById(id);if(!b){b=document.createElement('button');b.id=id;b.type='button';b.className='settingsSectionReset87';b.onclick=handler}
+                  if(b.parentNode!==body)body.appendChild(b);
                   b.textContent=tr('Réinitialiser cette section','Reset this section','Diesen Bereich zurücksetzen');
                 }
                 function resetText(){
