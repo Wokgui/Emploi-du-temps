@@ -659,12 +659,15 @@ public class UpcomingCoursesService extends RemoteViewsService {
             String lang = UiSettingsStore.language(context);
             Locale locale = "de".equals(lang) ? Locale.GERMANY : ("en".equals(lang) ? Locale.UK : Locale.FRANCE);
             String pattern = "de".equals(lang) ? "EEE d. MMM" : "EEE d MMM";
-            return new SimpleDateFormat(pattern, locale).format(date.getTime()) + " - " + ScheduleStore.getWeekLetter(context, date);
+            String label = new SimpleDateFormat(pattern, locale).format(date.getTime());
+            return AdvancedSettingsStore.json(context).optBoolean("singleWeek", false)
+                    ? label : label + " - " + ScheduleStore.getWeekLetter(context, date);
         }
 
         private String compactDateLabel(Calendar date) {
-            return new SimpleDateFormat("dd/MM", Locale.FRANCE).format(date.getTime())
-                    + " · " + ScheduleStore.getWeekLetter(context, date);
+            String label = new SimpleDateFormat("dd/MM", Locale.FRANCE).format(date.getTime());
+            return AdvancedSettingsStore.json(context).optBoolean("singleWeek", false)
+                    ? label : label + " · " + ScheduleStore.getWeekLetter(context, date);
         }
 
         @Override public RemoteViews getLoadingView() { return null; }

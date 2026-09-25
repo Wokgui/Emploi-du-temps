@@ -7,7 +7,7 @@ const root=path.resolve(__dirname,'../..');
 const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
 const baseline=process.env.EDT_BASELINE==='1';
 (async()=>{
-  const browser=await chromium.launch({headless:true});
+  const browser=await chromium.launch({headless:true,...(process.env.EDT_BROWSER_CHANNEL?{channel:process.env.EDT_BROWSER_CHANNEL}:{})});
   const context=await browser.newContext({viewport:{width:412,height:915},isMobile:true,hasTouch:true});
   const page=await context.newPage(),errors=[];
   page.on('pageerror',error=>errors.push(String(error)));

@@ -82,12 +82,16 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
     document.getElementById('advancedSettings85').open = true;
     const summaries = [...document.querySelectorAll('#settingsSheet > details > summary')];
     const mainSize = parseFloat(getComputedStyle(document.querySelector('#breakSettings86 > summary')).fontSize);
-    const requested = ['#week658LunchSettings .w658Title','#advReminderTitle','#advCalendarTitle','#advExceptionsTitle','#advProfilesTitle','#advBackupTitle'];
+    const requested = ['#week658LunchSettings .w658Title'];
+    const advanced = ['#advReminderTitle','#advExceptionsTitle','#advProfilesTitle','#advBackupTitle'];
     const widget = document.getElementById('widgetSettings86'), widgetSummary = widget.querySelector(':scope > summary');
     return {
       mainSize,
       summarySizes: summaries.map(node => ({ text: node.textContent.trim(), size: parseFloat(getComputedStyle(node).fontSize) })),
       requestedSizes: requested.map(selector => ({ selector, size: parseFloat(getComputedStyle(document.querySelector(selector)).fontSize) })),
+      advancedSizes: advanced.map(selector => ({ selector, size: parseFloat(getComputedStyle(document.querySelector(selector)).fontSize) })),
+      schoolSize: parseFloat(getComputedStyle(document.getElementById('schoolTitle')).fontSize),
+      calendarDisplay: getComputedStyle(document.getElementById('advCalendarTitle')).display,
       widgetDisplay: getComputedStyle(widgetSummary).display,
       widgetHeight: widget.getBoundingClientRect().height,
       widgetText: widgetSummary.textContent.trim()
@@ -96,6 +100,8 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
   assert.ok(settingsTitles.mainSize >= 13, JSON.stringify(settingsTitles));
   settingsTitles.summarySizes.forEach(title => assert.ok(Math.abs(title.size - settingsTitles.mainSize) <= 0.1, JSON.stringify(settingsTitles)));
   settingsTitles.requestedSizes.forEach(title => assert.ok(Math.abs(title.size - settingsTitles.mainSize) <= 0.1, JSON.stringify(settingsTitles)));
+  settingsTitles.advancedSizes.forEach(title => assert.ok(Math.abs(title.size - settingsTitles.schoolSize) <= 0.1, JSON.stringify(settingsTitles)));
+  assert.equal(settingsTitles.calendarDisplay, 'none', JSON.stringify(settingsTitles));
   assert.equal(settingsTitles.widgetDisplay, 'list-item', JSON.stringify(settingsTitles));
   assert.ok(settingsTitles.widgetHeight > 30, JSON.stringify(settingsTitles));
   assert.equal(settingsTitles.widgetText, 'Affichage du widget', JSON.stringify(settingsTitles));

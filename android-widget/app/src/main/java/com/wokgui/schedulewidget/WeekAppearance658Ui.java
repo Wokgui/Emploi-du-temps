@@ -167,7 +167,7 @@ final class WeekAppearance658Ui {
                   const active=view.classList.contains('active');
                   document.documentElement.classList.toggle('edtWeekFit658',active);
                   if(!active){document.documentElement.classList.remove('edtWeekCompact658');grid.style.removeProperty('height');grid.style.removeProperty('grid-auto-rows');scroller.style.removeProperty('height');view.style.removeProperty('height');stage.style.removeProperty('height');return}
-                  const available=Math.max(120,Math.floor(bottom.getBoundingClientRect().top-scroller.getBoundingClientRect().top-2));
+                  const available=Math.max(120,Math.floor(bottom.getBoundingClientRect().top-scroller.getBoundingClientRect().top-12));
                   const columns=Math.max(1,grid.querySelectorAll(':scope > .wh.day').length+1),laidOut=grid.querySelectorAll(':scope > .wh,:scope > .wc').length,rows=Math.max(1,Math.ceil(laidOut/columns));
                   grid.style.height=available+'px';grid.style.gridAutoRows='minmax(0,1fr)';scroller.style.height=available+'px';
                   document.documentElement.classList.toggle('edtWeekCompact658',available/rows<38);

@@ -204,7 +204,9 @@ final class WorkflowUi {
                   #colorSettings86 #themeTitle,
                   #colorSettings86 #paletteSettingRoot>.settingTitle{text-align:center!important}
                   #textSettings86>.settingsSectionBody86{padding-bottom:14px!important}
-                  #textSettings86 #advDensityAutoRow665{display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;margin:8px auto 0!important;padding:8px 10px!important;border:1px solid #cbd8e7!important;border-radius:9px!important;background:#f8fbff!important;color:#40516a!important;font-size:.70rem!important;font-weight:800!important;text-align:center!important}
+                  #textSettings86>.settingsSectionBody86>.settingBox:first-child{padding-top:2px!important}
+                  #textSettings86 #widgetDensity664{border-top:1px solid #e7edf3!important}
+                  #textSettings86 #advDensityAutoRow665{display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;width:min(238px,calc(100% - 24px))!important;max-width:238px!important;box-sizing:border-box!important;margin:8px auto 0!important;padding:8px 10px!important;border:1px solid #cbd8e7!important;border-radius:9px!important;background:#f8fbff!important;color:#40516a!important;font-size:.70rem!important;font-weight:800!important;line-height:1.25!important;text-align:center!important;white-space:normal!important}
                   #textSettings86 #advDensityAutoRow665 input{width:18px!important;height:18px!important;accent-color:#1689e8!important}
                   #slotSettingsGroup759>.settingTitle{text-align:center!important}
                   #slotSettingsGroup759 #slotSettings{margin:0!important;border:0!important;box-shadow:none!important}
@@ -214,7 +216,7 @@ final class WorkflowUi {
                   #languageSettings86 #languagePackPanel81{margin-top:8px!important}
                   #breakSettings86 #feedback663Visibility>.feedback663Title{display:none!important}
                   #widgetSettings86 #advWidgetTitle{display:none!important}
-                  #viewEdit #importPhoto{display:flex!important;width:fit-content!important;max-width:100%!important;margin:5px auto!important;padding:8px 12px!important}
+                  #viewEdit #importPhoto{display:flex!important;width:fit-content!important;max-width:100%!important;margin:0 auto 10px!important;padding:8px 12px!important}
                   #viewEdit #addCourse,#viewEdit #addBulkCourses{display:block!important;width:fit-content!important;max-width:100%!important;margin:7px auto 0!important;padding:9px 13px!important}
                   #breakNamesSettings763>.settingTitle{
                     text-align:center!important;font-size:var(--settings86-heading-size)!important;line-height:1.15!important;
@@ -293,10 +295,9 @@ final class WorkflowUi {
                   return box;
                 }
                 function moveAdaptiveTextControl(){
-                  const body=document.querySelector('#textSettings86>.settingsSectionBody86'),row=document.getElementById('advDensityAutoRow665');if(!body||!row)return;
+                  const density=document.getElementById('widgetDensity664'),row=document.getElementById('advDensityAutoRow665');if(!density||!row)return;
                   const label=row.querySelector('span');if(label)label.textContent=tr('Adapter la taille du texte pour tout afficher dans le widget','Adapt text size to show everything in the widget','Textgröße anpassen, um alles im Widget anzuzeigen');
-                  const reset=document.getElementById('resetText87');
-                  if(row.parentNode!==body||reset&&row.nextSibling!==reset)body.insertBefore(row,reset&&reset.parentNode===body?reset:null);
+                  if(row.parentNode!==density)density.appendChild(row);
                 }
                 function moveTopLevelAdvanced(){
                   const sheet=document.getElementById('settingsSheet'),content=document.getElementById('advancedContent85');if(!sheet||!content)return;
@@ -317,11 +318,11 @@ final class WorkflowUi {
                     ensureSlotSettings();
                     ensureBreakNamesSettings();
                     ensureGroup('languageSettings86',tr('Langue','Language','Sprache'),['languageSelect']);
-                    ensureGroup('textSettings86',tr('Taille du texte','Text size','Textgröße'),['appFont','widgetFont']);
+                    ensureGroup('textSettings86',tr('Taille du texte','Text size','Textgröße'),['appFont','widgetFont','widgetDensity664']);
                     ensureGroup('weekTypeSettings86',tr('Semaines et horaires','Weeks and times','Wochen und Zeiten'),['settingsWeekCycle678','slotSettingsGroup759']);
                     ensureGroup('colorSettings86',tr('Couleurs','Colors','Farben'),['themeTitle','paletteSettingRoot','fineSpecialColors','week658Settings']);
                     ensureGroup('breakSettings86',tr('Affichage des interruptions','Break display','Pausenanzeige'),['breakDisplaySetting','breakNamesSettings763','week658LunchSettings']);
-                    ensureGroup('widgetSettings86',tr('Affichage du widget','Widget display','Widget-Anzeige'),['advWidgetTitle','widgetDensity664']);
+                    ensureGroup('widgetSettings86',tr('Affichage du widget','Widget display','Widget-Anzeige'),['advWidgetTitle']);
                     moveAdaptiveTextControl();
                     moveTopLevelAdvanced();orderSections();
                     const v=document.getElementById('appVersionInfo');if(v)v.textContent='Version '+APP_VERSION;
