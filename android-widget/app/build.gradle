@@ -10,8 +10,8 @@ android {
         applicationId 'com.wokgui.schedulewidget'
         minSdk 26
         targetSdk 35
-        versionCode 760001
-        versionName '7.60'
+        versionCode 761001
+        versionName '7.61'
     }
 
     buildFeatures {
@@ -36,5 +36,4 @@ dependencies {
     implementation 'com.google.mlkit:translate:17.0.3'
 }
 
-// 6.62: isolates hidden week labels, unifies custom break names, strengthens
-// lunch boundaries, and adds a denser lunch-aware condensed widget.
+// 7.61: settings hierarchy and full-height week-view polish on top of 7.60.

@@ -9,7 +9,7 @@ final class ChunkedUiScripts {
     private ChunkedUiScripts() {}
 
     static String[] all() {
-        List<String> out = new ArrayList<>(60);
+        List<String> out = new ArrayList<>(61);
         add(out, HeavyPanelUi648.prelude());
         if (BuildConfig.DEBUG) add(out, HeavyPanelPerformanceUi648.prelude());
         add(out, UiRuntimeBundle.domSafetyPrelude());
@@ -35,7 +35,6 @@ final class ChunkedUiScripts {
         add(out, ActionChainUi651.script());
         add(out, SettingsLunchPolish653Ui.script());
         add(out, LunchBandContinuity656Ui.script());
-        // The legacy-named layer remains the final week appearance owner through 6.65.
         add(out, WeekAppearance658Ui.script());
         add(out, Feedback660Ui.script());
         add(out, Feedback661Ui.script());
@@ -46,6 +45,7 @@ final class ChunkedUiScripts {
         add(out, Feedback672Ui.script());
         add(out, Feedback678Ui.script());
         add(out, CalendarNavigation757Ui.script());
+        add(out, UiPolish761Ui.script());
         if (BuildConfig.DEBUG) add(out, HeavyPanelPerformanceUi648.script());
         add(out, UiRuntimeBundle.idleImportScript());
         return out.toArray(new String[0]);
@@ -102,6 +102,7 @@ final class ChunkedUiScripts {
                       .replace("APP_VERSION='6.77'", "APP_VERSION='6.78'")
                       .replace("APP_VERSION='6.78'", "APP_VERSION='6.79'")
                       .replace("APP_VERSION='6.79'", "APP_VERSION='7.59'")
-                      .replace("APP_VERSION='7.59'", "APP_VERSION='7.60'"));
+                      .replace("APP_VERSION='7.59'", "APP_VERSION='7.60'")
+                      .replace("APP_VERSION='7.60'", "APP_VERSION='7.61'"));
     }
 }
