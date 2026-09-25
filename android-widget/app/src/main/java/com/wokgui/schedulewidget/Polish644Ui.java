@@ -88,9 +88,7 @@ final class Polish644Ui {
                     #schoolCalendarBlock:has(#schoolEnabled:not(:checked)) #schoolHint{display:none!important}
                     #appPaletteTitle{text-align:center!important;width:100%!important}
 
-                    /* The card already says “Affichage du widget”: remove duplicate “Widget”. */
-                    #widgetSettings86>.settingsSectionTitle86{display:none!important}
-                    #widgetSettings86>.settingsSectionBody86{margin-top:0!important}
+                    /* SettingsLayoutUi owns the visible top-level “Affichage du widget” summary. */
 
                     @media(max-width:380px){
                       #courseForm .sheetActions{gap:3px!important}

@@ -90,8 +90,9 @@ final class WeekAppearance658Ui {
                     const top=data.rows[index],bottom=data.rows[last];
                     [top.time,...top.cells].forEach(cell=>cell.classList.add('week658LunchRowTop'));
                     [bottom.time,...bottom.cells].forEach(cell=>cell.classList.add('week658LunchRowBottom'));
-                    const addRail=(edge,y)=>{const rail=document.createElement('i');rail.className='week658LunchRail week658LunchRail'+edge;rail.setAttribute('aria-hidden','true');rail.style.top=Math.max(0,Math.round(y))+'px';grid.appendChild(rail)};
-                    addRail('Top',top.time.offsetTop);addRail('Bottom',bottom.time.offsetTop+bottom.time.offsetHeight-2);
+                    const gridRect=grid.getBoundingClientRect(),gridInset=grid.clientTop||0;
+                    const addRail=(edge,pageY)=>{const rail=document.createElement('i');rail.className='week658LunchRail week658LunchRail'+edge;rail.setAttribute('aria-hidden','true');rail.style.top=Math.max(0,pageY-gridRect.top-gridInset)+'px';grid.appendChild(rail)};
+                    addRail('Top',top.time.getBoundingClientRect().top-1);addRail('Bottom',bottom.time.getBoundingClientRect().bottom-1);
                     index=last+1;
                   }
                 }
@@ -115,7 +116,7 @@ final class WeekAppearance658Ui {
                   html body #viewWeek #weekGrid#weekGrid .week658LunchRowTop{box-shadow:none!important;border-top-color:transparent!important}
                   html body #viewWeek #weekGrid#weekGrid .week658LunchRowBottom{box-shadow:none!important;border-bottom-color:transparent!important}
                   html body #viewWeek #weekGrid#weekGrid.week658RailHost{position:relative!important}
-                  html body #viewWeek #weekGrid#weekGrid>.week658LunchRail{position:absolute!important;left:-1px!important;right:-1px!important;width:auto!important;height:2px!important;margin:0!important;padding:0!important;border:0!important;background:#D5B84D!important;box-shadow:none!important;z-index:80!important;pointer-events:none!important;display:block!important}
+                  html body #viewWeek #weekGrid#weekGrid>.week658LunchRail{position:absolute!important;left:-1px!important;right:-1px!important;width:auto!important;height:1px!important;margin:0!important;padding:0!important;border:0!important;background:#D5B84D!important;box-shadow:none!important;z-index:80!important;pointer-events:none!important;display:block!important}
                   html body #viewWeek #weekGrid#weekGrid .week658LunchTop{border-top-color:transparent!important}
                   html body #viewWeek #weekGrid#weekGrid .week658LunchBottom{border-bottom-color:transparent!important}
                   #week658Settings,#week658LunchSettings{margin:8px 0 0!important;padding:10px!important;border:1px solid #dbe3ef!important;border-radius:10px!important;background:#f8fafc!important;position:static!important;inset:auto!important;width:auto!important;height:auto!important;max-width:none!important;box-shadow:none!important;transform:none!important;z-index:auto!important}

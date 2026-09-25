@@ -177,10 +177,11 @@ final class WorkflowUi {
                 const style=document.createElement('style');
                 style.id='settingsLayoutStyle';
                 style.textContent=`
+                  #settingsSheet{--settings86-heading-size:.94rem}
                   #settingsSheet>.settingsSection86,#settingsSheet>#advancedSettings85{padding:0!important;margin-top:8px!important;overflow:hidden!important}
                   #settingsSheet>.settingsSection86>summary.settingsSectionTitle86,#settingsSheet>#advancedSettings85>summary{
-                    list-style:none!important;cursor:pointer!important;position:relative!important;margin:0!important;padding:10px 34px!important;
-                    text-align:center!important;font-size:.82rem!important;line-height:1.15!important;font-weight:900!important;color:var(--ink,#111936)!important
+                    display:list-item!important;list-style:none!important;cursor:pointer!important;position:relative!important;margin:0!important;padding:10px 34px!important;
+                    text-align:center!important;font-size:var(--settings86-heading-size)!important;line-height:1.15!important;font-weight:900!important;color:var(--ink,#111936)!important
                   }
                   #settingsSheet>.settingsSection86>summary.settingsSectionTitle86::-webkit-details-marker,#settingsSheet>#advancedSettings85>summary::-webkit-details-marker{display:none!important}
                   #settingsSheet>.settingsSection86>summary.settingsSectionTitle86:after,#settingsSheet>#advancedSettings85>summary:after{content:'⌄'!important;position:absolute!important;right:12px!important;top:50%!important;transform:translateY(-50%)!important;color:var(--muted,#68738a)!important;font-size:.95rem!important}
@@ -191,6 +192,14 @@ final class WorkflowUi {
                   }
                   #settingsSheet>.settingsSection86>.settingsSectionBody86>.settingBox+.settingBox{border-top:1px solid #e7edf3!important}
                   #settingsSheet>.settingsSection86>.settingsSectionBody86>.settingBox>.settingTitle{text-align:left!important;margin:0 0 6px!important;font-size:.74rem!important;color:#586579!important}
+                  #breakSettings86 #week658LunchSettings .w658Title,
+                  #settingsSheet #advancedSettings85 #advReminderTitle,
+                  #settingsSheet #advancedSettings85 #advCalendarTitle,
+                  #settingsSheet #advancedSettings85 #advExceptionsTitle,
+                  #settingsSheet #advancedSettings85 #advProfilesTitle,
+                  #settingsSheet #advancedSettings85 #advBackupTitle{
+                    font-size:var(--settings86-heading-size)!important;line-height:1.15!important;font-weight:900!important;color:var(--ink,#111936)!important
+                  }
                   #weekTypeSettings86 #settingsWeekCycle678>.settingTitle,
                   #colorSettings86 #themeTitle,
                   #colorSettings86 #paletteSettingRoot>.settingTitle{text-align:center!important}

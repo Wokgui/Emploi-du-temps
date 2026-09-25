@@ -78,6 +78,31 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
   assert.equal(openState.matrix, 'grid', JSON.stringify(openState));
   assert.ok(openState.height > 130, JSON.stringify(openState));
 
+  const settingsTitles = await page.evaluate(() => {
+    document.getElementById('advancedSettings85').open = true;
+    const summaries = [...document.querySelectorAll('#settingsSheet > details > summary')];
+    const mainSize = parseFloat(getComputedStyle(document.querySelector('#breakSettings86 > summary')).fontSize);
+    const requested = ['#week658LunchSettings .w658Title','#advReminderTitle','#advCalendarTitle','#advExceptionsTitle','#advProfilesTitle','#advBackupTitle'];
+    const widget = document.getElementById('widgetSettings86'), widgetSummary = widget.querySelector(':scope > summary');
+    return {
+      mainSize,
+      summarySizes: summaries.map(node => ({ text: node.textContent.trim(), size: parseFloat(getComputedStyle(node).fontSize) })),
+      requestedSizes: requested.map(selector => ({ selector, size: parseFloat(getComputedStyle(document.querySelector(selector)).fontSize) })),
+      widgetDisplay: getComputedStyle(widgetSummary).display,
+      widgetHeight: widget.getBoundingClientRect().height,
+      widgetText: widgetSummary.textContent.trim()
+    };
+  });
+  assert.ok(settingsTitles.mainSize >= 13, JSON.stringify(settingsTitles));
+  settingsTitles.summarySizes.forEach(title => assert.ok(Math.abs(title.size - settingsTitles.mainSize) <= 0.1, JSON.stringify(settingsTitles)));
+  settingsTitles.requestedSizes.forEach(title => assert.ok(Math.abs(title.size - settingsTitles.mainSize) <= 0.1, JSON.stringify(settingsTitles)));
+  assert.equal(settingsTitles.widgetDisplay, 'list-item', JSON.stringify(settingsTitles));
+  assert.ok(settingsTitles.widgetHeight > 30, JSON.stringify(settingsTitles));
+  assert.equal(settingsTitles.widgetText, 'Affichage du widget', JSON.stringify(settingsTitles));
+  await page.evaluate(() => document.querySelectorAll('#settingsSheet > details').forEach(node => { node.open = false; }));
+  await settle(page);
+  await page.screenshot({ path: path.resolve('smoke-browser/ui-762-settings.png'), fullPage: false });
+
   await page.locator('#settingsDone').tap();
   await page.waitForFunction(() => document.getElementById('settingsModal').getAttribute('data-edt-open') === 'false');
   await settle(page);
@@ -128,13 +153,18 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
     if (window.fitActiveWeek658) window.fitActiveWeek658();
     const grid = document.getElementById('weekGrid');
     const gridRect = grid.getBoundingClientRect();
+    const lunchTimes = [...grid.querySelectorAll(':scope > .wh.timecol.week658LunchTime')];
+    const lunchTop = lunchTimes[0]?.getBoundingClientRect().top;
+    const lunchBottom = lunchTimes[lunchTimes.length - 1]?.getBoundingClientRect().bottom;
     return [...grid.querySelectorAll(':scope > .week658LunchRail')].map(node => {
       const rect = node.getBoundingClientRect(), style = getComputedStyle(node);
+      const boundary = node.classList.contains('week658LunchRailTop') ? lunchTop : lunchBottom;
       return {
         leftDelta: Math.abs(rect.left - gridRect.left),
         rightDelta: Math.abs(rect.right - gridRect.right),
         widthDelta: Math.abs(rect.width - gridRect.width),
         height: rect.height,
+        boundaryDelta: Math.abs(rect.bottom - boundary),
         background: style.backgroundColor,
         zIndex: Number(style.zIndex)
       };
@@ -145,17 +175,20 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
     assert.ok(rail.leftDelta <= 0.5, JSON.stringify(rail));
     assert.ok(rail.rightDelta <= 0.5, JSON.stringify(rail));
     assert.ok(rail.widthDelta <= 0.5, JSON.stringify(rail));
-    assert.equal(rail.height, 2, JSON.stringify(rail));
+    assert.equal(rail.height, 1, JSON.stringify(rail));
+    assert.ok(rail.boundaryDelta <= 0.25, JSON.stringify(rail));
     assert.notEqual(rail.background, 'rgba(0, 0, 0, 0)', JSON.stringify(rail));
     assert.ok(rail.zIndex >= 80, JSON.stringify(rail));
   });
-  await page.screenshot({ path: path.resolve('smoke-browser/ui-760-week.png'), fullPage: false });
+  await page.screenshot({ path: path.resolve('smoke-browser/ui-762-week.png'), fullPage: false });
 
   assert.deepEqual(errors, []);
   console.log('ui_760_break_matrix_never_leaks=passed');
   console.log('ui_760_settings_layout_has_single_owner=passed');
   console.log('ui_760_day_header_two_lines=passed');
   console.log('ui_760_lunch_lines_span_full_grid=passed');
+  console.log('ui_762_settings_titles_and_widget_section=passed');
+  console.log('ui_762_lunch_lines_match_grid_boundaries=passed');
   await context.close();
   await browser.close();
 })().catch(error => { console.error(error); process.exitCode = 1; });
