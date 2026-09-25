@@ -25,15 +25,23 @@ final class Feedback665Ui {
                 `;document.head.appendChild(style);
 
                 function language(){const value=document.getElementById('languageSelect')?.value||'fr';return value==='en'||value==='de'?value:'fr'}
-                function labels(){const l=language();return l==='de'?['Sehr kompakt','Normal','Luftig']:(l==='en'?['Very compact','Normal','Spacious']:['Très condensé','Normal','Aéré'])}
+                function labels(){const l=language();return l==='de'?['Wenig dicht','Normal','Sehr dicht']:(l==='en'?['Least dense','Normal','Most dense']:['Peu dense','Normale','Très dense'])}
                 function legacyPercent(value){return value==='compact'?20:(value==='comfortable'?80:50)}
-                function densityValue(percent){return Number(percent)<34?'compact':(Number(percent)>66?'comfortable':'normal')}
+                function densityValue(percent){return Number(percent)<34?'comfortable':(Number(percent)>66?'compact':'normal')}
                 function clampPercent(value){return Math.max(0,Math.min(100,Math.round(Number(value)||0)))}
                 function autoLabel(){const l=language();return l==='de'?'Textgröße anpassen, um alles im Widget anzuzeigen':(l==='en'?'Adapt text size to show everything in the widget':'Adapter la taille du texte pour tout afficher dans le widget')}
                 function advanced(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
+                function migrateDirection(){
+                  const a=advanced();if(a.densityDirection766===true)return;
+                  const oldWidget=Number.isFinite(Number(a.widgetDensityPercent))?clampPercent(a.widgetDensityPercent):legacyPercent(a.density);
+                  const oldDay=Number.isFinite(Number(a.dayViewDensity765))?clampPercent(a.dayViewDensity765):100;
+                  a.widgetDensityPercent=100-oldWidget;a.dayViewDensity765=100-oldDay;a.densityDirection766=true;
+                  try{AndroidSchedule.saveAdvancedSettings(JSON.stringify(a))}catch(e){}
+                }
 
                 function installDensitySlider(){
                   const select=document.getElementById('advDensity'),box=document.getElementById('widgetDensity664');if(!select||!box)return;
+                  migrateDirection();
                   const row=select.closest('.advRow');if(!row)return;
                   select.tabIndex=-1;select.setAttribute('aria-hidden','true');
                   let control=document.getElementById('advDensityControl665');
@@ -57,7 +65,7 @@ final class Feedback665Ui {
                   const sync=()=>{const a=advanced(),percent=Number.isFinite(Number(a.widgetDensityPercent))?clampPercent(a.widgetDensityPercent):legacyPercent(select.value);slider.value=String(percent);autoInput.checked=a.widgetAutoDensity===true;paint()};
                   if(!slider.__feedback665){
                     slider.__feedback665=true;
-                    slider.setAttribute('aria-label',language()==='de'?'Widget-Kompaktheit':(language()==='en'?'Widget compactness':'Condensation du widget'));
+                    slider.setAttribute('aria-label',language()==='de'?'Widget-Dichte':(language()==='en'?'Widget density':'Densité du widget'));
                     slider.addEventListener('input',paint);
                     slider.addEventListener('change',persist);
                     autoInput.addEventListener('change',persist);

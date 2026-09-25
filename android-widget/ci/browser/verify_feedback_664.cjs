@@ -132,7 +132,7 @@ const asset = path.resolve(__dirname, '../../app/src/main/assets/index.html');
   assert.equal(layout.previewHidden, 'true');
   assert.equal(layout.densityInsideText, true);
   assert.equal(layout.densityInsideAdvanced, false);
-  assert.equal(layout.densityLabel, 'Condensation du widget');
+  assert.equal(layout.densityLabel, 'Densité du widget');
   assert.ok(layout.profileWidth > 140 && layout.profileWidth <= 260, JSON.stringify(layout));
   assert.ok(layout.profileWidth < layout.profileParentWidth);
   assert.equal(layout.profileTextAlign, 'center');

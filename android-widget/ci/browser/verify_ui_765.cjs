@@ -66,7 +66,7 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
   assert.equal(report.exceptionBorder,'0px');
   assert.deepEqual(report.schoolBorders,['0px','0px','0px']);
   assert.equal(report.dayParent,'fontCombined79');assert.equal(report.dayAfterWidgetRow,true);
-  assert.equal(report.densityTitle,'Condensation de la vue jour');assert.equal(report.densityValue,'100 %');
+  assert.equal(report.densityTitle,'Densité de la vue jour');assert.equal(report.densityValue,'0 %');
 
   await page.locator('#settingsDone').tap();
   await page.locator('.nav[data-mode="today"]').tap();
@@ -74,14 +74,14 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
   const full=await page.evaluate(()=>parseFloat(document.getElementById('todayList').style.minHeight));
   await page.locator('#settingsBtn').tap();await page.waitForFunction(()=>window.__edtHeavyPanels648.isOpen('settings'));
   await page.evaluate(()=>{document.getElementById('textSettings86').open=true});
-  await page.locator('#dayDensitySlider765').evaluate((node)=>{node.value='0';node.dispatchEvent(new Event('input',{bubbles:true}))});
+  await page.locator('#dayDensitySlider765').evaluate((node)=>{node.value='100';node.dispatchEvent(new Event('input',{bubbles:true}))});
   await page.locator('#settingsDone').tap();await page.locator('.nav[data-mode="today"]').tap();
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(resolve)));
   const compact=await page.evaluate(()=>({height:parseFloat(document.getElementById('todayList').style.minHeight),saved:JSON.parse(window.__data765.AdvancedSettings).dayViewDensity765}));
-  assert.equal(compact.saved,0);assert.ok(compact.height<full*.7,JSON.stringify({full,compact}));
+  assert.equal(compact.saved,100);assert.ok(compact.height<full*.7,JSON.stringify({full,compact}));
 
   const gradle=fs.readFileSync(path.join(root,'app/build.gradle'),'utf8');
-  assert.match(gradle,/versionCode 765001/);assert.match(gradle,/versionName '7[.]65'/);
+  assert.match(gradle,/versionCode 766001/);assert.match(gradle,/versionName '7[.]66'/);
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({report,dayDensity:{full,compact},errors},null,2));
   await browser.close();

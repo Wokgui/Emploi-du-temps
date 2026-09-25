@@ -13,7 +13,7 @@ final class Feedback765Ui {
                 function language(){try{return String((JSON.parse(AndroidSchedule.loadUiSettings()||'{}').language||'fr')).toLowerCase()}catch(e){return 'fr'}}
                 function tr(fr,en,de){const l=language();return l.startsWith('de')?de:(l.startsWith('en')?en:fr)}
                 function advanced(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
-                function dayDensity(){const value=Number(advanced().dayViewDensity765);return Number.isFinite(value)?Math.max(0,Math.min(100,Math.round(value))):100}
+                function dayDensity(){const value=Number(advanced().dayViewDensity765);return Number.isFinite(value)?Math.max(0,Math.min(100,Math.round(value))):0}
                 function saveDayDensity(value){
                   const a=advanced();a.dayViewDensity765=Math.max(0,Math.min(100,Math.round(Number(value)||0)));
                   try{if(typeof adv!=='undefined'&&adv)adv.dayViewDensity765=a.dayViewDensity765}catch(e){}
@@ -66,7 +66,7 @@ final class Feedback765Ui {
                     slider.addEventListener('input',()=>{saveDayDensity(slider.value);syncDayDensity();adjustToday()});
                     slider.addEventListener('change',()=>{saveDayDensity(slider.value);syncDayDensity();adjustToday()});
                   }
-                  const title=document.getElementById('dayDensityTitle765');if(title)title.textContent=tr('Condensation de la vue jour','Day view compactness','Kompaktheit der Tagesansicht');
+                  const title=document.getElementById('dayDensityTitle765');if(title)title.textContent=tr('Densité de la vue jour','Day view density','Dichte der Tagesansicht');
                   syncDayDensity();
                 }
                 function syncDayDensity(){const value=dayDensity(),slider=document.getElementById('dayDensitySlider765'),output=document.getElementById('dayDensityValue765');if(slider&&document.activeElement!==slider)slider.value=String(value);if(output)output.textContent=value+' %'}
@@ -74,7 +74,7 @@ final class Feedback765Ui {
                 function adjustToday(){
                   const view=document.getElementById('viewToday'),list=document.getElementById('todayList'),bottom=document.querySelector('.bottom');if(!view||!list||!bottom||!view.classList.contains('active'))return;
                   const full=Math.max(120,Math.floor(bottom.getBoundingClientRect().top-list.getBoundingClientRect().top-12));
-                  const ratio=.64+.36*(dayDensity()/100);list.style.minHeight=Math.max(120,Math.floor(full*ratio))+'px';
+                  const ratio=1-.36*(dayDensity()/100);list.style.minHeight=Math.max(120,Math.floor(full*ratio))+'px';
                 }
                 function polish(){ensureDayDensity();prepareFormat();requestAnimationFrame(()=>{ensureDayDensity();prepareFormat();adjustToday()})}
                 function wrap(name){const old=window[name];if(typeof old!=='function'||old.__feedback765)return;const next=function(){const result=old.apply(this,arguments);polish();return result};next.__feedback765=true;window[name]=next;try{eval(name+'=next')}catch(e){}}

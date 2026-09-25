@@ -47,7 +47,7 @@ final class Feedback664Ui {
                     body.appendChild(box);
                   }
                   const title=box.querySelector('.feedback664DensityTitle');
-                  const titleText=tr('Condensation du widget','Widget compactness','Widget-Kompaktheit');
+                  const titleText=tr('Densité du widget','Widget density','Widget-Dichte');
                   if(title&&title.textContent!==titleText)title.textContent=titleText;
                   row.classList.add('feedback664DensityRow');
                   if(row.parentNode!==box)box.appendChild(row);
