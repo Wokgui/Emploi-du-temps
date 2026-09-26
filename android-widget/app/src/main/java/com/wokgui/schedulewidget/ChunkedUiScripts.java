@@ -82,6 +82,8 @@ final class ChunkedUiScripts {
 
     private static void add(List<String> out, String script) {
         if (script == null || script.trim().isEmpty()) return;
+        script = script.replace("Farbenblind-Palette", "Daltonismus")
+                       .replace("Color-blind palette", "Colour-blind");
         script = LegacyChainRepair651.repair(UiRuntimeBundle.prepareChunk(script));
         out.add(script.replace("APP_VERSION='6.45'", "APP_VERSION='6.65'")
                       .replace("APP_VERSION='6.55'", "APP_VERSION='6.65'")
@@ -117,6 +119,7 @@ final class ChunkedUiScripts {
                       .replace("APP_VERSION='7.66'", "APP_VERSION='7.67'")
                       .replace("APP_VERSION='7.67'", "APP_VERSION='7.68'")
                       .replace("APP_VERSION='7.68'", "APP_VERSION='7.69'")
-                      .replace("APP_VERSION='7.69'", "APP_VERSION='7.70'"));
+                      .replace("APP_VERSION='7.69'", "APP_VERSION='7.70'")
+                      .replace("APP_VERSION='7.70'", "APP_VERSION='7.71'"));
     }
 }

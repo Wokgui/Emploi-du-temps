@@ -59,7 +59,7 @@ final class Feedback767Ui {
                 ];
 
                 function option(value,fr,en,de){const o=document.createElement('option');o.value=value;o.textContent=tr(fr,en,de);return o}
-                function makeAccess(id){const s=document.createElement('select');s.id=id;s.append(option('normal','Normale','Normal','Normal'),option('high_contrast','Contraste élevé','High contrast','Hoher Kontrast'),option('colorblind','Palette daltonisme','Color-blind palette','Farbenblind-Palette'));return s}
+                function makeAccess(id){const s=document.createElement('select');s.id=id;s.append(option('normal','Normale','Normal','Normal'),option('high_contrast','Contraste élevé','High contrast','Hoher Kontrast'),option('colorblind','Palette daltonisme','Colour-blind','Daltonismus'));return s}
                 function cell(kind){const d=document.createElement('div');d.className='displayCell767'+(kind?' '+kind:'');return d}
                 function detachControl(id){
                   const control=document.getElementById(id);if(!control)return null;
@@ -104,7 +104,7 @@ final class Feedback767Ui {
                   const cells=document.querySelectorAll('#displayGrid767 .displayHead767');if(cells[1])cells[1].textContent=tr('Application','Application','App');if(cells[2])cells[2].textContent=tr('Widget','Widget','Widget');
                   document.querySelectorAll('#displayGrid767 [data-row]').forEach(node=>{const row=rows[Number(node.dataset.row)];if(row)node.textContent=row.name()});
                   const access=document.querySelector('#displayGrid767 [data-access]');if(access)access.textContent=tr('Accessibilité','Accessibility','Barrierefreiheit');
-                  for(const id of ['advAppAccess767','advAccess']){const select=document.getElementById(id);if(select&&select.options.length>=3){select.options[0].textContent=tr('Normale','Normal','Normal');select.options[1].textContent=tr('Contraste élevé','High contrast','Hoher Kontrast');select.options[2].textContent=tr('Palette daltonisme','Color-blind palette','Farbenblind-Palette')}}
+                  for(const id of ['advAppAccess767','advAccess']){const select=document.getElementById(id);if(select&&select.options.length>=3){select.options[0].textContent=tr('Normale','Normal','Normal');select.options[1].textContent=tr('Contraste élevé','High contrast','Hoher Kontrast');select.options[2].textContent=tr('Palette daltonisme','Colour-blind','Daltonismus')}}
                   const bar=document.querySelector('#widgetEdgeBars672 .bar672Title');if(bar)bar.textContent=tr('Barres du widget en haut et en bas','Widget top and bottom bars','Widget-Leisten oben und unten');
                   text('advFormatLabel',tr('Format','Format','Format'));text('advFollowingLabel',tr('Cours suivants','Following classes','Folgende Stunden'));
                   text('addCourse',tr('＋ Ajouter un cours','＋ Add a class','＋ Stunde hinzufügen'));

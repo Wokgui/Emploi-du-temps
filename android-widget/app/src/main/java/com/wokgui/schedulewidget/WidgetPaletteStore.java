@@ -179,11 +179,24 @@ final class WidgetPaletteStore {
     }
 
     private static boolean isLight(int color) {
-        int r = (color >> 16) & 0xFF;
-        int g = (color >> 8) & 0xFF;
-        int b = color & 0xFF;
-        double luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0;
-        return luminance > 0.68;
+        return contrast(color, 0xFF17213A) >= contrast(color, 0xFFFFFFFF);
+    }
+
+    private static double contrast(int first, int second) {
+        double a = luminance(first), b = luminance(second);
+        return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+    }
+
+    private static double luminance(int color) {
+        double r = channel((color >> 16) & 0xFF);
+        double g = channel((color >> 8) & 0xFF);
+        double b = channel(color & 0xFF);
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    }
+
+    private static double channel(int value) {
+        double c = value / 255.0;
+        return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
     }
 
     private static int colorIndex(String id) {

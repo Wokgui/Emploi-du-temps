@@ -8,7 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.Spanned;
-import android.text.style.ForegroundColorSpan;
+import android.text.style.QuoteSpan;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
@@ -661,16 +661,11 @@ public class UpcomingCoursesService extends RemoteViewsService {
         }
 
         private CharSequence stripeText(String value, int accent) {
-            String[] lines = String.valueOf(value).split("\\n", -1);
-            StringBuilder out = new StringBuilder();
-            for (int i = 0; i < lines.length; i++) {
-                if (i > 0) out.append('\n');
-                out.append('▌').append(' ').append(lines[i]);
-            }
-            SpannableString styled = new SpannableString(out.toString());
-            for (int i = 0; i < styled.length(); i++) {
-                if (styled.charAt(i) == '▌') styled.setSpan(new ForegroundColorSpan(accent), i, i + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            }
+            SpannableString styled = new SpannableString(String.valueOf(value));
+            if (styled.length() == 0) return styled;
+            QuoteSpan stripe = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                    ? new QuoteSpan(accent, 3, 3) : new QuoteSpan(accent);
+            styled.setSpan(stripe, 0, styled.length(), Spanned.SPAN_PARAGRAPH);
             return styled;
         }
 
