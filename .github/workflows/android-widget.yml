@@ -52,10 +52,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with: {gradle-version: '8.10.2'}
       - run: gradle clean :app:assembleDebug --stacktrace
-      - name: Verify 7.71 debug build
+      - name: Verify 7.72 debug build
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='771001' versionName='7.71'" app/build/outputs/apk/debug/badging.txt
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='772001' versionName='7.72'" app/build/outputs/apk/debug/badging.txt
       - uses: actions/upload-artifact@v4
         with:
           name: ci-debug-apk-not-for-updates

@@ -1,6 +1,6 @@
 package com.wokgui.schedulewidget;
 
-/** 7.71 final owner for settings typography and compact widget controls. */
+/** 7.72 final owner for settings typography and compact widget controls. */
 final class Feedback769Ui {
     private Feedback769Ui() {}
 
@@ -10,17 +10,17 @@ final class Feedback769Ui {
               try{
                 if(window.__feedback769){window.refreshFeedback769&&window.refreshFeedback769();return}
                 window.__feedback769=true;
-                const VERSION='7.71';
+                const VERSION='7.72';
                 let scheduled=false;
                 const style=document.createElement('style');style.id='feedback769Style';style.textContent=`
                   #settingsSheet{--settings-content-font:.72rem}
                   #settingsSheet .settingsSectionBody86{font-size:var(--settings-content-font)!important}
                   #settingsSheet .settingsSectionBody86 *{font-size:var(--settings-content-font)!important}
-                  #widgetSettings86 .displayGrid767{grid-template-columns:minmax(92px,.9fr) repeat(2,minmax(112px,1.15fr))!important}
+                  #widgetSettings86 .displayGrid767{grid-template-columns:minmax(84px,.8fr) repeat(2,minmax(116px,1.2fr))!important}
                   #widgetSettings86 .displayCell767{overflow-wrap:anywhere!important;line-height:1.16!important}
                   #widgetSettings86 .displayHead767{background:#fff!important;color:var(--ink,#111936)!important;font-weight:800!important}
                   #widgetSettings86 .accessCell769{padding-left:2px!important;padding-right:2px!important}
-                  #widgetSettings86 .accessCell769 select{width:100%!important;max-width:none!important;min-width:0!important;padding:6px 12px 6px 2px!important;font-weight:750!important;-webkit-appearance:none!important;appearance:none!important;background-image:linear-gradient(45deg,transparent 50%,#667085 50%),linear-gradient(135deg,#667085 50%,transparent 50%)!important;background-position:calc(100% - 9px) 50%,calc(100% - 5px) 50%!important;background-size:4px 4px!important;background-repeat:no-repeat!important}
+                  #widgetSettings86 .accessCell769 select{width:100%!important;max-width:none!important;min-width:0!important;padding:6px 10px 6px 1px!important;font-weight:750!important;-webkit-appearance:none!important;appearance:none!important;background-image:linear-gradient(45deg,transparent 50%,#667085 50%),linear-gradient(135deg,#667085 50%,transparent 50%)!important;background-position:calc(100% - 8px) 50%,calc(100% - 4px) 50%!important;background-size:4px 4px!important;background-repeat:no-repeat!important}
                   #widgetSettings86 #widgetEdgeBars672 .bar672Grid{display:block!important}
                   #widgetSettings86 #widgetEdgeBars672 .bar771Row{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(125px,176px) auto!important;align-items:center!important;gap:8px!important;min-height:30px!important;margin:6px 0!important}
                   #widgetSettings86 #widgetEdgeBars672 .bar672Label{grid-column:auto!important;grid-row:auto!important;text-align:left!important;line-height:1.25!important;font-weight:400!important;color:inherit!important}
@@ -36,8 +36,8 @@ final class Feedback769Ui {
                   #slotSettings .slotRemove{display:flex!important;visibility:visible!important;position:relative!important;z-index:2!important;flex:0 0 24px!important;width:24px!important;height:24px!important;padding:0!important}
                   #slotSettings .slotRemove[hidden]{display:none!important}
                   @media(max-width:370px){
-                    #widgetSettings86 .displayGrid767{grid-template-columns:minmax(84px,.82fr) repeat(2,minmax(104px,1.1fr))!important}
-                    #widgetSettings86 .accessCell769 select{padding-right:11px!important;background-position:calc(100% - 8px) 50%,calc(100% - 4px) 50%!important}
+                    #widgetSettings86 .displayGrid767{grid-template-columns:minmax(80px,.78fr) repeat(2,minmax(106px,1.12fr))!important}
+                    #widgetSettings86 .accessCell769 select{padding-right:9px!important;background-position:calc(100% - 7px) 50%,calc(100% - 3px) 50%!important}
                     #widgetSettings86 #widgetEdgeBars672 .bar771Row{grid-template-columns:minmax(0,1fr) minmax(108px,145px) auto!important;gap:5px!important}
                     #slotSettings .slotRow{grid-template-columns:minmax(104px,.95fr) repeat(2,minmax(0,1fr))!important}
                   }
@@ -59,7 +59,7 @@ final class Feedback769Ui {
                 }
                 function fitAccessLabels(){
                   const raw=document.getElementById('languageSelect')?.value||document.documentElement.lang||'fr',lang=String(raw).toLowerCase().startsWith('de')?'de':(String(raw).toLowerCase().startsWith('en')?'en':'fr');
-                  for(const id of ['advAppAccess767','advAccess']){const select=document.getElementById(id);if(!select||select.options.length<3)continue;select.options[2].textContent=lang==='de'?'Daltonismus':(lang==='en'?'Colour-blind':'Palette daltonisme')}
+                  for(const id of ['advAppAccess767','advAccess']){const select=document.getElementById(id);if(!select||select.options.length<3)continue;select.options[2].textContent=lang==='de'?'Daltonismus':(lang==='en'?'Colour-blind':'Daltonisme')}
                 }
                 function refresh(){
                   scheduled=false;

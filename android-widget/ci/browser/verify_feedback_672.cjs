@@ -65,8 +65,8 @@ const attrs = xml => Object.fromEntries([...xml.matchAll(/(?:android:)?([A-Za-z_
   assert.match(settings, /value="color"/);
   assert.match(settings, /value="none"/);
   assert.match(settings, /type="color"/);
-  assert.match(gradle, /versionCode 771001/);
-  assert.match(gradle, /versionName '7[.]71'/);
+  assert.match(gradle, /versionCode 772001/);
+  assert.match(gradle, /versionName '7[.]72'/);
 
   const browser = await chromium.launch({ headless: true, ...(process.env.EDT_BROWSER_CHANNEL ? { channel: process.env.EDT_BROWSER_CHANNEL } : {}) });
   const context = await browser.newContext({ viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true });
