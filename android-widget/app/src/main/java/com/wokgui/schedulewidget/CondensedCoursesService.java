@@ -151,6 +151,12 @@ public final class CondensedCoursesService extends RemoteViewsService {
                 firstVisibleCourse = false;
                 previousEnd = ScheduleData.toMinutes(course.end);
             }
+            if (automaticDensity && items.size() > 1) {
+                int available = Math.max(CondensedRowSizing.AUTO_MIN_ROW_DP,
+                        widgetHeightDp - AdvancedSettingsStore.widgetBarChromeDp(context));
+                int capacity = Math.max(1, available / CondensedRowSizing.AUTO_MIN_ROW_DP);
+                if (items.size() > capacity) items.subList(capacity, items.size()).clear();
+            }
         }
 
         private void appendBreaks(int from, int to, int lunchStart, int lunchEnd, int cutoffMinute) {
@@ -287,11 +293,18 @@ public final class CondensedCoursesService extends RemoteViewsService {
                 views.setInt(R.id.rowCondensedTitle, "setGravity", Gravity.CENTER);
                 accent = text;
             } else {
-                views.setInt(R.id.rowCondensedContent, "setBackgroundColor", 0x00FFFFFF);
-                views.setTextColor(R.id.rowCondensedTime, 0xFF5D6B82);
-                views.setTextColor(R.id.rowCondensedTitle, 0xFF17213A);
+                String classMode = AdvancedSettingsStore.widgetClassColorMode(context);
+                int assigned = WidgetPaletteStore.assignedCourseColor(context, item.order, item.sourceLabel, item.colorId);
+                boolean fill = "fill".equals(classMode);
+                int background = fill ? assigned : 0x00FFFFFF;
+                boolean dark = !fill || WidgetPaletteStore.useDarkTextForColor(assigned);
+                views.setInt(R.id.rowCondensedContent, "setBackgroundColor", background);
+                views.setTextColor(R.id.rowCondensedTime, dark ? 0xFF5D6B82 : 0xFFFFFFFF);
+                views.setTextColor(R.id.rowCondensedTitle, dark ? 0xFF17213A : 0xFFFFFFFF);
                 views.setInt(R.id.rowCondensedTitle, "setGravity", Gravity.START | Gravity.CENTER_VERTICAL);
-                accent = WidgetPaletteStore.courseColor(context, item.order, item.sourceLabel, item.colorId);
+                accent = "stripe".equals(classMode) ? assigned
+                        : WidgetPaletteStore.courseColor(context, item.order, item.sourceLabel, item.colorId);
+                views.setViewVisibility(R.id.rowCondensedAccent, fill ? View.GONE : View.VISIBLE);
             }
             views.setInt(R.id.rowCondensedAccent, "setBackgroundColor", accent);
 

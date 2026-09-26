@@ -116,6 +116,7 @@ final class ChunkedUiScripts {
                       .replace("APP_VERSION='7.65'", "APP_VERSION='7.66'")
                       .replace("APP_VERSION='7.66'", "APP_VERSION='7.67'")
                       .replace("APP_VERSION='7.67'", "APP_VERSION='7.68'")
-                      .replace("APP_VERSION='7.68'", "APP_VERSION='7.69'"));
+                      .replace("APP_VERSION='7.68'", "APP_VERSION='7.69'")
+                      .replace("APP_VERSION='7.69'", "APP_VERSION='7.70'"));
     }
 }

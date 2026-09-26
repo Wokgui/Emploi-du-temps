@@ -65,7 +65,7 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
       gridTitles:[...document.querySelectorAll('#displayGrid767 .displayHead767')].map(x=>x.textContent.trim()),
       rows:[...document.querySelectorAll('#displayGrid767 [data-row]')].map(x=>x.textContent.trim()),
       general:document.getElementById('displayGeneralTitle767').textContent.trim(),widget:document.getElementById('displayWidgetTitle767').textContent.trim(),
-      barsHidden:style('widgetEdgeBars672').display!=='none'&&getComputedStyle(bars.querySelector('.bar672Title')).display==='none',barLabels:[...bars.querySelectorAll('.bar672Label')].map(x=>x.textContent.trim()),barsStyle:{border:style('widgetEdgeBars672').borderTopWidth,background:style('widgetEdgeBars672').backgroundColor},
+      barsHidden:style('widgetEdgeBars672').display!=='none'&&getComputedStyle(bars.querySelector('.bar672Title')).display==='none',barLabels:[...bars.querySelectorAll('.bar672Label')].map(x=>x.textContent.trim()),barsStyle:{border:style('widgetEdgeBars672').borderTopWidth,background:style('widgetEdgeBars672').backgroundColor},barGeometry:[...bars.querySelectorAll('.bar672Label')].map(label=>{const select=document.getElementById(label.htmlFor),a=label.getBoundingClientRect(),b=select.getBoundingClientRect();return {labelCenter:Math.round(a.top+a.height/2),selectCenter:Math.round(b.top+b.height/2),selectWidth:Math.round(b.width)}}),
       removed:[...['advShowPercent','advShowProgress','advShowWeekInfo']].every(id=>!document.getElementById(id)),
       sectionResets:[...document.querySelectorAll('#resetText87,#resetColors87,#resetWidget87')].length,
       buttonText:{add:document.getElementById('addCourse').textContent.trim(),bulk:document.getElementById('addBulkCourses').textContent.trim()},
@@ -82,19 +82,31 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
   assert.equal(german.title,'Einstellungen');assert.equal(german.display,'Anzeige');
   for(const expected of ['Sprache','Textgröße','Wochen und Zeiten','Farben','Pausenanzeige','Anzeige','Erweiterte Einstellungen'])assert.ok(german.summaries.includes(expected),JSON.stringify(german));
   assert.deepEqual(german.gridTitles,['','App','Widget']);assert.equal(german.general,'Allgemeine Anzeige');assert.equal(german.widget,'Widget');
-  assert.ok(german.rows.includes('Freistunden'));assert.ok(german.rows.includes('Farbe je Klasse'));assert.equal(german.barsHidden,true);assert.deepEqual(german.barLabels,['Anzeige der oberen Leiste','Anzeige der unteren Leiste']);
+  assert.ok(german.rows.includes('Freistunden'));assert.ok(german.rows.includes('Farbstreifen je Klasse'));assert.ok(german.rows.includes('Farbiges Feld je Klasse'));assert.equal(german.barsHidden,true);assert.deepEqual(german.barLabels,['Anzeige der oberen Leiste','Anzeige der unteren Leiste']);
+  assert.ok(Math.abs(german.barGeometry[0].labelCenter-german.barGeometry[0].selectCenter)<=1);assert.ok(Math.abs(german.barGeometry[1].labelCenter-german.barGeometry[1].selectCenter)<=1);assert.ok(german.barGeometry[1].labelCenter>german.barGeometry[0].labelCenter);assert.equal(german.barGeometry[0].selectWidth,german.barGeometry[1].selectWidth);
   assert.deepEqual(german.barsStyle,{border:'0px',background:'rgba(0, 0, 0, 0)'});assert.equal(german.removed,true);assert.equal(german.sectionResets,0);assert.equal(german.columns,3);
   assert.equal(german.buttonText.bulk,'＋ Mehrere Stunden zu einer Klasse hinzufügen');assert.equal(german.fontSizes.photo,german.fontSizes.add);assert.equal(german.fontSizes.photo,german.fontSizes.bulk);assert.ok(parseFloat(german.fontSizes.photo)<14);assert.ok(german.buttonHeights.photo<=40);assert.ok(german.buttonHeights.add<=40);assert.ok(german.buttonHeights.bulk<=40);assert.ok(german.historyHeight>=48);assert.ok(parseFloat(german.fontSizes.undo)>=13);
   assert.equal(german.formatRemoved,true);assert.equal(german.followingInside,'displayWidget767');assert.deepEqual(german.headerColors,[german.roomColor,german.roomColor]);for(const select of german.access){assert.ok(select.width>=88);assert.ok(parseFloat(select.font)<=9)}
 
   await page.locator('#advAppShowRoom767').uncheck();
-  await page.locator('#advClassColors').check();
+  await page.evaluate(()=>{const probe=document.createElement('div');probe.id='classColorProbe770';probe.className='editCourse';probe.innerHTML='<span class="label">6G3</span>';document.body.appendChild(probe)});
+  await page.locator('#advAppClassStripe770').check();
+  await page.locator('#advWidgetClassFill770').check();
+  assert.equal(await page.locator('#classColorProbe770').evaluate(x=>x.classList.contains('classTint')),true);
+  await page.locator('#advAppClassFill770').check();
+  assert.equal(await page.locator('#advAppClassStripe770').isChecked(),false);
+  assert.equal(await page.locator('#classColorProbe770').evaluate(x=>x.classList.contains('classFill')),true);
   await page.locator('#advAppAccess767').selectOption('high_contrast');
   await page.locator('#advAccess').selectOption('colorblind');
   await page.locator('#advFollowing').selectOption('2');
-  const behavior=await page.evaluate(()=>({advanced:JSON.parse(window.__data767.AdvancedSettings),classes:document.documentElement.className}));
-  assert.equal(behavior.advanced.appShowRoom,false);assert.equal(behavior.advanced.colorByClass,true);assert.equal(behavior.advanced.appAccessibility,'high_contrast');assert.equal(behavior.advanced.accessibility,'colorblind');assert.equal(behavior.advanced.upcomingCount,2);
+  const behavior=await page.evaluate(()=>({
+    advanced:JSON.parse(window.__data767.AdvancedSettings),classes:document.documentElement.className,
+    accessFit:[...document.querySelectorAll('#advAppAccess767,#advAccess')].map(select=>{const style=getComputedStyle(select),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');ctx.font=style.font;const measured=ctx.measureText(select.options[select.selectedIndex].text).width;const available=select.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);return {text:select.options[select.selectedIndex].text,measured,available}})
+  }));
+  assert.equal(behavior.advanced.appShowRoom,false);assert.equal(behavior.advanced.appClassColorMode,'fill');assert.equal(behavior.advanced.widgetClassColorMode,'fill');assert.equal(behavior.advanced.colorByClass,true);assert.equal(behavior.advanced.appAccessibility,'high_contrast');assert.equal(behavior.advanced.accessibility,'colorblind');assert.equal(behavior.advanced.upcomingCount,2);
+  for(const fit of behavior.accessFit)assert.ok(fit.measured<=fit.available,JSON.stringify(fit));
   assert.match(behavior.classes,/appHideRoom767/);assert.match(behavior.classes,/accessHigh/);
+  await page.screenshot({path:path.join('smoke-browser','ui-770-display.png'),fullPage:true});
 
   await page.locator('#languageSelect').evaluate(select=>{select.value='fr';select.dispatchEvent(new Event('change',{bubbles:true}))});
   assert.equal(await page.evaluate(()=>JSON.parse(window.__data767.UiSettings).language),'fr');
@@ -110,14 +122,14 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
   const widgetPalette=fs.readFileSync(path.join(root,'app/src/main/java/com/wokgui/schedulewidget/WidgetPaletteStore.java'),'utf8');
   const advancedStore=fs.readFileSync(path.join(root,'app/src/main/java/com/wokgui/schedulewidget/AdvancedSettingsStore.java'),'utf8');
   const main=fs.readFileSync(path.join(root,'app/src/main/java/com/wokgui/schedulewidget/MainActivity.java'),'utf8');
-  assert.match(widgetPalette,/AdvancedSettingsStore[.]colorByClass/);assert.match(widgetPalette,/weekFreeColor/);assert.match(advancedStore,/static String weekFreeColor/);assert.match(main,/resetAllSettings/);
+  assert.match(widgetPalette,/widgetClassColorMode/);assert.match(widgetPalette,/assignedCourseColor/);assert.match(widgetPalette,/courseBackground/);assert.match(widgetPalette,/weekFreeColor/);assert.match(advancedStore,/static String widgetClassColorMode/);assert.match(advancedStore,/static String appClassColorMode/);assert.match(advancedStore,/static String weekFreeColor/);assert.match(main,/resetAllSettings/);
   const condensedProvider=fs.readFileSync(path.join(root,'app/src/main/java/com/wokgui/schedulewidget/ScheduleWidgetCondensedProvider.java'),'utf8');
   const provider=fs.readFileSync(path.join(root,'app/src/main/java/com/wokgui/schedulewidget/ScheduleWidgetProvider.java'),'utf8');
   const upcoming=fs.readFileSync(path.join(root,'app/src/main/java/com/wokgui/schedulewidget/UpcomingCoursesService.java'),'utf8');
   const condensed=fs.readFileSync(path.join(root,'app/src/main/java/com/wokgui/schedulewidget/CondensedCoursesService.java'),'utf8');
   const previewMini=fs.readFileSync(path.join(root,'app/src/main/res/layout/widget_preview_mini.xml'),'utf8');const previewCondensed=fs.readFileSync(path.join(root,'app/src/main/res/layout/widget_preview_condensed.xml'),'utf8');
-  assert.match(condensedProvider,/WidgetLayoutStore[.]set\(context, id, WidgetLayoutStore[.]FORMAT_CONDENSED\)/);assert.match(provider,/enforceProviderFormat/);assert.match(provider,/courses\/"\+format/);assert.match(upcoming,/courseLimit = AdvancedSettingsStore[.]upcomingCount/);assert.match(condensed,/courseLimit = AdvancedSettingsStore[.]upcomingCount/);assert.doesNotMatch(previewMini,/layout_height="72dp"/);assert.doesNotMatch(previewCondensed,/layout_height="108dp"/);
-  const gradle=fs.readFileSync(path.join(root,'app/build.gradle'),'utf8');assert.match(gradle,/versionCode 769001/);assert.match(gradle,/versionName '7[.]69'/);
+  assert.match(condensedProvider,/WidgetLayoutStore[.]set\(context, id, WidgetLayoutStore[.]FORMAT_CONDENSED\)/);assert.match(provider,/enforceProviderFormat/);assert.match(provider,/courses\/"\+format/);assert.match(upcoming,/courseLimit = AdvancedSettingsStore[.]upcomingCount/);assert.match(upcoming,/rowCourseAccent/);assert.match(condensed,/courseLimit = AdvancedSettingsStore[.]upcomingCount/);assert.match(condensed,/items[.]subList\(capacity/);assert.match(previewMini,/layout_height="72dp"/);assert.match(previewCondensed,/layout_height="108dp"/);
+  const gradle=fs.readFileSync(path.join(root,'app/build.gradle'),'utf8');assert.match(gradle,/versionCode 770001/);assert.match(gradle,/versionName '7[.]70'/);
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({german,behavior,french,reset:{calls:reset.calls,slots:reset.schedule._slots.length,course:reset.schedule._weeks.A['2'].courses[0].label},errors},null,2));
   await browser.close();

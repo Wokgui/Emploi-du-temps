@@ -179,6 +179,18 @@ final class AdvancedSettingsStore {
     static boolean showLunch(Context context) { return json(context).optBoolean("showLunch", true); }
     static boolean showWeekInfo(Context context) { return json(context).optBoolean("showWeekInfo", true); }
     static boolean colorByClass(Context context) { return json(context).optBoolean("colorByClass", false); }
+    static String widgetClassColorMode(Context context) {
+        JSONObject settings = json(context);
+        String value = settings.optString("widgetClassColorMode", "");
+        if ("stripe".equals(value) || "fill".equals(value) || "none".equals(value)) return value;
+        return settings.optBoolean("colorByClass", false) ? "fill" : "none";
+    }
+    static String appClassColorMode(Context context) {
+        JSONObject settings = json(context);
+        String value = settings.optString("appClassColorMode", "");
+        if ("stripe".equals(value) || "fill".equals(value) || "none".equals(value)) return value;
+        return settings.optBoolean("appColorByClass", false) ? "stripe" : "none";
+    }
     static String accessibility(Context context) { return json(context).optString("accessibility", "normal"); }
     static String weekFreeColor(Context context) {
         JSONObject appearance = json(context).optJSONObject("weekAppearance658");
@@ -292,7 +304,7 @@ final class AdvancedSettingsStore {
     }
 
     static int classColor(Context context, String label, int fallback) {
-        if (!colorByClass(context) || label == null || label.trim().isEmpty()) return fallback;
+        if ("none".equals(widgetClassColorMode(context)) || label == null || label.trim().isEmpty()) return fallback;
         int[] standard = {0xFF0877F9, 0xFF00897B, 0xFF6750A4, 0xFF2E7D32, 0xFFEF6C00, 0xFFC2185B};
         int[] cb = {0xFF0072B2, 0xFFE69F00, 0xFF009E73, 0xFFCC79A7, 0xFFD55E00, 0xFF56B4E9};
         int[] palette = "colorblind".equals(accessibility(context)) ? cb : standard;

@@ -9,7 +9,7 @@ final class CondensedRowSizing {
     static final int PROGRESS_CHROME_DP = PROGRESS_STRIP_DP * 2;
     static final int MANUAL_MIN_ROW_DP = 14;
     static final int MANUAL_MAX_ROW_DP = 30;
-    static final int AUTO_MIN_ROW_DP = 1;
+    static final int AUTO_MIN_ROW_DP = 14;
 
     private CondensedRowSizing() {}
 

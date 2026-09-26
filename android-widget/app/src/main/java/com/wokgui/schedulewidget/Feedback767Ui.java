@@ -54,7 +54,8 @@ final class Feedback767Ui {
                   {name:()=>tr('Temps restant','Time left','Restzeit'),app:'advAppShowRemaining767',widget:'advShowRemaining',appKeys:['appShowRemaining'],widgetKey:'showRemaining'},
                   {name:()=>tr('Trous','Free periods','Freistunden'),app:'advAppShowBreaks767',widget:'advShowBreaks',appKeys:['showBreaksToday','showBreaksWeek'],widgetKey:'showBreaks'},
                   {name:()=>tr('Midi','Lunch','Mittag'),app:'advAppShowLunch767',widget:'advShowLunch',appKeys:['showLunchToday','showLunchWeek'],widgetKey:'showLunch'},
-                  {name:()=>tr('Couleur par classe','Color by class','Farbe je Klasse'),app:'advAppClassColors767',widget:'advClassColors',appKeys:['appColorByClass'],widgetKey:'colorByClass'}
+                  {name:()=>tr('Trait de couleur par classe','Class colour stripe','Farbstreifen je Klasse'),app:'advAppClassStripe770',widget:'advWidgetClassStripe770',classMode:'stripe'},
+                  {name:()=>tr('Case de couleur par classe','Class colour cell','Farbiges Feld je Klasse'),app:'advAppClassFill770',widget:'advWidgetClassFill770',classMode:'fill'}
                 ];
 
                 function option(value,fr,en,de){const o=document.createElement('option');o.value=value;o.textContent=tr(fr,en,de);return o}
@@ -68,6 +69,7 @@ final class Feedback767Ui {
                 }
                 function ensureDisplay(){
                   const title=document.getElementById('advWidgetTitle'),box=title&&title.closest('.settingBox');if(!box)return;
+                  const legacyClass=document.getElementById('advClassColors');const legacyClassRow=legacyClass&&legacyClass.closest('.advCheck');if(legacyClassRow)legacyClassRow.remove();
                   let general=document.getElementById('displayGeneral767');
                   if(!general){
                     general=document.createElement('div');general.id='displayGeneral767';
@@ -114,14 +116,22 @@ final class Feedback767Ui {
                 function saveAndApply(next){
                   write(next);
                   try{if(window.refreshAdvancedFeatures)window.refreshAdvancedFeatures()}catch(e){}
+                  try{if(window.refreshCoursePaletteV4)window.refreshCoursePaletteV4()}catch(e){}
                   applyPageState(next);requestAnimationFrame(refresh);
                 }
                 function bind(){
                   const state=read();
                   rows.forEach(row=>{
                     const app=document.getElementById(row.app),widget=document.getElementById(row.widget);
-                    if(app){app.checked=row.appKeys.every(key=>state[key]!==false);app.setAttribute('aria-label',row.name()+' · '+tr('Application','Application','App'));app.onchange=()=>{const next=read();row.appKeys.forEach(key=>next[key]=app.checked);saveAndApply(next)}}
-                    if(widget){widget.checked=state[row.widgetKey]!==false;widget.setAttribute('aria-label',row.name()+' · Widget');widget.onchange=()=>{const next=read();next[row.widgetKey]=widget.checked;saveAndApply(next)}}
+                    if(row.classMode){
+                      const appMode=['stripe','fill'].includes(state.appClassColorMode)?state.appClassColorMode:(state.appColorByClass?'stripe':'none');
+                      const widgetMode=['stripe','fill'].includes(state.widgetClassColorMode)?state.widgetClassColorMode:(state.colorByClass?'fill':'none');
+                      if(app){app.checked=appMode===row.classMode;app.setAttribute('aria-label',row.name()+' · '+tr('Application','Application','App'));app.onchange=()=>{if(app.checked)for(const id of ['advAppClassStripe770','advAppClassFill770'])if(id!==app.id){const other=document.getElementById(id);if(other)other.checked=false}const next=read();next.appClassColorMode=app.checked?row.classMode:'none';next.appColorByClass=app.checked;saveAndApply(next)}}
+                      if(widget){widget.checked=widgetMode===row.classMode;widget.setAttribute('aria-label',row.name()+' · Widget');widget.onchange=()=>{if(widget.checked)for(const id of ['advWidgetClassStripe770','advWidgetClassFill770'])if(id!==widget.id){const other=document.getElementById(id);if(other)other.checked=false}const next=read();next.widgetClassColorMode=widget.checked?row.classMode:'none';next.colorByClass=widget.checked;saveAndApply(next)}}
+                    }else{
+                      if(app){app.checked=row.appKeys.every(key=>state[key]!==false);app.setAttribute('aria-label',row.name()+' · '+tr('Application','Application','App'));app.onchange=()=>{const next=read();row.appKeys.forEach(key=>next[key]=app.checked);saveAndApply(next)}}
+                      if(widget){widget.checked=state[row.widgetKey]!==false;widget.setAttribute('aria-label',row.name()+' · Widget');widget.onchange=()=>{const next=read();next[row.widgetKey]=widget.checked;saveAndApply(next)}}
+                    }
                   });
                   const appAccess=document.getElementById('advAppAccess767'),widgetAccess=document.getElementById('advAccess');
                   if(appAccess){appAccess.value=state.appAccessibility||'normal';appAccess.onchange=()=>{const next=read();next.appAccessibility=appAccess.value;saveAndApply(next)}}
@@ -145,7 +155,7 @@ final class Feedback767Ui {
                   },true);
                 }
 
-                function defaultAdvanced(){return {density:'normal',widgetDensityPercent:50,widgetAutoDensity:false,dayViewDensity765:50,upcomingCount:0,widgetFormat:'timeline',showRoom:true,showTimes:true,showRemaining:true,showPercent:true,showProgress:true,widgetTopBarMode:'progress',widgetTopBarColor:'#1677E8',widgetBottomBarMode:'progress',widgetBottomBarColor:'#1677E8',showBreaks:true,showLunch:true,showWeekInfo:true,colorByClass:false,accessibility:'normal',appShowRoom:true,appShowTimes:true,appShowRemaining:true,appColorByClass:false,appAccessibility:'normal',showBreaksToday:true,showBreaksWeek:true,showLunchToday:true,showLunchWeek:true,cycleLength:2,singleWeek:false,remindersEnabled:false,reminderMinutes:10,holidayMode:'alsace_moselle',exceptions:[],dayOffRanges:[],gapWidgetLabel:'',lunchWidgetLabel:'',widgetCourseLabels:{}}}
+                function defaultAdvanced(){return {density:'normal',widgetDensityPercent:50,widgetAutoDensity:false,dayViewDensity765:50,upcomingCount:0,widgetFormat:'timeline',showRoom:true,showTimes:true,showRemaining:true,showPercent:true,showProgress:true,widgetTopBarMode:'progress',widgetTopBarColor:'#1677E8',widgetBottomBarMode:'progress',widgetBottomBarColor:'#1677E8',showBreaks:true,showLunch:true,showWeekInfo:true,colorByClass:false,widgetClassColorMode:'none',accessibility:'normal',appShowRoom:true,appShowTimes:true,appShowRemaining:true,appColorByClass:false,appClassColorMode:'none',appAccessibility:'normal',showBreaksToday:true,showBreaksWeek:true,showLunchToday:true,showLunchWeek:true,cycleLength:2,singleWeek:false,remindersEnabled:false,reminderMinutes:10,holidayMode:'alsace_moselle',exceptions:[],dayOffRanges:[],gapWidgetLabel:'',lunchWidgetLabel:'',widgetCourseLabels:{}}}
                 function resetEverything(){
                   try{AndroidSchedule.saveUiSettings(JSON.stringify({appFontScale:1,widgetFontScale:1,language:'fr',theme:'blue'}))}catch(e){}
                   try{AndroidSchedule.saveAdvancedSettings(JSON.stringify(defaultAdvanced()))}catch(e){}

@@ -6,6 +6,9 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
@@ -363,6 +366,7 @@ public class UpcomingCoursesService extends RemoteViewsService {
             v.setViewVisibility(R.id.rowDot, View.GONE);
             v.setViewVisibility(R.id.rowLineTop, View.GONE);
             v.setViewVisibility(R.id.rowLineBottom, View.GONE);
+            v.setViewVisibility(R.id.rowCourseAccent, View.GONE);
 
             String title = item.label;
             if (item.type == Item.COURSE && item.uncertain) title = "⚠ " + title;
@@ -383,11 +387,16 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 int ink = WidgetPaletteStore.gapText(context);
                 applyBreakRow(v, item, bg, ink, ink, relative);
             } else {
-                int bg = WidgetPaletteStore.courseColor(context, item.order, item.sourceLabel, item.colorId);
-                boolean dark = WidgetPaletteStore.useDarkText(context, item.order, item.sourceLabel, item.colorId);
+                String classMode = AdvancedSettingsStore.widgetClassColorMode(context);
+                int assigned = WidgetPaletteStore.assignedCourseColor(context, item.order, item.sourceLabel, item.colorId);
+                int bg = WidgetPaletteStore.courseBackground(context, item.order, item.sourceLabel, item.colorId);
+                boolean stripe = "stripe".equals(classMode);
+                boolean dark = stripe || WidgetPaletteStore.useDarkTextForColor(bg);
                 int ink = dark ? 0xFF17213A : 0xFFFFFFFF;
                 int muted = dark ? 0xFF35435A : 0xFFF7FBFF;
                 v.setInt(R.id.rowContent, "setBackgroundColor", bg);
+                v.setViewVisibility(R.id.rowCourseAccent, stripe ? View.VISIBLE : View.GONE);
+                if (stripe) v.setInt(R.id.rowCourseAccent, "setBackgroundColor", assigned);
                 String meta = courseMeta(item);
                 v.setTextViewText(R.id.rowMeta, meta);
                 v.setViewVisibility(R.id.rowMeta, meta.isEmpty() ? View.GONE : View.VISIBLE);
@@ -560,7 +569,9 @@ public class UpcomingCoursesService extends RemoteViewsService {
             }
             if (found != null) {
                 int order = found.slot > 0 ? found.slot : Math.max(1, slot);
-                int bg = WidgetPaletteStore.courseColor(context, order, found.label, found.color);
+                int bg = "stripe".equals(AdvancedSettingsStore.widgetClassColorMode(context))
+                        ? WidgetPaletteStore.assignedCourseColor(context, order, found.label, found.color)
+                        : WidgetPaletteStore.courseColor(context, order, found.label, found.color);
                 boolean dark = WidgetPaletteStore.useDarkText(context, order, found.label, found.color);
                 return new Segment(start, AdvancedSettingsStore.widgetCourseLabel(context, targetDate, found), found.room, bg,
                         dark ? 0xFF17213A : 0xFFFFFFFF, true, true);
@@ -628,10 +639,11 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 String text = hourLabel(s.start);
                 if (!s.label.isEmpty()) text += "\n" + shortLabel(s.label);
                 if (s.course && AdvancedSettingsStore.showRoom(context) && !s.room.isEmpty()) text += "\n" + shortRoom(s.room);
-                v.setTextViewText(id, text);
+                boolean stripe = s.course && "stripe".equals(AdvancedSettingsStore.widgetClassColorMode(context));
+                v.setTextViewText(id, stripe ? stripeText(text, s.background) : text);
                 v.setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_SP, 7f * scale);
-                v.setInt(id, "setBackgroundColor", s.background);
-                v.setTextColor(id, s.ink);
+                v.setInt(id, "setBackgroundColor", stripe ? 0xFFFFFFFF : s.background);
+                v.setTextColor(id, stripe ? 0xFF17213A : s.ink);
             }
 
             Intent fill = new Intent();
@@ -646,6 +658,20 @@ public class UpcomingCoursesService extends RemoteViewsService {
             String text = value == null ? "" : value.trim();
             while (text.contains("  ")) text = text.replace("  ", " ");
             return text.length() <= 8 ? text : text.substring(0, 7).trim() + ".";
+        }
+
+        private CharSequence stripeText(String value, int accent) {
+            String[] lines = String.valueOf(value).split("\\n", -1);
+            StringBuilder out = new StringBuilder();
+            for (int i = 0; i < lines.length; i++) {
+                if (i > 0) out.append('\n');
+                out.append('▌').append(' ').append(lines[i]);
+            }
+            SpannableString styled = new SpannableString(out.toString());
+            for (int i = 0; i < styled.length(); i++) {
+                if (styled.charAt(i) == '▌') styled.setSpan(new ForegroundColorSpan(accent), i, i + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            return styled;
         }
 
         private String shortRoom(String value) {

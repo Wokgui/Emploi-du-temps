@@ -38,15 +38,31 @@ final class WidgetPaletteStore {
     static int courseColor(Context context, int slot, String label, String colorId) {
         Integer literal = literalColor(colorId);
         if ("high_contrast".equals(AdvancedSettingsStore.accessibility(context))) return 0xFFFFFFFF;
-        if (AdvancedSettingsStore.colorByClass(context)) {
-            return AdvancedSettingsStore.classColor(context, label, literal == null ? 0xFF0877F9 : literal);
-        }
+        if ("fill".equals(AdvancedSettingsStore.widgetClassColorMode(context))) return assignedCourseColor(context, slot, label, colorId);
         if (literal != null) return literal;
         int[] palette = palette(context);
         int custom = colorIndex(colorId);
         int index = custom >= 0 ? custom : (slot > 0 ? slot - 1 : Math.abs(String.valueOf(label).hashCode()));
         return palette[Math.floorMod(index, palette.length)];
     }
+
+    static int assignedCourseColor(Context context, int slot, String label, String colorId) {
+        if ("high_contrast".equals(AdvancedSettingsStore.accessibility(context))) return 0xFF202020;
+        Integer literal = literalColor(colorId);
+        if (literal != null) return literal;
+        int[] colors = palette(context);
+        int custom = colorIndex(colorId);
+        if (custom >= 0) return colors[Math.min(custom, colors.length - 1)];
+        return AdvancedSettingsStore.classColor(context, label,
+                colors[Math.floorMod(slot > 0 ? slot - 1 : Math.abs(String.valueOf(label).hashCode()), colors.length)]);
+    }
+
+    static int courseBackground(Context context, int slot, String label, String colorId) {
+        return "stripe".equals(AdvancedSettingsStore.widgetClassColorMode(context))
+                ? 0xFFFFFFFF : courseColor(context, slot, label, colorId);
+    }
+
+    static boolean useDarkTextForColor(int color) { return isLight(color); }
 
     static boolean useDarkText(Context context, int slot, String label) {
         return useDarkText(context, slot, label, "");
