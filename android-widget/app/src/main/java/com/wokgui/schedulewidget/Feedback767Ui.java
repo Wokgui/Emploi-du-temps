@@ -52,8 +52,6 @@ final class Feedback767Ui {
                   {name:()=>tr('Salle','Room','Raum'),app:'advAppShowRoom767',widget:'advShowRoom',appKeys:['appShowRoom'],widgetKey:'showRoom'},
                   {name:()=>tr('Horaires','Times','Zeiten'),app:'advAppShowTimes767',widget:'advShowTimes',appKeys:['appShowTimes'],widgetKey:'showTimes'},
                   {name:()=>tr('Temps restant','Time left','Restzeit'),app:'advAppShowRemaining767',widget:'advShowRemaining',appKeys:['appShowRemaining'],widgetKey:'showRemaining'},
-                  {name:()=>tr('Trous','Free periods','Freistunden'),app:'advAppShowBreaks767',widget:'advShowBreaks',appKeys:['showBreaksToday','showBreaksWeek'],widgetKey:'showBreaks'},
-                  {name:()=>tr('Midi','Lunch','Mittag'),app:'advAppShowLunch767',widget:'advShowLunch',appKeys:['showLunchToday','showLunchWeek'],widgetKey:'showLunch'},
                   {name:()=>tr('Trait de couleur par classe','Class colour stripe','Farbstreifen je Klasse'),app:'advAppClassStripe770',widget:'advWidgetClassStripe770',classMode:'stripe'},
                   {name:()=>tr('Case de couleur par classe','Class colour cell','Farbiges Feld je Klasse'),app:'advAppClassFill770',widget:'advWidgetClassFill770',classMode:'fill'}
                 ];

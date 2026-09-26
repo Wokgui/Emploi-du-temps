@@ -60,7 +60,7 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
 
   const preview=fs.readFileSync(path.join(root,'app/src/main/res/layout/widget_preview_condensed.xml'),'utf8'),info=fs.readFileSync(path.join(root,'app/src/main/res/xml/widget_info_condensed.xml'),'utf8'),fallback=fs.readFileSync(path.join(root,'app/src/main/res/drawable/widget_preview_condensed_image.xml'),'utf8');
   assert.match(preview,/layout_height="match_parent"/);assert.match(info,/minHeight="108dp"/);assert.match(info,/targetCellHeight="2"/);assert.match(fallback,/height="108dp"/);
-  const gradle=fs.readFileSync(path.join(root,'app/build.gradle'),'utf8');assert.match(gradle,/versionCode 773001/);assert.match(gradle,/versionName '7[.]73'/);
+  const gradle=fs.readFileSync(path.join(root,'app/build.gradle'),'utf8');assert.match(gradle,/versionCode 774001/);assert.match(gradle,/versionName '7[.]74'/);
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({filled,stableWeek,density:{loose:loose.height,dense:dense.height},typography,errors},null,2));
   await browser.close();

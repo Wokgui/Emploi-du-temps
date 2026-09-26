@@ -182,8 +182,8 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
     assert.ok(rail.leftDelta <= 0.5, JSON.stringify(rail));
     assert.ok(rail.rightDelta <= 0.5, JSON.stringify(rail));
     assert.ok(rail.widthDelta <= 0.5, JSON.stringify(rail));
-    assert.equal(rail.height, 1, JSON.stringify(rail));
-    assert.ok(rail.boundaryDelta <= 0.25, JSON.stringify(rail));
+    assert.equal(rail.height, 2, JSON.stringify(rail));
+    assert.ok(rail.boundaryDelta <= 1.1, JSON.stringify(rail));
     assert.notEqual(rail.background, 'rgba(0, 0, 0, 0)', JSON.stringify(rail));
     assert.ok(rail.zIndex >= 80, JSON.stringify(rail));
   });

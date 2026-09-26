@@ -264,7 +264,7 @@ public final class CondensedCoursesService extends RemoteViewsService {
                 int halfLine = Math.max(1, (fittedHeight + 1) / 2);
                 views.setViewLayoutHeight(R.id.rowCondensedLineTop, halfLine, TypedValue.COMPLEX_UNIT_DIP);
                 views.setViewLayoutHeight(R.id.rowCondensedLineBottom, halfLine, TypedValue.COMPLEX_UNIT_DIP);
-                views.setViewLayoutHeight(R.id.rowCondensedAccent, Math.max(1, fittedHeight - 3), TypedValue.COMPLEX_UNIT_DIP);
+                views.setViewLayoutHeight(R.id.rowCondensedAccent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
                 views.setViewLayoutHeight(R.id.rowCondensedCourseProgress, Math.max(1, Math.min(5, fittedHeight - 1)), TypedValue.COMPLEX_UNIT_DIP);
             }
 
