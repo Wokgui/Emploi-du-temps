@@ -46,7 +46,7 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
       await page.evaluate(fs.readFileSync(path.join(chunks,name),'utf8')+'\n//# sourceURL='+name);
       await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(resolve)));
     }
-    await page.waitForFunction(()=>window.__feedback768&&window.__feedback767&&window.__feedback766&&window.__edtHeavyPanels648);
+    await page.waitForFunction(()=>window.__feedback769&&window.__feedback768&&window.__feedback767&&window.__feedback766&&window.__edtHeavyPanels648);
   };
   const openSettings=async()=>{
     await page.locator('#settingsBtn').tap();
@@ -72,8 +72,11 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
       fontSizes:{photo:style('importPhoto').fontSize,add:style('addCourse').fontSize,bulk:style('addBulkCourses').fontSize,undo:style('undoEdit86').fontSize},buttonHeights:{photo:document.getElementById('importPhoto').getBoundingClientRect().height,add:document.getElementById('addCourse').getBoundingClientRect().height,bulk:document.getElementById('addBulkCourses').getBoundingClientRect().height},
       historyHeight:document.getElementById('undoEdit86').getBoundingClientRect().height,
       columns:getComputedStyle(document.getElementById('displayGrid767')).gridTemplateColumns.split(' ').length,
-      formatInside:document.getElementById('advFormat').closest('#displayWidget767')?.id,
-      followingInside:document.getElementById('advFollowing').closest('#displayWidget767')?.id
+      formatRemoved:!document.getElementById('advFormat'),
+      followingInside:document.getElementById('advFollowing').closest('#displayWidget767')?.id,
+      headerColors:[...document.querySelectorAll('#displayGrid767 .displayHead767')].slice(1).map(x=>getComputedStyle(x).color),
+      roomColor:getComputedStyle(document.querySelector('#displayGrid767 [data-row="0"]')).color,
+      access:[...document.querySelectorAll('#advAppAccess767,#advAccess')].map(x=>({width:x.getBoundingClientRect().width,font:getComputedStyle(x).fontSize,text:x.options[x.selectedIndex].text}))
     };
   });
   assert.equal(german.title,'Einstellungen');assert.equal(german.display,'Anzeige');
@@ -82,14 +85,15 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
   assert.ok(german.rows.includes('Freistunden'));assert.ok(german.rows.includes('Farbe je Klasse'));assert.equal(german.barsHidden,true);assert.deepEqual(german.barLabels,['Anzeige der oberen Leiste','Anzeige der unteren Leiste']);
   assert.deepEqual(german.barsStyle,{border:'0px',background:'rgba(0, 0, 0, 0)'});assert.equal(german.removed,true);assert.equal(german.sectionResets,0);assert.equal(german.columns,3);
   assert.equal(german.buttonText.bulk,'＋ Mehrere Stunden zu einer Klasse hinzufügen');assert.equal(german.fontSizes.photo,german.fontSizes.add);assert.equal(german.fontSizes.photo,german.fontSizes.bulk);assert.ok(parseFloat(german.fontSizes.photo)<14);assert.ok(german.buttonHeights.photo<=40);assert.ok(german.buttonHeights.add<=40);assert.ok(german.buttonHeights.bulk<=40);assert.ok(german.historyHeight>=48);assert.ok(parseFloat(german.fontSizes.undo)>=13);
-  assert.equal(german.formatInside,'displayWidget767');assert.equal(german.followingInside,'displayWidget767');
+  assert.equal(german.formatRemoved,true);assert.equal(german.followingInside,'displayWidget767');assert.deepEqual(german.headerColors,[german.roomColor,german.roomColor]);for(const select of german.access){assert.ok(select.width>=88);assert.ok(parseFloat(select.font)<=9)}
 
   await page.locator('#advAppShowRoom767').uncheck();
   await page.locator('#advClassColors').check();
   await page.locator('#advAppAccess767').selectOption('high_contrast');
   await page.locator('#advAccess').selectOption('colorblind');
+  await page.locator('#advFollowing').selectOption('2');
   const behavior=await page.evaluate(()=>({advanced:JSON.parse(window.__data767.AdvancedSettings),classes:document.documentElement.className}));
-  assert.equal(behavior.advanced.appShowRoom,false);assert.equal(behavior.advanced.colorByClass,true);assert.equal(behavior.advanced.appAccessibility,'high_contrast');assert.equal(behavior.advanced.accessibility,'colorblind');
+  assert.equal(behavior.advanced.appShowRoom,false);assert.equal(behavior.advanced.colorByClass,true);assert.equal(behavior.advanced.appAccessibility,'high_contrast');assert.equal(behavior.advanced.accessibility,'colorblind');assert.equal(behavior.advanced.upcomingCount,2);
   assert.match(behavior.classes,/appHideRoom767/);assert.match(behavior.classes,/accessHigh/);
 
   await page.locator('#languageSelect').evaluate(select=>{select.value='fr';select.dispatchEvent(new Event('change',{bubbles:true}))});
@@ -107,7 +111,13 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
   const advancedStore=fs.readFileSync(path.join(root,'app/src/main/java/com/wokgui/schedulewidget/AdvancedSettingsStore.java'),'utf8');
   const main=fs.readFileSync(path.join(root,'app/src/main/java/com/wokgui/schedulewidget/MainActivity.java'),'utf8');
   assert.match(widgetPalette,/AdvancedSettingsStore[.]colorByClass/);assert.match(widgetPalette,/weekFreeColor/);assert.match(advancedStore,/static String weekFreeColor/);assert.match(main,/resetAllSettings/);
-  const gradle=fs.readFileSync(path.join(root,'app/build.gradle'),'utf8');assert.match(gradle,/versionCode 768001/);assert.match(gradle,/versionName '7[.]68'/);
+  const condensedProvider=fs.readFileSync(path.join(root,'app/src/main/java/com/wokgui/schedulewidget/ScheduleWidgetCondensedProvider.java'),'utf8');
+  const provider=fs.readFileSync(path.join(root,'app/src/main/java/com/wokgui/schedulewidget/ScheduleWidgetProvider.java'),'utf8');
+  const upcoming=fs.readFileSync(path.join(root,'app/src/main/java/com/wokgui/schedulewidget/UpcomingCoursesService.java'),'utf8');
+  const condensed=fs.readFileSync(path.join(root,'app/src/main/java/com/wokgui/schedulewidget/CondensedCoursesService.java'),'utf8');
+  const previewMini=fs.readFileSync(path.join(root,'app/src/main/res/layout/widget_preview_mini.xml'),'utf8');const previewCondensed=fs.readFileSync(path.join(root,'app/src/main/res/layout/widget_preview_condensed.xml'),'utf8');
+  assert.match(condensedProvider,/WidgetLayoutStore[.]set\(context, id, WidgetLayoutStore[.]FORMAT_CONDENSED\)/);assert.match(provider,/enforceProviderFormat/);assert.match(provider,/courses\/"\+format/);assert.match(upcoming,/courseLimit = AdvancedSettingsStore[.]upcomingCount/);assert.match(condensed,/courseLimit = AdvancedSettingsStore[.]upcomingCount/);assert.doesNotMatch(previewMini,/layout_height="72dp"/);assert.doesNotMatch(previewCondensed,/layout_height="108dp"/);
+  const gradle=fs.readFileSync(path.join(root,'app/build.gradle'),'utf8');assert.match(gradle,/versionCode 769001/);assert.match(gradle,/versionName '7[.]69'/);
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({german,behavior,french,reset:{calls:reset.calls,slots:reset.schedule._slots.length,course:reset.schedule._weeks.A['2'].courses[0].label},errors},null,2));
   await browser.close();

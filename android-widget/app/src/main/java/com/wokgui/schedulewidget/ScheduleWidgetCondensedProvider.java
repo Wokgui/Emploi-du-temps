@@ -11,9 +11,7 @@ public class ScheduleWidgetCondensedProvider extends ScheduleWidgetProvider {
     public void onUpdate(Context context, AppWidgetManager manager, int[] appWidgetIds) {
         if (appWidgetIds != null) {
             for (int id : appWidgetIds) {
-                if (!WidgetLayoutStore.has(context, id)) {
-                    WidgetLayoutStore.set(context, id, WidgetLayoutStore.FORMAT_CONDENSED);
-                }
+                WidgetLayoutStore.set(context, id, WidgetLayoutStore.FORMAT_CONDENSED);
             }
         }
         super.onUpdate(context, manager, appWidgetIds);

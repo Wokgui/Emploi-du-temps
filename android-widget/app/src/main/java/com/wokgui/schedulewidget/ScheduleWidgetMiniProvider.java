@@ -11,9 +11,7 @@ public class ScheduleWidgetMiniProvider extends ScheduleWidgetProvider {
     public void onUpdate(Context context, AppWidgetManager manager, int[] appWidgetIds) {
         if (appWidgetIds != null) {
             for (int id : appWidgetIds) {
-                if (!WidgetLayoutStore.has(context, id)) {
-                    WidgetLayoutStore.set(context, id, WidgetLayoutStore.FORMAT_MINI);
-                }
+                WidgetLayoutStore.set(context, id, WidgetLayoutStore.FORMAT_MINI);
             }
         }
         super.onUpdate(context, manager, appWidgetIds);

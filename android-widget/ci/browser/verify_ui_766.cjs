@@ -106,7 +106,7 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
   editHeadings.forEach(item=>assert.ok(item.hidden||item.display==='none',JSON.stringify(item)));
 
   const gradle=fs.readFileSync(path.join(root,'app/build.gradle'),'utf8');
-  assert.match(gradle,/versionCode 768001/);assert.match(gradle,/versionName '7[.]68'/);
+  assert.match(gradle,/versionCode 769001/);assert.match(gradle,/versionName '7[.]69'/);
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({report,densityDirection:{leastDense,mostDense},editHeadings,errors},null,2));
   await browser.close();

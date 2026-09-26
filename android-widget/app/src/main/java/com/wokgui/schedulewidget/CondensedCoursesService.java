@@ -107,7 +107,8 @@ public final class CondensedCoursesService extends RemoteViewsService {
 
             List<ScheduleData.Course> courses = ScheduleStore.getCourses(context, target.date);
             boolean automaticDensity = AdvancedSettingsStore.widgetAutoDensity(context);
-            int firstCourse = automaticDensity ? 0 : target.firstCourse;
+            int courseLimit = AdvancedSettingsStore.upcomingCount(context);
+            int firstCourse = automaticDensity && courseLimit == 0 ? 0 : target.firstCourse;
             if (courses == null || courses.isEmpty() || firstCourse >= courses.size()) return;
 
             boolean futureDay = !sameDay(now, target.date);
@@ -126,7 +127,9 @@ public final class CondensedCoursesService extends RemoteViewsService {
                 if (nowMin >= from && nowMin < to) appendBreaks(from, to, lunchStart, lunchEnd, nowMin);
             }
 
+            int addedCourses = 0;
             for (int i = firstCourse; i < courses.size(); i++) {
+                if (courseLimit > 0 && addedCourses >= courseLimit) break;
                 ScheduleData.Course course = courses.get(i);
                 int start = ScheduleData.toMinutes(course.start);
                 if (previousEnd >= 0) appendBreaks(previousEnd, start, lunchStart, lunchEnd, -1);
@@ -144,6 +147,7 @@ public final class CondensedCoursesService extends RemoteViewsService {
                         course.uncertain,
                         course.color
                 ));
+                addedCourses++;
                 firstVisibleCourse = false;
                 previousEnd = ScheduleData.toMinutes(course.end);
             }

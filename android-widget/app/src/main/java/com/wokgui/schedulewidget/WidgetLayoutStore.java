@@ -1,5 +1,7 @@
 package com.wokgui.schedulewidget;
 
+import android.appwidget.AppWidgetManager;
+import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
 import android.content.SharedPreferences;
 
@@ -25,6 +27,29 @@ final class WidgetLayoutStore {
     static int get(Context context, int widgetId) {
         int value = prefs(context).getInt(PREFIX + widgetId, FORMAT_CLASSIC);
         return isSupported(value) ? value : FORMAT_CLASSIC;
+    }
+
+    static int enforceProviderFormat(Context context, AppWidgetManager manager, int widgetId) {
+        int expected = formatForWidget(context, manager, widgetId);
+        if (!has(context, widgetId) || get(context, widgetId) != expected) set(context, widgetId, expected);
+        return expected;
+    }
+
+    static int formatForProviderClass(Class<?> providerClass) {
+        if (providerClass == ScheduleWidgetCondensedProvider.class) return FORMAT_CONDENSED;
+        if (providerClass == ScheduleWidgetMiniProvider.class) return FORMAT_MINI;
+        return FORMAT_CLASSIC;
+    }
+
+    private static int formatForWidget(Context context, AppWidgetManager manager, int widgetId) {
+        try {
+            AppWidgetProviderInfo info = manager == null ? null : manager.getAppWidgetInfo(widgetId);
+            String className = info == null || info.provider == null ? "" : info.provider.getClassName();
+            if (ScheduleWidgetCondensedProvider.class.getName().equals(className)) return FORMAT_CONDENSED;
+            if (ScheduleWidgetMiniProvider.class.getName().equals(className)) return FORMAT_MINI;
+            if (ScheduleWidgetProvider.class.getName().equals(className)) return FORMAT_CLASSIC;
+        } catch (Exception ignored) {}
+        return get(context, widgetId);
     }
 
     static void set(Context context, int widgetId, int format) {

@@ -43,15 +43,13 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
     const subtitleSelectors=['#appFontTitle','#widgetFontTitle','#dayDensityTitle765','#widgetDensity664 .feedback664DensityTitle','#settingsWeekCycle678>.settingTitle','.weekCurrentLabel678','#slotSettingsGroup759>.settingTitle','#themeTitle','#paletteSettingRoot>.settingTitle','#week658Settings .w658Title','#breakNamesTitle763','#week658LunchSettings .w658Title'];
     const contentSelectors=['#appFontValue','#widgetFontValue','#advDensityValue665','.weekCycleChoice678','.weekCurrentChoice678','#slotSettings input[type=time]','.themeName','.coursePaletteName','#week658Settings .w658Colors span','#breakNamesSettings763 .breakName','#week658LunchSettings .w658DayHead'];
     const separatorSelectors=['#widgetFontTitle','#dayDensity765','#widgetDensity664','.weekCurrentSettings678','#slotSettingsGroup759','#paletteSettingRoot','#week658Settings','#breakNamesSettings763','#week658LunchSettings'];
-    const format=document.getElementById('advFormat'),formatStyle=getComputedStyle(format),option=format.options[format.selectedIndex].text;
-    const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');ctx.font=formatStyle.font;const needed=ctx.measureText(option).width+parseFloat(formatStyle.paddingLeft)+parseFloat(formatStyle.paddingRight)+8;
     const school=style('#schoolCalendarSetting'),exception=style('#advExceptionList'),day=document.getElementById('dayDensity765'),widgetTitle=document.getElementById('widgetFontTitle'),widgetRow=widgetTitle.nextElementSibling;
     return {
       reference:{size:ref.fontSize,color:ref.color,weight:ref.fontWeight},
       subtitles:subtitleSelectors.map(selector=>({selector,size:style(selector).fontSize,color:style(selector).color,weight:style(selector).fontWeight,align:style(selector).textAlign})),
       contents:contentSelectors.map(selector=>({selector,size:style(selector).fontSize})),
       separators:separatorSelectors.map(selector=>({selector,width:style(selector).borderTopWidth,kind:style(selector).borderTopStyle})),
-      format:{clientWidth:format.clientWidth,needed,text:option,rowWidth:format.closest('.advRow').getBoundingClientRect().width,selectWidth:format.getBoundingClientRect().width},
+      formatRemoved:!document.getElementById('advFormat'),
       exceptionBorder:exception.borderTopWidth,
       schoolBorders:[school.borderTopWidth,school.borderRightWidth,school.borderLeftWidth],
       dayParent:day.parentElement.id,dayAfterWidgetRow:day.previousElementSibling===widgetRow,
@@ -62,7 +60,7 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
   report.subtitles.forEach(item=>{assert.equal(item.size,report.reference.size,JSON.stringify(item));assert.equal(item.color,report.reference.color,JSON.stringify(item));assert.equal(item.weight,report.reference.weight,JSON.stringify(item));assert.equal(item.align,'center',JSON.stringify(item))});
   report.contents.forEach(item=>assert.equal(item.size,report.reference.size,JSON.stringify(item)));
   report.separators.forEach(item=>{assert.equal(item.width,'1px',JSON.stringify(item));assert.notEqual(item.kind,'none',JSON.stringify(item))});
-  assert.ok(report.format.selectWidth>=190&&report.format.clientWidth>=report.format.needed,JSON.stringify(report.format));
+  assert.equal(report.formatRemoved,true);
   assert.equal(report.exceptionBorder,'0px');
   assert.deepEqual(report.schoolBorders,['0px','0px','0px']);
   assert.equal(report.dayParent,'fontCombined79');assert.equal(report.dayAfterWidgetRow,true);
@@ -81,7 +79,7 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
   assert.equal(compact.saved,100);assert.ok(compact.height<full*.7,JSON.stringify({full,compact}));
 
   const gradle=fs.readFileSync(path.join(root,'app/build.gradle'),'utf8');
-  assert.match(gradle,/versionCode 768001/);assert.match(gradle,/versionName '7[.]68'/);
+  assert.match(gradle,/versionCode 769001/);assert.match(gradle,/versionName '7[.]69'/);
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({report,dayDensity:{full,compact},errors},null,2));
   await browser.close();

@@ -20,7 +20,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
     static final String ACTION_BOUNDARY = "com.wokgui.schedulewidget.BOUNDARY";
     static final String ACTION_TOGGLE_MODE = "com.wokgui.schedulewidget.TOGGLE_MODE";
 
-    @Override public void onUpdate(Context context, AppWidgetManager manager, int[] appWidgetIds) { ScheduleStore.ensureInitialized(context); for (int id : appWidgetIds) updateWidget(context, manager, id); scheduleNextBoundary(context); ReminderScheduler.reschedule(context); }
+    @Override public void onUpdate(Context context, AppWidgetManager manager, int[] appWidgetIds) { ScheduleStore.ensureInitialized(context); int expected=WidgetLayoutStore.formatForProviderClass(getClass()); for (int id : appWidgetIds) { WidgetLayoutStore.set(context,id,expected); updateWidget(context, manager, id); } scheduleNextBoundary(context); ReminderScheduler.reschedule(context); }
     @Override public void onReceive(Context context, Intent intent) { super.onReceive(context, intent); String action=intent==null?null:intent.getAction(); if(ACTION_REFRESH.equals(action)||ACTION_BOUNDARY.equals(action)||ACTION_TOGGLE_MODE.equals(action)||Intent.ACTION_BOOT_COMPLETED.equals(action)||Intent.ACTION_TIME_CHANGED.equals(action)||Intent.ACTION_TIMEZONE_CHANGED.equals(action)||Intent.ACTION_DATE_CHANGED.equals(action)){updateAll(context);scheduleNextBoundary(context);ReminderScheduler.reschedule(context);} }
     @Override public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager, int appWidgetId, android.os.Bundle newOptions) { manager.notifyAppWidgetViewDataChanged(appWidgetId,R.id.upcomingList);updateWidget(context,manager,appWidgetId); }
     @Override public void onDeleted(Context context,int[] appWidgetIds){for(int id:appWidgetIds)WidgetModeStore.clear(context,id);}
@@ -34,7 +34,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         ScheduleStore.ensureInitialized(context);
         RemoteViews views=new RemoteViews(context.getPackageName(),R.layout.widget_schedule);
         views.setViewVisibility(R.id.widgetHeader,View.GONE);views.setViewVisibility(R.id.currentCard,View.GONE);views.setViewVisibility(R.id.btnWidgetMode,View.GONE);
-        int format=WidgetLayoutStore.get(context,widgetId);
+        int format=WidgetLayoutStore.enforceProviderFormat(context,manager,widgetId);
         // Every format owns an opaque surface. The previous transparent classic surface made the launcher wallpaper bleed through.
         int surface=0xFFF7F9FC;
         views.setInt(R.id.widgetRoot,"setBackgroundColor",surface);views.setInt(R.id.widgetBody,"setBackgroundColor",surface);views.setInt(R.id.emptyUpcoming,"setBackgroundColor",surface);
@@ -60,7 +60,7 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
             views.setViewVisibility(R.id.emptyUpcoming, empty ? View.VISIBLE : View.GONE);
             for (RemoteViews row : rows) views.addView(R.id.adaptiveDayRows, row);
         } else {
-            Intent listIntent=new Intent(context,UpcomingCoursesService.class);listIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,widgetId);listIntent.setData(Uri.parse("edt://widget/"+widgetId+"/courses"));views.setRemoteAdapter(R.id.upcomingList,listIntent);views.setEmptyView(R.id.upcomingList,R.id.emptyUpcoming);
+            Intent listIntent=new Intent(context,UpcomingCoursesService.class);listIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,widgetId);listIntent.setData(Uri.parse("edt://widget/"+widgetId+"/courses/"+format));views.setRemoteAdapter(R.id.upcomingList,listIntent);views.setEmptyView(R.id.upcomingList,R.id.emptyUpcoming);
             views.setViewVisibility(R.id.emptyUpcoming, View.VISIBLE);
         }
 
