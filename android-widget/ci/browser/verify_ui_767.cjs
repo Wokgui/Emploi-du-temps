@@ -46,7 +46,7 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
       await page.evaluate(fs.readFileSync(path.join(chunks,name),'utf8')+'\n//# sourceURL='+name);
       await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(resolve)));
     }
-    await page.waitForFunction(()=>window.__feedback767&&window.__feedback766&&window.__edtHeavyPanels648);
+    await page.waitForFunction(()=>window.__feedback768&&window.__feedback767&&window.__feedback766&&window.__edtHeavyPanels648);
   };
   const openSettings=async()=>{
     await page.locator('#settingsBtn').tap();
@@ -65,11 +65,11 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
       gridTitles:[...document.querySelectorAll('#displayGrid767 .displayHead767')].map(x=>x.textContent.trim()),
       rows:[...document.querySelectorAll('#displayGrid767 [data-row]')].map(x=>x.textContent.trim()),
       general:document.getElementById('displayGeneralTitle767').textContent.trim(),widget:document.getElementById('displayWidgetTitle767').textContent.trim(),
-      bars:bars.querySelector('.bar672Title').textContent.trim(),barsStyle:{border:style('widgetEdgeBars672').borderTopWidth,background:style('widgetEdgeBars672').backgroundColor},
+      barsHidden:style('widgetEdgeBars672').display!=='none'&&getComputedStyle(bars.querySelector('.bar672Title')).display==='none',barLabels:[...bars.querySelectorAll('.bar672Label')].map(x=>x.textContent.trim()),barsStyle:{border:style('widgetEdgeBars672').borderTopWidth,background:style('widgetEdgeBars672').backgroundColor},
       removed:[...['advShowPercent','advShowProgress','advShowWeekInfo']].every(id=>!document.getElementById(id)),
       sectionResets:[...document.querySelectorAll('#resetText87,#resetColors87,#resetWidget87')].length,
       buttonText:{add:document.getElementById('addCourse').textContent.trim(),bulk:document.getElementById('addBulkCourses').textContent.trim()},
-      fontSizes:{photo:style('importPhoto').fontSize,add:style('addCourse').fontSize,bulk:style('addBulkCourses').fontSize,undo:style('undoEdit86').fontSize},
+      fontSizes:{photo:style('importPhoto').fontSize,add:style('addCourse').fontSize,bulk:style('addBulkCourses').fontSize,undo:style('undoEdit86').fontSize},buttonHeights:{photo:document.getElementById('importPhoto').getBoundingClientRect().height,add:document.getElementById('addCourse').getBoundingClientRect().height,bulk:document.getElementById('addBulkCourses').getBoundingClientRect().height},
       historyHeight:document.getElementById('undoEdit86').getBoundingClientRect().height,
       columns:getComputedStyle(document.getElementById('displayGrid767')).gridTemplateColumns.split(' ').length,
       formatInside:document.getElementById('advFormat').closest('#displayWidget767')?.id,
@@ -79,9 +79,9 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
   assert.equal(german.title,'Einstellungen');assert.equal(german.display,'Anzeige');
   for(const expected of ['Sprache','Textgröße','Wochen und Zeiten','Farben','Pausenanzeige','Anzeige','Erweiterte Einstellungen'])assert.ok(german.summaries.includes(expected),JSON.stringify(german));
   assert.deepEqual(german.gridTitles,['','App','Widget']);assert.equal(german.general,'Allgemeine Anzeige');assert.equal(german.widget,'Widget');
-  assert.ok(german.rows.includes('Freistunden'));assert.ok(german.rows.includes('Farbe je Klasse'));assert.equal(german.bars,'Widget-Leisten oben und unten');
+  assert.ok(german.rows.includes('Freistunden'));assert.ok(german.rows.includes('Farbe je Klasse'));assert.equal(german.barsHidden,true);assert.deepEqual(german.barLabels,['Anzeige der oberen Leiste','Anzeige der unteren Leiste']);
   assert.deepEqual(german.barsStyle,{border:'0px',background:'rgba(0, 0, 0, 0)'});assert.equal(german.removed,true);assert.equal(german.sectionResets,0);assert.equal(german.columns,3);
-  assert.equal(german.buttonText.bulk,'＋ Mehrere Stunden zu einer Klasse hinzufügen');assert.equal(german.fontSizes.photo,german.fontSizes.add);assert.equal(german.fontSizes.photo,german.fontSizes.bulk);assert.ok(german.historyHeight>=48);assert.ok(parseFloat(german.fontSizes.undo)>=13);
+  assert.equal(german.buttonText.bulk,'＋ Mehrere Stunden zu einer Klasse hinzufügen');assert.equal(german.fontSizes.photo,german.fontSizes.add);assert.equal(german.fontSizes.photo,german.fontSizes.bulk);assert.ok(parseFloat(german.fontSizes.photo)<14);assert.ok(german.buttonHeights.photo<=40);assert.ok(german.buttonHeights.add<=40);assert.ok(german.buttonHeights.bulk<=40);assert.ok(german.historyHeight>=48);assert.ok(parseFloat(german.fontSizes.undo)>=13);
   assert.equal(german.formatInside,'displayWidget767');assert.equal(german.followingInside,'displayWidget767');
 
   await page.locator('#advAppShowRoom767').uncheck();
@@ -96,8 +96,8 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
   assert.equal(await page.evaluate(()=>JSON.parse(window.__data767.UiSettings).language),'fr');
   assert.equal(await page.evaluate(()=>window.__data767.reloadCalls),1);
   await page.reload();await inject();await openSettings();
-  const french=await page.evaluate(()=>({title:document.getElementById('settingsTitle').textContent.trim(),display:document.querySelector('#widgetSettings86>summary').textContent.trim(),week:document.querySelector('#weekTypeSettings86>summary').textContent.trim(),advanced:document.querySelector('#advancedSettings85>summary').textContent.trim(),bulk:document.getElementById('addBulkCourses').textContent.trim(),colorTitle:document.querySelector('#week658Settings .w658Title')?.textContent.trim(),colorLabels:[...document.querySelectorAll('#week658Settings .w658Colors span')].map(x=>x.textContent.trim())}));
-  assert.deepEqual(french,{title:'Réglages',display:'Affichage',week:'Semaines et horaires',advanced:'Réglages avancés',bulk:'＋ Ajouter plusieurs cours à une classe',colorTitle:'Couleurs des interruptions',colorLabels:['Trous','Cours','Midi']});
+  const french=await page.evaluate(()=>({title:document.getElementById('settingsTitle').textContent.trim(),display:document.querySelector('#widgetSettings86>summary').textContent.trim(),week:document.querySelector('#weekTypeSettings86>summary').textContent.trim(),advanced:document.querySelector('#advancedSettings85>summary').textContent.trim(),bulk:document.getElementById('addBulkCourses').textContent.trim(),barTitleDisplay:getComputedStyle(document.querySelector('#widgetEdgeBars672 .bar672Title')).display,barLabels:[...document.querySelectorAll('#widgetEdgeBars672 .bar672Label')].map(x=>x.textContent.trim()),colorTitle:document.querySelector('#week658Settings .w658Title')?.textContent.trim(),colorLabels:[...document.querySelectorAll('#week658Settings .w658Colors span')].map(x=>x.textContent.trim())}));
+  assert.deepEqual(french,{title:'Réglages',display:'Affichage',week:'Semaines et horaires',advanced:'Réglages avancés',bulk:'＋ Ajouter plusieurs cours à une classe',barTitleDisplay:'none',barLabels:['Affichage de la barre du haut','Affichage de la barre du bas'],colorTitle:'Couleurs des interruptions',colorLabels:['Trous','Cours','Midi']});
 
   await page.locator('#settingsReset').tap();
   const reset=await page.evaluate(()=>({ui:JSON.parse(window.__data767.UiSettings),advanced:JSON.parse(window.__data767.AdvancedSettings),schedule:JSON.parse(window.__data767.Schedule),calls:window.__data767.resetCalls}));
@@ -107,7 +107,7 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
   const advancedStore=fs.readFileSync(path.join(root,'app/src/main/java/com/wokgui/schedulewidget/AdvancedSettingsStore.java'),'utf8');
   const main=fs.readFileSync(path.join(root,'app/src/main/java/com/wokgui/schedulewidget/MainActivity.java'),'utf8');
   assert.match(widgetPalette,/AdvancedSettingsStore[.]colorByClass/);assert.match(widgetPalette,/weekFreeColor/);assert.match(advancedStore,/static String weekFreeColor/);assert.match(main,/resetAllSettings/);
-  const gradle=fs.readFileSync(path.join(root,'app/build.gradle'),'utf8');assert.match(gradle,/versionCode 767001/);assert.match(gradle,/versionName '7[.]67'/);
+  const gradle=fs.readFileSync(path.join(root,'app/build.gradle'),'utf8');assert.match(gradle,/versionCode 768001/);assert.match(gradle,/versionName '7[.]68'/);
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({german,behavior,french,reset:{calls:reset.calls,slots:reset.schedule._slots.length,course:reset.schedule._weeks.A['2'].courses[0].label},errors},null,2));
   await browser.close();
