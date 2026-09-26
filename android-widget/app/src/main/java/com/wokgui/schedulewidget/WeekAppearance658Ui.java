@@ -138,7 +138,7 @@ final class WeekAppearance658Ui {
                   const settings=load();
                   if(!colorBox){
                     colorBox=document.createElement('section');colorBox.id='week658Settings';colorBox.className='settingBox';
-                    colorBox.innerHTML='<div class="w658Title">'+tr('Couleurs de la vue semaine','Week view colours','Farben der Wochenansicht')+'</div><div class="w658Colors"><span>'+tr('Cases libres','Free cells','Freie Felder')+'</span><input id="w658Free" type="color"><span>'+tr('Cours','Classes','Unterricht')+'</span><input id="w658Course" type="color"><span>'+tr('Midi','Lunch','Mittag')+'</span><input id="w658Lunch" type="color"></div>';
+                    colorBox.innerHTML='<div class="w658Title">'+tr('Couleurs des interruptions','Break colours','Farben der Unterbrechungen')+'</div><div class="w658Colors"><span>'+tr('Trous','Free periods','Freistunden')+'</span><input id="w658Free" type="color"><span>'+tr('Cours','Classes','Unterricht')+'</span><input id="w658Course" type="color"><span>'+tr('Midi','Lunch','Mittag')+'</span><input id="w658Lunch" type="color"></div>';
                     colorBox.querySelector('#w658Free').value=settings.free;colorBox.querySelector('#w658Course').value=settings.course;colorBox.querySelector('#w658Lunch').value=settings.lunch;
                     [['w658Free','free'],['w658Course','course'],['w658Lunch','lunch']].forEach(([id,key])=>colorBox.querySelector('#'+id).addEventListener('input',event=>{const value=load();value[key]=event.target.value;save(value)}));
                   }

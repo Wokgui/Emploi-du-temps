@@ -171,7 +171,7 @@ final class BaseSettingsUi {
                 document.getElementById('settingsX').onclick=()=>modal.classList.remove('show');document.getElementById('settingsDone').onclick=()=>modal.classList.remove('show');modal.onclick=e=>{if(e.target===modal)modal.classList.remove('show')};
                 document.getElementById('appFont').oninput=e=>{state.appFontScale=Number(e.target.value)/100;applyFont();persist()};
                 document.getElementById('widgetFont').oninput=e=>{state.widgetFontScale=Number(e.target.value)/100;applyFont();persist()};
-                document.getElementById('languageSelect').onchange=e=>{state.language=e.target.value;renderThemeButtons();refresh();persist()};
+                document.getElementById('languageSelect').onchange=e=>{state.language=e.target.value;persist();renderThemeButtons();refresh()};
                 document.getElementById('settingsReset').onclick=()=>{state={appFontScale:1,widgetFontScale:1,language:'fr',theme:'blue'};document.getElementById('languageSelect').value='fr';renderThemeButtons();refresh();persist()};
 
                 window.refreshSettingsV3=refresh;

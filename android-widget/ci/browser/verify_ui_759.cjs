@@ -63,8 +63,7 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
       typeDelta:Math.abs(centerOf(document.querySelector('#settingsWeekCycle678>.settingTitle'))-center('settingsWeekCycle678')),
       themeDelta:Math.abs(center('themeTitle')-centerOf(document.getElementById('themeTitle')?.parentElement)),
       paletteDelta:Math.abs(center('appPaletteTitle')-center('paletteSettingRoot')),
-      resetGap:textBody&&reset?textBody.getBoundingClientRect().bottom-reset.getBoundingClientRect().bottom:null,
-      resetInside:reset?.parentElement===textBody,
+      resetMissing:!reset,
       calendarTitle:document.getElementById('advCalendarTitle')?.textContent.trim(),
       schoolInside:school?.parentElement===calendar,
       schoolAfterTitle:school?.previousElementSibling?.id==='advCalendarTitle',
@@ -83,8 +82,7 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
   assert.ok(layout.typeDelta<=1,JSON.stringify(layout));
   assert.ok(layout.themeDelta<=1,JSON.stringify(layout));
   assert.ok(layout.paletteDelta<=1,JSON.stringify(layout));
-  assert.equal(layout.resetInside,true);
-  assert.ok(layout.resetGap>=8,JSON.stringify(layout));
+  assert.equal(layout.resetMissing,true);
   assert.equal(layout.calendarTitle,'Vacances et jours fériés');
   assert.equal(layout.schoolInside,true);
   assert.equal(layout.schoolAfterTitle,true);

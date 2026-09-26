@@ -493,7 +493,7 @@ final class TimetableCoreUi {
                   de:{widgetDisplay:'Widget-Anzeige',density:'Dichte',format:'Format',following:'Folgende Stunden',auto:'Automatisch',compact:'Kompakt',normal:'Normal',comfortable:'Komfortabel',timeline:'Tagesverlauf',nowNext:'Jetzt + nächste Stunde',room:'Raum',times:'Zeiten',remaining:'Restzeit',percent:'Prozent',progress:'Fortschrittsbalken',gaps:'Freistunden',lunch:'Mittagspause',weekInfo:'Woche und Zyklus',classColors:'Farbe je Klasse',access:'Barrierefreiheit',accessNormal:'Normal',contrast:'Hoher Kontrast',colorblind:'Farbenblind-Palette',cycle:'Wochenzyklus',cycle2:'2 Wochen (A/B)',cycle3:'3 Wochen (A/B/C)',cycle4:'4 Wochen (A/B/C/D)',copyWeek:'Aktive Woche in die nächste kopieren',copyDay:'Tag kopieren',from:'Von',to:'Nach',copy:'Kopieren',reminders:'Erinnerungen',notify:'Vor dem Unterricht erinnern',calendar:'Ferien und unterrichtsfreie Tage',holidays:'Automatische Feiertage',holOff:'Aus',holFrance:'Frankreich',holAlsace:'Elsass-Mosel',addRange:'Unterrichtsfreie Zeit hinzufügen',label:'Bezeichnung',add:'Hinzufügen',exceptions:'Einmalige Änderungen',addException:'Ausnahme hinzufügen',noException:'Keine Ausnahme',cancelCourse:'Stunde fällt aus',roomChange:'Raumänderung',moveCourse:'Stunde verlegt',extraCourse:'Zusätzliche Stunde / Besprechung',date:'Datum',referenceStart:'Beginn der betroffenen Stunde',referenceLabel:'Klasse / ursprüngliche Bezeichnung',newStart:'Neuer Beginn',newEnd:'Neues Ende',newRoom:'Raum',newLabel:'Neue Bezeichnung',save:'Speichern',delete:'Löschen',profiles:'Profile',newProfile:'Neues Profil',rename:'Umbenennen',backup:'Sicherung',share:'Sicherung teilen',restore:'Sicherung wiederherstellen',blank:'Leer erstellen?',dayOff:'Unterrichtsfrei',uncertain:'Prüfen',importOk:'Sicherung wiederhergestellt.',importFail:'Diese Datei ist keine gültige Sicherung.',duplicateQuestion:'Aktuelles Profil duplizieren?'}
                 };
 
-                let adv={density:'normal',upcomingCount:0,widgetFormat:'timeline',showRoom:true,showTimes:true,showRemaining:true,showPercent:true,showProgress:true,showBreaks:true,showLunch:true,showWeekInfo:true,colorByClass:false,accessibility:'normal',cycleLength:2,remindersEnabled:false,reminderMinutes:10,holidayMode:'alsace_moselle',exceptions:[],dayOffRanges:[]};
+                let adv={density:'normal',upcomingCount:0,widgetFormat:'timeline',showRoom:true,showTimes:true,showRemaining:true,showPercent:true,showProgress:true,showBreaks:true,showLunch:true,showWeekInfo:true,colorByClass:false,accessibility:'normal',appShowRoom:true,appShowTimes:true,appShowRemaining:true,appColorByClass:false,appAccessibility:'normal',cycleLength:2,remindersEnabled:false,reminderMinutes:10,holidayMode:'alsace_moselle',exceptions:[],dayOffRanges:[]};
                 function uiLang(){
                   try{const raw=window.AndroidSchedule&&AndroidSchedule.loadUiSettings?AndroidSchedule.loadUiSettings():null;if(raw){const o=JSON.parse(raw);if(o.language==='en'||o.language==='de')return o.language}}catch(e){}
                   return 'fr';
@@ -583,11 +583,14 @@ final class TimetableCoreUi {
                 function classColor(label){
                   const std=['#0877f9','#00897b','#6750a4','#2e7d32','#ef6c00','#c2185b'];
                   const cb=['#0072b2','#e69f00','#009e73','#cc79a7','#d55e00','#56b4e9'];
-                  const p=adv.accessibility==='colorblind'?cb:std;let h=0;const s=String(label||'');for(let i=0;i<s.length;i++)h=((h*31)+s.charCodeAt(i))>>>0;return p[h%p.length]
+                  const p=adv.appAccessibility==='colorblind'?cb:std;let h=0;const s=String(label||'');for(let i=0;i<s.length;i++)h=((h*31)+s.charCodeAt(i))>>>0;return p[h%p.length]
                 }
                 function applyAppAppearance(){
-                  document.documentElement.classList.toggle('accessHigh',adv.accessibility==='high_contrast');
-                  if(!adv.colorByClass){document.querySelectorAll('.classTint').forEach(el=>{el.classList.remove('classTint');el.style.removeProperty('--class-color')});return}
+                  document.documentElement.classList.toggle('accessHigh',adv.appAccessibility==='high_contrast');
+                  document.documentElement.classList.toggle('appHideRoom767',adv.appShowRoom===false);
+                  document.documentElement.classList.toggle('appHideTimes767',adv.appShowTimes===false);
+                  document.documentElement.classList.toggle('appHideRemaining767',adv.appShowRemaining===false);
+                  if(!adv.appColorByClass){document.querySelectorAll('.classTint').forEach(el=>{el.classList.remove('classTint');el.style.removeProperty('--class-color')});return}
                   document.querySelectorAll('.todayCourse').forEach(el=>{if(el.classList.contains('gap')||el.classList.contains('lunch'))return;const label=el.querySelector('.label');if(label){el.classList.add('classTint');el.style.setProperty('--class-color',classColor(label.textContent))}});
                   document.querySelectorAll('.wc.has').forEach(el=>{const label=el.querySelector('.cellLabel');if(label){el.classList.add('classTint');el.style.setProperty('--class-color',classColor(label.textContent))}});
                   document.querySelectorAll('.editCourse').forEach(el=>{const label=el.querySelector('.label');if(label){el.classList.add('classTint');el.style.setProperty('--class-color',classColor(label.textContent))}});
@@ -619,8 +622,8 @@ final class TimetableCoreUi {
                     const row=document.createElement('div');
                     if(ev.type==='course'){
                       const c=ev.course,cur=nowM>=min(c.start)&&nowM<min(c.end);row.className='todayCourse'+(cur?' current':'')+(c.uncertain?' ocrUncertain':'');
-                      const roomText=adv.showRoom?'<div class="room">'+(uiLang()==='de'?'Raum ':(uiLang()==='en'?'room ':'salle '))+esc(c.room||'—')+(c.slot?' · '+(uiLang()==='de'?'Stunde ':(uiLang()==='en'?'period ':'heure '))+c.slot:'')+'</div>':'';
-                      const timeText=adv.showTimes?'<div class="time"><strong>'+esc(c.start)+'</strong><br>'+esc(c.end)+'</div>':'<div class="time"></div>';
+                      const roomText=adv.appShowRoom!==false?'<div class="room">'+(uiLang()==='de'?'Raum ':(uiLang()==='en'?'room ':'salle '))+esc(c.room||'—')+(c.slot?' · '+(uiLang()==='de'?'Stunde ':(uiLang()==='en'?'period ':'heure '))+c.slot:'')+'</div>':'';
+                      const timeText=adv.appShowTimes!==false?'<div class="time"><strong>'+esc(c.start)+'</strong><br>'+esc(c.end)+'</div>':'<div class="time"></div>';
                       row.innerHTML=timeText+'<div><div class="label">'+esc(c.label)+(c.uncertain?'<span class="ocrFlag">⚠ '+T().uncertain+'</span>':'')+'</div>'+roomText+'</div>'+(cur?'<div class="badge">'+(uiLang()==='de'?'Läuft':(uiLang()==='en'?'In class':'En cours'))+'</div>':'');
                       const base=(weeks[currentWeek]&&weeks[currentWeek][todayDay()])?weeks[currentWeek][todayDay()].courses:[];let idx=base.findIndex(x=>x.start===c.start&&x.label===c.label);if(idx<0)idx=base.findIndex(x=>x.label===c.label);if(idx>=0){const captured=idx;row.onclick=()=>{activeWeek=currentWeek;selected=todayDay();editing=captured;openEditor(captured)}}
                     }else if(ev.type==='gap'){

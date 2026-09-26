@@ -37,6 +37,10 @@ final class WidgetPaletteStore {
 
     static int courseColor(Context context, int slot, String label, String colorId) {
         Integer literal = literalColor(colorId);
+        if ("high_contrast".equals(AdvancedSettingsStore.accessibility(context))) return 0xFFFFFFFF;
+        if (AdvancedSettingsStore.colorByClass(context)) {
+            return AdvancedSettingsStore.classColor(context, label, literal == null ? 0xFF0877F9 : literal);
+        }
         if (literal != null) return literal;
         int[] palette = palette(context);
         int custom = colorIndex(colorId);
@@ -49,6 +53,7 @@ final class WidgetPaletteStore {
     }
 
     static boolean useDarkText(Context context, int slot, String label, String colorId) {
+        if ("high_contrast".equals(AdvancedSettingsStore.accessibility(context))) return true;
         return isLight(courseColor(context, slot, label, colorId));
     }
 
@@ -121,6 +126,7 @@ final class WidgetPaletteStore {
     }
 
     static int lunchBackground(Context context) {
+        if ("high_contrast".equals(AdvancedSettingsStore.accessibility(context))) return 0xFFFFFFFF;
         return parseOr(AdvancedSettingsStore.weekLunchColor(context), 0xFFFFE08A);
     }
 
@@ -129,9 +135,8 @@ final class WidgetPaletteStore {
     }
 
     static int gapBackground(Context context) {
-        JSONObject o = special(context);
-        boolean sync = o.optBoolean("sync", true);
-        return parseOr(o.optString(sync ? "appGap" : "widgetGap", "#DDF2EC"), 0xFFDDF2EC);
+        if ("high_contrast".equals(AdvancedSettingsStore.accessibility(context))) return 0xFFFFFFFF;
+        return parseOr(AdvancedSettingsStore.weekFreeColor(context), 0xFFEAF4FF);
     }
 
     static int gapText(Context context) {
@@ -198,5 +203,9 @@ final class WidgetPaletteStore {
     private static boolean isValid(String id) {
         return "vivid".equals(id) || "pastel".equals(id) || "warm".equals(id)
                 || "cool".equals(id) || "soft".equals(id);
+    }
+
+    static void reset(Context context) {
+        prefs(context).edit().clear().commit();
     }
 }

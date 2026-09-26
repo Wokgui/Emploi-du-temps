@@ -43,6 +43,11 @@ final class AdvancedSettingsStore {
             o.put("showWeekInfo", true);
             o.put("colorByClass", false);
             o.put("accessibility", "normal");
+            o.put("appShowRoom", true);
+            o.put("appShowTimes", true);
+            o.put("appShowRemaining", true);
+            o.put("appColorByClass", false);
+            o.put("appAccessibility", "normal");
             o.put("cycleLength", 2);
             o.put("singleWeek", false);
             o.put("remindersEnabled", false);
@@ -126,6 +131,9 @@ final class AdvancedSettingsStore {
         String access = merged.optString("accessibility", "normal");
         if (!"high_contrast".equals(access) && !"colorblind".equals(access)) access = "normal";
         merged.put("accessibility", access);
+        String appAccess = merged.optString("appAccessibility", "normal");
+        if (!"high_contrast".equals(appAccess) && !"colorblind".equals(appAccess)) appAccess = "normal";
+        merged.put("appAccessibility", appAccess);
         String holiday = merged.optString("holidayMode", "alsace_moselle");
         if (!"off".equals(holiday) && !"france".equals(holiday)) holiday = "alsace_moselle";
         merged.put("holidayMode", holiday);
@@ -172,6 +180,16 @@ final class AdvancedSettingsStore {
     static boolean showWeekInfo(Context context) { return json(context).optBoolean("showWeekInfo", true); }
     static boolean colorByClass(Context context) { return json(context).optBoolean("colorByClass", false); }
     static String accessibility(Context context) { return json(context).optString("accessibility", "normal"); }
+    static String weekFreeColor(Context context) {
+        JSONObject appearance = json(context).optJSONObject("weekAppearance658");
+        String value = appearance == null ? "" : appearance.optString("free", "").trim();
+        return value.matches("#[0-9A-Fa-f]{6}") ? value.toUpperCase(Locale.ROOT) : "#EAF4FF";
+    }
+    static synchronized void reset(Context context) {
+        prefs(context).edit().clear().commit();
+        ScheduleStore.refreshWidgets(context);
+        ReminderScheduler.reschedule(context);
+    }
     static boolean remindersEnabled(Context context) { return json(context).optBoolean("remindersEnabled", false); }
     static int reminderMinutes(Context context) { return clamp(json(context).optInt("reminderMinutes", 10), 0, 120); }
     static String holidayMode(Context context) { return json(context).optString("holidayMode", "alsace_moselle"); }

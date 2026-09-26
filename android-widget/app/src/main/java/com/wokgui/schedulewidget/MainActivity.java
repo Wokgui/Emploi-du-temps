@@ -647,6 +647,16 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> ScheduleWidgetProvider.refreshAll(MainActivity.this));
             if (AdvancedSettingsStore.remindersEnabled(MainActivity.this)) runOnUiThread(MainActivity.this::maybeRequestNotificationPermission);
         }
+        @JavascriptInterface public void resetAllSettings() {
+            UiSettingsStore.reset(MainActivity.this);
+            AdvancedSettingsStore.reset(MainActivity.this);
+            WidgetPaletteStore.reset(MainActivity.this);
+            ScheduleStore.resetSettings(MainActivity.this);
+            runOnUiThread(() -> {
+                ScheduleWidgetProvider.refreshAll(MainActivity.this);
+                reloadForLanguageUi();
+            });
+        }
         @JavascriptInterface public void setCurrentWeek(String letter) { ScheduleStore.setCurrentWeekLetter(MainActivity.this, letter); }
 
         @JavascriptInterface public String loadEffectiveCourses(String yyyyMmDd) {

@@ -81,7 +81,7 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
   assert.equal(compact.saved,100);assert.ok(compact.height<full*.7,JSON.stringify({full,compact}));
 
   const gradle=fs.readFileSync(path.join(root,'app/build.gradle'),'utf8');
-  assert.match(gradle,/versionCode 766001/);assert.match(gradle,/versionName '7[.]66'/);
+  assert.match(gradle,/versionCode 767001/);assert.match(gradle,/versionName '7[.]67'/);
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({report,dayDensity:{full,compact},errors},null,2));
   await browser.close();

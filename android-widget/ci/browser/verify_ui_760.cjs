@@ -105,7 +105,7 @@ const settle = page => page.evaluate(() => new Promise(resolve => requestAnimati
   assert.equal(settingsTitles.calendarDisplay, 'none', JSON.stringify(settingsTitles));
   assert.equal(settingsTitles.widgetDisplay, 'list-item', JSON.stringify(settingsTitles));
   assert.ok(settingsTitles.widgetHeight > 30, JSON.stringify(settingsTitles));
-  assert.equal(settingsTitles.widgetText, 'Affichage du widget', JSON.stringify(settingsTitles));
+  assert.equal(settingsTitles.widgetText, 'Affichage', JSON.stringify(settingsTitles));
   await page.evaluate(() => document.querySelectorAll('#settingsSheet > details').forEach(node => { node.open = false; }));
   await settle(page);
   await page.screenshot({ path: path.resolve('smoke-browser/ui-762-settings.png'), fullPage: false });

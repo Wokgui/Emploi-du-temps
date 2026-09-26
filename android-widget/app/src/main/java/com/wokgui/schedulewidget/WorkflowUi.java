@@ -664,9 +664,7 @@ final class WorkflowUi {
                   AndroidSchedule.saveAdvancedSettings(JSON.stringify(a));refreshAll()
                 }
                 function ensure(){
-                  addButton('textSettings86','resetText87',resetText);
-                  addButton('colorSettings86','resetColors87',resetColors);
-                  addButton('widgetSettings86','resetWidget87',resetWidget);
+                  ['resetText87','resetColors87','resetWidget87'].forEach(id=>{const b=document.getElementById(id);if(b)b.remove()});
                   const v=document.getElementById('appVersionInfo');if(v)v.textContent='Version '+APP_VERSION;
                 }
                 function refresh(){ensure()}

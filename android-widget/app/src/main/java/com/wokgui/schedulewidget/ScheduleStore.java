@@ -174,6 +174,19 @@ final class ScheduleStore {
     static boolean showGapBadge(Context context) { ensureInitialized(context); return prefs(context).getBoolean(SHOW_GAP_BADGE, false); }
     static boolean showLunchBadge(Context context) { ensureInitialized(context); return prefs(context).getBoolean(SHOW_LUNCH_BADGE, false); }
 
+    static void resetSettings(Context context) {
+        SharedPreferences.Editor e = prefs(context).edit().remove(SLOT_CONFIG)
+                .putString(GAP_LABEL, "Trou").putString(LUNCH_LABEL, "Midi")
+                .putBoolean(SHOW_GAP_BADGE, false).putBoolean(SHOW_LUNCH_BADGE, false);
+        for (int i = 0; i < 9; i++) {
+            e.putString("slot_" + (i + 1) + "_start", DEFAULT_START[i]);
+            e.putString("slot_" + (i + 1) + "_end", DEFAULT_END[i]);
+        }
+        for (int day : ALL_DAYS) e.putBoolean("enabled_" + day, day >= Calendar.MONDAY && day <= Calendar.FRIDAY);
+        e.putInt(CYCLE_ANCHOR, weekIndex(Calendar.getInstance())).commit();
+        refreshWidgets(context);
+    }
+
     static String getWeekLetter(Context context, Calendar date) {
         ensureInitialized(context);
         if (AdvancedSettingsStore.json(context).optBoolean("singleWeek", false)) return "A";

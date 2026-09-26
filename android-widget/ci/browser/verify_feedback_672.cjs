@@ -65,8 +65,8 @@ const attrs = xml => Object.fromEntries([...xml.matchAll(/(?:android:)?([A-Za-z_
   assert.match(settings, /value="color"/);
   assert.match(settings, /value="none"/);
   assert.match(settings, /type="color"/);
-  assert.match(gradle, /versionCode 766001/);
-  assert.match(gradle, /versionName '7[.]66'/);
+  assert.match(gradle, /versionCode 767001/);
+  assert.match(gradle, /versionName '7[.]67'/);
 
   const browser = await chromium.launch({ headless: true, ...(process.env.EDT_BROWSER_CHANNEL ? { channel: process.env.EDT_BROWSER_CHANNEL } : {}) });
   const context = await browser.newContext({ viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true });
@@ -110,7 +110,7 @@ const attrs = xml => Object.fromEntries([...xml.matchAll(/(?:android:)?([A-Za-z_
       topValue: top.value,
       bottomValue: bottom.value,
       topColorHidden: getComputedStyle(topColor).visibility === 'hidden',
-      courseProgressLabel: document.getElementById('advShowProgressLabel').textContent
+      courseProgressRemoved: !document.getElementById('advShowProgressLabel')
     };
   });
   assert.equal(initial.sameBox, true);
@@ -119,7 +119,7 @@ const attrs = xml => Object.fromEntries([...xml.matchAll(/(?:android:)?([A-Za-z_
   assert.equal(initial.topValue, 'progress');
   assert.equal(initial.bottomValue, 'progress');
   assert.equal(initial.topColorHidden, true);
-  assert.equal(initial.courseProgressLabel, 'Progression du cours en cours');
+  assert.equal(initial.courseProgressRemoved, true);
 
   await page.evaluate(()=>{const section=document.getElementById('widgetSettings86');if(section)section.open=true});
   await page.locator('#widgetTopBarMode672').selectOption('color');

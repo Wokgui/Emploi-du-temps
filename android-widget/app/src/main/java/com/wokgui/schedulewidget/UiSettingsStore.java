@@ -148,6 +148,11 @@ final class UiSettingsStore {
         }
     }
 
+    static void reset(Context context) {
+        prefs(context).edit().clear().commit();
+        ScheduleStore.refreshWidgets(context);
+    }
+
     static Locale locale(Context context) {
         String lang = language(context);
         if ("de".equals(lang)) return Locale.GERMANY;
