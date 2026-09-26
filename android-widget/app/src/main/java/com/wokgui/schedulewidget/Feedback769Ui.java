@@ -1,6 +1,6 @@
 package com.wokgui.schedulewidget;
 
-/** 7.72 final owner for settings typography and compact widget controls. */
+/** 7.73 final owner for settings typography and stable view appearance. */
 final class Feedback769Ui {
     private Feedback769Ui() {}
 
@@ -10,7 +10,7 @@ final class Feedback769Ui {
               try{
                 if(window.__feedback769){window.refreshFeedback769&&window.refreshFeedback769();return}
                 window.__feedback769=true;
-                const VERSION='7.72';
+                const VERSION='7.73';
                 let scheduled=false;
                 const style=document.createElement('style');style.id='feedback769Style';style.textContent=`
                   #settingsSheet{--settings-content-font:.72rem}
@@ -35,6 +35,22 @@ final class Feedback769Ui {
                   #slotSettings .slotNum{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
                   #slotSettings .slotRemove{display:flex!important;visibility:visible!important;position:relative!important;z-index:2!important;flex:0 0 24px!important;width:24px!important;height:24px!important;padding:0!important}
                   #slotSettings .slotRemove[hidden]{display:none!important}
+                  #advancedSettings85 .advRow select,#advancedSettings85 .advRow input[type=date],#advancedSettings85 .advRow input[type=time],#advancedSettings85 .advRow input[type=text],
+                  #advancedSettings85 .advInline select,#advancedSettings85 .advInline input,#advancedSettings85 .advRangeDates input,#advancedSettings85 #schoolCalendarBlock select{
+                    box-sizing:border-box!important;min-height:2.72em!important;max-width:100%!important;padding:.55em .72em!important;border-radius:.58em!important;
+                    font-size:var(--settings-content-font)!important;line-height:1.2!important
+                  }
+                  #settingsSheet #advancedSettings85 .advButton{box-sizing:border-box!important;min-height:2.72em!important;max-width:100%!important;padding:.55em .78em!important;border-radius:.58em!important;font-size:var(--settings-content-font)!important;line-height:1.2!important;white-space:normal!important}
+                  #advancedSettings85 .advCheck,#advancedSettings85 .schoolEnable{min-height:2.2em!important;line-height:1.25!important}
+                  #advancedSettings85 .advCheck input[type=checkbox],#advancedSettings85 .schoolEnable input[type=checkbox]{flex:0 0 1.5em!important;width:1.5em!important;height:1.5em!important;margin:0!important}
+                  #advancedSettings85 .advSmall,#advancedSettings85 .schoolHint,#advancedSettings85 .advItemText{font-size:var(--settings-content-font)!important;line-height:1.35!important;overflow-wrap:anywhere!important}
+                  #advancedSettings85 .advButtons{gap:.55em!important;align-items:stretch!important}
+                  #advancedSettings85 .advItem{gap:.65em!important;min-height:2.72em!important}
+                  html body #viewWeek #weekGrid#weekGrid .wc.week658Course.classFill,
+                  html body #viewWeek #weekGrid#weekGrid .wc.has.classFill,
+                  html body #todayList .todayCourse.classFill:not(.gap):not(.lunch),
+                  html body #editList .editCourse.classFill{background:var(--class-color)!important;background-color:var(--class-color)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--class-color) 72%,#26344d)!important}
+                  html body #viewWeek #weekGrid#weekGrid .wc.classFill *,html body #todayList .todayCourse.classFill *,html body #editList .editCourse.classFill *{color:var(--class-ink,#17213a)!important}
                   @media(max-width:370px){
                     #widgetSettings86 .displayGrid767{grid-template-columns:minmax(80px,.78fr) repeat(2,minmax(106px,1.12fr))!important}
                     #widgetSettings86 .accessCell769 select{padding-right:9px!important;background-position:calc(100% - 7px) 50%,calc(100% - 3px) 50%!important}
@@ -57,6 +73,32 @@ final class Feedback769Ui {
                   const size=profile?getComputedStyle(profile).fontSize:'11.52px';sheet.style.setProperty('--settings-content-font',size);
                   sheet.querySelectorAll('.settingsSectionBody86 *').forEach(node=>node.style.setProperty('font-size',size,'important'));
                 }
+                function readAdvanced(){try{return JSON.parse(AndroidSchedule.loadAdvancedSettings()||'{}')}catch(e){return {}}}
+                function courseInk(color){
+                  const m=/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(color||''));if(!m)return '#17213a';
+                  const channel=v=>{v/=255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4)},lum=(r,g,b)=>.2126*channel(r)+.7152*channel(g)+.0722*channel(b),contrast=(a,b)=>(Math.max(a,b)+.05)/(Math.min(a,b)+.05),bg=lum(parseInt(m[1],16),parseInt(m[2],16),parseInt(m[3],16)),dark=lum(0x17,0x21,0x3a);return contrast(bg,dark)>=contrast(bg,1)?'#17213a':'#ffffff'
+                }
+                function fallbackCourseColor(label,colorblind){
+                  const palette=colorblind?['#0072b2','#e69f00','#009e73','#cc79a7','#d55e00','#56b4e9']:['#0877f9','#00897b','#6750a4','#2e7d32','#ef6c00','#c2185b'];let hash=0;for(const c of String(label||''))hash=((hash*31)+c.charCodeAt(0))>>>0;return palette[hash%palette.length]
+                }
+                function normalizeCourseAppearance(){
+                  const state=readAdvanced(),mode=['stripe','fill'].includes(state.appClassColorMode)?state.appClassColorMode:(state.appColorByClass?'stripe':'none'),colorblind=state.appAccessibility==='colorblind';
+                  const cells=document.querySelectorAll('#todayList .todayCourse:not(.gap):not(.lunch),#weekGrid .wc.has,#editList .editCourse');
+                  cells.forEach(cell=>{
+                    if(mode==='none'){cell.classList.remove('classTint','classFill');cell.style.removeProperty('--class-color');cell.style.removeProperty('--class-ink');return}
+                    let color=getComputedStyle(cell).getPropertyValue('--class-color').trim()||cell.style.getPropertyValue('--class-color');
+                    if(!color){const label=cell.querySelector('.label,.cellLabel');color=fallbackCourseColor(label&&label.textContent,colorblind)}
+                    cell.classList.remove('classTint','classFill');cell.classList.add(mode==='fill'?'classFill':'classTint');cell.style.setProperty('--class-color',color);cell.style.setProperty('--class-ink',courseInk(color));
+                  });
+                }
+                let viewScheduled=false;
+                function refreshViews(){
+                  viewScheduled=false;
+                  try{if(window.refreshCoursePaletteV4)window.refreshCoursePaletteV4()}catch(e){}
+                  normalizeCourseAppearance();
+                  try{if(window.applyDayDensity765)window.applyDayDensity765()}catch(e){}
+                }
+                function scheduleViews(){if(viewScheduled)return;viewScheduled=true;requestAnimationFrame(()=>requestAnimationFrame(refreshViews))}
                 function fitAccessLabels(){
                   const raw=document.getElementById('languageSelect')?.value||document.documentElement.lang||'fr',lang=String(raw).toLowerCase().startsWith('de')?'de':(String(raw).toLowerCase().startsWith('en')?'en':'fr');
                   for(const id of ['advAppAccess767','advAccess']){const select=document.getElementById(id);if(!select||select.options.length<3)continue;select.options[2].textContent=lang==='de'?'Daltonismus':(lang==='en'?'Colour-blind':'Daltonisme')}
@@ -70,11 +112,13 @@ final class Feedback769Ui {
                   const version=document.getElementById('appVersionInfo');if(version)version.textContent='Version '+VERSION;
                 }
                 function schedule(){if(scheduled)return;scheduled=true;requestAnimationFrame(refresh)}
-                function wrap(name){const old=window[name];if(typeof old!=='function'||old.__feedback769)return;const next=function(){const result=old.apply(this,arguments);schedule();return result};next.__feedback769=true;window[name]=next;try{eval(name+'=next')}catch(e){}}
+                function wrap(name){const old=window[name];if(typeof old!=='function'||old.__feedback769)return;const next=function(){const result=old.apply(this,arguments);schedule();scheduleViews();return result};next.__feedback769=true;window[name]=next;try{eval(name+'=next')}catch(e){}}
                 window.refreshFeedback769=refresh;
-                ['render','refreshSettingsLayout','refreshAdvancedFeatures','prepareSettingsOpen665'].forEach(wrap);
+                window.refreshFeedback769Views=refreshViews;
+                ['render','renderToday','renderWeek','renderEdit','refreshSettingsLayout','refreshAdvancedFeatures','prepareSettingsOpen665'].forEach(wrap);
                 const sheet=document.getElementById('settingsSheet');if(sheet)new MutationObserver(schedule).observe(sheet,{childList:true,subtree:true});
-                refresh();
+                document.addEventListener('change',event=>{if(event.target&&['advAppClassStripe770','advAppClassFill770','dayDensitySlider765'].includes(event.target.id))scheduleViews()},true);
+                refresh();scheduleViews();
               }catch(e){console.error('Feedback769Ui',e)}
             })();
             """;

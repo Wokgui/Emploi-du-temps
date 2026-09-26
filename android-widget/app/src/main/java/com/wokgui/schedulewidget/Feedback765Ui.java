@@ -74,12 +74,13 @@ final class Feedback765Ui {
                 function adjustToday(){
                   const view=document.getElementById('viewToday'),list=document.getElementById('todayList'),bottom=document.querySelector('.bottom');if(!view||!list||!bottom||!view.classList.contains('active'))return;
                   const full=Math.max(120,Math.floor(bottom.getBoundingClientRect().top-list.getBoundingClientRect().top-12));
-                  const ratio=1-.36*(dayDensity()/100);list.style.minHeight=Math.max(120,Math.floor(full*ratio))+'px';
+                  const density=dayDensity(),ratio=1-.36*(density/100);list.style.minHeight=Math.max(120,Math.floor(full*ratio))+'px';list.dataset.densityPercent=String(density);
                 }
                 function polish(){ensureDayDensity();prepareFormat();requestAnimationFrame(()=>{ensureDayDensity();prepareFormat();adjustToday()})}
                 function wrap(name){const old=window[name];if(typeof old!=='function'||old.__feedback765)return;const next=function(){const result=old.apply(this,arguments);polish();return result};next.__feedback765=true;window[name]=next;try{eval(name+'=next')}catch(e){}}
                 function refresh(){wrap('renderToday');wrap('render');polish();adjustToday()}
                 window.refreshFeedback765=refresh;
+                window.applyDayDensity765=adjustToday;
                 addEventListener('resize',()=>requestAnimationFrame(adjustToday),{passive:true});
                 document.addEventListener('change',event=>{if(event.target&&event.target.id==='languageSelect')requestAnimationFrame(polish)},true);
                 const sheet=document.getElementById('settingsSheet');if(sheet)new MutationObserver(()=>requestAnimationFrame(()=>{ensureDayDensity();prepareFormat()})).observe(sheet,{childList:true,subtree:true});

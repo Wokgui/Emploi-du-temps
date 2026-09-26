@@ -60,9 +60,7 @@ final class Feedback764Ui {
                 `;document.head.appendChild(style);
 
                 function fitToday(){
-                  const view=document.getElementById('viewToday'),list=document.getElementById('todayList'),bottom=document.querySelector('.bottom');if(!view||!list||!bottom)return;
-                  if(!view.classList.contains('active')){list.style.removeProperty('min-height');return}
-                  const available=Math.max(120,Math.floor(bottom.getBoundingClientRect().top-list.getBoundingClientRect().top-12));list.style.minHeight=available+'px';
+                  if(typeof window.applyDayDensity765==='function')window.applyDayDensity765();
                 }
                 function editHeader(){
                   const title=document.getElementById('editDayTitle'),count=document.getElementById('editCount'),head=title&&title.parentElement;if(!title||!head)return;
