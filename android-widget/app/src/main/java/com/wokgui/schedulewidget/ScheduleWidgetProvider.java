@@ -45,16 +45,18 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
                 AdvancedSettingsStore.widgetTopBarMode(context),AdvancedSettingsStore.widgetTopBarColor(context),dayProgressValue);
         configureEdgeBar(views,R.id.widgetBottomBar,R.id.dayProgress,R.id.dayColorBottom,
                 AdvancedSettingsStore.widgetBottomBarMode(context),AdvancedSettingsStore.widgetBottomBarColor(context),dayProgressValue);
+        // The condensed format already sizes each ListView row from the widget bounds.
+        // Keeping a second direct-child renderer for it allowed stale launcher updates to
+        // leave both owners visible at once, producing duplicated and overlapping rows.
         boolean adaptiveRows = AdvancedSettingsStore.widgetAutoDensity(context)
-                && format != WidgetLayoutStore.FORMAT_MINI;
+                && format != WidgetLayoutStore.FORMAT_MINI
+                && format != WidgetLayoutStore.FORMAT_CONDENSED;
         views.removeAllViews(R.id.adaptiveDayRows);
         views.setViewVisibility(R.id.upcomingList, adaptiveRows ? View.GONE : View.VISIBLE);
         views.setViewVisibility(R.id.adaptiveDayRows, adaptiveRows ? View.VISIBLE : View.GONE);
 
         if (adaptiveRows) {
-            List<RemoteViews> rows = format == WidgetLayoutStore.FORMAT_CONDENSED
-                    ? CondensedCoursesService.buildAdaptiveRows(context, widgetId)
-                    : UpcomingCoursesService.buildAdaptiveRows(context, widgetId);
+            List<RemoteViews> rows = UpcomingCoursesService.buildAdaptiveRows(context, widgetId);
             boolean empty = rows.isEmpty();
             views.setViewVisibility(R.id.adaptiveDayRows, empty ? View.GONE : View.VISIBLE);
             views.setViewVisibility(R.id.emptyUpcoming, empty ? View.VISIBLE : View.GONE);

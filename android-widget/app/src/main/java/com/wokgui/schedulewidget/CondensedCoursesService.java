@@ -24,13 +24,6 @@ public final class CondensedCoursesService extends RemoteViewsService {
         return new Factory(context.getApplicationContext(), widgetId);
     }
 
-    static List<RemoteViews> buildAdaptiveRows(Context context, int widgetId) {
-        Factory factory = new Factory(context.getApplicationContext(), widgetId);
-        factory.reload();
-        List<RemoteViews> rows = new ArrayList<>();
-        for (int i = 0; i < factory.items.size(); i++) rows.add(factory.createViewAt(i, true));
-        return rows;
-    }
     @Override
     public RemoteViewsFactory onGetViewFactory(Intent intent) {
         int widgetId = intent == null ? AppWidgetManager.INVALID_APPWIDGET_ID
@@ -226,20 +219,17 @@ public final class CondensedCoursesService extends RemoteViewsService {
         }
 
         @Override
-        public RemoteViews getViewAt(int position) { return createViewAt(position, false); }
+        public RemoteViews getViewAt(int position) { return createViewAt(position); }
 
-        private RemoteViews createViewAt(int position, boolean adaptiveHost) {
+        private RemoteViews createViewAt(int position) {
             if (position < 0 || position >= items.size()) return null;
             Item item = items.get(position);
-            RemoteViews views = new RemoteViews(context.getPackageName(), adaptiveHost
-                    ? R.layout.widget_adaptive_course_row : R.layout.widget_course_row);
+            RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
 
             int densityPercent = AdvancedSettingsStore.widgetDensityPercent(context);
             boolean automaticDensity = AdvancedSettingsStore.widgetAutoDensity(context);
-            int sizingHeight = adaptiveHost
-                    ? WidgetHeightSizing.adaptiveEstimateHeightDp(widgetHeightDp) : widgetHeightDp;
             int fittedHeight = automaticDensity
-                    ? CondensedRowSizing.autoRowHeightDp(sizingHeight, items.size(), position,
+                    ? CondensedRowSizing.autoRowHeightDp(widgetHeightDp, items.size(), position,
                             AdvancedSettingsStore.widgetBarChromeDp(context))
                     : CondensedRowSizing.rowHeightForPercent(densityPercent);
             float scale = UiSettingsStore.widgetFontScale(context);
@@ -250,17 +240,14 @@ public final class CondensedCoursesService extends RemoteViewsService {
             views.setViewVisibility(R.id.rowContent, View.GONE);
             views.setViewVisibility(R.id.rowCondensedContent, View.VISIBLE);
             views.setViewVisibility(R.id.rowMiniContent, View.GONE);
-            views.setViewVisibility(R.id.rowCondensedLineTop, position == 0 ? View.GONE : View.VISIBLE);
-            views.setViewVisibility(R.id.rowCondensedLineBottom, position == items.size() - 1 ? View.GONE : View.VISIBLE);
+            boolean courseItem = item.type == Item.COURSE;
+            views.setViewVisibility(R.id.rowCondensedLineTop,
+                    courseItem && position > 0 ? View.VISIBLE : View.GONE);
+            views.setViewVisibility(R.id.rowCondensedLineBottom,
+                    courseItem && position < items.size() - 1 ? View.VISIBLE : View.GONE);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (adaptiveHost) {
-                    views.setViewLayoutHeight(R.id.adaptiveRowSlot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
-                    views.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
-                    views.setViewLayoutHeight(R.id.rowCondensedContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
-                } else {
-                    views.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
-                    views.setViewLayoutHeight(R.id.rowCondensedContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
-                }
+                views.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                views.setViewLayoutHeight(R.id.rowCondensedContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
                 int halfLine = Math.max(1, (fittedHeight + 1) / 2);
                 views.setViewLayoutHeight(R.id.rowCondensedLineTop, halfLine, TypedValue.COMPLEX_UNIT_DIP);
                 views.setViewLayoutHeight(R.id.rowCondensedLineBottom, halfLine, TypedValue.COMPLEX_UNIT_DIP);
@@ -309,15 +296,13 @@ public final class CondensedCoursesService extends RemoteViewsService {
             }
             views.setInt(R.id.rowCondensedAccent, "setBackgroundColor", accent);
 
-            if (!adaptiveHost) {
-                Intent fill = new Intent();
-                fill.putExtra("open_mode", "week");
-                views.setOnClickFillInIntent(R.id.rowRoot, fill);
-                views.setOnClickFillInIntent(R.id.rowCondensedContent, fill);
-                views.setOnClickFillInIntent(R.id.rowCondensedTime, fill);
-                views.setOnClickFillInIntent(R.id.rowCondensedTitle, fill);
-                views.setOnClickFillInIntent(R.id.rowCondensedMeta, fill);
-            }
+            Intent fill = new Intent();
+            fill.putExtra("open_mode", "week");
+            views.setOnClickFillInIntent(R.id.rowRoot, fill);
+            views.setOnClickFillInIntent(R.id.rowCondensedContent, fill);
+            views.setOnClickFillInIntent(R.id.rowCondensedTime, fill);
+            views.setOnClickFillInIntent(R.id.rowCondensedTitle, fill);
+            views.setOnClickFillInIntent(R.id.rowCondensedMeta, fill);
             return views;
         }
 

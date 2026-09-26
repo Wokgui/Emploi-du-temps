@@ -46,7 +46,7 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
       labels:labels.map(label=>({text:label.textContent.trim(),lines:[...label.querySelectorAll('.bar775Line')].map(line=>({text:line.textContent,top:line.getBoundingClientRect().top}))}))
     };
   });
-  assert.equal(ui.version,'Version 7.75');assert.ok(ui.titleDelta<=1,JSON.stringify(ui));assert.equal(ui.gearLeftOfTitle,true);assert.ok(ui.gearGap>=4&&ui.gearGap<=6,JSON.stringify(ui));
+  assert.equal(ui.version,'Version 7.76');assert.ok(ui.titleDelta<=1,JSON.stringify(ui));assert.equal(ui.gearLeftOfTitle,true);assert.ok(ui.gearGap>=4&&ui.gearGap<=6,JSON.stringify(ui));
   assert.deepEqual(ui.labels.map(x=>x.text),['Affichage de la barre du haut','Affichage de la barre du bas']);
   for(const label of ui.labels){assert.equal(label.lines.length,2,JSON.stringify(label));assert.equal(label.lines[0].text,'Affichage de la barre');assert.ok(label.lines[1].text==='du haut'||label.lines[1].text==='du bas');assert.ok(label.lines[1].top>label.lines[0].top,JSON.stringify(label))}
 
@@ -62,7 +62,7 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
   assert.match(mini,/setTextViewText\(TEXT_IDS\[i\], text\)/);assert.match(mini,/setViewVisibility\(ACCENT_IDS\[i\], stripe \? View\.VISIBLE : View\.GONE\)/);
   assert.doesNotMatch(mini,/QuoteSpan|stripeText\(/);
   const nonCourse=condensed.match(/if \(item\.type != Item\.COURSE\) \{[\s\S]*?\} else \{/);assert.ok(nonCourse);assert.match(nonCourse[0],/setViewVisibility\(R\.id\.rowCondensedAccent, View\.GONE\)/);
-  assert.match(gradle,/versionCode 775001/);assert.match(gradle,/versionName '7[.]75'/);
+  assert.match(gradle,/versionCode 776001/);assert.match(gradle,/versionName '7[.]76'/);
   assert.deepEqual(errors,[]);
   await page.screenshot({path:path.join('smoke-browser','ui-775-settings.png'),fullPage:true});
   console.log(JSON.stringify({ui,miniCells:11,condensedBreakAccent:'gone',errors},null,2));
