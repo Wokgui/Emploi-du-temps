@@ -6,9 +6,6 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
-import android.text.SpannableString;
-import android.text.Spanned;
-import android.text.style.QuoteSpan;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
@@ -461,6 +458,16 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 R.id.miniCell5, R.id.miniCell6, R.id.miniCell7, R.id.miniCell8,
                 R.id.miniCell9, R.id.miniCell10, R.id.miniCell11
         };
+        private static final int[] TEXT_IDS = {
+                R.id.miniCellText1, R.id.miniCellText2, R.id.miniCellText3, R.id.miniCellText4,
+                R.id.miniCellText5, R.id.miniCellText6, R.id.miniCellText7, R.id.miniCellText8,
+                R.id.miniCellText9, R.id.miniCellText10, R.id.miniCellText11
+        };
+        private static final int[] ACCENT_IDS = {
+                R.id.miniCellAccent1, R.id.miniCellAccent2, R.id.miniCellAccent3, R.id.miniCellAccent4,
+                R.id.miniCellAccent5, R.id.miniCellAccent6, R.id.miniCellAccent7, R.id.miniCellAccent8,
+                R.id.miniCellAccent9, R.id.miniCellAccent10, R.id.miniCellAccent11
+        };
 
         private static final class Segment {
             final int start;
@@ -640,10 +647,12 @@ public class UpcomingCoursesService extends RemoteViewsService {
                 if (!s.label.isEmpty()) text += "\n" + shortLabel(s.label);
                 if (s.course && AdvancedSettingsStore.showRoom(context) && !s.room.isEmpty()) text += "\n" + shortRoom(s.room);
                 boolean stripe = s.course && "stripe".equals(AdvancedSettingsStore.widgetClassColorMode(context));
-                v.setTextViewText(id, stripe ? stripeText(text, s.background) : text);
-                v.setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_SP, 7f * scale);
+                v.setTextViewText(TEXT_IDS[i], text);
+                v.setTextViewTextSize(TEXT_IDS[i], TypedValue.COMPLEX_UNIT_SP, 7f * scale);
                 v.setInt(id, "setBackgroundColor", stripe ? 0xFFFFFFFF : s.background);
-                v.setTextColor(id, stripe ? 0xFF17213A : s.ink);
+                v.setTextColor(TEXT_IDS[i], stripe ? 0xFF17213A : s.ink);
+                v.setViewVisibility(ACCENT_IDS[i], stripe ? View.VISIBLE : View.GONE);
+                v.setInt(ACCENT_IDS[i], "setBackgroundColor", s.background);
             }
 
             Intent fill = new Intent();
@@ -658,15 +667,6 @@ public class UpcomingCoursesService extends RemoteViewsService {
             String text = value == null ? "" : value.trim();
             while (text.contains("  ")) text = text.replace("  ", " ");
             return text.length() <= 8 ? text : text.substring(0, 7).trim() + ".";
-        }
-
-        private CharSequence stripeText(String value, int accent) {
-            SpannableString styled = new SpannableString(String.valueOf(value));
-            if (styled.length() == 0) return styled;
-            QuoteSpan stripe = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
-                    ? new QuoteSpan(accent, 3, 3) : new QuoteSpan(accent);
-            styled.setSpan(stripe, 0, styled.length(), Spanned.SPAN_PARAGRAPH);
-            return styled;
         }
 
         private String shortRoom(String value) {

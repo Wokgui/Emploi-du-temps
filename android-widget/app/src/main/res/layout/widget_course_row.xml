@@ -245,17 +245,50 @@
             android:layout_height="52dp"
             android:orientation="horizontal"
             android:baselineAligned="false">
-            <TextView android:id="@+id/miniCell1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="1dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
-            <TextView android:id="@+id/miniCell2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="1dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
-            <TextView android:id="@+id/miniCell3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="1dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
-            <TextView android:id="@+id/miniCell4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="1dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
-            <TextView android:id="@+id/miniCell5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="1dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
-            <TextView android:id="@+id/miniCell6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="1dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
-            <TextView android:id="@+id/miniCell7" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="1dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
-            <TextView android:id="@+id/miniCell8" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="1dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
-            <TextView android:id="@+id/miniCell9" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="1dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
-            <TextView android:id="@+id/miniCell10" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="1dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
-            <TextView android:id="@+id/miniCell11" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="1dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
+            <FrameLayout android:id="@+id/miniCell1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
+                <TextView android:id="@+id/miniCellAccent1" android:layout_width="3dp" android:layout_height="match_parent" android:layout_gravity="left" android:visibility="gone" android:background="#1677E8" />
+                <TextView android:id="@+id/miniCellText1" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="2dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
+            </FrameLayout>
+            <FrameLayout android:id="@+id/miniCell2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
+                <TextView android:id="@+id/miniCellAccent2" android:layout_width="3dp" android:layout_height="match_parent" android:layout_gravity="left" android:visibility="gone" android:background="#1677E8" />
+                <TextView android:id="@+id/miniCellText2" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="2dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
+            </FrameLayout>
+            <FrameLayout android:id="@+id/miniCell3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
+                <TextView android:id="@+id/miniCellAccent3" android:layout_width="3dp" android:layout_height="match_parent" android:layout_gravity="left" android:visibility="gone" android:background="#1677E8" />
+                <TextView android:id="@+id/miniCellText3" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="2dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
+            </FrameLayout>
+            <FrameLayout android:id="@+id/miniCell4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
+                <TextView android:id="@+id/miniCellAccent4" android:layout_width="3dp" android:layout_height="match_parent" android:layout_gravity="left" android:visibility="gone" android:background="#1677E8" />
+                <TextView android:id="@+id/miniCellText4" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="2dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
+            </FrameLayout>
+            <FrameLayout android:id="@+id/miniCell5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
+                <TextView android:id="@+id/miniCellAccent5" android:layout_width="3dp" android:layout_height="match_parent" android:layout_gravity="left" android:visibility="gone" android:background="#1677E8" />
+                <TextView android:id="@+id/miniCellText5" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="2dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
+            </FrameLayout>
+            <FrameLayout android:id="@+id/miniCell6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
+                <TextView android:id="@+id/miniCellAccent6" android:layout_width="3dp" android:layout_height="match_parent" android:layout_gravity="left" android:visibility="gone" android:background="#1677E8" />
+                <TextView android:id="@+id/miniCellText6" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="2dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
+            </FrameLayout>
+            <FrameLayout android:id="@+id/miniCell7" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
+                <TextView android:id="@+id/miniCellAccent7" android:layout_width="3dp" android:layout_height="match_parent" android:layout_gravity="left" android:visibility="gone" android:background="#1677E8" />
+                <TextView android:id="@+id/miniCellText7" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="2dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
+            </FrameLayout>
+            <FrameLayout android:id="@+id/miniCell8" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
+                <TextView android:id="@+id/miniCellAccent8" android:layout_width="3dp" android:layout_height="match_parent" android:layout_gravity="left" android:visibility="gone" android:background="#1677E8" />
+                <TextView android:id="@+id/miniCellText8" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="2dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
+            </FrameLayout>
+            <FrameLayout android:id="@+id/miniCell9" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
+                <TextView android:id="@+id/miniCellAccent9" android:layout_width="3dp" android:layout_height="match_parent" android:layout_gravity="left" android:visibility="gone" android:background="#1677E8" />
+                <TextView android:id="@+id/miniCellText9" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="2dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
+            </FrameLayout>
+            <FrameLayout android:id="@+id/miniCell10" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
+                <TextView android:id="@+id/miniCellAccent10" android:layout_width="3dp" android:layout_height="match_parent" android:layout_gravity="left" android:visibility="gone" android:background="#1677E8" />
+                <TextView android:id="@+id/miniCellText10" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="2dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
+            </FrameLayout>
+            <FrameLayout android:id="@+id/miniCell11" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
+                <TextView android:id="@+id/miniCellAccent11" android:layout_width="3dp" android:layout_height="match_parent" android:layout_gravity="left" android:visibility="gone" android:background="#1677E8" />
+                <TextView android:id="@+id/miniCellText11" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:includeFontPadding="false" android:lineSpacingExtra="0dp" android:padding="2dp" android:maxLines="3" android:ellipsize="end" android:textSize="7sp" android:textStyle="bold" />
+            </FrameLayout>
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

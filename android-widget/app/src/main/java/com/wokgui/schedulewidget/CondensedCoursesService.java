@@ -292,6 +292,7 @@ public final class CondensedCoursesService extends RemoteViewsService {
                 views.setTextColor(R.id.rowCondensedTitle, text);
                 views.setInt(R.id.rowCondensedTitle, "setGravity", Gravity.CENTER);
                 accent = text;
+                views.setViewVisibility(R.id.rowCondensedAccent, View.GONE);
             } else {
                 String classMode = AdvancedSettingsStore.widgetClassColorMode(context);
                 int assigned = WidgetPaletteStore.assignedCourseColor(context, item.order, item.sourceLabel, item.colorId);

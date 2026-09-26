@@ -1,6 +1,6 @@
 package com.wokgui.schedulewidget;
 
-/** 7.74 final owner for seamless class colours and settings finishing. */
+/** 7.75 owner for seamless class colours and settings finishing. */
 final class Feedback774Ui {
     private Feedback774Ui() {}
 
@@ -10,7 +10,7 @@ final class Feedback774Ui {
               try{
                 if(window.__feedback774){window.refreshFeedback774&&window.refreshFeedback774();return}
                 window.__feedback774=true;
-                const VERSION='7.74';
+                const VERSION='7.75';
                 let scheduled=false;
                 const style=document.createElement('style');style.id='feedback774Style';style.textContent=`
                   #settingsSheet .settingsHead{position:relative!important;justify-content:flex-end!important}
