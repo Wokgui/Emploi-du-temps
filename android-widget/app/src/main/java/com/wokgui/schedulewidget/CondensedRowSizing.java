@@ -9,7 +9,9 @@ final class CondensedRowSizing {
     static final int PROGRESS_CHROME_DP = PROGRESS_STRIP_DP * 2;
     static final int MANUAL_MIN_ROW_DP = 14;
     static final int MANUAL_MAX_ROW_DP = 30;
-    static final int AUTO_MIN_ROW_DP = 14;
+    // Automatic mode promises to show every row. A 1 dp technical floor lets the
+    // available height be divided across the complete list instead of dropping items.
+    static final int AUTO_MIN_ROW_DP = 1;
 
     private CondensedRowSizing() {}
 

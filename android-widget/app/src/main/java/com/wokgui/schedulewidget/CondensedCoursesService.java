@@ -144,12 +144,8 @@ public final class CondensedCoursesService extends RemoteViewsService {
                 firstVisibleCourse = false;
                 previousEnd = ScheduleData.toMinutes(course.end);
             }
-            if (automaticDensity && items.size() > 1) {
-                int available = Math.max(CondensedRowSizing.AUTO_MIN_ROW_DP,
-                        widgetHeightDp - AdvancedSettingsStore.widgetBarChromeDp(context));
-                int capacity = Math.max(1, available / CondensedRowSizing.AUTO_MIN_ROW_DP);
-                if (items.size() > capacity) items.subList(capacity, items.size()).clear();
-            }
+            // Automatic fitting must keep the complete chronological list. Row heights
+            // and text are divided later from the actual widget height.
         }
 
         private void appendBreaks(int from, int to, int lunchStart, int lunchEnd, int cutoffMinute) {

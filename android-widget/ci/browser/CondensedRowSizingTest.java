@@ -87,6 +87,17 @@ public final class CondensedRowSizingTest {
             throw new AssertionError("small automatic rows did not shrink text");
         if (Math.abs(CondensedRowSizing.autoTextScaleForRow(28, 0.80f) - 0.80f) > 0.0001f)
             throw new AssertionError("automatic fitting ignored a smaller requested scale");
+        int compactHeight = 108;
+        int completeCount = 11;
+        int completeUsed = 0;
+        for (int position = 0; position < completeCount; position++) {
+            completeUsed += CondensedRowSizing.autoRowHeightDp(compactHeight, completeCount, position);
+        }
+        if (completeUsed != compactHeight - CondensedRowSizing.PROGRESS_CHROME_DP)
+            throw new AssertionError("automatic condensed mode does not distribute every row");
+        if (CondensedRowSizing.AUTO_MIN_ROW_DP != 1)
+            throw new AssertionError("automatic minimum would truncate compact widgets");
+        System.out.println("condensed_widget_all_rows_fit_778=passed");
         System.out.println("condensed_widget_auto_text_fit_777=passed");
         System.out.println("configurable_widget_bar_chrome_672=passed");        System.out.println("full_height_automatic_widget_density_667=passed");
         System.out.println("continuous_and_automatic_widget_density_666=passed");
