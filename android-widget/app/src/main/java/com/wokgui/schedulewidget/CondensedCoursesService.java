@@ -3,7 +3,6 @@ package com.wokgui.schedulewidget;
 import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.TypedValue;
@@ -22,6 +21,14 @@ import java.util.Locale;
 public final class CondensedCoursesService extends RemoteViewsService {
     static RemoteViewsFactory createFactory(Context context, int widgetId) {
         return new Factory(context.getApplicationContext(), widgetId);
+    }
+
+    static List<RemoteViews> buildAdaptiveRows(Context context, int widgetId) {
+        Factory factory = new Factory(context.getApplicationContext(), widgetId);
+        factory.reload();
+        List<RemoteViews> rows = new ArrayList<>();
+        for (int i = 0; i < factory.items.size(); i++) rows.add(factory.createViewAt(i, true));
+        return rows;
     }
 
     @Override
@@ -144,8 +151,8 @@ public final class CondensedCoursesService extends RemoteViewsService {
                 firstVisibleCourse = false;
                 previousEnd = ScheduleData.toMinutes(course.end);
             }
-            // Automatic fitting must keep the complete chronological list. Row heights
-            // and text are divided later from the actual widget height.
+            // Automatic fitting keeps the complete chronological list. The provider's
+            // collection-free layout divides the real launcher height between these rows.
         }
 
         private void appendBreaks(int from, int to, int lunchStart, int lunchEnd, int cutoffMinute) {
@@ -185,11 +192,9 @@ public final class CondensedCoursesService extends RemoteViewsService {
             if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return 180;
             Bundle options = AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId);
             if (options == null) return 180;
-            boolean landscape = context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
-            return WidgetHeightSizing.resolveHeightDp(
+            return WidgetHeightSizing.smallestHeightDp(
                     options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0),
                     options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0),
-                    landscape,
                     180
             );
         }
@@ -215,12 +220,13 @@ public final class CondensedCoursesService extends RemoteViewsService {
         }
 
         @Override
-        public RemoteViews getViewAt(int position) { return createViewAt(position); }
+        public RemoteViews getViewAt(int position) { return createViewAt(position, false); }
 
-        private RemoteViews createViewAt(int position) {
+        private RemoteViews createViewAt(int position, boolean adaptiveHost) {
             if (position < 0 || position >= items.size()) return null;
             Item item = items.get(position);
-            RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_course_row);
+            RemoteViews views = new RemoteViews(context.getPackageName(), adaptiveHost
+                    ? R.layout.widget_adaptive_condensed_row : R.layout.widget_course_row);
 
             int densityPercent = AdvancedSettingsStore.widgetDensityPercent(context);
             boolean automaticDensity = AdvancedSettingsStore.widgetAutoDensity(context);
@@ -232,8 +238,12 @@ public final class CondensedCoursesService extends RemoteViewsService {
             float effectiveScale = automaticDensity
                     ? CondensedRowSizing.autoTextScaleForRow(fittedHeight, requestedScale)
                     : requestedScale * CondensedRowSizing.textScaleForRow(fittedHeight);
-            views.setTextViewTextSize(R.id.rowCondensedTime, TypedValue.COMPLEX_UNIT_SP, 7f * effectiveScale);
-            views.setTextViewTextSize(R.id.rowCondensedTitle, TypedValue.COMPLEX_UNIT_SP, 9f * effectiveScale);
+            // The adaptive XML lets TextView fit itself from the real weighted row height.
+            // List-backed manual mode keeps the explicit user-controlled text scale.
+            if (!adaptiveHost) {
+                views.setTextViewTextSize(R.id.rowCondensedTime, TypedValue.COMPLEX_UNIT_SP, 7f * effectiveScale);
+                views.setTextViewTextSize(R.id.rowCondensedTitle, TypedValue.COMPLEX_UNIT_SP, 9f * effectiveScale);
+            }
 
             views.setViewVisibility(R.id.rowContent, View.GONE);
             views.setViewVisibility(R.id.rowCondensedContent, View.VISIBLE);
@@ -244,12 +254,22 @@ public final class CondensedCoursesService extends RemoteViewsService {
             views.setViewVisibility(R.id.rowCondensedLineBottom,
                     courseItem && position < items.size() - 1 ? View.VISIBLE : View.GONE);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                views.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
-                views.setViewLayoutHeight(R.id.rowCondensedContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
-                int halfLine = Math.max(1, (fittedHeight + 1) / 2);
-                views.setViewLayoutHeight(R.id.rowCondensedLineTop, halfLine, TypedValue.COMPLEX_UNIT_DIP);
-                views.setViewLayoutHeight(R.id.rowCondensedLineBottom, halfLine, TypedValue.COMPLEX_UNIT_DIP);
-                views.setViewLayoutHeight(R.id.rowCondensedAccent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                if (adaptiveHost) {
+                    // adaptiveRowSlot keeps its XML 0dp + weight=1 contract. Android then
+                    // divides the real launcher body height between every row, without an estimate.
+                    views.setViewLayoutHeight(R.id.rowRoot, -1, TypedValue.COMPLEX_UNIT_PX);
+                    views.setViewLayoutHeight(R.id.rowCondensedContent, -1, TypedValue.COMPLEX_UNIT_PX);
+                    views.setViewLayoutHeight(R.id.rowCondensedLineTop, -1, TypedValue.COMPLEX_UNIT_PX);
+                    views.setViewLayoutHeight(R.id.rowCondensedLineBottom, -1, TypedValue.COMPLEX_UNIT_PX);
+                    views.setViewLayoutHeight(R.id.rowCondensedAccent, -1, TypedValue.COMPLEX_UNIT_PX);
+                } else {
+                    views.setViewLayoutHeight(R.id.rowRoot, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                    views.setViewLayoutHeight(R.id.rowCondensedContent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                    int halfLine = Math.max(1, (fittedHeight + 1) / 2);
+                    views.setViewLayoutHeight(R.id.rowCondensedLineTop, halfLine, TypedValue.COMPLEX_UNIT_DIP);
+                    views.setViewLayoutHeight(R.id.rowCondensedLineBottom, halfLine, TypedValue.COMPLEX_UNIT_DIP);
+                    views.setViewLayoutHeight(R.id.rowCondensedAccent, fittedHeight, TypedValue.COMPLEX_UNIT_DIP);
+                }
                 views.setViewLayoutHeight(R.id.rowCondensedCourseProgress, Math.max(1, Math.min(5, fittedHeight - 1)), TypedValue.COMPLEX_UNIT_DIP);
             }
 
@@ -294,13 +314,15 @@ public final class CondensedCoursesService extends RemoteViewsService {
             }
             views.setInt(R.id.rowCondensedAccent, "setBackgroundColor", accent);
 
-            Intent fill = new Intent();
-            fill.putExtra("open_mode", "week");
-            views.setOnClickFillInIntent(R.id.rowRoot, fill);
-            views.setOnClickFillInIntent(R.id.rowCondensedContent, fill);
-            views.setOnClickFillInIntent(R.id.rowCondensedTime, fill);
-            views.setOnClickFillInIntent(R.id.rowCondensedTitle, fill);
-            views.setOnClickFillInIntent(R.id.rowCondensedMeta, fill);
+            if (!adaptiveHost) {
+                Intent fill = new Intent();
+                fill.putExtra("open_mode", "week");
+                views.setOnClickFillInIntent(R.id.rowRoot, fill);
+                views.setOnClickFillInIntent(R.id.rowCondensedContent, fill);
+                views.setOnClickFillInIntent(R.id.rowCondensedTime, fill);
+                views.setOnClickFillInIntent(R.id.rowCondensedTitle, fill);
+                views.setOnClickFillInIntent(R.id.rowCondensedMeta, fill);
+            }
             return views;
         }
 

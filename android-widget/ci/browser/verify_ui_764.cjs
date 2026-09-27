@@ -104,7 +104,7 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
 
   const gradle=fs.readFileSync(path.join(root,'app/build.gradle'),'utf8');
   const widget=fs.readFileSync(path.join(root,'app/src/main/java/com/wokgui/schedulewidget/UpcomingCoursesService.java'),'utf8');
-  assert.match(gradle,/versionCode 778001/);assert.match(gradle,/versionName '7[.]78'/);
+  assert.match(gradle,/versionCode 779001/);assert.match(gradle,/versionName '7[.]79'/);
   assert.match(widget,/optBoolean\("singleWeek", false\)/);
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({regular,large,week,edit,settings,single,errors},null,2));

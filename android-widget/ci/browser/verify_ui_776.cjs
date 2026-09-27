@@ -9,18 +9,19 @@ const provider=read('app/src/main/java/com/wokgui/schedulewidget/ScheduleWidgetP
 const condensed=read('app/src/main/java/com/wokgui/schedulewidget/CondensedCoursesService.java');
 const gradle=read('app/build.gradle');
 
-assert.match(provider,/automaticDensity = AdvancedSettingsStore[.]widgetAutoDensity\(context\)/);
-assert.match(provider,/adaptiveRows = automaticDensity[\s\S]{0,100}format != WidgetLayoutStore[.]FORMAT_MINI[\s\S]{0,100}format != WidgetLayoutStore[.]FORMAT_CONDENSED/);
-assert.doesNotMatch(provider,/CondensedCoursesService[.]buildAdaptiveRows/);
-assert.match(provider,/List<RemoteViews> rows = UpcomingCoursesService[.]buildAdaptiveRows/);
+assert.match(provider,/automaticDensity\s*=\s*AdvancedSettingsStore[.]widgetAutoDensity\(context\)/);
+assert.match(provider,/condensedAdaptive[\s\S]{0,160}widget_schedule_adaptive/);
+assert.match(provider,/adaptiveRows = automaticDensity[\s\S]{0,100}format != WidgetLayoutStore[.]FORMAT_MINI/);
+assert.match(provider,/CondensedCoursesService[.]buildAdaptiveRows/);
 
-assert.doesNotMatch(condensed,/buildAdaptiveRows|adaptiveHost|adaptiveRowSlot/);
+assert.match(condensed,/buildAdaptiveRows|adaptiveHost/);
+assert.doesNotMatch(condensed,/setViewLayoutHeight\(R[.]id[.]adaptiveRowSlot/);
 assert.match(condensed,/boolean courseItem = item[.]type == Item[.]COURSE/);
 assert.match(condensed,/rowCondensedLineTop,[\s\S]{0,100}courseItem && position > 0 \? View[.]VISIBLE : View[.]GONE/);
 assert.match(condensed,/rowCondensedLineBottom,[\s\S]{0,120}courseItem && position < items[.]size\(\) - 1 \? View[.]VISIBLE : View[.]GONE/);
 const nonCourse=condensed.match(/if \(item[.]type != Item[.]COURSE\) \{[\s\S]*?\} else \{/);
 assert.ok(nonCourse);assert.match(nonCourse[0],/setViewVisibility\(R[.]id[.]rowCondensedAccent, View[.]GONE\)/);
-assert.match(gradle,/versionCode 778001/);assert.match(gradle,/versionName '7[.]78'/);
+assert.match(gradle,/versionCode 779001/);assert.match(gradle,/versionName '7[.]79'/);
 
 console.log('ui_776_condensed_single_renderer=passed');
 console.log('ui_776_break_timeline_and_accent_hidden=passed');

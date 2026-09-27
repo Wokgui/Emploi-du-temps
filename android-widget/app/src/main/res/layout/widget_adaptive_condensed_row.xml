@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One equal-weight condensed row. Text auto-sizes from the row's real host height. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/adaptiveRowSlot"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1">
+
+    <LinearLayout
+        android:id="@+id/rowRoot"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="0dp">
+
+        <LinearLayout
+            android:id="@+id/rowContent"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"
+            android:orientation="horizontal" />
+
+        <LinearLayout
+            android:id="@+id/rowCondensedContent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingLeft="2dp"
+            android:paddingRight="3dp"
+            android:background="#00FFFFFF">
+
+            <TextView
+                android:id="@+id/rowCondensedTime"
+                android:layout_width="36dp"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:autoSizeTextType="uniform"
+                android:autoSizeMinTextSize="3sp"
+                android:autoSizeMaxTextSize="7sp"
+                android:autoSizeStepGranularity="1sp"
+                android:textColor="#5D6B82"
+                android:textStyle="bold" />
+
+            <FrameLayout
+                android:layout_width="7dp"
+                android:layout_height="match_parent">
+                <TextView
+                    android:id="@+id/rowCondensedLineTop"
+                    android:layout_width="1dp"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="top|center_horizontal"
+                    android:background="#D6DDE7" />
+                <TextView
+                    android:id="@+id/rowCondensedLineBottom"
+                    android:layout_width="1dp"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:background="#D6DDE7" />
+                <TextView
+                    android:id="@+id/rowCondensedAccent"
+                    android:layout_width="3dp"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    android:background="#1677E8" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center_vertical"
+                android:paddingLeft="3dp">
+                <TextView
+                    android:id="@+id/rowCondensedTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:autoSizeTextType="uniform"
+                    android:autoSizeMinTextSize="3sp"
+                    android:autoSizeMaxTextSize="9sp"
+                    android:autoSizeStepGranularity="1sp"
+                    android:textColor="#17213A"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/rowCondensedMeta"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/rowCondensedCourseProgress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="48dp"
+                android:layout_height="3dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="6dp"
+                android:visibility="gone"
+                android:max="1000"
+                android:progress="0"
+                android:progressTint="#1677E8"
+                android:progressBackgroundTint="#D8E0EA" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/rowMiniContent"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"
+            android:orientation="vertical" />
+    </LinearLayout>
+</FrameLayout>

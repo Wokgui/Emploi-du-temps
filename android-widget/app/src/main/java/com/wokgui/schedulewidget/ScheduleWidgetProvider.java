@@ -22,19 +22,21 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
 
     @Override public void onUpdate(Context context, AppWidgetManager manager, int[] appWidgetIds) { ScheduleStore.ensureInitialized(context); int expected=WidgetLayoutStore.formatForProviderClass(getClass()); for (int id : appWidgetIds) { WidgetLayoutStore.set(context,id,expected); updateWidget(context, manager, id); } scheduleNextBoundary(context); ReminderScheduler.reschedule(context); }
     @Override public void onReceive(Context context, Intent intent) { super.onReceive(context, intent); String action=intent==null?null:intent.getAction(); if(ACTION_REFRESH.equals(action)||ACTION_BOUNDARY.equals(action)||ACTION_TOGGLE_MODE.equals(action)||Intent.ACTION_BOOT_COMPLETED.equals(action)||Intent.ACTION_TIME_CHANGED.equals(action)||Intent.ACTION_TIMEZONE_CHANGED.equals(action)||Intent.ACTION_DATE_CHANGED.equals(action)){updateAll(context);scheduleNextBoundary(context);ReminderScheduler.reschedule(context);} }
-    @Override public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager, int appWidgetId, android.os.Bundle newOptions) { manager.notifyAppWidgetViewDataChanged(appWidgetId,R.id.upcomingList);updateWidget(context,manager,appWidgetId); }
+    @Override public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager, int appWidgetId, android.os.Bundle newOptions) { updateWidget(context,manager,appWidgetId); }
     @Override public void onDeleted(Context context,int[] appWidgetIds){for(int id:appWidgetIds)WidgetModeStore.clear(context,id);}
     @Override public void onEnabled(Context context){ScheduleStore.ensureInitialized(context);updateAll(context);scheduleNextBoundary(context);ReminderScheduler.reschedule(context);}
     @Override public void onDisabled(Context context){cancelBoundary(context);}
     static void refreshAll(Context context){updateAll(context);}
 
-    private static void updateAll(Context context){AppWidgetManager manager=AppWidgetManager.getInstance(context);Class<?>[] providers={ScheduleWidgetProvider.class,ScheduleWidgetCondensedProvider.class,ScheduleWidgetMiniProvider.class};for(Class<?> provider:providers){int[] ids=manager.getAppWidgetIds(new ComponentName(context,provider));if(ids==null||ids.length==0)continue;manager.notifyAppWidgetViewDataChanged(ids,R.id.upcomingList);for(int id:ids)updateWidget(context,manager,id);}}
+    private static void updateAll(Context context){AppWidgetManager manager=AppWidgetManager.getInstance(context);Class<?>[] providers={ScheduleWidgetProvider.class,ScheduleWidgetCondensedProvider.class,ScheduleWidgetMiniProvider.class};for(Class<?> provider:providers){int[] ids=manager.getAppWidgetIds(new ComponentName(context,provider));if(ids==null||ids.length==0)continue;for(int id:ids)updateWidget(context,manager,id);}}
 
     static void updateWidget(Context context,AppWidgetManager manager,int widgetId){
         ScheduleStore.ensureInitialized(context);
-        RemoteViews views=new RemoteViews(context.getPackageName(),R.layout.widget_schedule);
-        views.setViewVisibility(R.id.widgetHeader,View.GONE);views.setViewVisibility(R.id.currentCard,View.GONE);views.setViewVisibility(R.id.btnWidgetMode,View.GONE);
         int format=WidgetLayoutStore.enforceProviderFormat(context,manager,widgetId);
+        boolean automaticDensity=AdvancedSettingsStore.widgetAutoDensity(context);
+        boolean condensedAdaptive=automaticDensity&&format==WidgetLayoutStore.FORMAT_CONDENSED;
+        RemoteViews views=new RemoteViews(context.getPackageName(),condensedAdaptive?R.layout.widget_schedule_adaptive:R.layout.widget_schedule);
+        views.setViewVisibility(R.id.widgetHeader,View.GONE);views.setViewVisibility(R.id.currentCard,View.GONE);views.setViewVisibility(R.id.btnWidgetMode,View.GONE);
         // Every format owns an opaque surface. The previous transparent classic surface made the launcher wallpaper bleed through.
         int surface=0xFFF7F9FC;
         views.setInt(R.id.widgetRoot,"setBackgroundColor",surface);views.setInt(R.id.widgetBody,"setBackgroundColor",surface);views.setInt(R.id.emptyUpcoming,"setBackgroundColor",surface);
@@ -45,19 +47,18 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
                 AdvancedSettingsStore.widgetTopBarMode(context),AdvancedSettingsStore.widgetTopBarColor(context),dayProgressValue);
         configureEdgeBar(views,R.id.widgetBottomBar,R.id.dayProgress,R.id.dayColorBottom,
                 AdvancedSettingsStore.widgetBottomBarMode(context),AdvancedSettingsStore.widgetBottomBarColor(context),dayProgressValue);
-        // The condensed format already sizes each ListView row from the widget bounds.
-        // Keeping a second direct-child renderer for it allowed stale launcher updates to
-        // leave both owners visible at once, producing duplicated and overlapping rows.
-        boolean automaticDensity = AdvancedSettingsStore.widgetAutoDensity(context);
+        // Automatic rows use the launcher's real body height. The condensed format gets
+        // a collection-free root, so a stale ListView can never overlap this renderer.
         boolean adaptiveRows = automaticDensity
-                && format != WidgetLayoutStore.FORMAT_MINI
-                && format != WidgetLayoutStore.FORMAT_CONDENSED;
+                && format != WidgetLayoutStore.FORMAT_MINI;
         views.removeAllViews(R.id.adaptiveDayRows);
-        views.setViewVisibility(R.id.upcomingList, adaptiveRows ? View.GONE : View.VISIBLE);
+        if(!condensedAdaptive)views.setViewVisibility(R.id.upcomingList, adaptiveRows ? View.GONE : View.VISIBLE);
         views.setViewVisibility(R.id.adaptiveDayRows, adaptiveRows ? View.VISIBLE : View.GONE);
 
         if (adaptiveRows) {
-            List<RemoteViews> rows = UpcomingCoursesService.buildAdaptiveRows(context, widgetId);
+            List<RemoteViews> rows = format==WidgetLayoutStore.FORMAT_CONDENSED
+                    ?CondensedCoursesService.buildAdaptiveRows(context,widgetId)
+                    :UpcomingCoursesService.buildAdaptiveRows(context, widgetId);
             boolean empty = rows.isEmpty();
             views.setViewVisibility(R.id.adaptiveDayRows, empty ? View.GONE : View.VISIBLE);
             views.setViewVisibility(R.id.emptyUpcoming, empty ? View.VISIBLE : View.GONE);

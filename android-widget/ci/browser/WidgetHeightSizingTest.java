@@ -7,6 +7,8 @@ public final class WidgetHeightSizingTest {
         equal(51, WidgetHeightSizing.resolveHeightDp(51, 102, true, 40), "landscape height");
         equal(77, WidgetHeightSizing.resolveHeightDp(0, 77, true, 40), "missing preferred height");
         equal(40, WidgetHeightSizing.resolveHeightDp(0, 0, false, 40), "fallback height");
+        equal(51, WidgetHeightSizing.smallestHeightDp(51, 102, 40), "conservative adaptive height");
+        equal(77, WidgetHeightSizing.smallestHeightDp(0, 77, 40), "conservative missing height");
         equal(94, WidgetHeightSizing.adaptiveEstimateHeightDp(102), "launcher-safe estimate");
         equal(99, WidgetHeightSizing.contentHeightDp(51, 102, false, 40, 3, 28), "portrait content");
         equal(72, WidgetHeightSizing.contentHeightDp(40, 40, false, 40, 3, 72), "mini minimum");

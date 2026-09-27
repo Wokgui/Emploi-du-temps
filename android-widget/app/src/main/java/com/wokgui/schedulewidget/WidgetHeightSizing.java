@@ -12,6 +12,14 @@ final class WidgetHeightSizing {
         return Math.max(1, fallbackDp);
     }
 
+    /** Conservative estimate used only to size text inside rows whose real height is weight-driven. */
+    static int smallestHeightDp(int minHeightDp, int maxHeightDp, int fallbackDp) {
+        if (minHeightDp > 0 && maxHeightDp > 0) return Math.min(minHeightDp, maxHeightDp);
+        if (minHeightDp > 0) return minHeightDp;
+        if (maxHeightDp > 0) return maxHeightDp;
+        return Math.max(1, fallbackDp);
+    }
+
     static int adaptiveEstimateHeightDp(int launcherHeightDp) {
         return Math.max(1, launcherHeightDp - 8);
     }

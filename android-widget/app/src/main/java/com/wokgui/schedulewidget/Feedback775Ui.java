@@ -1,6 +1,6 @@
 package com.wokgui.schedulewidget;
 
-/** 7.78 final owner for the settings heading and widget bar labels. */
+/** 7.79 final owner for the settings heading and widget bar labels. */
 final class Feedback775Ui {
     private Feedback775Ui() {}
 
@@ -10,7 +10,7 @@ final class Feedback775Ui {
               try{
                 if(window.__feedback775){window.refreshFeedback775&&window.refreshFeedback775();return}
                 window.__feedback775=true;
-                const VERSION='7.78';
+                const VERSION='7.79';
                 let scheduled=false;
                 const style=document.createElement('style');style.id='feedback775Style';style.textContent=`
                   #settingsSheet #settingsGear774{left:0!important;width:25px!important;height:25px!important}
