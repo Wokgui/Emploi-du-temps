@@ -73,6 +73,21 @@ public final class CondensedRowSizingTest {
                 }
             }
         }
+        float previousAutoScale = 0f;
+        for (int row = CondensedRowSizing.AUTO_MIN_ROW_DP; row <= 40; row++) {
+            float fit = CondensedRowSizing.textScaleForRow(row);
+            float automatic = CondensedRowSizing.autoTextScaleForRow(row, 1.40f);
+            if (automatic > fit + 0.0001f) throw new AssertionError("automatic text exceeds row capacity");
+            if (automatic > 1.4001f) throw new AssertionError("automatic text exceeds requested scale");
+            if (automatic + 0.0001f < previousAutoScale) throw new AssertionError("automatic text scale went backwards");
+            previousAutoScale = automatic;
+        }
+        if (CondensedRowSizing.autoTextScaleForRow(14, 1.40f)
+                >= CondensedRowSizing.autoTextScaleForRow(22, 1.40f))
+            throw new AssertionError("small automatic rows did not shrink text");
+        if (Math.abs(CondensedRowSizing.autoTextScaleForRow(28, 0.80f) - 0.80f) > 0.0001f)
+            throw new AssertionError("automatic fitting ignored a smaller requested scale");
+        System.out.println("condensed_widget_auto_text_fit_777=passed");
         System.out.println("configurable_widget_bar_chrome_672=passed");        System.out.println("full_height_automatic_widget_density_667=passed");
         System.out.println("continuous_and_automatic_widget_density_666=passed");
         System.out.println("condensed_widget_density_665=passed");

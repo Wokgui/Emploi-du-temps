@@ -232,10 +232,12 @@ public final class CondensedCoursesService extends RemoteViewsService {
                     ? CondensedRowSizing.autoRowHeightDp(widgetHeightDp, items.size(), position,
                             AdvancedSettingsStore.widgetBarChromeDp(context))
                     : CondensedRowSizing.rowHeightForPercent(densityPercent);
-            float scale = UiSettingsStore.widgetFontScale(context);
-            float densityScale = CondensedRowSizing.textScaleForRow(fittedHeight);
-            views.setTextViewTextSize(R.id.rowCondensedTime, TypedValue.COMPLEX_UNIT_SP, 7f * scale * densityScale);
-            views.setTextViewTextSize(R.id.rowCondensedTitle, TypedValue.COMPLEX_UNIT_SP, 9f * scale * densityScale);
+            float requestedScale = UiSettingsStore.widgetFontScale(context);
+            float effectiveScale = automaticDensity
+                    ? CondensedRowSizing.autoTextScaleForRow(fittedHeight, requestedScale)
+                    : requestedScale * CondensedRowSizing.textScaleForRow(fittedHeight);
+            views.setTextViewTextSize(R.id.rowCondensedTime, TypedValue.COMPLEX_UNIT_SP, 7f * effectiveScale);
+            views.setTextViewTextSize(R.id.rowCondensedTitle, TypedValue.COMPLEX_UNIT_SP, 9f * effectiveScale);
 
             views.setViewVisibility(R.id.rowContent, View.GONE);
             views.setViewVisibility(R.id.rowCondensedContent, View.VISIBLE);

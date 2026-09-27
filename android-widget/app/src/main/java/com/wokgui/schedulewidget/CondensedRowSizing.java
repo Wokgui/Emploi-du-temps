@@ -65,6 +65,12 @@ final class CondensedRowSizing {
         return Math.max(0.34f, Math.min(1.20f, rowHeightDp / (float) NATURAL_ROW_DP));
     }
 
+    /** Keeps the requested widget scale when it fits, otherwise shrinks it to the row capacity. */
+    static float autoTextScaleForRow(int rowHeightDp, float requestedScale) {
+        float requested = Math.max(0.80f, Math.min(1.40f, requestedScale));
+        return Math.min(requested, textScaleForRow(rowHeightDp));
+    }
+
     static int rowHeightForDensity(String density) {
         if ("compact".equals(density)) return COMPACT_ROW_DP;
         if ("comfortable".equals(density)) return COMFORTABLE_ROW_DP;

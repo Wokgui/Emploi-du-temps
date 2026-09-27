@@ -48,7 +48,8 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
         // The condensed format already sizes each ListView row from the widget bounds.
         // Keeping a second direct-child renderer for it allowed stale launcher updates to
         // leave both owners visible at once, producing duplicated and overlapping rows.
-        boolean adaptiveRows = AdvancedSettingsStore.widgetAutoDensity(context)
+        boolean automaticDensity = AdvancedSettingsStore.widgetAutoDensity(context);
+        boolean adaptiveRows = automaticDensity
                 && format != WidgetLayoutStore.FORMAT_MINI
                 && format != WidgetLayoutStore.FORMAT_CONDENSED;
         views.removeAllViews(R.id.adaptiveDayRows);
@@ -62,7 +63,15 @@ public class ScheduleWidgetProvider extends AppWidgetProvider {
             views.setViewVisibility(R.id.emptyUpcoming, empty ? View.VISIBLE : View.GONE);
             for (RemoteViews row : rows) views.addView(R.id.adaptiveDayRows, row);
         } else {
-            Intent listIntent=new Intent(context,UpcomingCoursesService.class);listIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,widgetId);listIntent.setData(Uri.parse("edt://widget/"+widgetId+"/courses/"+format));views.setRemoteAdapter(R.id.upcomingList,listIntent);views.setEmptyView(R.id.upcomingList,R.id.emptyUpcoming);
+            Intent listIntent=new Intent(context,UpcomingCoursesService.class);listIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,widgetId);
+            // Collection adapters are cached by their intent identity. Include every sizing input so
+            // launchers create a fresh single ListView factory when automatic fitting is toggled.
+            String adapterIdentity="edt://widget/"+widgetId+"/courses/"+format
+                    +"?auto="+(automaticDensity?1:0)
+                    +"&density="+AdvancedSettingsStore.widgetDensityPercent(context)
+                    +"&font="+Math.round(UiSettingsStore.widgetFontScale(context)*100f)
+                    +"&chrome="+AdvancedSettingsStore.widgetBarChromeDp(context);
+            listIntent.setData(Uri.parse(adapterIdentity));views.setRemoteAdapter(R.id.upcomingList,listIntent);views.setEmptyView(R.id.upcomingList,R.id.emptyUpcoming);
             views.setViewVisibility(R.id.emptyUpcoming, View.VISIBLE);
         }
 

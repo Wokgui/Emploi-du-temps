@@ -1,6 +1,6 @@
 package com.wokgui.schedulewidget;
 
-/** 7.76 owner for settings typography and stable view appearance. */
+/** 7.77 owner for settings typography and stable view appearance. */
 final class Feedback769Ui {
     private Feedback769Ui() {}
 
@@ -10,7 +10,7 @@ final class Feedback769Ui {
               try{
                 if(window.__feedback769){window.refreshFeedback769&&window.refreshFeedback769();return}
                 window.__feedback769=true;
-                const VERSION='7.76';
+                const VERSION='7.77';
                 let scheduled=false;
                 const style=document.createElement('style');style.id='feedback769Style';style.textContent=`
                   #settingsSheet{--settings-content-font:.72rem}
