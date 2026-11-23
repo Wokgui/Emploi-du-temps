@@ -714,6 +714,9 @@ final class ScheduleDisplayUi {
                   html body #viewWeek #weekGrid#weekGrid .wc.finalLunchCell::before,
                   #weekGrid .finalLunchJoinedRight::after{display:none!important;content:none!important}
 
+                  #weekGrid:not(.hideWeekLunch70) .lunchCourseFirst{border-top:var(--week-strong-line) solid var(--ft-midi-border,#C7AA62)!important}
+                  #weekGrid:not(.hideWeekLunch70) .lunchCourseLast{border-bottom:var(--week-strong-line) solid var(--ft-midi-border,#C7AA62)!important}
+
                   /* Hide every legacy vertical clock marker. The only visible marker is .now70Bar/.now70Dot. */
                   #weekGrid::before,#weekGrid::after{content:none!important;display:none!important}
                   #weekGrid #weekNowRail,#weekGrid #weekNowDot,#weekGrid [id*="WeekNow"],#weekGrid [id*="weekNow"],

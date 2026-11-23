@@ -1460,6 +1460,10 @@ final class TimetableCoreUi {
                 }
                 window.lunchBounds=lunchBounds;
 
+                function overlapsLunch(course,bounds){
+                  return bounds.end>bounds.start&&min(course.start)<bounds.end&&min(course.end)>bounds.start;
+                }
+
                 function lunchForDay(list){
                   try{
                     const courses=(Array.isArray(list)?list:[]).slice().sort((a,b)=>min(a.start)-min(b.start));
@@ -1469,7 +1473,7 @@ final class TimetableCoreUi {
                     const hasBefore=courses.some(c=>min(c.end)<=start);
                     const hasAfter=courses.some(c=>min(c.start)>=end);
                     if(!hasBefore||!hasAfter)return null;
-                    if(courses.some(c=>min(c.start)<end&&min(c.end)>start))return null;
+                    if(courses.some(c=>overlapsLunch(c,{start,end})))return null;
                     return {start:clock(start),end:clock(end),startM:start,endM:end,duration:end-start};
                   }catch(e){return null}
                 }
@@ -1494,12 +1498,11 @@ final class TimetableCoreUi {
                   const map=new Map();
                   for(const s of slots)map.set(s.start+'|'+s.end,{start:s.start,end:s.end,type:'slot'});
                   for(const d of DAYS)for(const c of state[d].courses)map.set(c.start+'|'+c.end,{start:c.start,end:c.end,type:'course'});
-                  const out=[...map.values()];
                   if(DAYS.some(d=>lunchForDay(state[d].courses))){
                     const b=lunchBounds(),start=clock(b.start),end=clock(b.end);
-                    if(!map.has(start+'|'+end))out.push({start:start,end:end,type:'lunchDynamic'});
+                    map.set(start+'|'+end,{start,end,type:'lunchDynamic'});
                   }
-                  return out.sort((a,b)=>min(a.start)-min(b.start)||((a.type==='lunchDynamic')?-1:0)-((b.type==='lunchDynamic')?-1:0)||min(a.end)-min(b.end));
+                  return [...map.values()].sort((a,b)=>min(a.start)-min(b.start)||min(a.end)-min(b.end));
                 }
 
                 function renderBreakSettingsV9(){
@@ -1708,13 +1711,28 @@ final class TimetableCoreUi {
 
                 function appendRegularWeekRow(box,t){
                   const th=document.createElement('div');th.className='wh timecol';th.innerHTML=`${esc(t.start)}<br>${esc(t.end)}`;box.appendChild(th);
+                  const bounds=lunchBounds(),lunchRow=t.type==='lunchDynamic';
                   for(const d of DAYS){
-                    const c=state[d].courses.find(x=>x.start===t.start&&x.end===t.end),cell=document.createElement('div');
+                    const courses=state[d].courses,cell=document.createElement('div');
+                    const c=courses.find(x=>x.start===t.start&&x.end===t.end);
                     if(c){
-                      cell.className='wc has';cell.innerHTML=`<div><div class="cellLabel">${esc(c.label)}${badgeHtml(c)}</div><div class="cellRoom">${esc(c.room||'—')}</div></div>`;
+                      cell.className='wc has';
+                      if(overlapsLunch(c,bounds)){
+                        const overlapping=courses.filter(course=>overlapsLunch(course,bounds));
+                        cell.classList.toggle('lunchCourseFirst',min(c.start)===Math.min(...overlapping.map(course=>min(course.start))));
+                        cell.classList.toggle('lunchCourseLast',min(c.end)===Math.max(...overlapping.map(course=>min(course.end))));
+                      }
+                      cell.innerHTML=`<div><div class="cellLabel">${esc(c.label)}${badgeHtml(c)}</div><div class="cellRoom">${esc(c.room||'—')}</div></div>`;
                       cell.onclick=()=>{selected=d;editing=state[d].courses.indexOf(c);openEditor(editing)};
+                    }else if(lunchRow&&lunchForDay(courses)){
+                      cell.className='wc lunchCell dynamicLunchCell';
+                      const label=lunchLabelText();
+                      cell.innerHTML=label?`<div class="dynamicLunchOverlay"><span class="cellLabel breakFitLabel">${esc(label)}</span></div>`:'';
+                      cell.onclick=()=>{selected=d;newPrefill={start:t.start,end:t.end};openEditor(null)};
+                    }else if(lunchRow){
+                      cell.className='wc emptyCell dynamicLunchEmpty';
                     }else{
-                      const g=gapsForDay(state[d].courses).find(x=>Math.min(min(t.end),x.end)>Math.max(min(t.start),x.start));
+                      const g=gapsForDay(courses).find(x=>Math.min(min(t.end),x.end)>Math.max(min(t.start),x.start));
                       if(g){const label=gapLabelText();cell.className='wc gapCell';cell.innerHTML=label?`<div class="cellLabel breakFitLabel">${esc(label)}</div>`:''}
                       else cell.className='wc emptyCell';
                       cell.onclick=()=>{selected=d;newPrefill={start:t.start,end:t.end};openEditor(null)};
@@ -1723,26 +1741,12 @@ final class TimetableCoreUi {
                   }
                 }
 
-                function appendLunchBandRow(box){
-                  const bounds=lunchBounds(),th=document.createElement('div');
-                  th.className='wh timecol';th.innerHTML=`${clock(bounds.start)}<br>${clock(bounds.end)}`;box.appendChild(th);
-                  const label=lunchLabelText();
-                  for(const d of DAYS){
-                    const info=lunchForDay(state[d].courses),cell=document.createElement('div');
-                    if(!info){cell.className='wc emptyCell dynamicLunchEmpty';box.appendChild(cell);continue}
-                    cell.className='wc lunchCell dynamicLunchCell';
-                    const overlay=document.createElement('div');overlay.className='dynamicLunchOverlay';
-                    overlay.innerHTML=label?`<span class="cellLabel breakFitLabel">${esc(label)}</span>`:'';
-                    cell.appendChild(overlay);box.appendChild(cell);
-                  }
-                }
-
                 function renderWeekDynamic(){
                   state=weeks[activeWeek];$('weekTitleLetter').textContent=activeWeek;
                   const box=$('weekGrid'),times=dynamicWeekTimes();box.innerHTML='';
                   const corner=document.createElement('div');corner.className='wh timecol';corner.textContent='H';box.appendChild(corner);
                   for(const d of DAYS){const h=document.createElement('div');h.className='wh day';h.textContent=NAMES[d];box.appendChild(h)}
-                  for(const t of times){if(t.type==='lunchDynamic')appendLunchBandRow(box);else appendRegularWeekRow(box,t)}
+                  for(const t of times)appendRegularWeekRow(box,t);
                   syncBreakCells();fitBreakLabels();polishWeekNowMarker();decorateCourseBadges();if(window.refreshCourseColors)window.refreshCourseColors();
                 }
 
