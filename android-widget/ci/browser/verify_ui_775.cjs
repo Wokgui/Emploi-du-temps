@@ -62,7 +62,7 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
   assert.match(mini,/setTextViewText\(TEXT_IDS\[i\], text\)/);assert.match(mini,/setViewVisibility\(ACCENT_IDS\[i\], stripe \? View\.VISIBLE : View\.GONE\)/);
   assert.doesNotMatch(mini,/QuoteSpan|stripeText\(/);
   const nonCourse=condensed.match(/if \(item\.type != Item\.COURSE\) \{[\s\S]*?\} else \{/);assert.ok(nonCourse);assert.match(nonCourse[0],/setViewVisibility\(R\.id\.rowCondensedAccent, View\.GONE\)/);
-  assert.match(gradle,/versionCode 779001/);assert.match(gradle,/versionName '7[.]79'/);
+  assert.match(gradle,/versionCode 780001/);assert.match(gradle,/versionName '7[.]80'/);
   assert.deepEqual(errors,[]);
   await page.screenshot({path:path.join('smoke-browser','ui-775-settings.png'),fullPage:true});
   console.log(JSON.stringify({ui,miniCells:11,condensedBreakAccent:'gone',errors},null,2));

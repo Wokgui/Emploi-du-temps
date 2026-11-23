@@ -31,7 +31,7 @@ assert.match(condensedRow,/android:autoSizeMinTextSize="3sp"/);
 assert.match(adaptiveLayout,/android:id="@\+id\/adaptiveDayRows"/);
 assert.doesNotMatch(adaptiveLayout,/ListView|upcomingList|setRemoteAdapter/);
 assert.match(gradle,/versionCode 780001/);
-assert.match(gradle,/versionName '7[.]79'/);
+assert.match(gradle,/versionName '7[.]80'/);
 
 console.log('ui_779_condensed_uses_real_weighted_host_height=passed');
 console.log('ui_779_condensed_adaptive_layout_has_no_list_owner=passed');

@@ -66,7 +66,7 @@ const chunks=path.resolve(process.env.EDT_UI_CHUNKS||'smoke-browser/chunks');
   assert.deepEqual({top:settings.range.top,right:settings.range.right,bottom:settings.range.bottom,left:settings.range.left},{top:'1px',right:'1px',bottom:'1px',left:'1px'});assert.equal(settings.range.outline,'none');assert.notEqual(settings.range.shadow,'none');
 
   const rowXml=fs.readFileSync(path.join(root,'app/src/main/res/layout/widget_course_row.xml'),'utf8'),condensed=fs.readFileSync(path.join(root,'app/src/main/java/com/wokgui/schedulewidget/CondensedCoursesService.java'),'utf8'),gradle=fs.readFileSync(path.join(root,'app/build.gradle'),'utf8');
-  assert.match(rowXml,/rowCondensedAccent[\s\S]{0,180}layout_height="match_parent"/);assert.match(condensed,/setViewLayoutHeight\(R[.]id[.]rowCondensedAccent, fittedHeight,/);assert.doesNotMatch(condensed,/rowCondensedAccent, Math[.]max\(1, fittedHeight - 3\)/);assert.match(gradle,/versionCode 779001/);assert.match(gradle,/versionName '7[.]79'/);
+  assert.match(rowXml,/rowCondensedAccent[\s\S]{0,180}layout_height="match_parent"/);assert.match(condensed,/setViewLayoutHeight\(R[.]id[.]rowCondensedAccent, fittedHeight,/);assert.doesNotMatch(condensed,/rowCondensedAccent, Math[.]max\(1, fittedHeight - 3\)/);assert.match(gradle,/versionCode 780001/);assert.match(gradle,/versionName '7[.]80'/);
   await page.screenshot({path:path.join('smoke-browser','ui-774-settings.png'),fullPage:true});
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({stripe,fill,lunch,settings,errors},null,2));

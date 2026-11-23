@@ -15,7 +15,7 @@ assert.doesNotMatch(condensed,/capacity|items[.]subList/);
 assert.match(condensed,/Automatic fitting keeps the complete chronological list/);
 assert.match(test,/completeCount = 11/);
 assert.match(test,/completeUsed != compactHeight - CondensedRowSizing[.]PROGRESS_CHROME_DP/);
-assert.match(gradle,/versionCode 779001/);assert.match(gradle,/versionName '7[.]79'/);
+assert.match(gradle,/versionCode 780001/);assert.match(gradle,/versionName '7[.]80'/);
 
 console.log('ui_778_condensed_keeps_every_automatic_row=passed');
 console.log('ui_778_compact_height_is_shared_across_complete_list=passed');

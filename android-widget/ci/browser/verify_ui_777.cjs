@@ -24,7 +24,7 @@ assert.match(sizing,/static float autoTextScaleForRow\(int rowHeightDp, float re
 assert.match(sizing,/return Math[.]min\(requested, textScaleForRow\(rowHeightDp\)\)/);
 assert.match(provider,/condensedAdaptive[\s\S]{0,160}widget_schedule_adaptive/);
 assert.match(provider,/CondensedCoursesService[.]buildAdaptiveRows/);
-assert.match(gradle,/versionCode 779001/);assert.match(gradle,/versionName '7[.]79'/);
+assert.match(gradle,/versionCode 780001/);assert.match(gradle,/versionName '7[.]80'/);
 
 console.log('ui_777_condensed_adapter_refreshes_on_text_fit_change=passed');
 console.log('ui_777_condensed_auto_font_is_capped_to_row=passed');

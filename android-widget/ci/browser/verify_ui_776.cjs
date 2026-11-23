@@ -21,7 +21,7 @@ assert.match(condensed,/rowCondensedLineTop,[\s\S]{0,100}courseItem && position 
 assert.match(condensed,/rowCondensedLineBottom,[\s\S]{0,120}courseItem && position < items[.]size\(\) - 1 \? View[.]VISIBLE : View[.]GONE/);
 const nonCourse=condensed.match(/if \(item[.]type != Item[.]COURSE\) \{[\s\S]*?\} else \{/);
 assert.ok(nonCourse);assert.match(nonCourse[0],/setViewVisibility\(R[.]id[.]rowCondensedAccent, View[.]GONE\)/);
-assert.match(gradle,/versionCode 779001/);assert.match(gradle,/versionName '7[.]79'/);
+assert.match(gradle,/versionCode 780001/);assert.match(gradle,/versionName '7[.]80'/);
 
 console.log('ui_776_condensed_single_renderer=passed');
 console.log('ui_776_break_timeline_and_accent_hidden=passed');
