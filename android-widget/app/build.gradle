@@ -18,6 +18,15 @@ android {
         buildConfig true
     }
 
+    signingConfigs {
+        debug {
+            def ciKeystore = System.getenv('EDT_SIGNING_KEYSTORE')
+            if (ciKeystore) {
+                storeFile file(ciKeystore)
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false

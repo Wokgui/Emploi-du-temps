@@ -58,8 +58,14 @@ jobs:
           set -euo pipefail
           test -n "$EDT_RELEASE_KEYSTORE_B64" || { echo '::error::Clé de signature EDT indisponible.'; exit 1; }
           umask 077
-          mkdir -p "$HOME/.android"
-          printf '%s' "$EDT_RELEASE_KEYSTORE_B64" | base64 --decode > "$HOME/.android/debug.keystore"
+          keystore="$RUNNER_TEMP/edt-signing.keystore"
+          printf '%s' "$EDT_RELEASE_KEYSTORE_B64" | base64 --decode > "$keystore"
+          digest="$(LC_ALL=C keytool -list -v -keystore "$keystore" -storepass android -alias androiddebugkey | sed -nE 's/^[[:space:]]*SHA256:[[:space:]]*//p' | tr -d ': ' | tr '[:upper:]' '[:lower:]')"
+          if [ "$digest" != "581c970557509c9a0d3e9ffba431a2683d75715b7be8356042fbf39c8330c589" ]; then
+            echo "::error::La clé du secret ne correspond pas au certificat public EDT 7.79."
+            exit 1
+          fi
+          echo "EDT_SIGNING_KEYSTORE=$keystore" >> "$GITHUB_ENV"
       - run: gradle clean :app:assembleDebug --stacktrace
       - name: Verify 7.80 debug build
         run: |
