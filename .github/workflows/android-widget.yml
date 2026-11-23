@@ -2,13 +2,13 @@ name: Build and validate Android timetable
 
 on:
   push:
-    branches: [refactor/ui-single-owner-679]
+    branches: [refactor/ui-single-owner-679, codex/pause-midi-7-79]
     paths: ['android-widget/**', '.github/workflows/android-widget.yml']
   workflow_dispatch:
 concurrency:
   group: android-widget-${{ github.ref_name }}-v19
   cancel-in-progress: true
-permissions: {contents: read}
+permissions: {contents: write}
 
 jobs:
   browser-ui:
@@ -51,13 +51,43 @@ jobs:
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
       - uses: gradle/actions/setup-gradle@v4
         with: {gradle-version: '8.10.2'}
+      - name: Restore the existing Android signing key
+        env:
+          EDT_RELEASE_KEYSTORE_B64: ${{ secrets.EDT_RELEASE_KEYSTORE_B64 }}
+        run: |
+          set -euo pipefail
+          test -n "$EDT_RELEASE_KEYSTORE_B64" || { echo '::error::Clé de signature EDT indisponible.'; exit 1; }
+          umask 077
+          mkdir -p "$HOME/.android"
+          printf '%s' "$EDT_RELEASE_KEYSTORE_B64" | base64 --decode > "$HOME/.android/debug.keystore"
       - run: gradle clean :app:assembleDebug --stacktrace
-      - name: Verify 7.79 debug build
+      - name: Verify 7.80 debug build
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/badging.txt
-          grep -q "package: name='com.wokgui.schedulewidget' versionCode='779001' versionName='7.79'" app/build/outputs/apk/debug/badging.txt
+          grep -q "package: name='com.wokgui.schedulewidget' versionCode='780001' versionName='7.80'" app/build/outputs/apk/debug/badging.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: ci-debug-apk-not-for-updates
+          name: Emploi-du-temps-7.80
           path: android-widget/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+      - name: Verify the signer and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp app/build/outputs/apk/debug/app-debug.apk Emploi-du-temps-7.80.apk
+          gh release download 'v7.79' --pattern 'Emploi-du-temps-7.79.apk' --output "$RUNNER_TEMP/previous-release.apk"
+          APKSIGNER="$(find "${ANDROID_SDK_ROOT:-$ANDROID_HOME}/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
+          test -x "$APKSIGNER"
+          signer_digest() {
+            "$APKSIGNER" verify --print-certs "$1" | sed -n 's/^Signer #[0-9]* certificate SHA-256 digest: //p' | sort
+          }
+          OLD_SIGNER="$(signer_digest "$RUNNER_TEMP/previous-release.apk")"
+          NEW_SIGNER="$(signer_digest "Emploi-du-temps-7.80.apk")"
+          test -n "$OLD_SIGNER"
+          if [ "$OLD_SIGNER" != "$NEW_SIGNER" ]; then
+            echo "::error::La signature diffère de celle de l’APK déjà publié."
+            exit 1
+          fi
+          gh release create v7.80 Emploi-du-temps-7.80.apk --target "$GITHUB_SHA" --title 'Emploi du temps 7.80' --notes 'Corrige la pause de midi lorsqu’un cours occupe ce créneau.' --latest
