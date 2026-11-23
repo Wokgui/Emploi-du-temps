@@ -30,7 +30,7 @@ assert.ok((condensedRow.match(/android:autoSizeTextType="uniform"/g)||[]).length
 assert.match(condensedRow,/android:autoSizeMinTextSize="3sp"/);
 assert.match(adaptiveLayout,/android:id="@\+id\/adaptiveDayRows"/);
 assert.doesNotMatch(adaptiveLayout,/ListView|upcomingList|setRemoteAdapter/);
-assert.match(gradle,/versionCode 779001/);
+assert.match(gradle,/versionCode 780001/);
 assert.match(gradle,/versionName '7[.]79'/);
 
 console.log('ui_779_condensed_uses_real_weighted_host_height=passed');
